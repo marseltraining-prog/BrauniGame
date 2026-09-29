@@ -221,6 +221,47 @@ BK.CFG = {
     // --- цель второго акта ---
     FED_CITIES: 10, FED_STORES: 10, FED_REV: 40000000000, // «Федеральная сеть»: 10 городов по 10+ точек и оборот 40 млрд за 12 мес.
     LEGEND_REV: 100000000000,   // «Лидер рынка» — 100 млрд за 12 мес. (дополнительная цель)
+    // --- штаб (corphq.js, этап Р3; §6.12): открытие и абонплата в ценах 2027 (× уровень цен); у университета и логистики — по уровням ---
+    HQ: {
+      finance:    { open: 20000000, month: 2000000 },
+      hr:         { open: 15000000, month: 1500000, per5: 500000 },  // +0,5 млн в месяц на каждые 5 городов
+      uni:        { open: [0, 25000000, 60000000, 150000000], month: [0, 2000000, 4000000, 8000000] },
+      purchasing: { open: 30000000, month: 3000000 },
+      logistics:  { open: [0, 40000000, 300000000], month: [0, 3000000, 13000000] },
+      brand:      { open: 30000000, month: 5000000, campaign: 100000000 },
+      security:   { open: 12000000, month: 1500000 },
+      legal:      { open: 15000000, month: 1500000 },
+    },
+    FIN_RATE: 0.005, FIN_RES: 0.005, FIN_EMB_P: 0.15, // финдеп: ставка кредита −0,5 п. п., доход резерва +0,5 п. п., «приукрашивание» ловится 15 %/мес
+    REPORT_NOISE: 0.05,         // без финдепа отчёты директоров с шумом ±5 %
+    HR_CAND_N: 5, HR_HUNTERS: 2, HR_SKILL_ERR: 5, HR_POACH_K: 0.75, HUNTER_FEE_YEARS: 0.25, CHECK_FEE: 0.5, CHECK_P: 0.5, // HR: кандидатов 5 (2 — хедхантер), погрешность ±5, переманивают на 25 % реже; хедхантер — 25 % годового оклада; проверка при найме — 0,5 оклада, 50 %
+    PURCH_PER100: 0.01, PURCH_MAX: 0.04, // закупки: фудкост −1 % за каждые 100 точек сети (до −4 %)
+    LOG_DEL: [1, 0.92, 0.85],   // логистика: доставка на точки × (межгородние поставки и фабрика заморозки — этап Р4)
+    BRAND_AW_K: 1.5, BRAND_AW_START: 0.10, BRAND_CAMPAIGN_AW: 0.15, BRAND_CAMPAIGN_DAYS: 365, // бренд: узнаваемость ×1,5 быстрее, новые города +10 %, «Федеральная реклама» +15 % везде (раз в год)
+    SEC_THEFT_P: 0.10, SEC_AUDIT_K: 0.5, // служба безопасности: воровство раскрывается 10 %/мес на каждого, аудит вдвое дешевле
+    LEGAL_LAUNCH_K: 0.8, LEGAL_FINE_K: 0.7, // GR и юристы: запуск следующего города на 20 % раньше, штрафы −30 %, раз в год особое помещение
+    // --- университет (§6.9) ---
+    UNI_SEATS: [0, 2, 4, 4], UNI_DISC: [1, 1, 0.7, 0.7], UNI_EVENING_K: 1.5, UNI_STUDY_D: 0.97,
+    UNI_PROG: { ops: 2000000, econ: 2000000, people: 2000000, growth: 2500000, brand: 1000000, mba: 15000000 }, // цена программы в ценах 2027
+    UNI_GAIN: 10, UNI_MBA_SKILL: 5, UNI_MBA_LOY: 10, UNI_MBA_PRICE: 1.2, UNI_GRAD_LOY: 5, // эффект программ; MBA — рыночная цена ×1,2
+    UNI_TRAIN_RATE: [1, 1.2, 1.35, 1.5], UNI_TRAIN_COST: 0.8, // обучение персонала в городах директоров: скорость × и цена × (к DIR_TRAIN_*)
+    UNI_OWN_DAYS: 365,          // ур. 2+: раз в год «свой» кандидат в директора
+    // --- мотивация (§6.6) ---
+    KPI_SKEW: 10, KPI_PEN: -3, KPI_PROFIT_RATING: -0.15, KPI_OPENS_PB: 1.2, KPI_OK: 0.9, KPI_SPAN: 0.2, KPI_CAP: 1.5, KPI_TURN: 0.02, KPI_RATING: 4.3,
+    OPT_LOY: 1, OPT_POACH: 0.6, OPT_THEFT: 0.7, OPT_YEARS: 3, OPT_WARN: 0.15, // опционы: лояльность +1/мес, переманивание × (1 − 0,6 × несозревшая доля), у вора θ × 0,7; стоимость = доля × 3 годовые прибыли
+    BOARD_MAX: 5, BOARD_LOY: 10, BOARD_LOY_M: 0.5, // место в совете директоров
+    REGION_KM: 600, REGION_MAX: 3, REGION_SKILL: 0.75, REGION_PAY: 1.4, REGION_GRADE: 4, // региональный директор: кластер до 3 городов ближе 600 км
+    // --- переманивание (§6.8) и скрытые черты (§6.5) ---
+    POACH_BASE: 0.006, POACH_COMP: { low: 0.5, mid: 1, high: 1.5, vhigh: 2 }, POACH_GRADE: 1.3, POACH_OFFER: [30, 60], POACH_DIFF: { easy: 0.7, normal: 1, hard: 1.3 },
+    THEFT0: 0.02, THEFT_Q: 0.003, THEFT_MAX: 0.07, EMB: [0.05, 0.10], RELAPSE_P: 0.4,
+    AUDIT_PCT: 0.003, AUDIT_MIN: 3000000, AUDIT_P: { theft: 0.7, embellish: 0.8 }, VISIT_P: { theft: 0.35, embellish: 0.5 }, AUDIT_FALSE: -3, AUDIT_AGAIN: -5,
+    SUE_BACK: 0.3, SUE_AW: -0.05, FORGIVE_PAY: 0.7,
+    BURNOUT_M: [36, 48], AGENT_M: [12, 24],
+    // --- федеральный «Хлебный двор» и местные сети (§12 п. 6) ---
+    PRESS_COMP: { low: 0, mid: 0.1, high: 0.25, vhigh: 0.4 }, PRESS_K: 0.04, PRESS_MAX: 1.5,
+    RIVAL_FOLLOW_P: 0.04, RIVAL_FOLLOW_AFTER: 180, RIVAL_PRESS0: 0.3, RIVAL_PRESS_GROW: 0.04, RIVAL_PRESS_CAP: 1.0, RIVAL_PRESS_DOM: -0.05,
+    // --- корпоративные события e201–e218 (corpev.js) ---
+    CEV_GAP: [45, 75], CEV_POS: 0.3,
   },
 
   // --- события ---

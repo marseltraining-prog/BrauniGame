@@ -45,14 +45,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!c.dev) c.dev = { y: E.dateOf(S.day).y, opened: 0, closed: 0 };
     }
     if (!cr.dirCand) { cr.dirCand = []; refreshCands(S, false); }
+    if (BK.HQ) BK.HQ.ensure(S); // Р3: штаб, мотивация, скрытые черты — значения по умолчанию
   }
 
   /* ---------------- кандидаты ---------------- */
   function corpRng(S, fn) { return CI().withRng(S, S.corp, 'rng', fn); }
   function pickW(S, list) { let t = 0; for (const x of list) t += x[1]; let r = I.rnd(S) * t; for (const x of list) { r -= x[1]; if (r < 0) return x[0]; } return list[0][0]; }
-  function makeDirector(S, src) {
+  function makeDirector(S, src, maxOwn) { // maxOwn — потолок грейда «своих» (университет 3-го уровня — до 3)
     const K_ = K(), cr = S.corp;
-    const grade = src === 'own' ? I.ri(S, 1, 2) : src === 'hunter' ? pickW(S, [[3, 0.5], [4, 0.35], [5, 0.15]]) : pickW(S, [[1, 0.35], [2, 0.4], [3, 0.25]]);
+    const grade = src === 'own' ? I.ri(S, 1, maxOwn || 2) : src === 'hunter' ? pickW(S, [[3, 0.5], [4, 0.35], [5, 0.15]]) : pickW(S, [[1, 0.35], [2, 0.4], [3, 0.25]]);
     const f = I.rnd(S) < 0.5;
     const first = I.pick(S, f ? BK.NAMES_F.concat(BK.DIRECTOR_NAMES_F || []) : BK.NAMES_M.concat(BK.DIRECTOR_NAMES_M || []));
     let sur = I.pick(S, BK.SURNAMES.concat(BK.DIRECTOR_SURNAMES || [])); if (f && /(ов|ев|ин)$/.test(sur)) sur += 'а';
@@ -70,12 +71,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const k of SK) skills[k] = clamp(skills[k], 5, cap);
     const hp = (K_.DIR_HIDDEN_P[src] || 0.25) * ({ easy: 0.6, hard: 1.5 }[S.difficulty] || 1);
     const hidden = I.rnd(S) < hp ? [pickW(S, HID)] : [];
-    const err = K_.DIR_SKILL_ERR, seen = {};
+    const err = BK.HQ ? BK.HQ.skillErr(S) : K_.DIR_SKILL_ERR, seen = {};
     for (const k of SK) seen[k] = clamp(Math.round(skills[k] + I.rr(S, -err, err)), 0, 100);
     const d = { id: 'd' + (++cr.dirSeq), name: `${first} ${sur}`, f, grade, skills, seen, style, traits, hidden, src,
       loyalty: Math.round(I.rr(S, K_.DIR_LOY0[0], K_.DIR_LOY0[1]) + (src === 'own' ? K_.DIR_LOY_OWN : 0)), loyD: 0, loyWhy: [],
       bio: bio ? bio.t : '', pot: I.ri(S, 1, 3), city: null, joined: null, months: 0, cityMonths: 0, manualM: 0, adaptUntil: 0, praiseDay: -999, hist: [] };
     d.salary = Math.round(marketPay(S, d, null) * I.rr(S, 0.95, 1.1) / 1000) * 1000;
+    if (BK.HQ) BK.HQ.dirInit(S, d);
     return d;
   }
   function refreshCands(S, paid) {
@@ -90,7 +92,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         d.bio = BK.corpText ? txtG(`{g:Прошёл|Прошла} путь от продавца до наставника в нашей сети: точка №${best.st.num}, ${best.st.address}.`, d.f) : '';
         cr.dirCand.push(d);
       }
-      while (cr.dirCand.length < K_.DIR_CAND_N) cr.dirCand.push(makeDirector(S, 'market'));
+      const N = BK.HQ ? BK.HQ.candN(S) : K_.DIR_CAND_N, hunt = BK.HQ && BK.HQ.lvlOf(S, 'hr') ? K_.HR_HUNTERS : 0; // HR-департамент: 5 кандидатов, из них 2 — от хедхантера
+      while (cr.dirCand.length < N - hunt) cr.dirCand.push(makeDirector(S, 'market'));
+      while (cr.dirCand.length < N) cr.dirCand.push(makeDirector(S, 'hunter'));
     });
     cr.dirCandDay = S.day;
     return { ok: true };
@@ -99,7 +103,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function marketPay(S, d, cityId) {
     const K_ = K(), dc = cityId ? def(cityId) : { wage: 1 };
     let avg = 0; for (const k of SK) avg += d.skills[k] / 4;
-    return K_.DIR_SALARY[d.grade] * S.macro.priceLevel * Math.sqrt(dc.wage || 1) * (0.8 + 0.4 * avg / 100) * (dc.big ? 1.15 : 1);
+    return K_.DIR_SALARY[d.grade] * S.macro.priceLevel * Math.sqrt(dc.wage || 1) * (0.8 + 0.4 * avg / 100) * (dc.big ? 1.15 : 1) * (BK.HQ ? BK.HQ.priceK(d) : 1) * (d.regional ? K_.REGION_PAY : 1);
   }
 
   /* ---------------- найм, назначение, увольнение ---------------- */
@@ -108,7 +112,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function hire(S, candId, cityId) {
     if (!on(S)) return { ok: false };
     const cr = S.corp, d = cr.dirCand.find((x) => x.id === candId); if (!d) return { ok: false, msg: 'Кандидат уже ушёл' };
-    const cost = Math.round(d.salary * K().DIR_HIRE_SALARIES);
+    const cost = BK.HQ ? BK.HQ.hireCost(S, d) : Math.round(d.salary * K().DIR_HIRE_SALARIES);
     if (S.cash < cost) return { ok: false, msg: `Не хватает ${fm(cost - S.cash)}` };
     I.spend(S, cost, 'hire');
     cr.dirCand = cr.dirCand.filter((x) => x.id !== candId);
@@ -121,10 +125,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function assign(S, dirId, cityId, quiet) {
     const cr = S.corp, d = dirById(S, dirId); if (!d) return { ok: false, msg: 'Директор не найден' };
     if (d.city === cityId) return { ok: true };
+    if (BK.HQ && d.region && d.region.length) BK.HQ.dropRegion(S, d); // региональный: кластер распадается при переводе
     if (d.city && cr.cities[d.city]) cr.cities[d.city].directorId = null;
     if (!cityId) { d.city = null; d.cityMonths = 0; if (!quiet) I.log(S, `${d.name} — в резерве (половина оклада).`, 'info'); return { ok: true }; }
     const c = cr.cities[cityId]; if (!c) return { ok: false, msg: 'Город не найден' };
-    const old = dirOf(S, c); if (old) { old.city = null; old.cityMonths = 0; I.log(S, `${old.name} переведен${old.f ? 'а' : ''} в резерв.`, 'info'); }
+    const old = dirOf(S, c);
+    if (old && old.city !== cityId && BK.HQ) BK.HQ.dropRegion(S, old, cityId); // город уходит из кластера регионального директора
+    else if (old) { if (BK.HQ && old.region && old.region.length) BK.HQ.dropRegion(S, old); old.city = null; old.cityMonths = 0; I.log(S, `${old.name} переведен${old.f ? 'а' : ''} в резерв.`, 'info'); }
     const was = d.city;
     c.directorId = d.id; d.city = cityId; d.cityMonths = 0; d.manualM = 0;
     if (was || c.status === 'run') d.adaptUntil = S.day + 30; // месяц адаптации на новом месте (§6.11)
@@ -134,14 +141,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!quiet) I.log(S, `${d.name} — директор ${CI().cityIn(cityId)}.`, 'good');
     return { ok: true };
   }
-  function fire(S, dirId) {
+  function fire(S, dirId, sev) { // sev — окладов выходного пособия (по умолчанию DIR_FIRE_SALARIES; пойманного на воровстве — 0)
     const cr = S.corp, d = dirById(S, dirId); if (!d) return { ok: false };
-    const cost = Math.round(d.salary * K().DIR_FIRE_SALARIES);
-    I.spend(S, cost, 'other');
-    if (d.city && cr.cities[d.city]) cr.cities[d.city].directorId = null;
-    cr.directors = cr.directors.filter((x) => x !== d);
-    I.log(S, `${d.name} ${d.f ? 'уволена' : 'уволен'}: выходное пособие ${fm(cost)}.`, 'warn');
+    const cost = Math.round(d.salary * (sev != null ? sev : K().DIR_FIRE_SALARIES));
+    if (cost) I.spend(S, cost, 'other');
+    removeDir(S, d);
+    I.log(S, `${d.name} ${d.f ? 'уволена' : 'уволен'}${cost ? `: выходное пособие ${fm(cost)}` : ' без выходного пособия'}.`, 'warn');
     return { ok: true, cost };
+  }
+  function removeDir(S, d) { // снять с города (и кластера) и убрать из списка
+    const cr = S.corp;
+    if (BK.HQ && d.region && d.region.length) BK.HQ.dropRegion(S, d);
+    if (d.city && cr.cities[d.city] && cr.cities[d.city].directorId === d.id) cr.cities[d.city].directorId = null;
+    cr.directors = cr.directors.filter((x) => x !== d);
   }
   function setSalary(S, dirId, k) {
     const d = dirById(S, dirId); if (!d) return { ok: false };
@@ -174,9 +186,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const yearLeft = (S) => { const t = E.dateOf(S.day); return (12 - t.m) / 12; };
 
   /* ---------------- навыки, лимиты, модификаторы агрегированного месяца ---------------- */
-  function eff(S, d, c) { // навыки с поправкой на совпадение приоритета города со стилем (±5%)
+  function eff(S, d, c) { // навыки с поправкой на совпадение приоритета города со стилем (±5%), KPI-перекос и кластер регионального (Р3)
     const m = match(d, c), k = 1 + K().DIR_PRIO_EFF * m, o = {};
-    for (const s of SK) o[s] = clamp(d.skills[s] * k, 0, 100);
+    const x = BK.HQ ? BK.HQ.skillAdd(S, d, c) : { add: null, k: 1 };
+    for (const s of SK) o[s] = clamp((d.skills[s] + (x.add ? x.add[s] : 0)) * k * x.k, 0, 100);
     return o;
   }
   function match(d, c) { if (!c || d.style === 'balance') return 0; return PRIO_OF[d.style] === c.priority ? 1 : -1; }
@@ -193,6 +206,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let p = (K().DIR_PAYBACK[d.style] || 24) * (K().DIR_PB_K[0] + K().DIR_PB_K[1] * g / 100);
     if (c.priority === 'growth') p += 4; else if (c.priority === 'profit') p -= 4;
     if (d.traits.indexOf('cautious') >= 0) p *= 0.85;
+    if (BK.HQ) p *= BK.HQ.paybackK(d); // KPI «открытия/выручка» — берёт места похуже
     return p;
   }
   function proposeCapex(S, c, d) { // «предложение директора»: годовой лимит открытий × средняя цена точки
@@ -200,15 +214,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Math.round(openLimit(S, c, d) * per / 1e6) * 1e6;
   }
   function mods(S, c) {
-    const d = dirOf(S, c); if (!d || c.id === S.corp.active) return null;
+    const d = dirOf(S, c); if (!d || c.id === S.corp.active || d.absentUntil > S.day || d.leaveDay != null) return null; // в отпуске или передаёт дела — «владелец заочно»
     const cfg = C(), sk = eff(S, d, c), st = d.style, late = d.cityMonths >= 12;
     let D = K().DIR_D0 + K().DIR_D_K * sk.ops / 100;
     D *= st === 'service' ? 1.02 : st === 'growth' ? 0.99 : st === 'economy' && late ? 0.98 : 1;
     if (d.adaptUntil > S.day) D *= 0.97;
     const has = (t) => d.traits.indexOf(t) >= 0;
     const W = cfg.RATING_W, fresh = cfg.BAKE_LEVELS[clamp(Math.round(E.wasteState(S).bake), -3, 3) + 3].fresh;
-    const rAdd = 0.1 * (sk.ops - 60) / 40 + (st === 'service' ? 0.2 : 0) - (st === 'economy' && late ? 0.2 : 0) + (c.priority === 'quality' ? 0.1 : 0);
-    return {
+    const rAdd0 = 0.1 * (sk.ops - 60) / 40 + (st === 'service' ? 0.2 : 0) - (st === 'economy' && late ? 0.2 : 0) + (c.priority === 'quality' ? 0.1 : 0);
+    const m = {
       d, D, eps: has('gambler') ? 2 : has('reliable') ? 0.6 : 1,
       mood: K().DIR_MOOD_PEOPLE * (sk.people - 50) / 50 + (st === 'service' ? 3 : st === 'economy' ? -3 : 0),
       quitK: has('charismatic') ? 0.85 : 1,
@@ -221,9 +235,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const ratio = s.staffTarget ? Math.min(1, n / s.staffTarget) : 1;
         const t = W.train * clamp(cfg.RATING_TRAIN[0] + cfg.RATING_TRAIN[1] * (avgL - 1), 1, 5) + W.repair * cfg.RATING_REPAIR[s.repair || 0]
           + W.mood * clamp(1 + 4 * Math.pow(clamp(mood, 0, 100) / 100, cfg.RATING_MOOD_EXP), 1, 5) + W.staff * clamp(5 - 8 * (1 - ratio), 1, 5) + W.fresh * fresh;
-        return clamp(t + rAdd, 1, 5);
+        return clamp(t + rAdd0 + (m.rAdd || 0), 1, 5);
       },
     };
+    return BK.HQ ? BK.HQ.modsAdj(S, d, c, m) : m; // Р3: учёба, воровство, университет, KPI «только прибыль», стандарты бренда
   }
   // обучение персонала точки агрегированно: доля людей ниже цели поднимается на уровень (ГСЧ города)
   function train(S, sd, dm, frac) {
@@ -233,7 +248,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const x = k * rate; let m = Math.floor(x) + (I.rnd(S) < x - Math.floor(x) ? 1 : 0); m = Math.min(m, k);
       if (!m) continue;
       sd.lv[l - 1] -= m; sd.lv[l] = (sd.lv[l] || 0) + m; n += m;
-      cost += m * C().TRAIN_COST[l + 1] * pl * K().DIR_TRAIN_COST;
+      cost += m * C().TRAIN_COST[l + 1] * pl * K().DIR_TRAIN_COST * (dm.trainCostK || 1);
     }
     return { n, cost };
   }
@@ -357,7 +372,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // ремонты по окупаемости (как у бота): ступень за раз, из бюджета капвложений; «Экономия» строже, приоритет «Качество» щедрее
   function repairs(S, c, d) {
     const cfg = C(), pk = c.packed, b = c.budget, pl = S.macro.priceLevel;
-    const lim = (d.style === 'economy' ? 16 : 24) * (c.priority === 'quality' ? 1.5 : c.priority === 'profit' ? 0.8 : 1);
+    const lim = (d.style === 'economy' ? 16 : 24) * (c.priority === 'quality' ? 1.5 : c.priority === 'profit' ? 0.8 : 1) * (BK.HQ && BK.HQ.onlyProfit(d) ? 0.6 : 1); // KPI «только прибыль» — экономит на ремонтах
     const list = [];
     for (const s of pk.stores) {
       if (s.status !== 'open' || (s.repair || 0) >= 3 || !s.last || !s.last.frac || (s.openedDay != null && S.day - s.openedDay < 180)) continue;
@@ -393,7 +408,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const r = assign(S, dirId, id, true); if (!r.ok) return r;
     const d = dirById(S, dirId);
     let n = 0;
-    BK.Corp.withCity(S, id, () => { buildProd(S, c, true); n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
+    BK.Corp.withCity(S, id, () => { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
     I.log(S, `${d.name} запускает ${CI().def(id).name}: цех и ${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
     return { ok: true, opened: n };
   }
@@ -405,7 +420,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const d of cr.directors.slice()) {
       const c = d.city ? cr.cities[d.city] : null;
       I.spend(S, d.salary * (c ? 1 : K_.DIR_RESERVE_PAY) * (1 + cfg.PAYROLL_TAX), 'upkeep');
-      if (c && c.packed && c.id !== cr.active) develop(S, c, d);
+      const busy = d.absentUntil > S.day || d.leaveDay != null;
+      if (c && c.packed && c.id !== cr.active && !busy) develop(S, c, d);
+      for (const rid of d.region || []) { const rc = cr.cities[rid]; if (rc && rc.packed && rid !== cr.active && rc.directorId === d.id && !busy) develop(S, rc, d); } // кластер регионального
       loyalty(S, d, c);
       d.months++; if (c) d.cityMonths++;
       // навыки растут от практики — в «своих» навыках, до потолка грейда (§6.1)
@@ -415,6 +432,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (d.loyalty < K_.LOY_QUIT) quit(S, d);
     }
     if (S.day - (cr.dirCandDay || 0) >= K_.DIR_CAND_DAYS) refreshCands(S, false);
+    if (BK.HQ) BK.HQ.monthly(S); // штаб, учёба, KPI, опционы, скрытые черты, переманивание, соперник
   }
   function loyalty(S, d, c) {
     const K_ = K(), why = [];
@@ -424,14 +442,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else why.push(['в резерве', K_.LOY_RESERVE]);
     if (c && c.id === S.corp.active) { d.manualM++; if (d.manualM > K_.LOY_MANUAL_GRACE && d.traits.indexOf('executive') < 0) why.push(['вы управляете сами', K_.LOY_MANUAL]); } else d.manualM = 0;
     if (d.traits.indexOf('reliable') >= 0) why.push(['надёжн' + (d.f ? 'ая' : 'ый'), K_.LOY_RELIABLE]);
+    if (d.board) why.push(['совет директоров', K_.BOARD_LOY_M]);
+    if (BK.HQ && BK.HQ.unvested(d) > 0) why.push(['опцион созревает', K_.OPT_LOY]); else if (d.opt && d.opt.city > 0) why.push(['доля прибыли города', 0.5]);
+    if (d.traits.indexOf('ambitious') >= 0 && d.months >= 36 && !d.regional && !(d.opt && (d.opt.city || d.opt.corp))) why.push(['амбиции: нет повышения или доли', -1]);
     const drift = (60 - d.loyalty) * K_.LOY_DRIFT; why.push(['тянется к 60', drift]);
     let s = 0; for (const w of why) s += w[1];
     d.loyalty = clamp(d.loyalty + s, 0, 100); d.loyD = s; d.loyWhy = why.map((w) => [w[0], +w[1].toFixed(2)]);
   }
   function quit(S, d) {
     const cr = S.corp, c = d.city ? cr.cities[d.city] : null;
-    if (c) c.directorId = null;
-    cr.directors = cr.directors.filter((x) => x !== d);
+    removeDir(S, d); if (BK.HQ) cr.stat.left++;
     I.log(S, `${d.name} ${d.f ? 'ушла' : 'ушёл'} из сети: лояльность упала до ${Math.round(d.loyalty)}.${c ? ' ' + CI().def(c.id).name + ' без директора.' : ''}`, 'bad');
     pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: `Лояльность упала до ${Math.round(d.loyalty)}: оклад ниже рынка, отказы и личное управление копились месяцами.${c ? ` ${CI().def(c.id).name} теперь без директора — назначьте нового.` : ''}` });
     S.notify.push({ type: 'toast', title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: c ? `${CI().def(c.id).name} без директора.` : 'Директор из резерва ушёл.', kind: 'bad' });
@@ -446,7 +466,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else { let b = 0; for (const s of packedList(c)) b += (s.base || 0) * 30.4 * S.macro.priceLevel; monthRev = b; }
     monthRev *= (1 + 0.5 * grow / Math.max(3, n)) * 1.03;
     const margin = h.length >= 3 ? h.reduce((a, x) => a + x[3], 0) / Math.max(1, h.reduce((a, x) => a + x[2], 0)) : 0.1;
-    c.plan = { y: t.y, from: S.day, stores: n + grow, monthRev: Math.round(monthRev), margin: +clamp(margin, -0.2, 0.3).toFixed(3) };
+    c.plan = { y: t.y, from: S.day, n0: n, stores: n + grow, monthRev: Math.round(monthRev), margin: +clamp(margin, -0.2, 0.3).toFixed(3) };
   }
   function planFact(S, c) { // выполнение плана по выручке за месяцы текущего плана
     const p = c.plan; if (!p) return null;
@@ -474,6 +494,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (it.due == null || it.due > S.day) continue;
       for (const r of it.reqs || []) if (r.st === 'open') { r.st = 'default'; r.ans = S.day; const d = dirById(S, it.dir); if (d) d.loyalty = clamp(d.loyalty + K_.LOY_DEFAULT, 0, 100); }
       if (it.kind === 'award' && !it.done) it.done = 'default';
+      if (it.kind === 'caught' && !it.done && BK.HQ) BK.HQ.decide(S, it.id, it.trait === 'theft' ? 'quiet' : 'warn'); // без ответа: вора увольняют тихо, «приукрашивающего» — предупреждают
     }
     for (const id in cr.cities) {
       const c = cr.cities[id], d = dirOf(S, c);
@@ -501,18 +522,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (reqs.length < 2 && d.salary < mk * 0.95 && d.loyalty < 60 && !hasOpen(S, c.id, 'raise') && S.day - (d.raiseAsk || -999) > 180) { reqs.push({ t: 'raise', pct: 10, alt: 5, st: 'open' }); d.raiseAsk = S.day; }
     // фраза директора: стиль × ситуация (BK.DIRECTOR_PHRASES)
     const pf = planFact(S, c);
-    const sit = reqs.length ? { budget: 'budget', pay: 'staff', close: 'kpiFail', raise: 'raise' }[reqs[0].t] : d.loyalty < 30 ? 'quit' : pf != null && pf < 0.9 ? 'kpiFail' : 'ok';
+    const emb = BK.HQ ? BK.HQ.embOf(d) : 0; // «Приукрашивает отчёты»: цифры лучше факта, фраза слишком гладкая
+    let sit = reqs.length ? { budget: 'budget', pay: 'staff', close: 'kpiFail', raise: 'raise' }[reqs[0].t] : d.loyalty < 30 ? 'quit' : pf != null && pf < 0.9 ? 'kpiFail' : 'ok';
+    if (emb && (sit === 'ok' || sit === 'kpiFail')) sit = 'embellish';
+    if (!reqs.length && sit === 'ok' && c.rivalIn && S.day - c.rivalIn < 400) sit = 'rival';
     const style = d.style === 'balance' ? corpRng(S, () => I.pick(S, ['growth', 'economy', 'service'])) : d.style;
     const P = (BK.DIRECTOR_PHRASES || {})[style] || {};
+    // без финансового департамента отчёт идёт «как прислал директор»: шум ±5 % (§6.12)
+    const fin = BK.HQ && BK.HQ.lvlOf(S, 'finance') > 0, nz = fin ? [0, 0] : corpRng(S, () => [I.rr(S, -1, 1) * K_.REPORT_NOISE, I.rr(S, -1, 1) * K_.REPORT_NOISE]);
+    const shown = { rev: Math.round(row[2] * (1 + emb) * (1 + nz[0])), profit: Math.round((row[3] + Math.abs(row[2]) * emb * 0.6) + Math.abs(row[2]) * nz[1] * 0.3) };
     const variants = P[sit] || P.ok || ['Месяц прошёл по плану.'];
     const r0 = reqs[0] || {};
     const [text, sPick] = corpRng(S, () => [I.pick(S, variants), open.length ? I.pick(S, open) : null]);
-    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100)), months: 6, district: sPick ? districtName(c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
+    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || (emb ? Math.round(emb * 100) + 2 : Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100))), months: 6, district: sPick ? districtName(c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
     if (sit === 'ok' && /\{stores\}/.test(text)) ctx.n = open.length;
     let phrase = txtG(text, d.f); phrase = BK.corpText ? BK.corpText(phrase, ctx) : phrase;
     const opened = c.dev.mOpened || 0, closed = c.dev.mClosed || 0;
-    const it = pushInbox(S, { kind: 'report', dir: d.id, dname: d.name, city: c.id, y: row[0], m: row[1],
-      rev: row[2], profit: row[3], stores: row[4], rating: row[5], staff: row[6], fc: row[7], quits: row[8] || 0,
+    const it = pushInbox(S, { kind: 'report', dir: d.id, dname: d.name, city: c.id, y: row[0], m: row[1], fin, emb: emb ? 1 : 0,
+      rev: shown.rev, profit: shown.profit, stores: row[4], rating: emb ? Math.min(5, +(row[5] + 0.15).toFixed(2)) : row[5], staff: row[6], fc: row[7], quits: row[8] || 0,
       prev: prev ? { rev: prev[2], profit: prev[3], stores: prev[4], rating: prev[5] } : null,
       plan: c.plan ? { rev: c.plan.monthRev, stores: c.plan.stores, margin: c.plan.margin } : null,
       left: c.budget.left, capex: c.budget.capex, missing, mood: Math.round(mood), phrase, reqs, due: reqs.length ? S.day + 30 : null, opened, closed, dev: row[7] > 0 ? row[2] / row[7] - 1 : null });
@@ -599,7 +626,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- сводки для интерфейса ---------------- */
-  function inboxOpen(S) { if (!on(S) || !S.corp.inbox) return 0; let n = 0; for (const it of S.corp.inbox) { n += openCount(it); if (it.kind === 'award' && !it.done) n++; } return n; }
+  function inboxOpen(S) { if (!on(S) || !S.corp.inbox) return 0; let n = 0; for (const it of S.corp.inbox) { n += openCount(it); if ((it.kind === 'award' || it.kind === 'caught') && !it.done) n++; } return n; }
   function cityDev(S, id) { // для карточки города и сравнения: прогноз, отклонение, текучка
     const c = S.corp.cities[id]; if (!c) return null;
     const h = c.hist.slice(-12), fcRows = h.filter((x) => x[7] > 0);
@@ -610,7 +637,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Dir = { ensure, mods, train, monthly, afterMonth, yearly, launch, hire, assign, fire, setSalary, praise, setPriority, setBudget, answer, award, refreshCands,
-    marketPay, openLimit, payback, eff, match, dirById, dirOf, planFact, fedStatus, inboxOpen, cityDev, proposeCapex, PRIO_OF, SK, STYLES };
+    marketPay, openLimit, payback, eff, match, dirById, dirOf, planFact, fedStatus, inboxOpen, cityDev, proposeCapex, PRIO_OF, SK, STYLES,
+    makeDirector, pushInbox, makePlan, removeDir, districtName, closePacked };
   Object.assign(BK.Engine, { dirHire: hire, dirAssign: assign, dirFire: fire, dirSalary: setSalary, dirPraise: praise, dirAnswer: answer, dirAward: award, dirRefresh: refreshCands,
     citySetPriority: setPriority, citySetBudget: setBudget, fedStatus });
 })();

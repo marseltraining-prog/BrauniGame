@@ -231,7 +231,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let m = 1;
     for (const x of S.mods) {
       if (x.t !== t || x.until <= S.day) continue;
-      if (x.scope === 'global' || (x.scope === 'district' && store && store.district === x.target) || (x.scope === 'store' && store && store.id === x.target) || (x.scope === 'production' && prodId && prodId === x.target)) m *= x.m;
+      if (x.scope === 'global' || (x.scope === 'district' && store && store.district === x.target) || (x.scope === 'store' && store && store.id === x.target) || (x.scope === 'production' && prodId && prodId === x.target)
+        || (x.scope === 'city' && S.corp && x.target === (S.corp._with || S.corp.active))) m *= x.m; // 'city' — корпоративные события по городу (corpev.js)
     }
     return m;
   }
@@ -289,7 +290,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // объём: чем больше изделий в день возит точка, тем больше рейсов (√ — рейсы укрупняются)
     const ref = C().DELIVERY_UNITS_REF;
     const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * C().ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
-    return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st);
+    return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st) * (S.corp && S.corp.hqDelK ? S.corp.hqDelK : 1); // логистика штаба
   }
   function kmPerUnit() { return (BK.CITY && BK.CITY.kmPerUnit) || C().KM_PER_UNIT; } // масштаб активного города (Уфа — KM_PER_UNIT)
   function storeRentMonth(st) { return st.area * st.rentM2; }
@@ -497,6 +498,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (wsum > 0) fcMult = fsum / wsum;
     }
     fcMult *= modScope(S, 'foodcost', 'global', null);
+    if (S.corp) fcMult *= modScope(S, 'foodcost', 'city', S.corp.active) * (S.corp.hqFcK || 1); // второй акт: события города и отдел закупок штаба
     const fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
     S.cache.fcPct = fcPct;
     const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
@@ -761,6 +763,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (fireQueuedEvent(S)) { /* отложенное последствие прошлого решения */ }
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
+    if (S.corp && BK.CorpEv && !S.ev.pending) BK.CorpEv.daily(S, t); // корпоративные события e201–e218 (2+ города; свой ГСЧ)
     if (S.flags.quitsToday) {
       const autohire = S.office.hr && S.office.autohireOn;
       const parts = quitStores.map((st) => `№${st.num}: осталось ${st.staff.length} из ${st.staffTarget}`);
@@ -824,7 +827,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // кредит и резерв
     const interest = S.loan * loanRate(S) / 12;
     spend(S, interest, 'interest');
-    const resInc = S.reserve * Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD) / 12;
+    const resInc = S.reserve * Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD + (S.corp && BK.HQ ? BK.HQ.resAdd(S) : 0)) / 12; // финдеп: казначейство
     S.reserve += resInc;
     M.reserveIncome = resInc;
     const profit = M.rev + M.income - (opex + tax + interest);
@@ -1319,9 +1322,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = S.history.slice(-3); const avg = h.length ? h.reduce((a, x) => a + x.rev, 0) / h.length : 0;
     let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT) * diffK(S, 'loanMult');
     if (S.ev && S.day < (S.ev.creditSqueezeUntil || 0)) lim *= C().CRISIS_LOAN_MULT != null ? C().CRISIS_LOAN_MULT : 1; // кризис: лимит урезан
+    if (S.corp && S.corp.creditK) lim *= S.corp.creditK; // корпоративное событие e213: кредитная линия под экспансию
     return lim;
   }
-  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd'); }
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0); } // штаб: казначейство, ковенанта банка
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
@@ -1518,5 +1522,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
-  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight };
+  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects };
 })();
