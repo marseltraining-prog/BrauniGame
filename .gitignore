@@ -4,3 +4,4 @@ qa/qa/
 qa/shots/
 dist/local.html
 dist/game.html
+.claude/worktrees/
