@@ -99,7 +99,11 @@ async function layoutCheck(p, label, opts = {}) {
         // кнопки: перекрытие и размер цели
         if ((el.tagName === 'BUTTON' || el.matches('[data-act], select, input, label.chefitem')) && inView && !el.disabled) {
           const cx = Math.min(W - 1, Math.max(0, r.left + r.width / 2)), cy = Math.min(H - 1, Math.max(0, r.top + r.height / 2));
-          if (r.top >= 0 && r.bottom <= H) {
+          // элемент, прокрученный за край своего контейнера (панель справа), не считается перекрытым
+          const sc = (() => { for (let e = el.parentElement; e; e = e.parentElement) { const s = getComputedStyle(e); if (/(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight) return e; } return null; })();
+          const scr = sc && sc.getBoundingClientRect();
+          const inScroll = !scr || (cy >= scr.top && cy <= scr.bottom);
+          if (r.top >= 0 && r.bottom <= H && inScroll) {
             const top = document.elementFromPoint(cx, cy);
             if (top && top !== el && !el.contains(top) && !top.contains(el)) out.push(`ПЕРЕКРЫТА ${desc(el)} элементом ${desc(top)}`);
           }
