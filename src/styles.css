@@ -269,6 +269,16 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .alert.bad { border-left-color: var(--bad); background: var(--bad-soft); }
 .alert.warn { border-left-color: var(--warn); background: var(--warn-soft); }
 .alert.good { border-left-color: var(--good); background: var(--good-soft); }
+.hol { display: flex; gap: 10px; align-items: center; padding: 7px 10px; border-radius: 8px; background: var(--surface-2); }
+.hol.now { box-shadow: inset 3px 0 0 var(--crust); }
+.hol.neg.now { box-shadow: inset 3px 0 0 var(--river); }
+.hol .when { flex: 0 0 58px; text-align: center; font-family: var(--f-mono); font-size: 15px; font-weight: 600; line-height: 1.15; color: var(--crust-t); }
+.hol.neg .when { color: var(--river-t); }
+.hol .when small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.hol .hb { min-width: 0; }
+.hol .ht { font-size: 13px; font-weight: 600; }
+.hol .ht small { font-weight: 400; color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+.hol .hd { font-size: 12px; color: var(--ink-2); }
 .alert .a-t { font-weight: 600; }
 .chart { width: 100%; height: auto; display: block; }
 .chart text { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-3); }

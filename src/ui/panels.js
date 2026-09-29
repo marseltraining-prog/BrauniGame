@@ -177,9 +177,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div></div>`;
     const al = alerts(S);
     if (al.length) s += `<div class="sec"><h3>Требует внимания</h3>${al.map((a) => `<div class="alert ${a.cls}" data-act="${a.act}" data-arg="${a.arg || ''}"><div><div class="a-t">${a.t}</div><div>${a.d}</div></div></div>`).join('')}</div>`;
+    s += holidaysBlock(S);
     s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
     s += `<div class="sec"><h3>Отчёт за прошлый месяц${last ? ` <small>${E_.MONTHS[last.m]} ${last.y}</small>` : ''}</h3>${pnlTable(last && last.pnl, true)}</div>`;
     return s;
+  }
+
+  /* ближайшие даты календаря праздников */
+  function holidaysBlock(S) {
+    const E_ = E(); if (!E_.upcomingHolidays) return '';
+    const MG = E_.MONTHS_G;
+    const range = (a, b) => { const x = E_.dateOf(a), y = E_.dateOf(b); return a === b ? `${x.d} ${MG[x.m]}` : x.m === y.m ? `${x.d}–${y.d} ${MG[x.m]}` : `${x.d} ${MG[x.m]} — ${y.d} ${MG[y.m]}`; };
+    const rows = E_.upcomingHolidays(S, 3).map((h) => {
+      const when = h.active ? `идёт<small>ещё ${h.end - S.day + 1} дн.</small>` : h.inDays === 0 ? 'сегодня' : `${h.inDays}<small>${plural(h.inDays, 'день', 'дня', 'дней')}</small>`;
+      return `<div class="hol${h.neg ? ' neg' : ''}${h.active ? ' now' : ''}"><div class="when">${when}</div><div class="hb"><div class="ht">${esc(h.name)} <small>${range(h.start, h.end)}</small></div><div class="hd">${esc(h.effect)}</div></div></div>`;
+    });
+    return rows.length ? `<div class="sec"><h3>Ближайшие даты <small>календарь Уфы</small></h3>${rows.join('')}</div>` : '';
   }
 
   function setupPanel(S, ui) {
