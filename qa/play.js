@@ -26,7 +26,7 @@ const S = (p, fn, arg) => p.evaluate(fn, arg);
     if (!(await loc.count())) { if (!opts.optional) issues.push(`нет элемента для клика: ${sel}`); return false; }
     if (await loc.isDisabled().catch(() => false)) { if (!opts.optional) issues.push(`элемент выключен: ${sel}`); return false; }
     await loc.scrollIntoViewIfNeeded().catch(() => {});
-    await loc.click({ timeout: 3000 }).catch((e) => { issues.push(`клик не прошёл ${sel}: ${e.message.split('\n')[0]}`); });
+    await loc.click({ timeout: 3000 }).catch((e) => { issues.push(`клик не прошёл ${sel}: ${e.message.split("\n").filter((l) => /intercepts|not stable|outside|detached/.test(l)).slice(-2).join(" / ") || e.message.split("\n")[0]}`); });
     await p.waitForTimeout(40);
     return true;
   }

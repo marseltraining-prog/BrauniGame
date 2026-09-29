@@ -4,6 +4,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const E = BK.Engine, C = BK.CFG, P = BK.Panels, H = BK.UIH;
   const SAVE_KEY = 'bk-ufa-save-v1';
   const $ = (sel, el) => (el || document).querySelector(sel);
+  // название сети в кавычках, но без «двойных» кавычек: Пекарня «Каравай» → как есть, Каравай → «Каравай»
+  const qname = (n) => (/[«»"„“]/.test(n) ? H.esc(n) : `«${H.esc(n)}»`);
   let S = null;
   const ui = { tab: 'dash', sel: null, storeId: null, speed: 1, paused: false, modal: null, lastPanel: 0, dirty: true, modalQueue: [] };
   let map = null, acc = 0, lastT = 0, lastSave = 0;
@@ -80,10 +82,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat" title="Деньги на расчётном счёте: из них платите аренду, зарплаты и покупки"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
       <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
       <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
-      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот<span class="long"> 12 мес / 5 млрд</span></span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+    </div>
+    <div class="hudbtns">
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
-      <button class="iconbtn" data-act="help" title="Как играть">${ICON.help}</button>
-      <button class="iconbtn" data-act="settings" title="Меню игры">${ICON.gear}</button>
+      <button class="iconbtn" data-act="help" title="Как играть" aria-label="Как играть">${ICON.help}</button>
+      <button class="iconbtn" data-act="settings" title="Меню игры" aria-label="Меню игры">${ICON.gear}</button>
     </div>
   </header>
   <div class="main">
@@ -108,6 +112,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 <div id="start"></div>`);
     map = new BK.MapView($('#map'), { onClick: mapClick, tipFor });
     map.tip = $('.maptip');
+    // высота HUD → CSS-переменная: на телефоне уведомления встают сразу под липкий HUD
+    const hud = $('.hud'), setHud = () => document.documentElement.style.setProperty('--hud-h', Math.round(hud.getBoundingClientRect().height) + 'px');
+    setHud(); if (globalThis.ResizeObserver) new ResizeObserver(setHud).observe(hud); else window.addEventListener('resize', setHud);
+    window.addEventListener('scroll', placeToasts, { passive: true });
+    window.addEventListener('resize', placeToasts);
     document.addEventListener('click', onClick);
     document.addEventListener('input', onInput);
     document.addEventListener('change', onInput);
@@ -137,7 +146,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
       <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
-      ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: «${H.esc(saved.company)}», ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
+      ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
@@ -147,7 +156,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
-  function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; }
+  function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   function newGame(name) {
     S = E.newGame({ company: name });
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
@@ -178,7 +187,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       if (n) { ui.dirty = true; map.render(S, ui.sel); }
     }
-    if (S.ev.pending && !ui.modal) openEventModal();
+    // после банкротства — только итоговое окно: событие или шеф, пришедшие в тот же день, его не перекрывают
+    if (S.lost) { if (!ui.modal && ui.modalQueue.length) ui.modalQueue.shift()(); }
+    else if (S.ev.pending && !ui.modal) openEventModal();
     else if (S.chef.pending && !ui.modal && S.phase === 'play') openChefModal();
     else if (!ui.modal && ui.modalQueue.length) { const m = ui.modalQueue.shift(); m(); }
     renderHud();
@@ -218,7 +229,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#hud-res').textContent = H.fm(S.reserve);
     const open = S.stores.filter((s) => s.status !== 'opening').length;
     $('#hud-stores').textContent = open + (S.stores.length > open ? '+' + (S.stores.length - open) : '');
-    $('#hud-goal').textContent = H.fm(rolling) + (S.won ? ' · цель взята' : '');
+    $('#hud-goal').innerHTML = H.fm(rolling) + (S.won ? '<span class="long"> · цель взята</span>' : '');
     $('#hud-goalbar').style.width = Math.min(100, rolling / C.WIN_ANNUAL_REVENUE * 100).toFixed(1) + '%';
     document.querySelectorAll('[data-speed]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.speed === ui.speed)));
     const ban = $('#setupbanner');
@@ -252,7 +263,38 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let html;
     if ((S.phase === 'setup_prod' || S.phase === 'setup_store') && ui.tab !== 'log') html = P.dash(S, ui);
     else html = fn(S, ui);
-    if (html !== ui.lastHtml) { body.innerHTML = html; ui.lastHtml = html; body.scrollTop = scroll; }
+    if (html !== ui.lastHtml) {
+      // смена вкладки — полная замена; обновление той же вкладки — точечно (morph), чтобы не пересобирать
+      // и не перерисовывать весь список из 40–60 карточек каждые 350 мс на скорости ×10
+      if (ui.lastTab === ui.tab + '|' + ui.storeId && body.firstChild) morph(body, html);
+      else body.innerHTML = html;
+      ui.lastHtml = html; ui.lastTab = ui.tab + '|' + ui.storeId; body.scrollTop = scroll;
+    }
+  }
+  /* Минимальный DOM-diff: узлы с тем же тегом переиспользуются, меняются только отличающиеся атрибуты и текст. */
+  function morph(el, html) {
+    const tpl = document.createElement('template'); tpl.innerHTML = html;
+    syncChildren(el, tpl.content);
+  }
+  function syncChildren(a, b) {
+    const bs = [...b.childNodes];
+    for (let i = 0; i < bs.length; i++) {
+      const x = a.childNodes[i], y = bs[i];
+      if (!x) { a.appendChild(y); continue; }
+      if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) { a.replaceChild(y, x); continue; }
+      if (x.nodeType !== 1) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; continue; }
+      if (x.isEqualNode(y)) continue;
+      syncAttrs(x, y);
+      syncChildren(x, y);
+      if (x.tagName === 'SELECT' && document.activeElement !== x) { const o = y.querySelector('option[selected]'); if (o) x.value = o.value; }
+    }
+    while (a.childNodes.length > bs.length) a.removeChild(a.lastChild);
+  }
+  function syncAttrs(x, y) {
+    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    for (const at of y.attributes) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    if (x.tagName === 'INPUT' && document.activeElement !== x) { if (x.type === 'checkbox' || x.type === 'radio') x.checked = y.hasAttribute('checked'); else if (x.value !== (y.getAttribute('value') || '')) x.value = y.getAttribute('value') || ''; }
+    if (x.tagName === 'OPTION') x.selected = y.hasAttribute('selected');
   }
   function renderAll() { if (!S) return; renderHud(); ui.dirty = true; renderPanel(); map.render(S, ui.sel); }
   function refresh() { if (!S) return; ui.dirty = true; renderPanel(); map.render(S, ui.sel); hudCache = ''; renderHud(); }
@@ -375,6 +417,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- уведомления ---------------- */
+  // Телефон: панель стоит под картой, её вкладки «ездят» по экрану при прокрутке. Уведомления встают сверху
+  // (под HUD), а когда вкладки поднялись в верхнюю половину экрана — уходят вниз, чтобы не закрывать их.
+  const mqPhone = globalThis.matchMedia ? matchMedia('(max-width: 820px)') : { matches: false };
+  function placeToasts() {
+    const box = $('#toasts'); if (!box || !box.firstChild) return;
+    let bottom = false;
+    if (mqPhone.matches) { const r = $('#tabs').getBoundingClientRect(); bottom = r.bottom > 0 && r.top < innerHeight * 0.55; }
+    box.classList.toggle('bottom', bottom);
+  }
   function toast(title, text, kind, effects, onClick) {
     const box = $('#toasts');
     const el = document.createElement('div');
@@ -384,6 +435,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (onClick) el.title = 'Открыть точку';
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
+    placeToasts();
     setTimeout(() => el.remove(), effects ? 9000 : 6000);
   }
 
@@ -406,8 +458,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ev.effectsText && ev.effectsText.length) html += `<div class="effects">${ev.effectsText.map((t) => `<span class="chip ${ev.kind === 'pos' ? 'good' : 'bad'}">${H.esc(t)}</span>`).join('')}</div>`;
     html += `</div><div class="modal-f">`;
     if (ev.choices) {
+      // бесплатный вариант доступен всегда (даже при минусе на счёте), иначе игрок застревает в окне;
+      // если по деньгам не проходит ничего — открыт самый дешёвый вариант (уйдёт в минус, как и прочие платежи)
+      const afford = (c) => !c.cost || c.cost <= S.cash + S.reserve;
+      const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (c.cost < ev.choices[b].cost ? i : b), 0);
       ev.choices.forEach((c, i) => {
-        const can = c.cost <= S.cash + S.reserve;
+        const can = afford(c) || i === cheapest;
         html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}</span></button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
@@ -415,7 +471,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(html);
     $('#modal').querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => {
       const i = +b.dataset.choice;
-      if (ev.choices) { const c = ev.choices[i]; if (c.cost > S.cash) E.reserveMove(S, -(c.cost - S.cash)); }
+      if (ev.choices) { const c = ev.choices[i]; if (c.cost > 0 && c.cost > S.cash) E.reserveMove(S, -(c.cost - S.cash)); }
       E.resolveEvent(S, i < 0 ? 0 : i);
       closeModal(); save();
     }));
@@ -472,7 +528,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openWinModal() {
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">«${H.esc(S.company)}» стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b>, открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b>, открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });

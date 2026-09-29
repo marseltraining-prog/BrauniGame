@@ -188,7 +188,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const p = E.nearestProd(S, st); if (!p) continue;
       r += `<line class="m-route" x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${st.x.toFixed(1)}" y2="${st.y.toFixed(1)}"/>`;
     }
-    this.gR.innerHTML = r;
+    // DOM трогаем, только если разметка изменилась: на ×10 с 40–60 точками это убирает лишние пересчёты стилей и перерисовку карты
+    if (r !== this.lastR) { this.gR.innerHTML = r; this.lastR = r; }
     let m = '';
     const isSel = (k, id) => sel && sel.kind === k && sel.id === id;
     // офис
@@ -216,7 +217,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (st.status !== 'opening' && (vac > 0 || st.staff.length < BK.CFG.SIZES[st.size].staffMin)) m += `<circle class="m-alert" cx="${-rad * 0.8}" cy="${-rad * 0.8}" r="5.5"/><text class="m-alert-t" x="${-rad * 0.8}" y="${-rad * 0.8}">${vac || '!'}</text>`;
       m += `</g>`;
     }
-    this.gM.innerHTML = m;
+    if (m !== this.lastM) { this.gM.innerHTML = m; this.lastM = m; }
   };
   BK.MapView = Map;
   BK.mapStatic = staticLayer;
