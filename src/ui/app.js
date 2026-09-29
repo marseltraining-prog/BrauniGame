@@ -61,6 +61,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
     st.notify = []; st.flags = st.flags || {};
+    if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     return st;
   }
@@ -322,7 +323,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'store') {
       const st = E.byId(S.stores, id); if (!st) return '';
       const mood = BK.storeMood(st);
-      return `<b>№${st.num} · ${e(st.address)}</b><br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}`;
+      const rt = st.status !== 'opening' && H.rating ? ` · ${H.rating.r1(E.storeRating(S, st))}★` : '';
+      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}`;
     }
     if (kind === 'offer') {
       const o = E.byId(S.offers, id); if (!o) return '';
@@ -387,6 +389,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: () => { const st = loadSave(); if (st) continueGame(st); },
     closeModal: () => closeModal(),
+    eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
     const t = e.target.closest('[data-act]');
@@ -402,6 +405,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ui.dragging = e.type === 'input';
       if (e.type === 'change') { ui.dragging = false; refresh(); }
     } else if (t.dataset.inp === 'hireStore') { ui.hireStore = t.value; refresh(); }
+    else if (t.dataset.inp === 'bake') {
+      E.setBake(S, +t.value);
+      const lab = t.closest('.field'), L = C.BAKE_LEVELS[E.wasteState(S).bake + 3]; if (lab) lab.querySelector('b').textContent = L.name; t.setAttribute('aria-valuetext', L.name);
+      ui.dragging = e.type === 'input';
+      if (e.type === 'change') { ui.dragging = false; refresh(); }
+    }
   }
   function onKey(e) {
     const tg = e.target.tagName;

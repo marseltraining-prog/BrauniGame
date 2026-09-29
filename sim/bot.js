@@ -13,13 +13,14 @@ const E = BK.Engine, CFG = BK.CFG;
 const PROFILES = {
   good: { every: 7, reserveMonths: 2.5, reserveShare: 0.25, culture: true, train: true, repair: true, payPremium: 0.12,
     events: 'smart', menu: 'smart', maxPayback: 26, cannibal: true, capAt: 0.8, loadTarget: 0.78,
-    repairPayback: 24, trainPayback: 20, prices: true, office: true, bootstrapLoan: true, bufferRev: 0.25, realtor: true },
+    repairPayback: 24, trainPayback: 20, prices: true, office: true, bootstrapLoan: true, bufferRev: 0.25, realtor: true,
+    bake: 0, eveDisc: 1 }, // выпечка «норма» и вечерняя скидка 30% (ставит один раз — без штрафа за частую смену)
   avg: null, // = good, но: управляет раз в 30 дней, без резерва, случайные выборы в событиях, без культуры, без риелтора
   bad: { every: 7, reserveMonths: 0, reserveShare: 0, culture: false, train: false, repair: false, payPremium: 0,
     events: 'free', menu: 'none', greedy: true, capAt: 1.0, loadTarget: 1.0, prices: false, office: false, bufferRev: 0 },
 };
 
-PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false });
+PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null }); // списания — по умолчанию
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const thrOf = (e) => CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
 const storeThr = (st) => st.staff.reduce((a, e) => a + thrOf(e), 0);
@@ -233,6 +234,8 @@ function play(opts) {
     else first = (aff[0] || all[all.length - 1]).o;
   }
   if (!E.rentStore(S, first.id).ok) { E.takeLoan(S, E.storeOpenCost(S, first).total - S.cash + 1e6); E.rentStore(S, first.id); }
+  if (P.bake != null && E.setBake) E.setBake(S, P.bake);
+  if (P.eveDisc != null && E.setEveDiscount) E.setEveDiscount(S, P.eveDisc);
   E.setAlloc(S, { reserve: P.reserveFixed != null ? P.reserveFixed : P.reserveShare, bonus: lvl === 'bad' ? 0 : 0.03, marketing: lvl === 'bad' ? 0 : 0.04 });
 
   const years = opts.years || 20;

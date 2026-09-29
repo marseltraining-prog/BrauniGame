@@ -312,6 +312,23 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 4px 10px; font-size: 12px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+/* рейтинг точки на картах: звёзды с дробным заполнением */
+.rstars { position: relative; display: inline-block; font-size: 11px; line-height: 1; letter-spacing: 1px; color: var(--line-2); vertical-align: 0; font-family: var(--f-body); }
+.rstars::before { content: "★★★★★"; }
+.rstars::after { content: "★★★★★"; position: absolute; left: 0; top: 0; width: var(--r); overflow: hidden; white-space: nowrap; color: var(--crust-2); }
+.kpi .v .rstars { font-size: 13px; }
+.chip.rating { gap: 5px; cursor: help; }
+.chip.rating b { font-family: var(--f-mono); font-weight: 600; }
+/* выпечка и списания */
+.bake input[type=range] { width: 100%; accent-color: var(--crust); margin: 2px 0 0; }
+.bake-scale { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 11px; color: var(--ink-3); gap: 6px; }
+.bake-scale span:nth-child(2) { text-align: center; } .bake-scale span:last-child { text-align: right; }
+.wastesum { font-size: 13px; padding: 7px 10px; border-radius: 8px; background: var(--surface-2); }
+.wastesum b { font-family: var(--f-mono); font-weight: 600; }
+.flabel { font-size: 12px; color: var(--ink-2); }
+.seg.disc { align-self: flex-start; }
+.seg.disc button { min-width: 52px; padding: 6px 12px; font-size: 13px; }
+.kv.lostrow { font-size: 12px; padding-top: 2px; }
 .confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 10px; background: var(--bad-soft); border-radius: 8px; font-size: 13px; }
 .empty { padding: 18px; text-align: center; color: var(--ink-3); border: 1px dashed var(--line-2); border-radius: var(--r); font-size: 13px; }
 
@@ -406,6 +423,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .stepper button { width: 36px; height: 36px; }
   .btn.sm { min-height: 34px; }
   .seg button { min-height: 34px; }
+  .seg.disc { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-self: stretch; }
+  .seg.disc button { min-height: 40px; }
+  .bake input[type=range] { height: 40px; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
