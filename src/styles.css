@@ -446,3 +446,14 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 /* узкий экран: категория продукта в окне шефа — отдельной строкой, иначе длинная плашка («Башкирская и татарская») наезжает на название */
 @media (max-width: 480px) { .chefitem .chip { grid-column: 2 / span 2; grid-row: 2; justify-self: start; } .chefitem .cm { grid-row: 3; } .chefitem input { grid-row: 1 / span 3; align-self: start; margin-top: 2px; } }
 @media (max-width: 374px) { .stat .v { font-size: 12px; letter-spacing: -.04em; } .stats { column-gap: 8px; } }
+/* сеть-соперник: приглушённые ромбы на карте, блок во вкладке «Рынок», переключатель на стартовом экране */
+.m-rival rect { fill: var(--rival, #9580a8); fill-opacity: .65; stroke: var(--paper, #fff); stroke-width: 1.4; stroke-opacity: .9; }
+.m-rival:hover rect { fill-opacity: .9; }
+.crowded .m-rival rect { fill-opacity: .4; }
+.rival-sum { display: flex; gap: 10px; align-items: flex-start; }
+.rv-mark { flex: none; width: 11px; height: 11px; margin: 5px 3px 0; transform: rotate(45deg); border-radius: 2px; background: var(--rival, #9580a8); opacity: .7; }
+.start .rival-opt { margin-top: 12px; max-width: 460px; font-size: 13px; color: var(--ink-2); }
+.start .rival-opt .row { gap: 10px; }
+.start .rival-opt small { display: block; margin-top: 4px; font-size: 12px; }
+.maplegend .lg-rival { display: none; }
+.has-rival .maplegend .lg-rival { display: inline-flex; }

@@ -277,10 +277,10 @@ function play(opts) {
       const rev = h.reduce((a, x) => a + x.rev, 0), prof = h.reduce((a, x) => a + x.profit, 0);
       const avgStaff = yDays ? yStaffDays / yDays : 0;
       mem.quitsYear.push(yQuits); mem.staffYear.push(avgStaff);
-      out.push({ year: t.y - CFG.START_YEAR, stores: S.stores.length, rev: Math.round(rev / 1e6), profit: Math.round(prof / 1e6), cash: Math.round(S.cash / 1e6), reserve: Math.round(S.reserve / 1e6), loan: Math.round(S.loan / 1e6), staff: E.allStaff(S), 'turn%': avgStaff ? Math.round(yQuits / avgStaff * 100) : 0, capUse: +(S.cache.capUse || 0).toFixed(2), avgLvl: +(avgLvl(S)).toFixed(2), mood: Math.round(avgMood(S)), menu: S.menu.length, prods: S.productions.length, cult: S.culture, pm: S.menu[0] ? S.menu[0].pm : 1, pl: +pl().toFixed(2) });
+      out.push({ year: t.y - CFG.START_YEAR, stores: S.stores.length, rev: Math.round(rev / 1e6), profit: Math.round(prof / 1e6), cash: Math.round(S.cash / 1e6), reserve: Math.round(S.reserve / 1e6), loan: Math.round(S.loan / 1e6), staff: E.allStaff(S), 'turn%': avgStaff ? Math.round(yQuits / avgStaff * 100) : 0, capUse: +(S.cache.capUse || 0).toFixed(2), avgLvl: +(avgLvl(S)).toFixed(2), mood: Math.round(avgMood(S)), menu: S.menu.length, prods: S.productions.length, cult: S.culture, pm: S.menu[0] ? S.menu[0].pm : 1, pl: +pl().toFixed(2), rv: rivalN(S) });
       yQuits = 0; yStaffDays = 0; yDays = 0;
     }
-    if (S.won && !mem.won) { mem.won = { year: +(S.day / 365).toFixed(1), stores: S.stores.length }; out.push({ WON_YEAR: mem.won.year, stores: S.stores.length }); if (opts.stopOnWin) break; }
+    if (S.won && !mem.won) { mem.won = { year: +(S.day / 365).toFixed(1), stores: S.stores.length, rv: rivalN(S), rvL: rivalLoss(S) }; out.push({ WON_YEAR: mem.won.year, stores: S.stores.length }); if (opts.stopOnWin) break; }
   }
   return { S, out, mem, lost: S.lost, lostYear: S.lost ? +(S.day / 365).toFixed(1) : null, won: mem.won || null };
 }
@@ -505,6 +505,14 @@ function manageBad(S, P) {
   if (S.cash < 0) E.takeLoan(S, -S.cash + 1e6);
 }
 
+/* ---------- сеть-соперник: число точек и средняя потеря гостей у точек игрока (%) ---------- */
+function rivalN(S) { return S.rival && S.rival.enabled ? S.rival.stores.length : null; }
+function rivalLoss(S) {
+  if (!E.rivalMult || !rivalN(S)) return null;
+  const open = S.stores.filter((s) => s.status !== 'opening'); if (!open.length) return 0;
+  return +(open.reduce((a, st) => a + 1 - E.rivalMult(S, st), 0) / open.length * 100).toFixed(1);
+}
+
 /* ---------- сводка ---------- */
 function summarize(r) {
   const { S, mem } = r;
@@ -539,6 +547,7 @@ function summarize(r) {
     pb: med(payback), pbNet: med(paybackNet), turn: Math.round((med(turn.slice(1)) || 0) * 100),
     fc: +(share('fc', 12) * 100).toFixed(1), pay: +(share('payroll', 12) * 100).toFixed(1), rent: +(share('rent', 12) * 100).toFixed(1), del: +(share('delivery', 12) * 100).toFixed(1), upk: +(share('upkeep', 12) * 100).toFixed(1), tax: +(share('tax', 12) * 100).toFixed(1),
     minLiq: Math.round(mem.minLiq / 1e6), cris: mem.crises.length,
+    rv5: yv(5, 'rv'), rv10: yv(10, 'rv'), rv15: yv(15, 'rv'), rvW: r.won ? r.won.rv : null, rvL: r.won ? r.won.rvL : null,
   };
 }
 

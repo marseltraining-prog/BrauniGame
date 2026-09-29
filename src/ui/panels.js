@@ -283,7 +283,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const prod = E_.nearestProd(S, st);
     let s = `<button class="back" data-act="closeStoreView">← Все точки</button>`;
     s += `<div class="sec"><div class="card-h"><div><h2 style="font-family:var(--f-display);font-size:18px">№${st.num} · ${esc(st.address)}</h2><div class="card-s">${dname(st.district)} · ${fmtLong(st.size)}, ${st.area} м²</div></div></div>
-      <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}</div></div>`;
+      <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}${rivalChip(S, st)}</div></div>`;
     if (T && !T.closed) {
       s += `<div class="sec"><h3>Сегодня</h3><div class="kpis">
         <div class="kpi"><span class="k">Чеков</span><span class="v">${n0(T.checks)}</span><span class="d">трафик ${n0(T.traffic)} чел.</span></div>
@@ -340,7 +340,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sel = ui.sel && ui.sel.kind === 'offer' && ui.sel.id === o.id;
     return `<div class="card${sel ? ' sel' : ''}" data-offer="${o.id}">
       <div class="card-h"><div><div class="card-t">${esc(o.address)}</div><div class="card-s">${dname(o.district)} · ${fmtShort(o.size)}, ${o.area} м²</div></div><button class="btn sm" data-act="focusOffer" data-arg="${o.id}" title="Показать на карте">На карте</button></div>
-      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? `оплата за год, −${Math.round(cfg.YEARLY_RENT_DISCOUNT * 100)}%` : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}</div>
+      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? `оплата за год, −${Math.round(cfg.YEARLY_RENT_DISCOUNT * 100)}%` : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}${rivalChip(S, o)}</div>
       <div class="grid2">
         ${kv('Аренда', `${n0(o.rentM2)} ₽/м² · ${fm(o.area * o.rentM2)}`)}${kv('Трафик', n0(o.traffic) + ' чел./день')}
         ${kv('Платёжеспособность', n0(o.solv * S.macro.priceLevel) + ' ₽ за визит')}${kv('Конкуренция', o.comp > 0.95 ? 'низкая' : o.comp > 0.89 ? 'средняя' : 'высокая')}
@@ -364,7 +364,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div>`;
   }
   function market(S, ui) {
-    let s = '';
+    let s = rivalBlock(S);
     if (S.prodOffers.length) s += `<div class="sec"><h3>Помещения под производство</h3>${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     const want = E().offersWanted(S);
     s += `<div class="sec"><h3>Помещения для точек <small>${S.offers.length} из ${want}</small></h3>`;
@@ -564,6 +564,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return s + `</div>`;
   }
+
+  /* ---------- сеть-соперник ---------- */
+  function rivalChip(S, o) { // «рядом конкурент: N точек» — в карточке точки и помещения
+    const r = E().rivalNear ? E().rivalNear(S, o) : null; if (!r || !r.n) return '';
+    const name = E().rivalSummary(S).name;
+    return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * C().KM_PER_UNIT).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
+  }
+  function rivalBlock(S) { // «Конкурент: Хлебный двор — N точек, растёт/слабеет» (вкладка «Рынок»; можно вставить и в «Сводку»)
+    const r = E().rivalSummary ? E().rivalSummary(S) : null; if (!r) return '';
+    const per = r.months >= 12 ? 'за год' : 'с начала игры';
+    const trend = r.delta > 0 ? `<span class="negc">растёт: +${r.delta} ${per}</span>` : r.delta < 0 ? `<span class="pos">слабеет: −${-r.delta} ${per}</span>` : `<span class="hint">без изменений ${per}</span>`;
+    const hit = S.stores.filter((st) => st.status !== 'opening' && E().rivalNear(S, st).n).length;
+    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(r.name)}»</small></h3>
+      <div class="rival-sum"><i class="rv-mark" aria-hidden="true"></i><div><b>${nw(r.n, 'точка', 'точки', 'точек')}</b> · ${trend}
+      <div class="hint">Рядом с соперником ${hit ? nw(hit, 'ваша точка', 'ваши точки', 'ваших точек') : 'ни одной вашей точки'}. Занял помещений с рынка: ${r.grabbed}, закрыл точек из-за вас: ${r.closed}. Высокий рейтинг точки снижает потери гостей, а где у вас несколько сильных точек, соперник уходит.</div></div></div></div>`;
+  }
+  BK.rivalBlock = rivalBlock;
 
   BK.Panels = { dash, stores, market, production, menu, team, finance, journal, offerCard, prodOfferCard };
   BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw };
