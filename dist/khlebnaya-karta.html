@@ -450,6 +450,123 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 @media (max-width: 480px) { .chefitem .chip { grid-column: 2 / span 2; grid-row: 2; justify-self: start; } .chefitem .cm { grid-row: 3; } .chefitem input { grid-row: 1 / span 3; align-self: start; margin-top: 2px; } }
 @media (max-width: 374px) { .stat .v { font-size: 12px; letter-spacing: -.04em; } .stats { column-gap: 8px; } }
 
+/* ===== Дополнения: слоты сохранений, достижения, итоговый экран (src/ui/extras.js). Только токены темы из styles.css. ===== */
+.rar-c { --rar: var(--good); --rar-t: var(--good-t); --rar-soft: var(--good-soft); }
+.rar-r { --rar: var(--river); --rar-t: var(--river-t); --rar-soft: var(--river-soft); }
+.rar-e { --rar: var(--crust); --rar-t: var(--crust-t); --rar-soft: var(--crust-soft); }
+
+/* --- стартовый экран: слоты --- */
+.slots { margin-top: 18px; max-width: 520px; text-align: left; display: flex; flex-direction: column; gap: 8px; }
+.slots-h { font-family: var(--f-display); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.slots-h small { font-family: var(--f-body); text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.slot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.slot.cur { border-color: var(--line-2); box-shadow: inset 3px 0 0 var(--crust); }
+.slot.empty { background: transparent; border-style: dashed; border-color: var(--line-2); grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; padding-block: 8px; }
+.slot.empty .slot-n { grid-row: auto; }
+.slot.empty .slot-b { grid-column: 3; }
+.slot-n { grid-row: 1 / span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-mono); font-size: 13px; font-weight: 600; background: var(--surface-2); color: var(--ink-2); }
+.slot-i { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.slot-i b { font-size: 14px; overflow-wrap: anywhere; }
+.slot-m { font-size: 12px; color: var(--ink-3); }
+.slot-c { display: flex; flex-wrap: wrap; gap: 4px; }
+.slot-b { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.slot-b .btn { font-size: 13px; padding: 6px 11px; }
+.slot-b .confirm { width: 100%; }
+
+/* --- «Меню игры» --- */
+.setx { display: flex; flex-wrap: wrap; gap: 8px; }
+.setx .btn { flex: 1 1 180px; }
+
+/* --- широкое окно --- */
+.modal.wide { max-width: 880px; }
+
+/* --- экран «Достижения» --- */
+.abar { display: block; height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.abar i { display: block; height: 100%; background: var(--rar, var(--crust)); border-radius: 3px; }
+.abar.big { height: 7px; margin-top: 4px; }
+.abar.big i { background: var(--crust); }
+.achseg { align-self: flex-start; }
+.achseg button { min-height: 32px; padding: 5px 12px; font-size: 13px; }
+.achgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.ach { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 11px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); content-visibility: auto; contain-intrinsic-size: auto 86px; }
+.ach .ai { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; background: var(--rar-soft); box-shadow: 0 0 0 2px var(--rar); }
+.ach.off .ai { background: var(--surface-2); box-shadow: 0 0 0 1px var(--line-2); filter: grayscale(1); opacity: .55; color: var(--ink-3); font-family: var(--f-display); font-size: 16px; }
+.ach .at { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ach .at b { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.ach .ad { font-size: 12px; color: var(--ink-2); line-height: 1.35; }
+.ach .am { font-size: 11px; color: var(--ink-3); }
+.ach .rar { color: var(--rar-t); font-weight: 600; }
+.ach.off { background: var(--paper); border-style: dashed; }
+.ach.off .at b { color: var(--ink-2); }
+.ach.off .rar { color: var(--ink-3); }
+.ach.on { border-color: color-mix(in srgb, var(--rar) 45%, var(--line)); }
+
+/* --- тост о достижении --- */
+.toast.achtoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; border-left-color: var(--rar); background: linear-gradient(90deg, var(--rar-soft), var(--surface) 70%); }
+.achtoast .ai { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; background: var(--surface); box-shadow: 0 0 0 2px var(--rar); animation: achpop .5s ease-out; }
+.achtoast .at { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.achtoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--rar-t); }
+.achtoast b { margin: 0; }
+.achtoast .ad { color: var(--ink-2); font-size: 12px; }
+@keyframes achpop { 0% { transform: scale(.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .achtoast .ai { animation: none; } }
+
+/* --- итоговый экран --- */
+.sumk { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sumcharts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.sumcharts figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sumcharts figcaption { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.schart .ln { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.schart .area { stroke: none; opacity: .16; }
+.s-rev { stroke: var(--crust); fill: var(--crust); } .legend i.s-rev { background: var(--crust); }
+.s-prof { stroke: var(--river); fill: var(--river); } .legend i.s-prof { background: var(--river); }
+.s-stores { stroke: var(--crust); fill: var(--crust); } .legend i.s-stores { background: var(--crust); }
+.s-cash { stroke: var(--ink-2); fill: var(--ink-2); } .legend i.s-cash { background: var(--ink-2); }
+.s-res { stroke: var(--good); fill: var(--good); } .legend i.s-res { background: var(--good); }
+.s-staff { stroke: var(--river); fill: var(--river); } .legend i.s-staff { background: var(--river); }
+.sumstores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sumstore.best { box-shadow: inset 3px 0 0 var(--good); }
+.sumstore.worst { box-shadow: inset 3px 0 0 var(--bad); }
+.sumcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.sumlist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.sumlist li { position: relative; padding: 7px 10px 7px 30px; border-radius: 8px; font-size: 13px; line-height: 1.4; }
+.sumlist.ok li { background: var(--good-soft); }
+.sumlist.bad li { background: var(--warn-soft); }
+.sumlist li::before { position: absolute; left: 10px; top: 7px; font-weight: 700; }
+.sumlist.ok li::before { content: '✓'; color: var(--good-t); }
+.sumlist.bad li::before { content: '!'; color: var(--warn-t); }
+.timeline { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.timeline li { display: grid; grid-template-columns: 26px 118px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.timeline li:last-child { border-bottom: 0; }
+.timeline .td { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.timeline .ti { font-size: 15px; text-align: center; }
+.achchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.achchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 5px; border-radius: 999px; font-size: 12px; background: var(--rar-soft); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rar) 40%, transparent); }
+.sec > .btn { align-self: flex-start; }
+
+@media (max-width: 820px) {
+  .slot-b .btn { min-height: 40px; }
+  .slot-b .btn.sm { min-height: 40px; }
+  .achseg button { min-height: 40px; }
+  .setx .btn { min-height: 40px; }
+  #modal .modal-f .btn { min-height: 40px; }
+  .sumcharts, .sumcols, .sumstores { grid-template-columns: 1fr; }
+  .sumk { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .toast.achtoast { gap: 8px; }
+  .achtoast .ai { width: 30px; height: 30px; font-size: 17px; }
+}
+@media (max-width: 480px) {
+  .achgrid { grid-template-columns: 1fr; }
+  .timeline li { grid-template-columns: 22px minmax(0, 1fr); }
+  .timeline .td { grid-column: 2; }
+  .timeline .tt { grid-column: 2; }
+  .timeline .ti { grid-row: 1 / span 2; }
+  .slot { padding: 10px; gap: 8px 10px; }
+  .slot-b, .slot.empty .slot-b { grid-column: 1 / -1; }
+  .slot.empty { grid-template-columns: auto minmax(0, 1fr); }
+  .slot-b .btn { flex: 1 1 auto; }
+}
+
 [hidden]{display:none!important}
 </style>
 <script>
@@ -3266,6 +3383,347 @@ var BK = globalThis.BK || (globalThis.BK = {});
   Object.assign(BK.Engine, { wasteState, wasteFactors, ratingParts, ratingTarget, storeRating, ratingMult, networkRating, setBake, setEveDiscount, discFreeDay, discPenalty });
 })();
 
+/* data/achievements.js */
+/* =====================================================================
+   ДОСТИЖЕНИЯ, ЛЕТОПИСЬ РЕШЕНИЙ И ИТОГИ ИГРЫ — чистая логика, без DOM.
+   Подключается после engine.js: оборачивает несколько функций BK.Engine (tick, newGame, решения игрока),
+   поэтому сам движок не меняется. Работает и в браузере, и в sim/ (Node).
+   Состояние (сохраняется вместе с игрой, старые сохранения получают значения по умолчанию):
+     S.achievements = { id: день получения }
+     S.achx  — счётчики для условий (рискованные решения, кризисы, праздники, увольнения…)
+     S.chron — летопись главных решений: [{ day, t, … }] (t: prod/open/close/loan/repay/choice/crisis)
+     st.pAll / st.pN / st.p12 / st.lossRun / st.lossMax — прибыль точки за всё время, по месяцам последнего года
+   Уведомление о новом достижении — S.notify {type:'ach', id} + запись в журнале.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG;
+  const RAR = { c: 'обычное', r: 'редкое', e: 'эпическое' };
+  const CATS = [
+    ['stores', 'Точки'], ['money', 'Оборот'], ['team', 'Команда'], ['rating', 'Рейтинг'], ['menu', 'Меню и цех'],
+    ['events', 'События'], ['finance', 'Финансы'], ['holidays', 'Праздники'], ['city', 'Город и темп'], ['secret', 'Секретные'],
+  ];
+  const HEAVY_EVERY = 7; // «тяжёлые» условия (перебор всех сотрудников) — раз в неделю
+
+  /* ---------- помощники условий ---------- */
+  const openStores = (S) => { let n = 0; for (const s of S.stores) if (s.status !== 'opening') n++; return n; };
+  const peak = (S) => Math.max((S.stats && S.stats.peakStores) || 0, S.stores.length);
+  const staffN = (S) => { let n = 0; for (const s of S.stores) n += s.staff.length; return n; };
+  const equipN = (S) => { let n = 0; for (const p of S.productions) for (const k in p.equip) n += p.equip[k] || 0; return n; };
+  const districtsN = (S) => new Set(S.stores.map((s) => s.district)).size;
+  const catsN = (S) => { const c = new Set(); for (const it of S.menu) { const p = E().byId(BK.PRODUCTS, it.id); if (p) c.add(p.cat); } return c.size; };
+  const rolling = (S) => { let s = 0; for (const h of S.history.slice(-12)) s += h.rev; return s; };
+  const rollingProfit = (S) => { let s = 0; for (const h of S.history.slice(-12)) s += h.profit; return s; };
+  const lvlN = (S, l) => { let n = 0; for (const s of S.stores) for (const e of s.staff) if (e.lvl >= l) n++; return n; };
+  const cnt = (id, cat, icon, rar, name, desc, get, goal, o) => Object.assign({ id, cat, icon, rar, name, desc, test: (S, X) => get(S, X) >= goal, prog: (S, X) => [get(S, X), goal] }, o || {});
+  const flag = (id, cat, icon, rar, name, desc, test, o) => Object.assign({ id, cat, icon, rar, name, desc, test }, o || {});
+  const M = (v) => v * 1e6;
+
+  /* ---------- список (порядок = порядок на экране внутри категории) ---------- */
+  const LIST = [
+    // Точки
+    flag('prod1', 'stores', '🏭', 'c', 'Своя пекарня', 'Арендовать помещение под первый цех', (S) => S.productions.length >= 1),
+    flag('store1', 'stores', '🥐', 'c', 'Первая точка', 'Арендовать помещение под первую пекарню', (S) => S.stores.length >= 1 || peak(S) >= 1),
+    flag('open1', 'stores', '🔔', 'c', 'Двери открыты', 'Первая точка приняла гостей', (S) => openStores(S) >= 1 || peak(S) >= 2),
+    cnt('stores3', 'stores', '🏪', 'c', 'Три адреса', 'Три точки в сети одновременно', peak, 3),
+    cnt('stores5', 'stores', '🖐', 'c', 'Пятёрка', 'Пять точек в сети одновременно', peak, 5),
+    cnt('stores10', 'stores', '🔟', 'r', 'Десятка', 'Десять точек в сети', peak, 10),
+    cnt('stores20', 'stores', '🏘', 'r', 'Двадцать адресов', 'Двадцать точек в сети', peak, 20),
+    cnt('stores30', 'stores', '🌆', 'e', 'Городская сеть', 'Тридцать точек в сети', peak, 30),
+    cnt('stores40', 'stores', '🗼', 'e', 'Сорок адресов', 'Сорок точек в сети', peak, 40),
+    // Оборот
+    cnt('rev1m', 'money', '🪙', 'c', 'Первый миллион', 'Выручка за месяц — 1 млн ₽', (S, X) => X.maxRev, M(1)),
+    flag('profit1', 'money', '📈', 'c', 'В плюсе', 'Первый месяц с прибылью', (S, X) => X.profitMonths >= 1),
+    cnt('rev10m', 'money', '💰', 'r', 'Десять миллионов', 'Выручка за месяц — 10 млн ₽', (S, X) => X.maxRev, M(10)),
+    cnt('rev100m', 'money', '🏦', 'e', 'Сто миллионов', 'Выручка за месяц — 100 млн ₽', (S, X) => X.maxRev, M(100)),
+    cnt('cum10b', 'money', '💎', 'e', 'Десять миллиардов', 'Выручка за всю игру — 10 млрд ₽', (S) => S.cumRevenue || 0, 1e10),
+    cnt('cum30b', 'money', '🌾', 'e', 'Тридцать миллиардов', 'Выручка за всю игру — 30 млрд ₽', (S) => S.cumRevenue || 0, 3e10),
+    cnt('rev3b', 'money', '🚂', 'e', 'Три миллиарда за год', 'Оборот за 12 месяцев — 3 млрд ₽', rolling, 3e9),
+    flag('win', 'money', '🏆', 'e', 'Хлебная карта Уфы', 'Оборот за 12 месяцев — 5 млрд ₽: победа', (S) => !!S.won, { prog: (S) => [rolling(S), C().WIN_ANNUAL_REVENUE] }),
+    // Команда
+    cnt('hire10', 'team', '🤝', 'c', 'Своя команда', 'Нанять 10 сотрудников', (S) => S.stats.hires, 10),
+    flag('train1', 'team', '🎓', 'c', 'Первое обучение', 'Отправить сотрудника на обучение', (S, X) => X.trains >= 1 || !!S.office.academy),
+    flag('academy', 'team', '🏫', 'r', 'Своя академия', 'Открыть отдел обучения', (S) => !!S.office.academy),
+    cnt('hire300', 'team', '🏟', 'r', 'Большой коллектив', 'Нанять 300 сотрудников', (S) => S.stats.hires, 300),
+    cnt('masters', 'team', '🧑‍🍳', 'r', 'Мастера своего дела', '60 сотрудников на 5-м уровне обучения', (S) => lvlN(S, C().MAX_LVL || 5), 60, { heavy: true }),
+    flag('happy', 'team', '😊', 'r', 'Все довольны', 'Все сотрудники довольны работой при штате от 100 человек', (S) => { let n = 0; for (const s of S.stores) for (const e of s.staff) { if (e.mood < C().MOOD_HAPPY) return false; n++; } return n >= 100; }, { heavy: true }),
+    flag('culture', 'team', '🌟', 'r', 'Бренд работодателя', 'Корпоративная культура на высшем уровне', (S) => S.culture >= C().CULTURE.length - 1, { prog: (S) => [S.culture, C().CULTURE.length - 1] }),
+    flag('noquit', 'team', '🕊️', 'e', 'Никто не ушёл', '12 месяцев подряд без увольнений при штате от 6 человек', (S, X) => X.staffSince != null && S.day - Math.max(X.lastQuit, X.staffSince) >= 365, { prog: (S, X) => [X.staffSince == null ? 0 : Math.max(0, Math.min(365, S.day - Math.max(X.lastQuit, X.staffSince))), 365], unit: 'дн.' }),
+    // Рейтинг
+    flag('star5', 'rating', '⭐', 'r', 'Звёздная точка', 'Точка с рейтингом 4,9★ на картах', (S) => S.stores.some((s) => s.status !== 'opening' && E().storeRating(S, s) >= 4.9), { heavy: true }),
+    flag('net45', 'rating', '🌠', 'r', 'Любимая сеть', 'Средний рейтинг сети 4,5★ при 30 точках и больше', (S) => openStores(S) >= 30 && (E().networkRating(S) || 0) >= 4.5, { heavy: true }),
+    // Меню и цех
+    flag('chef1', 'menu', '👨‍🍳', 'c', 'Новинка от шефа', 'Добавить в меню новинку шеф-пекаря', (S) => S.menu.some((m) => BK.START_MENU.indexOf(m.id) < 0)),
+    flag('equip1', 'menu', '⚙️', 'c', 'Новое оборудование', 'Купить оборудование для цеха', (S) => equipN(S) >= 1),
+    flag('repair1', 'menu', '🖌', 'c', 'Свежий ремонт', 'Сделать ремонт в точке', (S) => S.stores.some((s) => s.repair >= 1 || s.status === 'repair')),
+    cnt('menu14', 'menu', '🧺', 'r', 'Богатая витрина', '14 позиций в меню', (S) => S.menu.length, 14),
+    cnt('equip20', 'menu', '🏗', 'r', 'Цех мечты', '20 единиц оборудования в цехах', equipN, 20),
+    flag('prod2', 'menu', '🏭', 'r', 'Второй цех', 'Открыть второе производство', (S) => S.productions.length >= 2),
+    flag('repair3', 'menu', '💫', 'r', 'Премиум-концепт', 'Ремонт третьей ступени в точке', (S) => S.stores.some((s) => s.repair >= 3)),
+    cnt('cats', 'menu', '🎨', 'e', 'Всё для всех', 'Все категории выпечки и напитков в меню', catsN, 9),
+    flag('prod3', 'menu', '🌇', 'e', 'Три цеха', 'Открыть третье производство', (S) => S.productions.length >= 3),
+    // События
+    cnt('ev10', 'events', '⚡', 'c', 'Закалённые', 'Пережить 10 событий', (S) => S.stats.eventsSeen, 10),
+    flag('star', 'events', '📺', 'r', 'Звёздный час', 'Одно из редких «звёздных» событий', (S) => ['e137', 'e138', 'e139', 'e140'].some((id) => S.ev.once && S.ev.once[id])),
+    cnt('risky5', 'events', '🎲', 'r', 'Азартный пекарь', 'Пять раз выбрать вариант с отложенными последствиями', (S, X) => X.risky, 5),
+    cnt('crisis', 'events', '🛡', 'r', 'Без паники', 'Пережить экономический кризис (полгода) без новых кредитов', (S, X) => X.crisisOk, 1),
+    cnt('ev150', 'events', '🌪', 'r', 'Видали всякое', 'Пережить 150 событий', (S) => S.stats.eventsSeen, 150),
+    // Финансы
+    flag('reserveSaved', 'finance', '🛟', 'c', 'Резерв выручил', 'Резервный фонд закрыл кассовый разрыв', (S) => !!S.flags.reserveUsedMsg),
+    flag('repaid', 'finance', '✅', 'c', 'Без долгов', 'Полностью погасить кредит', (S, X) => X.repaid >= 1),
+    flag('lowWaste', 'finance', '♻️', 'r', 'Бережливость', 'Списания меньше 0,8% выручки за месяц (при выручке от 5 млн ₽)', (S, X) => !!X.lowWaste),
+    cnt('res200m', 'finance', '🐷', 'r', 'Подушка безопасности', 'Резервный фонд — 200 млн ₽', (S) => S.reserve, M(200)),
+    cnt('res500m', 'finance', '🏰', 'e', 'Золотой запас', 'Резервный фонд — 500 млн ₽', (S) => S.reserve, M(500)),
+    flag('osno', 'finance', '🏛', 'r', 'Большой бизнес', 'Выручка за год больше лимита УСН — сеть на общей системе налогов', (S) => S.macro.regime === 'osno'),
+    // Праздники
+    flag('hBay', 'holidays', '🌙', 'c', 'Праздничный эчпочмак', 'Встретить Ураза- или Курбан-байрам с национальной выпечкой в меню', (S, X) => !!X.hBay),
+    flag('hNY', 'holidays', '🎄', 'c', 'Сладкий Новый год', 'Встретить Новый год с десертами в меню', (S, X) => !!X.hNY),
+    flag('hSab', 'holidays', '🎪', 'r', 'Сабантуй', 'Точка у парка работает в Сабантуй', (S, X) => !!X.hSab),
+    cnt('hAll', 'holidays', '📅', 'r', 'Круглый год', 'Встретить все даты календаря Уфы с открытыми точками', (S, X) => Object.keys(X.hol || {}).length, 8),
+    // Город и темп
+    cnt('d6', 'city', '🗺', 'c', 'Полгорода', 'Точки в шести районах Уфы', districtsN, 6),
+    cnt('d12', 'city', '🏙', 'e', 'Вся Уфа', 'Точки во всех 12 районах', districtsN, 12),
+    flag('fast', 'city', '🚀', 'e', 'Стремительный рост', 'Десять точек за первые три года', (S) => S.stores.length >= 10 && S.day <= 3 * 365, { prog: (S) => [S.day <= 3 * 365 ? S.stores.length : 0, 10], missed: (S) => S.day > 3 * 365 }),
+    cnt('y10', 'city', '🎂', 'r', 'Десять лет в деле', 'Сеть работает 10 лет', (S) => Math.floor(S.day / 365), 10),
+    cnt('y15', 'city', '🎖', 'e', 'Пятнадцать лет', 'Сеть работает 15 лет', (S) => Math.floor(S.day / 365), 15),
+    // Секретные (до получения скрыты)
+    flag('s13', 'secret', '🐈', 'c', 'Чёртова дюжина', 'Открыть точку №13', (S) => (S.flags.storeNum || 0) >= 13, { secret: true }),
+    flag('sPrice', 'secret', '👑', 'c', 'Хлеб по цене золота', 'Все цены в меню на 50% выше рекомендованных', (S) => S.menu.length > 0 && S.menu.every((m) => m.pm >= 1.5), { secret: true }),
+    flag('sSurv', 'secret', '🩹', 'r', 'На волоске', 'Выбраться из кассового разрыва после двух месяцев в минусе', (S, X) => !!X.survived, { secret: true }),
+    flag('sLoner', 'secret', '🏠', 'r', 'Одна, но любимая', 'Три года с одной-единственной точкой', (S, X) => X.loner >= 3 * 365, { secret: true }),
+    cnt('sClose', 'secret', '✂️', 'r', 'Оптимизатор', 'Закрыть пять точек', (S, X) => X.closed, 5, { secret: true }),
+  ];
+  const BY_ID = {}; for (const a of LIST) BY_ID[a.id] = a;
+
+  /* ---------- состояние ---------- */
+  function freshX() {
+    return { v: 1, maxRev: 0, profitMonths: 0, trains: 0, risky: 0, crises: [], crisisOk: 0, repaid: 0, loans: 0, closed: 0, lowWaste: false,
+      q: null, lastQuit: 0, staffSince: null, hol: {}, hNY: false, hBay: false, hSab: false, gapMonths: 0, gapMax: 0, survived: false, loner: 0, mKey: null, lastHeavy: -99 };
+  }
+  // Безопасная инициализация. Старое сохранение (без S.achievements): всё, что уже выполнено, начисляется тихо.
+  function ensure(S) {
+    if (!S) return S;
+    if (!S.achx) S.achx = freshX();
+    const X = S.achx;
+    if (!S.chron) S.chron = [];
+    if (X.q == null) X.q = S.stats ? S.stats.quits : 0;
+    if (!S.achievements) {
+      S.achievements = {};
+      backfill(S);
+      for (const a of LIST) if (!S.achievements[a.id] && safeTest(a, S)) S.achievements[a.id] = S.day;
+    }
+    return S;
+  }
+  function backfill(S) { // счётчики, которые можно восстановить из истории старого сохранения
+    const X = S.achx;
+    for (const h of S.history || []) {
+      X.maxRev = Math.max(X.maxRev, h.rev || 0);
+      if (h.profit > 0) X.profitMonths++;
+      if (h.pnl && h.rev >= 5e6 && h.pnl.waste != null && h.pnl.waste / h.rev < 0.008) X.lowWaste = true;
+    }
+    const h = S.history && S.history[S.history.length - 1]; if (h) X.mKey = h.y * 12 + h.m;
+    if (staffN(S) >= 6) X.staffSince = S.day;
+    X.lastQuit = S.day;
+  }
+  function safeTest(a, S) { try { return !!a.test(S, S.achx); } catch (e) { return false; } }
+  function logLine(S, text, kind) { S.log.unshift({ day: S.day, text, kind }); if (S.log.length > 250) S.log.length = 250; }
+  function award(S, a) {
+    S.achievements[a.id] = S.day;
+    S.notify.push({ type: 'ach', id: a.id });
+    logLine(S, `Достижение «${a.name}»: ${a.desc.charAt(0).toLowerCase() + a.desc.slice(1)}.`, 'good');
+  }
+  function check(S, all) {
+    if (!S || !S.achievements) return;
+    const X = S.achx, heavy = all || S.day - X.lastHeavy >= HEAVY_EVERY;
+    if (heavy) X.lastHeavy = S.day;
+    for (const a of LIST) {
+      if (S.achievements[a.id] != null) continue;
+      if (a.heavy && !heavy) continue;
+      if (safeTest(a, S)) award(S, a);
+    }
+  }
+  function chron(S, rec) {
+    rec.day = S.day;
+    S.chron.push(rec);
+    if (S.chron.length > 400) { const i = S.chron.findIndex((r) => r.t === 'open' && r.num % 10 !== 0 && r.num > 1); S.chron.splice(i >= 0 ? i : 0, 1); }
+  }
+
+  /* ---------- ежедневный учёт (после E.tick) ---------- */
+  function daily(S) {
+    ensure(S);
+    const X = S.achx;
+    // увольнения: день последнего ухода; отсчёт «без увольнений» — с момента, когда в штате 6+ человек
+    if (S.stats.quits !== X.q) { X.q = S.stats.quits; X.lastQuit = S.day; }
+    const nStaff = staffN(S);
+    if (nStaff >= 6) { if (X.staffSince == null) X.staffSince = S.day; } else X.staffSince = null;
+    if (S.stores.length === 1 && openStores(S) === 1) X.loner++; else if (S.stores.length > 1) X.loner = 0;
+    // кризисы: через 180 дней после начала — «пережит»; без новых кредитов за это время — засчитан
+    for (const c of X.crises) if (!c.done && S.day - c.day >= 180) { c.done = true; if (!c.loan && !S.lost) X.crisisOk++; }
+    holidays(S, X);
+    // новый месячный расчёт
+    const h = S.history[S.history.length - 1];
+    if (h && h.y * 12 + h.m !== X.mKey) { X.mKey = h.y * 12 + h.m; onMonth(S, X, h); }
+    check(S);
+  }
+  function holidays(S, X) {
+    if (!E().holidaysOfYear || !openStores(S)) return;
+    const y = E().dateOf(S.day).y;
+    for (const hd of E().holidaysOfYear(y)) {
+      if (hd.start > S.day || hd.end < S.day) continue;
+      X.hol[hd.id] = 1;
+      const hasCat = (cat) => S.menu.some((m) => { const p = E().byId(BK.PRODUCTS, m.id); return p && p.cat === cat; });
+      const hasLm = (lm) => S.stores.some((s) => s.status !== 'opening' && s.landmarks.indexOf(lm) >= 0);
+      if (hd.id === 'newyear' && hasCat('desserts')) X.hNY = true;
+      if ((hd.id === 'uraza' || hd.id === 'kurban') && hasCat('national')) X.hBay = true;
+      if (hd.id === 'sabantuy' && hasLm('park')) X.hSab = true;
+    }
+  }
+  function onMonth(S, X, h) {
+    X.maxRev = Math.max(X.maxRev, h.rev);
+    if (h.profit > 0) X.profitMonths++;
+    if (h.pnl && h.rev >= 5e6 && h.pnl.waste != null && h.pnl.waste / h.rev < 0.008) X.lowWaste = true;
+    if (S.negMonths > 0) { X.gapMonths++; X.gapMax = Math.max(X.gapMax, S.negMonths); }
+    else if (X.prevNeg >= 2 && !S.lost) X.survived = true;
+    X.prevNeg = S.negMonths;
+    for (const st of S.stores) { // прибыль точки: за всё время, помесячно за последний год, серии убыточных месяцев
+      if (!st.last || st.status === 'opening' || st.last.profit == null) continue;
+      const p = Math.round(st.last.profit);
+      st.pAll = (st.pAll || 0) + p; st.pN = (st.pN || 0) + 1;
+      st.p12 = (st.p12 || []).concat([p]).slice(-12);
+      st.lossRun = p < 0 ? (st.lossRun || 0) + 1 : 0;
+      st.lossMax = Math.max(st.lossMax || 0, st.lossRun);
+    }
+  }
+
+  /* ---------- обёртки функций движка (действия игрока и ботов) ---------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__ach) return;
+    Eng.__ach = true;
+    const w = (name, fn) => { const orig = Eng[name]; if (orig) Eng[name] = fn(orig); };
+    w('newGame', (o) => function (opts) { const S = o.apply(this, arguments); S.achievements = {}; S.achx = freshX(); S.achx.q = 0; S.chron = []; return S; });
+    w('tick', (o) => function (S) { const r = o.apply(this, arguments); if (r) daily(S); return r; });
+    const after = (name, fn) => w(name, (o) => function (S) { const pre = fn.pre ? fn.pre.apply(null, arguments) : null; const r = o.apply(this, arguments); if (S && S.achievements && (r == null || r.ok !== false)) { fn(S, r, pre, arguments); check(S); } return r; });
+    after('chooseProduction', (S) => chron(S, { t: 'prod', n: S.productions.length, addr: S.productions[S.productions.length - 1].address }));
+    after('rentStore', (S, r) => chron(S, { t: 'open', num: r.store.num, addr: r.store.address, d: r.store.district, n: S.stores.length }));
+    const close = (S, r, st) => { S.achx.closed++; if (st) chron(S, { t: 'close', num: st.num, addr: st.address, d: st.district, pAll: st.pAll || 0, pN: st.pN || 0, p12: (st.p12 || []).reduce((a, x) => a + x, 0), lossMax: st.lossMax || 0 }); };
+    close.pre = (S, id) => (S && S.stores ? S.stores.find((x) => x.id === id) : null);
+    after('closeStore', close);
+    after('takeLoan', (S, r) => {
+      const X = S.achx; X.loans++;
+      for (const c of X.crises) if (!c.done) c.loan = true;
+      chron(S, { t: 'loan', v: Math.round(r.amount), loan: Math.round(S.loan), rev: Math.round(S.lastMonthRev) });
+    });
+    const repay = (S, r, before) => { if (before > 0 && S.loan <= 0) { S.achx.repaid++; chron(S, { t: 'repay', v: Math.round(before) }); } };
+    repay.pre = (S) => (S ? S.loan : 0);
+    after('repayLoan', repay);
+    after('train', (S) => { S.achx.trains++; });
+    after('trainAll', (S) => { S.achx.trains++; });
+    // решение в событии: рискованное (с отложенным последствием), кризис, дорогой вариант — в летопись
+    const choice = (S, r, pre) => {
+      if (!pre) return;
+      const X = S.achx, inst = pre.inst, e = E().byId(BK.EVENTS, inst.id);
+      const ch = inst.choices && e && e.choices ? (e.choices[pre.idx] || e.choices[e.choices.length - 1]) : null;
+      const risky = !!(ch && (ch.effects || []).some((f) => f.t === 'schedule'));
+      if (risky) X.risky++;
+      if (inst.crisis) X.crises.push({ day: inst.day, loan: false, done: false });
+      const cost = ch && inst.choices[pre.idx] ? inst.choices[pre.idx].cost || 0 : 0;
+      const big = cost >= Math.max(1e6 * S.macro.priceLevel, S.lastMonthRev * 0.15);
+      if (inst.crisis || risky || big || (e && e.once)) chron(S, { t: inst.crisis ? 'crisis' : 'choice', id: inst.id, title: inst.title, label: ch ? ch.label : '', cost: Math.round(cost), risky, kind: inst.kind });
+    };
+    choice.pre = (S, idx) => (S && S.ev && S.ev.pending ? { inst: S.ev.pending, idx: idx | 0 } : null);
+    after('resolveEvent', choice);
+  }
+  wrap();
+
+  /* ---------- итоги игры: лучшая/худшая точка, главные решения, что верно / что можно лучше ---------- */
+  function storeRows(S) {
+    const rows = [];
+    for (const st of S.stores) if (st.pN) rows.push({ num: st.num, addr: st.address, d: st.district, pAll: st.pAll || 0, pN: st.pN, p12: (st.p12 || []).reduce((a, x) => a + x, 0), lossMax: st.lossMax || 0, open: true });
+    for (const c of S.chron || []) if (c.t === 'close' && c.pN) rows.push({ num: c.num, addr: c.addr, d: c.d, pAll: c.pAll, pN: c.pN, p12: c.p12, lossMax: c.lossMax, open: false, day: c.day });
+    return rows;
+  }
+  function decisions(S, max) {
+    const out = [];
+    for (const c of S.chron || []) {
+      if (c.t === 'open' && !(c.num === 1 || c.num % 10 === 0)) continue;
+      if (c.t === 'loan' && c.v < Math.max(3e6, c.rev * 1.5)) continue; // только крупные кредиты
+      out.push(c);
+    }
+    // если решений много — оставить самые весомые (кризисы, цеха, закрытия, крупные кредиты), по датам
+    const w = (c) => ((c.t === 'open' && c.num === 1) || (c.t === 'prod' && c.n === 1) ? 9 : ({ crisis: 5, prod: 4, close: 4, repay: 3, loan: 3, open: 3, choice: c.risky ? 3 : 2 })[c.t] || 1);
+    const keep = out.map((c, i) => ({ c, i })).sort((a, b) => w(b.c) - w(a.c) || b.i - a.i).slice(0, max || 12).sort((a, b) => a.i - b.i);
+    return keep.map((x) => x.c);
+  }
+  function review(S) {
+    ensure(S);
+    const cfg = C(), X = S.achx, h = S.history || [];
+    const sum = (f, arr) => (arr || h).reduce((a, x) => a + (f(x) || 0), 0);
+    const years = S.day / 365;
+    const revAll = sum((x) => x.rev), last12 = h.slice(-12);
+    const rev12 = sum((x) => x.rev, last12), prof12 = sum((x) => x.profit, last12);
+    const wasteShare = revAll ? sum((x) => x.pnl && x.pnl.waste) / revAll : 0;
+    const interest = sum((x) => x.pnl && x.pnl.interest), intShare = revAll ? interest / revAll : 0;
+    const avgStaff = h.length ? sum((x) => x.staff) / h.length : 0;
+    const turnover = avgStaff >= 3 && years > 0.5 ? S.stats.quits / avgStaff / years : null;
+    const rating = E().networkRating(S);
+    const rows = storeRows(S);
+    const byAll = rows.slice().sort((a, b) => b.pAll - a.pAll);
+    const best = byAll[0] || null, worst = byAll.length > 1 ? byAll[byAll.length - 1] : null;
+    const lossy = rows.filter((r) => r.lossMax >= 6).sort((a, b) => b.lossMax - a.lossMax)[0];
+    const fmt = BK.fmtMoney, pc = (v) => (Math.round(v * 1000) / 10).toString().replace('.', ',') + '%';
+    const good = [], bad = [];
+    const G = (w, t) => good.push({ w, t }), B = (w, t) => bad.push({ w, t });
+    const monthCost = (() => { const p = h.length ? h[h.length - 1].pnl : null; return p ? p.rent + p.payroll + p.util + (p.delivery || 0) + (p.upkeep || 0) : 0; })();
+    // что сделано верно
+    if (S.won) G(10, `Цель взята за ${(Math.round((S.wonDay || S.day) / 36.5) / 10).toString().replace('.', ',')} года: оборот 5 млрд ₽ за 12 месяцев.`);
+    if (X.crisisOk) G(8, X.crisisOk > 1 ? `Пережили ${X.crisisOk} кризиса без новых кредитов — резерв и запас денег сработали.` : 'Пережили кризис без новых кредитов — резерв и запас денег сработали.');
+    else if (S.flags.reserveUsedMsg && !S.lost) G(5, 'Резервный фонд закрыл кассовый разрыв — сеть не встала.');
+    if (turnover != null && turnover < 0.2) G(7, `Команда держалась: уходило ~${pc(turnover)} сотрудников в год — зарплаты, премии и культура окупились.`);
+    if (rating != null && rating >= 4.4) G(6, `Гости ценят сеть: средний рейтинг ${rating.toFixed(1).replace('.', ',')}★.`);
+    if (S.culture >= 3) G(4, `Вложились в корпоративную культуру — «${cfg.CULTURE[S.culture].name}».`);
+    if (monthCost > 0 && S.reserve >= monthCost * 2) G(5, `Держали резерв на ${Math.floor(S.reserve / monthCost)} мес. постоянных расходов.`);
+    if (X.repaid && S.loan <= 0) G(4, 'Кредиты погашены — сеть без долгов.');
+    if (S.achievements.fast) G(6, 'Быстрый старт: десять точек за первые два года.');
+    else if (peak(S) >= 20) G(4, `Выросли до ${peak(S)} точек.`);
+    if (revAll > 0 && h.length >= 6 && wasteShare < 0.025) G(4, `Мало списаний: ${pc(wasteShare)} выручки за всю игру.`);
+    if (rev12 > 0 && prof12 / rev12 >= 0.1) G(5, `Сеть прибыльна: ${pc(prof12 / rev12)} выручки за последний год остаётся в прибыли.`);
+    if (S.productions.length >= 2) G(3, `Вовремя расширили производство: ${S.productions.length} цеха.`);
+    // что можно было лучше
+    if (S.lost) B(10, `Банкротство на ${Math.max(1, Math.ceil(years))}-м году: ${cfg.BANKRUPT_MONTHS} месячных расчёта подряд со счётом в минусе и пустым резервом.`);
+    if (turnover != null && turnover > 0.35) B(8, `Высокая текучка: ~${pc(turnover)} команды уходило за год — похоже, экономили на зарплатах, премиях или культуре.`);
+    if (lossy) B(7, `Долго держали убыточную точку №${lossy.num} (${lossy.addr}) — ${lossy.lossMax} мес. подряд в минусе. Чините раньше (штат, ремонт, цены) или закрывайте.`);
+    if (revAll > 0 && h.length >= 6 && wasteShare > 0.04) B(6, `Много списаний: ${pc(wasteShare)} выручки. Настройте «Сколько печь» и вечернюю скидку во вкладке «Цех».`);
+    if (X.gapMonths) B(7, `Кассовые разрывы: ${X.gapMonths} мес. со счётом в минусе. Держите в резерве 2–3 месячных расхода.`);
+    if (intShare > 0.015) B(5, `Проценты по кредитам съели ${pc(intShare)} выручки (${fmt(interest)}).`);
+    if (rating != null && rating < 3.8) B(6, `Низкий рейтинг сети ${rating.toFixed(1).replace('.', ',')}★ — обучение, ремонт и довольная команда приводят новых гостей.`);
+    if (S.pay && S.market && S.pay.seller < S.market.seller * 0.97) B(5, 'Зарплаты ниже рынка — люди уходят к конкурентам.');
+    if (S.cache && S.cache.capUse > 1) B(5, 'Производство не справлялось со спросом — продажи терялись. Оборудование окупается быстрее новых точек.');
+    if (S.alloc && S.alloc.reserve === 0 && S.reserve < monthCost) B(4, 'Не откладывали прибыль в резервный фонд — первый же кризис бьёт по счёту.');
+    if (years >= 3 && peak(S) < 5) B(4, `Медленный рост: за ${Math.floor(years)} года — всего ${peak(S)} точки.`);
+    if (!S.office.hr && S.stores.length > cfg.HR_REQUIRED_STORES) B(3, 'Без HR-отдела найм в большой сети шёл медленно.');
+    if (monthCost > 0 && S.cash > monthCost * 6 && S.cash > S.reserve) B(4, `Много свободных денег на счёте (${fmt(S.cash)}): в резервном фонде они приносили бы проценты, а в новых точках — выручку.`);
+    const d10 = (S.chron || []).find((c) => c.t === 'open' && c.num === 10);
+    if (d10 && d10.day > 4 * 365) B(3, `Медленный старт: десятая точка открылась только на ${Math.ceil(d10.day / 365)}-м году — ранние точки дольше всего работают на оборот.`);
+    if (best && worst && worst !== best && worst.pN >= 12 && worst.p12 < best.p12 * 0.15) B(3, `Точка №${worst.num} (${worst.addr}) заработала за год всего ${fmt(worst.p12)} — проверьте аренду, штат и цены или замените место.`);
+    if (S.culture < 2 && staffN(S) >= 50) B(3, 'Большая команда без корпоративной культуры — довольство держится только на зарплате.');
+    // запасные пункты, чтобы в каждом блоке было не меньше трёх
+    const years1 = Math.max(1, Math.round(years));
+    const gFill = [`Продержались ${years1} ${years1 % 10 === 1 && years1 % 100 !== 11 ? 'год' : years1 % 10 >= 2 && years1 % 10 <= 4 && (years1 % 100 < 12 || years1 % 100 > 14) ? 'года' : 'лет'} и открыли ${peak(S)} точ.`, `Пережили ${S.stats.eventsSeen} событий — проверки, конкуренты, погода и кризисы.`, `Заработали ${fmt(revAll)} выручки за всю игру.`];
+    const bFill = ['Следите за загрузкой цеха: при 90% пора покупать оборудование.', 'Сравнивайте предложения по окупаемости, а не только по трафику.', 'Держите в резерве 2–3 месячных расхода — он спасает при кризисе и карантине.'];
+    for (const t of gFill) if (good.length < 3) G(0, t);
+    for (const t of bFill) if (bad.length < 3) B(0, t);
+    const top = (a) => a.sort((x, y) => y.w - x.w).slice(0, 5).map((x) => x.t);
+    return { good: top(good), bad: top(bad), best, worst: worst && worst !== best ? worst : null, decisions: decisions(S, 12), revAll, rev12, prof12, turnover, rating, wasteShare };
+  }
+
+  function list() { return LIST; }
+  function isOn(S, id) { return !!(S && S.achievements && S.achievements[id] != null); }
+  function count(S) { let n = 0; if (S && S.achievements) for (const a of LIST) if (S.achievements[a.id] != null) n++; return n; }
+  function progress(S, a) { if (!a.prog) return null; try { const p = a.prog(S, S.achx); return [Math.max(0, p[0] || 0), p[1]]; } catch (e) { return null; } }
+
+  BK.Ach = { LIST, BY_ID, CATS, RAR, list, ensure, check, daily, review, storeRows, decisions, isOn, count, progress, wrap };
+})();
+
 /* ui/map.js */
 /* Карта Уфы: статичный слой (районы, реки) + динамические маркеры. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -4065,6 +4523,259 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.UIH.rating = { ratingInfo, rstars, r1 };
 })();
 
+/* ui/extras.js */
+/* Дополнения интерфейса: слоты сохранений (3 игры), экран «Достижения», тост о достижении, итоговый экран игры.
+   Логика достижений и итогов — src/data/achievements.js (BK.Ach). Здесь — только HTML и обработчики.
+   Связь с ядром — через BK.App (openModal, closeModal, toast, newGame, toStart, state) и data-act в app.js. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG, H = () => BK.UIH, A = () => BK.Ach, APP = () => BK.App;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const fm = (v) => BK.fmtMoney(v);
+  const qn = (n) => (/[«»"„“]/.test(n) ? esc(n) : `«${esc(n)}»`);
+  const DIFF = { easy: 'Лёгкий', normal: 'Нормальный', hard: 'Хардкор', hardcore: 'Хардкор' };
+
+  /* =================== СЛОТЫ СОХРАНЕНИЙ ===================
+     Слот 1 — прежний ключ 'bk-ufa-save-v1' (старое сохранение игрока автоматически становится слотом 1),
+     слоты 2–3 — 'bk-ufa-save-v1-slot2/3'. Активный слот (куда идёт автосохранение) — 'bk-ufa-slot'. */
+  const N_SLOTS = 3, ACTIVE_KEY = 'bk-ufa-slot';
+  const keyOf = (n) => (n === 1 ? 'bk-ufa-save-v1' : 'bk-ufa-save-v1-slot' + n);
+  let active = 1;
+  try { const a = +localStorage.getItem(ACTIVE_KEY); if (a >= 1 && a <= N_SLOTS) active = a; } catch (e) { /* без хранилища — слот 1 */ }
+  const ui = { ask: null }; // ask: { n, kind: 'new'|'del' } — открытое подтверждение на стартовом экране
+
+  function available() { try { const k = '__bk_test'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } }
+  function key(n) { return keyOf(n || active); }
+  function setActive(n) { active = n; try { localStorage.setItem(ACTIVE_KEY, String(n)); } catch (e) {} }
+  function raw(n) { try { return localStorage.getItem(keyOf(n)); } catch (e) { return null; } }
+  function read(n) { const r = raw(n); if (!r) return null; try { return JSON.parse(r); } catch (e) { return null; } }
+  function remove(n) { try { localStorage.removeItem(keyOf(n)); } catch (e) {} }
+  function info(n) {
+    const r = raw(n); if (!r) return null;
+    let st; try { st = JSON.parse(r); } catch (e) { return { broken: true }; }
+    if (!st || !Array.isArray(st.stores) || st.day == null) return { broken: true };
+    let rev12 = 0; for (const h of (st.history || []).slice(-12)) rev12 += h.rev || 0;
+    let ach = 0; if (st.achievements && A()) for (const a of A().LIST) if (st.achievements[a.id] != null) ach++;
+    return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024) };
+  }
+  // куда пойдёт новая игра: активный слот, если он пуст или там банкротство, иначе первый свободный
+  function target() {
+    const cur = info(active);
+    if (!cur || cur.broken || cur.lost) return active;
+    for (let n = 1; n <= N_SLOTS; n++) if (!raw(n)) return n;
+    return null;
+  }
+  function beforeNew() {
+    if (!available()) return true; // без хранилища игра идёт без сохранений
+    const t = target();
+    if (!t) { APP().toast('Все слоты заняты', 'Нажмите «Новая игра в этот слот» у игры, которую не жалко, или удалите её.', 'warn'); return false; }
+    setActive(t); return true;
+  }
+  const plural = (n, a, b, c) => (H() ? H().plural(n, a, b, c) : c);
+  function slotRow(n) {
+    const s = info(n), ask = ui.ask && ui.ask.n === n ? ui.ask.kind : null;
+    const head = `<span class="slot-n" aria-hidden="true">${n}</span>`;
+    if (!s) {
+      return `<div class="slot empty">${head}<div class="slot-i"><b>Свободный слот</b><span class="slot-m">Здесь может быть ещё одна сеть</span></div>
+        <div class="slot-b"><button class="btn" type="button" data-sa="new" data-n="${n}">Новая игра в этот слот</button></div></div>`;
+    }
+    if (s.broken) {
+      return `<div class="slot">${head}<div class="slot-i"><b>Сохранение повреждено</b><span class="slot-m">Его не получится загрузить</span></div>
+        <div class="slot-b">${ask === 'del' ? confirmDel(n, 'повреждённое сохранение') : `<button class="btn" type="button" data-sa="new" data-n="${n}">Новая игра в этот слот</button><button class="btn danger" type="button" data-sa="askDel" data-n="${n}">Удалить</button>`}</div></div>`;
+    }
+    const chips = [];
+    if (n === active) chips.push('<span class="chip">последняя</span>');
+    if (s.won) chips.push('<span class="chip good">победа</span>');
+    if (s.lost) chips.push('<span class="chip bad">банкротство</span>');
+    if (s.difficulty) chips.push(`<span class="chip crust">${esc(DIFF[s.difficulty] || s.difficulty)}</span>`);
+    const meta = [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    if (s.ach) meta.push(`🏆 ${s.ach}`);
+    let btns;
+    if (ask === 'del') btns = confirmDel(n, qn(s.company));
+    else if (ask === 'new') btns = `<div class="confirm">Игра ${qn(s.company)} будет заменена новой. <button class="btn sm danger" type="button" data-sa="new" data-n="${n}" data-sure="1">Заменить</button><button class="btn sm" type="button" data-sa="cancel">Отмена</button></div>`;
+    else btns = `<button class="btn dark" type="button" data-act="continue" data-arg="${n}">${s.lost ? 'Открыть итог' : 'Продолжить'}</button><button class="btn" type="button" data-sa="askNew" data-n="${n}">Новая игра в этот слот</button><button class="btn danger" type="button" data-sa="askDel" data-n="${n}">Удалить</button>`;
+    return `<div class="slot${n === active ? ' cur' : ''}">${head}<div class="slot-i"><b>${esc(s.company)}</b><span class="slot-m">${meta.join(' · ')}</span>${chips.length ? `<span class="slot-c">${chips.join('')}</span>` : ''}</div><div class="slot-b">${btns}</div></div>`;
+  }
+  const confirmDel = (n, what) => `<div class="confirm">Удалить ${what}? Это нельзя отменить. <button class="btn sm danger" type="button" data-sa="del" data-n="${n}">Удалить</button><button class="btn sm" type="button" data-sa="cancel">Отмена</button></div>`;
+  function startHtml() {
+    if (!available()) return `<div class="slots" id="slots"><p class="hint">Браузер не даёт сохранять данные (приватный режим или запрет хранилища) — играть можно, но прогресс не сохранится после закрытия вкладки.</p></div>`;
+    let s = `<div class="slots" id="slots"><h2 class="slots-h">Ваши игры <small>${N_SLOTS} слота, автосохранение раз в месяц</small></h2>`;
+    for (let n = 1; n <= N_SLOTS; n++) s += slotRow(n);
+    return s + '</div>';
+  }
+  function bind(el) {
+    el.onclick = (e) => {
+      const b = e.target.closest('[data-sa]'); if (!b) return;
+      e.preventDefault();
+      const n = +b.dataset.n, k = b.dataset.sa;
+      if (k === 'askDel') ui.ask = { n, kind: 'del' };
+      else if (k === 'askNew') ui.ask = { n, kind: 'new' };
+      else if (k === 'cancel') ui.ask = null;
+      else if (k === 'del') { remove(n); ui.ask = null; APP().toast('Игра удалена', `Слот ${n} свободен.`, 'good'); }
+      else if (k === 'new') {
+        ui.ask = null; setActive(n);
+        const inp = $('#companyName'); APP().newGame((inp && inp.value.trim()) || 'Пекарня «Каравай»');
+        return;
+      }
+      const box = $('#slots', el); if (box) box.outerHTML = startHtml();
+    };
+  }
+  BK.Slots = { N: N_SLOTS, key, keyOf, setActive, get active() { return active; }, read, info, remove, target, beforeNew, startHtml, bind, available };
+
+  /* =================== ДОСТИЖЕНИЯ =================== */
+  const RARN = { c: 'обычное', r: 'редкое', e: 'эпическое' };
+  function achToast(n) {
+    const a = A() && A().BY_ID[n.id]; if (!a) return;
+    const box = $('#toasts'); if (!box) return;
+    const el = document.createElement('div');
+    el.className = `toast achtoast rar-${a.rar}`;
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span class="ai" aria-hidden="true">${a.icon}</span><span class="at"><span class="ey">Достижение · ${RARN[a.rar]}</span><b>${esc(a.name)}</b><span class="ad">${esc(a.desc)}</span></span>`;
+    el.title = 'Открыть достижения';
+    el.addEventListener('click', () => { el.remove(); if (APP().state) openAchievements(); });
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    setTimeout(() => el.remove(), 7000);
+  }
+  let achFilter = 'all';
+  function achCard(S, a) {
+    const on = A().isOn(S, a.id), hide = a.secret && !on;
+    const p = !on && !hide ? A().progress(S, a) : null;
+    let meta;
+    if (on) meta = `<span class="am"><span class="rar">${RARN[a.rar]}</span> · получено ${E().fmtDate(S.achievements[a.id])}</span>`;
+    else if (a.missed && a.missed(S)) meta = `<span class="am"><span class="rar">${RARN[a.rar]}</span> · срок прошёл — в этой игре уже не получить</span>`;
+    else if (p && p[1] > 1) {
+      const v = Math.min(1, p[0] / p[1]);
+      const f = (x) => (p[1] >= 1e6 ? fm(x) : Math.floor(x).toLocaleString('ru-RU') + (a.unit ? ' ' + a.unit : ''));
+      meta = `<span class="am"><span class="rar">${RARN[a.rar]}</span> · ${f(Math.min(p[0], p[1]))} из ${f(p[1])}</span><span class="abar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Прогресс"><i style="width:${(v * 100).toFixed(0)}%"></i></span>`;
+    } else meta = `<span class="am"><span class="rar">${hide ? 'секретное' : RARN[a.rar]}</span>${hide ? '' : ' · ещё не получено'}</span>`;
+    return `<div class="ach ${on ? 'on' : 'off'} rar-${a.rar}"><span class="ai" aria-hidden="true">${hide ? '?' : a.icon}</span><span class="at"><b>${hide ? '???' : esc(a.name)}</b><span class="ad">${hide ? 'Секретное достижение — откроется, когда выполните условие' : esc(a.desc)}</span>${meta}</span></div>`;
+  }
+  function achHtml(S) {
+    const L = A().LIST, got = A().count(S);
+    let s = `<div class="modal-h"><span class="eyebrow">Достижения</span><h2>Получено ${got} из ${L.length}</h2><div class="abar big" aria-hidden="true"><i style="width:${(got / L.length * 100).toFixed(0)}%"></i></div></div><div class="modal-b">`;
+    s += `<div class="seg achseg" role="group" aria-label="Какие показать">${[['all', 'Все'], ['on', 'Полученные'], ['off', 'Впереди']].map(([k, l]) => `<button type="button" data-achf="${k}" aria-pressed="${achFilter === k}">${l}</button>`).join('')}</div>`;
+    for (const [cat, name] of A().CATS) {
+      const items = L.filter((a) => a.cat === cat && (achFilter === 'all' || (achFilter === 'on') === A().isOn(S, a.id)));
+      if (!items.length) continue;
+      const n = L.filter((a) => a.cat === cat && A().isOn(S, a.id)).length, t = L.filter((a) => a.cat === cat).length;
+      s += `<div class="sec"><h3>${name} <small>${n} из ${t}</small></h3><div class="achgrid">${items.map((a) => achCard(S, a)).join('')}</div></div>`;
+    }
+    if (achFilter !== 'all' && !L.some((a) => (achFilter === 'on') === A().isOn(S, a.id))) s += `<div class="empty">${achFilter === 'on' ? 'Пока ничего — первые достижения придут в первые же дни.' : 'Получено всё!'}</div>`;
+    return s + `</div><div class="modal-f">${S.lost ? '<button class="btn primary block" data-act="summary">К итогам игры</button>' : '<button class="btn primary block" data-act="closeModal">Вернуться в игру</button>'}</div>`;
+  }
+  function openAchievements() {
+    const S = APP().state; if (!S || !A()) return;
+    A().ensure(S);
+    const draw = (keep) => {
+      APP().openModal(achHtml(S), { closable: !S.lost, keepScroll: keep });
+      const m = $('#modal .modal'); m.classList.add('wide');
+      m.querySelectorAll('[data-achf]').forEach((b) => b.addEventListener('click', () => { achFilter = b.dataset.achf; draw(false); }));
+    };
+    draw(false);
+  }
+
+  /* =================== ИТОГОВЫЙ ЭКРАН =================== */
+  // линейный график по всей истории: series = [{ v: (h) => число, cls, label, area?, step? }]
+  function lineChart(hist, series, label) {
+    const n = hist.length;
+    if (n < 2) return `<div class="empty">Мало данных — график появится после двух месяцев работы.</div>`;
+    const W = 400, Hh = 130, pl = 60, pr = 6, pt = 8, pb = 18;
+    const vals = series.map((s) => hist.map((h) => +s.v(h) || 0));
+    let max = Math.max(1, ...vals.map((a) => Math.max(...a))), min = Math.min(0, ...vals.map((a) => Math.min(...a)));
+    const raw = (max - min) / 3, pow = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+    const money = series[0].money !== false;
+    let step = [1, 2, 2.5, 5, 10].map((k) => k * pow).find((v) => v >= raw) || raw;
+    if (!money) step = Math.max(1, Math.round(step)); // штуки (точки, люди) — только целые деления
+    max = Math.ceil(max / step - 1e-9) * step; min = Math.floor(min / step + 1e-9) * step;
+    const y = (v) => pt + (Hh - pt - pb) * (1 - (v - min) / (max - min || 1));
+    const x = (i) => pl + (W - pl - pr) * i / (n - 1);
+    const tl = (v) => (Math.abs(v) < 1e-6 ? '0' : money ? fm(v).replace(/\s₽/, '').replace(/,0(?=\s)/, '') : Math.round(v).toLocaleString('ru-RU'));
+    let s = `<svg class="chart schart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(label)}">`;
+    for (let v = min; v <= max + 1e-6; v += step) s += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${pl - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${tl(v)}</text>`;
+    if (min < 0) s += `<line class="zero" x1="${pl}" x2="${W - pr}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+    series.forEach((se, k) => {
+      const pts = [];
+      vals[k].forEach((v, i) => { if (se.step && i) pts.push(`${x(i).toFixed(1)},${y(vals[k][i - 1]).toFixed(1)}`); pts.push(`${x(i).toFixed(1)},${y(v).toFixed(1)}`); });
+      if (se.area) s += `<polygon class="${se.cls} area" points="${x(0).toFixed(1)},${y(Math.max(0, min)).toFixed(1)} ${pts.join(' ')} ${x(n - 1).toFixed(1)},${y(Math.max(0, min)).toFixed(1)}"/>`;
+      s += `<polyline class="${se.cls} ln" points="${pts.join(' ')}"/>`;
+    });
+    // подписи лет: не больше 5, крайние — к краям
+    const years = [...new Set(hist.map((h) => h.y))];
+    const every = Math.max(1, Math.ceil(years.length / 5));
+    const marks = years.filter((yy, i) => i % every === 0);
+    marks.forEach((yy, k) => {
+      const i = hist.findIndex((h) => h.y === yy);
+      const anchor = i === 0 ? 'start' : k === marks.length - 1 && x(i) > W - 30 ? 'end' : 'middle';
+      s += `<text x="${x(i).toFixed(1)}" y="${Hh - 4}" text-anchor="${anchor}">${yy}</text>`;
+    });
+    s += `</svg><div class="legend">${series.map((se) => `<span><i class="${se.cls}"></i>${se.label}</span>`).join('')}</div>`;
+    return s;
+  }
+  const qt = (t) => (/[«»]/.test(t) ? t : `«${t}»`); // без «двойных» кавычек
+  const DEC = {
+    prod: (c) => ({ ic: '🏭', t: `Открыт ${c.n}-й цех: ${c.addr}` }),
+    open: (c) => ({ ic: '🥐', t: c.num === 1 ? `Первая точка: ${c.addr}` : `Открыта ${c.num}-я точка: ${c.addr}` }),
+    close: (c) => ({ ic: '✂️', t: `Закрыта точка №${c.num} (${c.addr}) — прибыль за время работы ${fm(c.pAll)}` }),
+    loan: (c) => ({ ic: '🏦', t: `Кредит ${fm(c.v)} — долг вырос до ${fm(c.loan)}` }),
+    repay: (c) => ({ ic: '✅', t: `Кредит погашен полностью (${fm(c.v)})` }),
+    crisis: (c) => ({ ic: '🌪', t: `Кризис ${qt(c.title)}${c.label ? `: ${qt(c.label)}` : ''}${c.cost ? ` за ${fm(c.cost)}` : ''}` }),
+    choice: (c) => ({ ic: c.risky ? '🎲' : '⚖️', t: `${qt(c.title)}: выбрано ${qt(c.label)}${c.cost ? ` за ${fm(c.cost)}` : ''}${c.risky ? ' — с отложенными последствиями' : ''}` }),
+  };
+  function storeCard(r, kind) {
+    const h = H();
+    return `<div class="card sumstore ${kind}"><div class="card-h"><div><div class="card-t">${kind === 'best' ? 'Лучшая точка' : 'Худшая точка'} · №${r.num}</div><div class="card-s">${esc(r.addr)} · ${h.dname(r.d)}${r.open ? '' : ' · закрыта'}</div></div><span class="chip ${r.pAll >= 0 ? 'good' : 'bad'}">${fm(r.pAll)}</span></div>
+      <div class="grid2">${h.kv('Прибыль за всё время', fm(r.pAll))}${h.kv('За последний год', fm(r.p12))}${h.kv('Месяцев работы', r.pN)}${h.kv('Худшая серия', r.lossMax ? r.lossMax + ' мес. в минусе' : 'без убыточных месяцев')}</div></div>`;
+  }
+  function summaryHtml(S) {
+    const R = A().review(S), h = S.history || [], cfg = C();
+    const years = S.day / 365, yt = (Math.round(years * 10) / 10).toString().replace('.', ',');
+    const got = A().count(S), L = A().LIST;
+    const title = S.won ? `Победа: ${qn(S.company)} — хлебная карта Уфы` : S.lost ? `${qn(S.company)}: банкротство на ${Math.max(1, Math.ceil(years))}-м году` : `${qn(S.company)}: ${yt} года в деле`;
+    const byYear = {}; for (const x of h) byYear[x.y] = (byYear[x.y] || 0) + x.rev;
+    const bestYear = Object.keys(byYear).sort((a, b) => byYear[b] - byYear[a])[0];
+    let s = `<div class="modal-h"><span class="eyebrow ${S.lost ? 'neg' : S.won ? 'pos' : ''}">Итоги игры · ${E().fmtDate(S.day)}</span><h2>${title}</h2></div><div class="modal-b">`;
+    s += `<div class="kpis sumk">
+      <div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${fm(S.cumRevenue || R.revAll)}</span></div>
+      <div class="kpi"><span class="k">Оборот 12 мес</span><span class="v">${fm(R.rev12)}</span></div>
+      <div class="kpi"><span class="k">Лучший год${bestYear ? ' · ' + bestYear : ''}</span><span class="v">${bestYear ? fm(byYear[bestYear]) : '—'}</span></div>
+      <div class="kpi"><span class="k">Точек (максимум)</span><span class="v">${Math.max(S.stats.peakStores || 0, S.stores.length)}</span></div>
+      <div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div>
+      <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div></div>`;
+    s += `<div class="sec"><h3>Вся игра по месяцам</h3><div class="sumcharts">
+      <figure><figcaption>Выручка и прибыль за месяц</figcaption>${lineChart(h, [{ v: (x) => x.rev, cls: 's-rev', label: 'Выручка', area: true }, { v: (x) => x.profit, cls: 's-prof', label: 'Прибыль' }], 'Выручка и прибыль по месяцам')}</figure>
+      <figure><figcaption>Точки в сети</figcaption>${lineChart(h, [{ v: (x) => x.stores, cls: 's-stores', label: 'Работающие точки', step: true, area: true, money: false }], 'Число точек по месяцам')}</figure>
+      <figure><figcaption>Деньги на конец месяца</figcaption>${lineChart(h, [{ v: (x) => x.cash, cls: 's-cash', label: 'Счёт' }, { v: (x) => x.reserve, cls: 's-res', label: 'Резерв' }], 'Счёт и резерв по месяцам')}</figure>
+      <figure><figcaption>Команда</figcaption>${lineChart(h, [{ v: (x) => x.staff, cls: 's-staff', label: 'Сотрудники в точках', area: true, money: false }], 'Сотрудники по месяцам')}</figure>
+    </div></div>`;
+    if (R.best) s += `<div class="sec"><h3>Лучшая и худшая точка <small>по прибыли за всё время</small></h3><div class="sumstores">${storeCard(R.best, 'best')}${R.worst ? storeCard(R.worst, 'worst') : ''}</div></div>`;
+    s += `<div class="sumcols"><div class="sec okcol"><h3>Что сделано верно</h3><ul class="sumlist ok">${R.good.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
+      <div class="sec badcol"><h3>Что можно было лучше</h3><ul class="sumlist bad">${R.bad.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div></div>`;
+    if (R.decisions.length) s += `<div class="sec"><h3>Главные решения</h3><ol class="timeline">${R.decisions.map((c) => { const d = (DEC[c.t] || (() => ({ ic: '•', t: c.t })))(c); return `<li><span class="ti" aria-hidden="true">${d.ic}</span><span class="td">${E().fmtDate(c.day)}</span><span class="tt">${esc(d.t)}</span></li>`; }).join('')}</ol></div>`;
+    const on = L.filter((a) => A().isOn(S, a.id)).sort((a, b) => S.achievements[a.id] - S.achievements[b.id]);
+    s += `<div class="sec"><h3>Достижения <small>${got} из ${L.length}</small></h3>${on.length ? `<div class="achchips">${on.map((a) => `<span class="achchip rar-${a.rar}" title="${esc(a.desc)}"><span aria-hidden="true">${a.icon}</span>${esc(a.name)}</span>`).join('')}</div>` : '<div class="empty">Пока ни одного.</div>'}<button class="btn" type="button" data-act="achievements">Все достижения</button></div>`;
+    s += `</div><div class="modal-f">${S.lost ? '' : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
+    return s;
+  }
+  function openSummary() {
+    const S = APP().state; if (!S || !A()) return;
+    A().ensure(S);
+    APP().openModal(summaryHtml(S), { closable: !S.lost });
+    $('#modal .modal').classList.add('wide');
+    $('#sumNew').addEventListener('click', () => APP().toStart());
+  }
+
+  // блок для «Меню игры»: достижения, итоги, слот
+  function settingsHtml(S) {
+    const got = A() ? A().count(S) : 0, n = A() ? A().LIST.length : 0;
+    return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
+      ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
+  }
+
+  BK.Extras = { achToast, openAchievements, openSummary, settingsHtml, lineChart };
+})();
+
 /* ui/app.js */
 /* Ядро интерфейса: цикл игры, HUD, вкладки, модальные окна, уведомления, сохранения. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -4120,17 +4831,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- сохранения ---------------- */
   function save() {
     if (!S) return;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
+    try { localStorage.setItem(BK.Slots.key(), JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
   }
   function stripState(st) { const c = Object.assign({}, st); delete c.cache; c.notify = []; return c; }
-  function loadSave() { try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
-  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
   function exportCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(stripState(S))))); }
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
     st.notify = []; st.flags = st.flags || {};
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
+    if (BK.Ach) BK.Ach.ensure(st); // достижения: уже выполненные в старом сохранении начисляются тихо
     return st;
   }
 
@@ -4201,7 +4912,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- стартовый экран ---------------- */
   function startScreen() {
-    const saved = loadSave();
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
@@ -4215,14 +4925,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
       <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
-      ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
+      ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
     </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
+    BK.Slots.bind(el);
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
     $('#startCodeBtn').addEventListener('click', () => {
-      try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
+      try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
@@ -4282,6 +4993,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'year') ui.modalQueue.push(() => openYearModal(n));
       else if (n.type === 'won') ui.modalQueue.unshift(() => openWinModal());
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
+      else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
     }
   }
 
@@ -4455,7 +5167,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     zoomIn: () => map.zoom(1 / 1.3), zoomOut: () => map.zoom(1.3), zoomReset: () => map.reset(),
     settings: () => openSettings(), help: () => openHelp(),
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
-    continue: () => { const st = loadSave(); if (st) continueGame(st); },
+    continue: (d) => { if (d && d.arg) BK.Slots.setActive(+d.arg); const st = loadSave(); if (st) continueGame(st); },
+    achievements: () => BK.Extras.openAchievements(), summary: () => BK.Extras.openSummary(),
     closeModal: () => closeModal(),
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
@@ -4607,15 +5320,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
       <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b>, открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
-      </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
-    $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
+    $('#newAfter').addEventListener('click', toStart);
   }
   function openLostModal() {
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>
-      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button></div>`);
-    $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+    $('#newAfter').addEventListener('click', toStart);
   }
   function openTutorialModal() {
     openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
@@ -4643,6 +5356,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openSettings() {
     openModal(`<div class="modal-h"><span class="eyebrow">Меню игры</span><h2>${H.esc(S.company)}</h2></div><div class="modal-b">
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
+      ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>
@@ -4656,10 +5370,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
     $('#loadCode').addEventListener('click', () => { try { const st = importCode($('#saveCode').value); continueGame(st); save(); toast('Игра загружена', '', 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); } });
     $('#newGameBtn').addEventListener('click', () => {
-      $('#newConfirm').innerHTML = `<div class="confirm">Текущая игра будет удалена. <button class="btn sm danger" id="newYes">Начать заново</button></div>`;
-      $('#newYes').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      $('#newConfirm').innerHTML = `<div class="confirm">Эта игра останется в своём слоте. Новую можно начать в свободном слоте или вместо любой игры. <button class="btn sm danger" id="newYes">К списку игр</button></div>`;
+      $('#newYes').addEventListener('click', toStart);
     });
   }
+
+  function toStart() { save(); closeModal(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
@@ -4673,7 +5389,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();
