@@ -23,15 +23,17 @@
   --warn-soft: #f5e6c4;
   --bad: #c0412d;
   --bad-soft: #f5d6cf;
-  --district: #f3f5f6;
-  --district-2: #e9edf0;
+  /* районы карты — тёплая «мучная» бумага чертежа */
+  --district: #f8f4ec;
+  --district-2: #f3ede3;
   /* текстовые варианты акцентов: темнее заливок, чтобы текст держал контраст ≥ 4.5 на фоне и на мягких плашках */
   --good-t: #1e6b41; --warn-t: #7f5405; --bad-t: #a3301c; --river-t: #235f6b; --crust-t: #94500b;
   --btn-primary: #b0600f; --btn-primary-h: #96510c; --on-primary: #fff; --on-bad: #fff;
   /* «инверсные» плашки: подсказка на карте, баннер шагов */
   --inv-bg: var(--ink); --inv-ink: var(--surface); --inv-accent: var(--crust-2); --inv-line: transparent;
   /* карта */
-  --map-land: var(--paper-2); --map-edge: var(--line-2); --map-river: var(--river); --map-river-o: .85; --map-label: var(--ink-3);
+  --map-land: #e8e1d4; --map-edge: #c3b59e; --map-river: var(--river); --map-river-o: .85; --map-label: #5a5347;
+  --grid-minor: rgba(107, 74, 46, .075); --grid-major: rgba(107, 74, 46, .14);
   --map-park: var(--good); --map-park-o: .14; --map-rail: var(--ink-3); --map-route: var(--crust);
   --prod-bg: var(--ink); --prod-ink: var(--surface);
   --face-happy: #4fb57a; --face-mid: #e5b53c; --face-sad: #e2553f; --face-ink: #1b1b1b; --face-edge: rgba(0,0,0,.25);
@@ -57,6 +59,7 @@
     --inv-bg: #2a3243; --inv-ink: #e7eaf0; --inv-accent: #f2b066; --inv-line: #3d4a5e;
     --map-land: #0f141c; --map-edge: #34506a; --map-river: #3e8fa0; --map-river-o: .75; --map-label: #9fb3c8;
     --map-park: #52b67f; --map-park-o: .12; --map-rail: #7d8fa8; --map-route: #f2b066;
+    --grid-minor: rgba(120, 160, 200, .045); --grid-major: rgba(120, 160, 200, .09);
     --prod-bg: #dfe6f0; --prod-ink: #141a24;
     --face-edge: rgba(0,0,0,.55);
     --backdrop: rgba(4, 6, 10, .72); --modal-line: #2d3645;
@@ -76,6 +79,7 @@
   --inv-bg: #2a3243; --inv-ink: #e7eaf0; --inv-accent: #f2b066; --inv-line: #3d4a5e;
   --map-land: #0f141c; --map-edge: #34506a; --map-river: #3e8fa0; --map-river-o: .75; --map-label: #9fb3c8;
   --map-park: #52b67f; --map-park-o: .12; --map-rail: #7d8fa8; --map-route: #f2b066;
+  --grid-minor: rgba(120, 160, 200, .045); --grid-major: rgba(120, 160, 200, .09);
   --prod-bg: #dfe6f0; --prod-ink: #141a24;
   --face-edge: rgba(0,0,0,.55);
   --backdrop: rgba(4, 6, 10, .72); --modal-line: #2d3645;
@@ -147,68 +151,14 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 
 /* ---------- main layout ---------- */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; min-height: 0; }
-.mapwrap { position: relative; min-height: 0; overflow: hidden; background: var(--paper); }
+.mapwrap { position: relative; min-height: 0; overflow: hidden; background: var(--map-land); }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; }
 .map.dragging { cursor: grabbing; }
-.mapctl { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.mapctl button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; font-size: 18px; line-height: 1; box-shadow: var(--shadow); }
-.maplegend { position: absolute; left: 12px; bottom: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--ink-2); display: flex; gap: 12px; flex-wrap: wrap; max-width: calc(100% - 24px); }
-.maplegend span { display: inline-flex; align-items: center; gap: 5px; }
-.maplegend svg { width: 14px; height: 14px; }
 .maptip { position: absolute; pointer-events: none; background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); padding: 6px 9px; border-radius: 6px; font-size: 12px; max-width: 240px; z-index: 4; box-shadow: var(--shadow); }
 .maptip b { font-weight: 600; }
 .setupbanner { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); padding: 10px 16px; border-radius: 10px; box-shadow: var(--shadow); font-size: 13px; max-width: calc(100% - 100px); text-align: center; z-index: 3; }
 .setupbanner b { color: var(--inv-accent); font-family: var(--f-display); font-size: 12px; font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: .02em; }
 
-/* map svg */
-.m-water { fill: var(--river-soft); }
-.m-land { fill: var(--map-land); }
-.m-district { fill: var(--district); stroke: var(--map-edge); stroke-width: 1.2; transition: fill .2s; }
-.m-district.alt { fill: var(--district-2); }
-.m-district.hot { fill: var(--crust-soft); }
-.m-river { fill: none; stroke: var(--map-river); stroke-linecap: round; stroke-linejoin: round; opacity: var(--map-river-o); }
-.m-rail { fill: none; stroke: var(--map-rail); stroke-width: 2; stroke-dasharray: 7 5; opacity: .6; }
-.m-park { fill: var(--map-park); opacity: var(--map-park-o); }
-.m-dlabel { font-family: var(--f-display); font-size: 13px; font-weight: 500; fill: var(--map-label); text-anchor: middle; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
-.m-dlabel, .m-rlabel, .m-small { paint-order: stroke; stroke: var(--district); stroke-width: 3px; stroke-linejoin: round; stroke-opacity: .55; }
-.m-rlabel { font-family: var(--f-body); font-style: italic; font-size: 13px; fill: var(--river-t); pointer-events: none; }
-.m-small { font-family: var(--f-body); font-size: 10px; fill: var(--map-label); pointer-events: none; }
-.m-route { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .55; }
-.mapwrap.crowded .m-route { opacity: .22; }
-.maplegend .crowd-note { display: none; font-style: normal; color: var(--ink-3); }
-.mapwrap.crowded .maplegend .crowd-note { display: inline; }
-.m-store { cursor: pointer; }
-.m-store circle.b { fill: var(--surface); stroke: var(--crust); stroke-width: 2.5; }
-.m-store.opening circle.b { stroke-dasharray: 3 3; stroke: var(--ink-3); }
-.m-store.repair circle.b { stroke: var(--warn); }
-.m-store.closed circle.b { stroke: var(--bad); }
-.m-store.sel circle.b { fill: var(--crust); }
-.m-store.sel text { fill: var(--surface); }
-.m-store text { font-family: var(--f-mono); font-size: 10px; font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-.m-offer { cursor: pointer; }
-.m-offer circle { fill: color-mix(in srgb, var(--river) 16%, transparent); stroke: var(--river); stroke-width: 1.8; stroke-dasharray: 4 3; }
-.m-offer path { stroke: var(--river); stroke-width: 2.2; stroke-linecap: round; }
-.m-offer.sel circle { fill: var(--river); stroke-dasharray: none; }
-.m-offer.sel path { stroke: var(--surface); }
-.m-offer.pulse circle { animation: pulse 1.8s ease-in-out infinite; }
-@keyframes pulse { 50% { stroke-width: 3.5; } }
-.m-prod { cursor: pointer; }
-.m-prod rect { fill: var(--prod-bg); stroke: var(--surface); stroke-width: 2; }
-.m-prod path { fill: var(--prod-ink); }
-.m-prod.opening rect { fill: var(--ink-3); }
-.m-prod.sel rect { fill: var(--crust); }
-.m-prodoffer rect { fill: color-mix(in srgb, var(--prod-bg) 12%, transparent); stroke: var(--prod-bg); stroke-width: 1.8; stroke-dasharray: 4 3; }
-.m-prodoffer path { fill: var(--prod-bg); }
-.m-prodoffer { cursor: pointer; }
-.m-prodoffer.sel rect { fill: var(--prod-bg); } .m-prodoffer.sel path { fill: var(--prod-ink); }
-.m-hq rect { fill: var(--crust); stroke: var(--surface); stroke-width: 1.5; } .m-hq path { fill: var(--on-primary); }
-.m-face circle { stroke: var(--face-edge); stroke-width: .8; }
-.m-face.happy circle { fill: var(--face-happy); } .m-face.mid circle { fill: var(--face-mid); } .m-face.sad circle { fill: var(--face-sad); }
-.m-face path, .m-face .eye { stroke: var(--face-ink); fill: none; stroke-width: 1.2; stroke-linecap: round; }
-.m-face .eye { fill: var(--face-ink); stroke: none; }
-.m-alert { fill: var(--bad); }
-.m-alert-t { fill: var(--on-bad); font: 700 9px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
-@media (prefers-reduced-motion: reduce) { .m-offer.pulse circle { animation: none; } }
 
 /* ---------- panel ---------- */
 .panel { border-left: 1px solid var(--line); background: var(--surface); display: grid; grid-template-rows: auto 1fr; min-height: 0; }
@@ -488,7 +438,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .start .rules .r-diff { display: none; } /* капитал и срок победы — уже в карточках сложности */
   .diffopt { padding: 8px; } .diffopt:has(input:checked) { padding: 7px; } .diffopt .dn { font-size: 13.5px; } .diffopt .dm { font-size: 11px; } .diffopt::after { display: none; } .diffdesc { min-height: 0; margin-top: 6px; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
-  .maplegend { display: none; }
   .setupbanner { display: none; }
   /* на телефоне уведомления сверху, под липким HUD: снизу они закрывали вкладки панели под картой.
      Справа оставлено место под кнопки зума, видно не больше двух последних уведомлений. */
@@ -610,6 +559,145 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .has-rival .maplegend .lg-rival { display: inline-flex; }
 /* нижние блоки «Сводки» вне экрана не раскладываются и не рисуются (на телефоне панель — часть длинной страницы) */
 .pbody > .sec.lazy { content-visibility: auto; contain-intrinsic-size: auto 320px; }
+
+/* ================= Карта-чертёж (градплан на миллиметровке) ================= */
+.m-land { fill: var(--map-land); }
+.m-district { fill: var(--district); stroke: var(--map-edge); stroke-width: 1.2; }
+.m-district.alt { fill: var(--district-2); }
+.m-city-edge { fill: none; stroke: var(--map-edge); stroke-width: 1.4; opacity: .9; pointer-events: none; }
+.m-river { fill: none; stroke: var(--map-river); stroke-linecap: round; stroke-linejoin: round; opacity: var(--map-river-o); }
+.m-river-edge { fill: none; stroke: var(--map-river); stroke-linecap: round; stroke-linejoin: round; opacity: .18; }
+.m-rail { fill: none; stroke: var(--map-rail); stroke-width: 1.6; stroke-dasharray: 8 5; opacity: .55; }
+.m-park { fill: var(--map-park); opacity: var(--map-park-o); }
+/* подписи держат экранный размер (--lk — единиц карты на пиксель), ореол цвета бумаги через paint-order */
+.m-dlabel, .m-rlabel, .m-small { paint-order: stroke; stroke: var(--district); stroke-linejoin: round; pointer-events: none; }
+.m-dlabel { font-family: var(--f-display); font-size: calc(11.5px * var(--lk, 1)); stroke-width: calc(4px * var(--lk, 1)); font-weight: 500; fill: var(--map-label); text-anchor: middle; letter-spacing: .12em; text-transform: uppercase; }
+.m-rlabel { font-family: var(--f-body); font-style: italic; font-size: calc(13px * var(--lk, 1)); stroke-width: calc(3.5px * var(--lk, 1)); stroke: var(--map-land); font-weight: 500; fill: var(--river-t); letter-spacing: .04em; }
+.m-small { font-family: var(--f-body); font-size: calc(10px * var(--lk, 1)); stroke-width: calc(3px * var(--lk, 1)); fill: var(--map-label); }
+.map.far .m-small { display: none; }
+.start-map { --lk: 1.8; } /* обложка: вся карта в ~400 px, подписи крупнее, чтобы читались */
+.m-route { fill: none; stroke: var(--map-route); stroke-width: 1.3; stroke-dasharray: 2 4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.rt-on .m-route { opacity: .8; stroke-width: 1.8; }
+.rt-off .m-route { opacity: .14; }
+/* точки */
+.m-store, .m-cl, .m-offer, .m-prod, .m-prodoffer, .m-hq { cursor: pointer; }
+.m-store circle.b { fill: var(--surface); stroke: var(--crust); stroke-width: 2.5; }
+.m-store circle.b.t-good { stroke: var(--good); } .m-store circle.b.t-warn { stroke: var(--warn); } .m-store circle.b.t-bad { stroke: var(--bad); }
+.m-store.opening circle.b { stroke-dasharray: 3 3; stroke: var(--ink-3); }
+.m-store text, .m-cl text { font-family: var(--f-mono); font-size: 10px; font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.m-store .halo { fill: var(--crust); opacity: .2; }
+.m-store .halo2 { fill: none; stroke: var(--crust); stroke-width: 1.3; }
+.m-store.sel circle.b { fill: var(--crust); stroke: var(--surface); }
+.m-store.sel text { fill: var(--on-primary); }
+/* кластеры: кружок с числом и кольцо долей выбранного слоя */
+.m-cl .bg { fill: var(--surface); opacity: .92; }
+.m-cl .ring { fill: none; stroke-width: 3.8; }
+.m-cl circle.b { fill: var(--surface); stroke: var(--line-2); stroke-width: 1; }
+.m-cl:hover circle.b { stroke: var(--ink-3); }
+/* значки проблем */
+.m-bdg rect { stroke: var(--surface); stroke-width: 1.6; }
+.m-bdg.money rect, .m-bdg.closed rect { fill: var(--bad); } .m-bdg.staff rect { fill: var(--warn); }
+.m-bdg-t { font: 700 9px var(--f-mono); fill: #fff; text-anchor: middle; dominant-baseline: central; }
+.m-bdg-g { fill: #fff; } .m-bdg-x { stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.m-offer circle { fill: color-mix(in srgb, var(--river) 16%, transparent); stroke: var(--river); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.m-offer path { stroke: var(--river-t); stroke-width: 2.2; stroke-linecap: round; }
+.m-offer.sel circle { fill: var(--river); stroke-dasharray: none; }
+.m-offer.sel path { stroke: var(--surface); }
+.m-offer.pulse circle { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { stroke-width: 3.5; } }
+.m-prod rect { fill: var(--prod-bg); stroke: var(--surface); stroke-width: 2; }
+.m-prod path { fill: var(--prod-ink); }
+.m-prod.opening rect { fill: var(--ink-3); }
+.m-prod.sel rect { fill: var(--crust); }
+.m-prodoffer rect { fill: color-mix(in srgb, var(--prod-bg) 12%, transparent); stroke: var(--prod-bg); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.m-prodoffer path { fill: var(--prod-bg); }
+.m-prodoffer.sel rect { fill: var(--prod-bg); } .m-prodoffer.sel path { fill: var(--prod-ink); }
+.m-hq rect { fill: var(--crust); stroke: var(--surface); stroke-width: 1.5; } .m-hq path { fill: var(--on-primary); fill-rule: evenodd; }
+.m-face circle { stroke: var(--face-edge); stroke-width: .8; }
+.m-face.happy circle { fill: var(--face-happy); } .m-face.mid circle { fill: var(--face-mid); } .m-face.sad circle { fill: var(--face-sad); }
+.m-face path, .m-face .eye { stroke: var(--face-ink); fill: none; stroke-width: 1.2; stroke-linecap: round; }
+.m-face .eye { fill: var(--face-ink); stroke: none; }
+.m-alert { fill: var(--bad); }
+.m-alert-t { fill: var(--on-bad); font: 700 9px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
+@media (prefers-reduced-motion: reduce) { .m-offer.pulse circle { animation: none; } }
+
+/* плавающие элементы карты */
+.maplayers, .maplegend, .mapctl { position: absolute; z-index: 2; }
+.maplayers { top: 14px; left: 14px; display: flex; gap: 2px; padding: 4px; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); max-width: calc(100% - 90px); }
+.maplayers button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; flex: none; }
+.maplayers button:hover { color: var(--ink); background: var(--surface-2); }
+.maplayers button svg { width: 16px; height: 16px; flex: none; }
+.maplayers button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.maplayers .ml-toggle { display: none; }
+.maplegend { top: 62px; left: 14px; min-width: 214px; max-width: 260px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+.maplegend .lg-t { font-family: var(--f-display); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 1px; }
+.maplegend .lg-r { display: flex; align-items: center; gap: 8px; }
+.maplegend .lg-r > span { min-width: 0; }
+.maplegend .lg-r b { margin-left: auto; padding-left: 8px; font-family: var(--f-mono); font-weight: 600; color: var(--ink); white-space: nowrap; }
+.maplegend .face, .maplegend .lg-sw { width: 16px; height: 16px; flex: none; }
+.maplegend .lg-h { display: flex; align-items: center; gap: 8px; font-size: 11px; line-height: 1.3; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 7px; margin-top: 1px; }
+.maplegend .lg-h b { color: var(--ink); }
+.maplegend .lg-cl { width: 26px; height: 26px; flex: none; }
+.maplegend .lg-rt { width: 26px; height: 10px; flex: none; }
+.maplegend .lg-p { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 7px; }
+.maplegend .lg-p > span { display: inline-flex; align-items: center; gap: 5px; }
+.maplegend .lg-p .lg-sw { width: 14px; height: 14px; }
+.mapwrap.m-setup .maplayers, .mapwrap.m-setup .maplegend { display: none; }
+.mapnorth { position: absolute; right: 18px; top: 12px; width: 40px; display: flex; flex-direction: column; align-items: center; color: var(--ink-2); pointer-events: none; z-index: 1; }
+.mapnorth svg { width: 24px; height: 34px; }
+.mapnorth span { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .05em; line-height: 1.1; }
+.mapctl { right: 14px; top: 76px; display: flex; flex-direction: column; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.mapctl button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; }
+.mapctl button + button { border-top: 1px solid var(--line); }
+.mapctl button:hover { color: var(--ink); background: var(--surface-2); }
+.mapctl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mapscale { position: absolute; right: 16px; bottom: 146px; padding: 5px 8px 2px; border-radius: 6px; background: color-mix(in srgb, var(--map-land) 78%, transparent); font-family: var(--f-mono); font-size: 10px; color: var(--ink-2); pointer-events: none; z-index: 1; }
+.mapscale .sc-bars { display: flex; height: 6px; border: 1px solid var(--ink-2); margin-bottom: 3px; }
+.mapscale .sc-bars i { display: block; height: 100%; flex: 1 1 0; }
+.mapscale .sc-bars i:nth-child(3) { flex-grow: 2; }
+.mapscale .sc-bars i:nth-child(odd) { background: var(--ink-2); }
+.mapscale .sc-lbl { position: relative; height: 13px; }
+.mapscale .sc-lbl span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.mapscale .sc-lbl span:first-child { transform: none; }
+.mapscale .sc-lbl span:last-child { transform: translateX(-100%); }
+/* картуш — штамп чертежа */
+.mapcart { position: absolute; right: 14px; bottom: 14px; background: var(--surface); border: 1.5px solid var(--ink-2); padding: 3px; box-shadow: var(--shadow); pointer-events: none; z-index: 1; }
+.mapcart .ct-in { border: .75px solid var(--ink-3); display: grid; grid-template-columns: auto auto; }
+.mapcart .ct-c { padding: 5px 10px; border-right: .75px solid var(--ink-3); border-bottom: .75px solid var(--ink-3); }
+.mapcart .ct-c:nth-child(2n+1):not(.ct-full) { border-right: 0; }
+.mapcart .ct-full { grid-column: 1 / -1; border-right: 0; }
+.mapcart .ct-last { border-bottom: 0; }
+.mapcart small { display: block; font-family: var(--f-display); font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); line-height: 1.2; }
+.mapcart .ct-t { font-family: var(--f-display); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.mapcart .ct-v { font-family: var(--f-mono); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.mapcart .ct-name { white-space: normal; max-width: 150px; }
+.maptip .tip-hint { opacity: .75; font-size: 11px; }
+@media (max-width: 1100px) {
+  .maplegend { top: auto; bottom: 14px; }
+  .mapcart { display: none; }
+  .mapscale { bottom: 14px; }
+}
+/* телефон: чипы слоёв — прокручиваемая строка, легенда — по кнопке, картуша нет */
+@media (max-width: 820px) {
+  .maplayers { top: 8px; left: 0; right: 0; max-width: none; padding: 0 10px; gap: 6px; background: none; border: 0; box-shadow: none; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .maplayers::-webkit-scrollbar { display: none; }
+  .maplayers button { height: 32px; padding: 0 11px; border-radius: 16px; font-size: 12.5px; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .maplayers button svg { width: 14px; height: 14px; }
+  .maplayers button[aria-pressed="true"] { border-color: var(--ink); }
+  .maplayers .ml-toggle { display: inline-flex; width: 36px; padding: 0; justify-content: center; }
+  .maplayers .ml-toggle[aria-expanded="true"] { color: var(--crust-t); border-color: var(--crust); }
+  .maplegend { display: none; top: 48px; bottom: auto; left: 10px; min-width: 0; max-width: calc(100% - 70px); padding: 8px 10px; }
+  .mapwrap.legend-open .maplegend { display: flex; }
+  .mapnorth { left: 12px; right: auto; top: 48px; width: 22px; color: var(--ink-3); }
+  .mapnorth svg { width: 16px; height: 23px; }
+  .mapnorth span { font-size: 10.5px; }
+  .mapwrap.legend-open .mapnorth { display: none; }
+  .mapctl { top: auto; bottom: 10px; right: 10px; }
+  .mapctl button { width: 38px; height: 38px; }
+  .mapscale { left: 8px; right: auto; bottom: 8px; font-size: 10.5px; color: var(--ink-2); }
+  .mapscale .sc-bars { height: 5px; border-color: var(--ink-3); }
+  .mapscale .sc-bars i:nth-child(odd) { background: var(--ink-3); }
+}
 
 [hidden]{display:none!important}
 </style>
@@ -3670,10 +3758,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
 })();
 
 /* ui/map.js */
-/* Карта Уфы: статичный слой (районы, реки) + динамические маркеры. */
+/* Карта Уфы — «градплан на миллиметровке»: статичный слой (районы, сетка, реки, подписи),
+   динамические маркеры с кластерами при отдалении, слои «Прибыль / Настроение / Штат / Доставка»,
+   стрелка севера, масштабная линейка и картуш. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
-  const NS = 'http://www.w3.org/2000/svg';
+  const KM = 33; // единиц карты в 1 км
+  const MIN_W = 160; // предельное приближение (ширина окна в единицах карты)
+  const LAYER_KEY = 'bk-ufa-maplayer';
 
   function clipPoly(poly, a, b, c) { // оставить точки с a*x + b*y <= c
     const out = [];
@@ -3708,27 +3800,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return d;
   }
 
+  // сдвиги подписей районов, чтобы не садились на скопления точек (как в макете)
+  const LABEL_DY = { center: -46, zaton: -46, dema: -48, nizh: -36, glumilino: -44, inors: -44 };
+  const LABEL_DX = { zaton: -20, glumilino: 20 };
+
   function staticLayer(opts) {
-    const M = BK.MAP;
+    const M = BK.MAP, id = opts.id;
     const cells = voronoi(BK.DISTRICTS);
-    let s = `<defs><clipPath id="${opts.id}-city"><path d="${smooth(M.city.concat([M.city[0]]))}Z"/></clipPath>
-      <pattern id="${opts.id}-grain" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".7" fill="currentColor" opacity=".08"/></pattern></defs>`;
+    const city = smooth(M.city.concat([M.city[0]])) + 'Z';
+    let s = `<defs><clipPath id="${id}-city"><path d="${city}"/></clipPath>
+      <pattern id="${id}-g1" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="var(--grid-minor)" stroke-width=".6"/></pattern>
+      <pattern id="${id}-g5" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="url(#${id}-g1)"/><path d="M50 0H0V50" fill="none" stroke="var(--grid-major)" stroke-width="1"/></pattern></defs>`;
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" class="m-land"/>`;
-    s += `<g clip-path="url(#${opts.id}-city)">`;
+    s += `<g clip-path="url(#${id}-city)">`;
     cells.forEach((c, i) => { s += `<path class="m-district${i % 2 ? ' alt' : ''}" data-d="${BK.DISTRICTS[i].id}" d="${pathOf(c, true)}"/>`; });
-    s += `<rect x="-60" y="-60" width="1120" height="1120" fill="url(#${opts.id}-grain)" style="color:var(--ink)" pointer-events="none"/>`;
     s += `</g>`;
+    // миллиметровка: один элемент с паттерном поверх земли и районов
+    s += `<rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#${id}-g5)" pointer-events="none"/>`;
+    s += `<path class="m-city-edge" d="${city}"/>`;
     for (const p of M.parks) s += `<circle class="m-park" cx="${p.x}" cy="${p.y}" r="${p.r}"/>`;
     s += `<path class="m-rail" d="${smooth(M.rail)}"/>`;
-    s += `<path class="m-river" stroke-width="18" d="${smooth(M.belaya)}"/>`;
-    s += `<path class="m-river" stroke-width="12" d="${smooth(M.ufa)}"/>`;
-    s += `<path class="m-river" stroke-width="7" d="${smooth(M.dema)}"/>`;
+    // реки: мягкий «разлив» и русло
+    s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
+    s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
-      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x}" y="${d.y - 44}">${d.name}</text>`;
-      for (const p of M.parks) s += `<text class="m-small" x="${p.x}" y="${p.y + 3}" text-anchor="middle">${p.name}</text>`;
-      s += `<text class="m-small" x="${M.station.x + 10}" y="${M.station.y - 8}">${M.station.name}</text>`;
-      s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/>`;
+      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (LABEL_DX[d.id] || 0)}" y="${d.y + (LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
+      s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
     return s;
   }
@@ -3754,15 +3853,102 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FACTORY = 'M-7,6 L-7,-2 L-3,-5 L-3,-1 L1,-4 L1,0 L5,-3 L5,-7 L7,-7 L7,6 Z';
   const OFFICE = 'M-6,6 L-6,-6 L6,-6 L6,6 Z M-3.5,-3.5 h2 v2 h-2 Z M1.5,-3.5 h2 v2 h-2 Z M-3.5,0.5 h2 v2 h-2 Z M1.5,0.5 h2 v2 h-2 Z';
 
+  /* ---------- слои ---------- */
+  const IC = {
+    rub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20V4h5.5a4 4 0 0 1 0 8H6M6 16h8"/></svg>',
+    mood: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14c1 1.4 2.1 2 3.5 2s2.5-.6 3.5-2"/><circle cx="9" cy="10" r=".6" fill="currentColor"/><circle cx="15" cy="10" r=".6" fill="currentColor"/></svg>',
+    team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
+    truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
+    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 5-9 5-9-5z"/><path d="M3 14l9 5 9-5"/></svg>',
+  };
+  const LAYERS = [['profit', 'Прибыль', IC.rub], ['mood', 'Настроение', IC.mood], ['staff', 'Штат', IC.team], ['delivery', 'Доставка', IC.truck]];
+  const TONE_COL = { good: 'var(--good)', warn: 'var(--warn)', bad: 'var(--bad)', none: 'var(--line-2)' };
+  const MOOD_COL = { happy: 'var(--face-happy)', mid: 'var(--face-mid)', sad: 'var(--face-sad)' };
+  const MOOD_TONE = { happy: 'good', mid: 'warn', sad: 'bad' };
+  // значки проблем: не больше трёх типов, по приоритету — закрыта, убыток, нехватка штата
+  const PROB = { closed: 'Закрыта', money: 'Убыток за месяц', staff: 'Нехватка штата' };
+  const PROB_ORDER = ['closed', 'money', 'staff'];
+  function badge(kind, x, y) {
+    const glyph = kind === 'money' ? '<text class="m-bdg-t" x="0" y=".6">₽</text>'
+      : kind === 'staff' ? '<circle cx="0" cy="-2.2" r="2.2" class="m-bdg-g"/><path d="M-4,4 Q0,-1.5 4,4 Z" class="m-bdg-g"/>'
+      : '<path d="M-3,-3 L3,3 M3,-3 L-3,3" class="m-bdg-x"/>';
+    return `<g class="m-bdg ${kind}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><rect x="-7.5" y="-7.5" width="15" height="15" rx="4"/>${glyph}</g>`;
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const nw = (n, a, b, c) => { const m = n % 10, h = n % 100; return `${n} ${m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c}`; };
+
+  // состояние точки для слоёв: тон (good/warn/bad/none) и проблема
+  function storeInfo(S, st, layer) {
+    const E = BK.Engine, cfg = BK.CFG;
+    const opening = st.status === 'opening';
+    const closed = st.status === 'repair' || (st.status === 'open' && ((st.closedUntil && st.closedUntil > S.day) || !st.staff.length));
+    const min = (cfg.SIZES[st.size] || cfg.SIZES.standard).staffMin;
+    const vac = opening ? 0 : E.vacancies(st);
+    let prob = null;
+    if (closed) prob = 'closed';
+    else if (st.last && st.last.profit < 0) prob = 'money';
+    else if (!opening && (vac > 0 || st.staff.length < min)) prob = 'staff';
+    const mood = opening ? null : storeMood(st);
+    let tone = 'none';
+    if (layer === 'profit') { if (st.last && st.last.rev > 0) { const mg = st.last.profit / st.last.rev; tone = mg >= 0.15 ? 'good' : mg >= 0 ? 'warn' : 'bad'; } else if (st.last) tone = 'bad'; }
+    else if (layer === 'mood') tone = mood ? MOOD_TONE[mood] : 'none';
+    else if (layer === 'staff') { if (!opening) { const n = st.staff.length; tone = n >= st.staffTarget ? 'good' : n >= min ? 'warn' : 'bad'; } }
+    return { st, tone, prob, mood, vac, cls: opening ? 'opening' : st.status === 'repair' ? 'repair' : closed ? 'closed' : 'open' };
+  }
+
   function Map(el, opts) {
     this.el = el; this.opts = opts || {};
     this.vb = { x: 0, y: 0, w: 1000, h: 1000 };
+    this.layer = 'mood';
+    try { const l = localStorage.getItem(LAYER_KEY); if (LAYERS.some((x) => x[0] === l)) this.layer = l; } catch (e) {}
     el.setAttribute('viewBox', '0 0 1000 1000');
     el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = el.querySelector('.routes'); this.gM = el.querySelector('.markers');
+    this.wrap = el.parentNode;
+    this.px = { w: 800, h: 800 };
+    this.buildUi();
+    this.measure();
+    if (globalThis.ResizeObserver) new ResizeObserver(() => { this.measure(); this.setVB(); this.showChip(); }).observe(el);
     this.bind();
   }
+  // размеры SVG кэшируются: render вызывается на каждом тике, и чтение getBoundingClientRect там заставляло бы браузер пересчитывать вёрстку
+  Map.prototype.measure = function () { const r = this.el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) this.px = { w: r.width, h: r.height }; };
+  Map.prototype.upp = function () { return Math.max(this.vb.w / this.px.w, this.vb.h / this.px.h); }; // единиц карты на пиксель (meet)
+
+  Map.prototype.buildUi = function () {
+    const w = this.wrap; if (!w) return;
+    const div = (cls, html) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; w.appendChild(d); return d; };
+    this.uiLayers = div('maplayers');
+    this.uiLayers.setAttribute('role', 'group'); this.uiLayers.setAttribute('aria-label', 'Слой карты');
+    this.uiLayers.innerHTML = `<button type="button" class="ml-toggle" aria-label="Легенда слоя" aria-expanded="false">${IC.layers}</button>` +
+      LAYERS.map(([k, n, i]) => `<button type="button" class="ml-chip" data-layer="${k}" aria-pressed="${this.layer === k}">${i}<span>${n}</span></button>`).join('');
+    this.uiLegend = div('maplegend');
+    this.uiNorth = div('mapnorth', '<svg viewBox="0 0 30 42" aria-hidden="true"><circle cx="15" cy="27" r="13" fill="none" stroke="currentColor" stroke-width="1"/><path d="M15 2 L21 27 L15 23 L9 27Z" fill="currentColor"/><path d="M15 23 L21 27 L15 38 L9 27Z" fill="none" stroke="currentColor" stroke-width="1"/></svg><span>С</span>');
+    this.uiNorth.setAttribute('aria-hidden', 'true');
+    this.uiScale = div('mapscale'); this.uiScale.setAttribute('aria-hidden', 'true');
+    this.uiCart = div('mapcart');
+    this.uiLayers.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.classList.contains('ml-toggle')) { const open = !w.classList.contains('legend-open'); w.classList.toggle('legend-open', open); b.setAttribute('aria-expanded', String(open)); return; }
+      this.setLayer(b.dataset.layer);
+    });
+  };
+  // активный чип — в видимую часть строки (на телефоне строка прокручивается), страницу при этом не трогаем
+  Map.prototype.showChip = function () {
+    const row = this.uiLayers, b = row && row.querySelector('[aria-pressed="true"]'); if (!b || row.scrollWidth <= row.clientWidth) return;
+    const l = b.offsetLeft - 10, r = b.offsetLeft + b.offsetWidth + 10;
+    if (l < row.scrollLeft) row.scrollLeft = l; else if (r > row.scrollLeft + row.clientWidth) row.scrollLeft = r - row.clientWidth;
+  };
+  Map.prototype.setLayer = function (k) {
+    if (!LAYERS.some((x) => x[0] === k)) return;
+    this.layer = k;
+    try { localStorage.setItem(LAYER_KEY, k); } catch (e) {}
+    this.uiLayers.querySelectorAll('[data-layer]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.layer === k)));
+    this.showChip();
+    if (this.lastS) this.render(this.lastS, this.lastSel);
+  };
+
   Map.prototype.setVB = function () {
     const v = this.vb; this.el.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
     if (this.lastS && !this.pendingR) { this.pendingR = true; requestAnimationFrame(() => { this.pendingR = false; this.render(this.lastS, this.lastSel); }); }
@@ -3774,18 +3960,47 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { x: this.vb.x + (cx - r.left - ox) / s, y: this.vb.y + (cy - r.top - oy) / s, s };
   };
   Map.prototype.zoom = function (f, cx, cy) {
+    this.anim = null;
     const r = this.el.getBoundingClientRect();
     if (cx == null) { cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
     const p = this.toMap(cx, cy);
-    const nw = Math.max(220, Math.min(1300, this.vb.w * f));
+    const nw = Math.max(MIN_W, Math.min(1300, this.vb.w * f));
     const k = nw / this.vb.w;
     this.vb.x = p.x - (p.x - this.vb.x) * k; this.vb.y = p.y - (p.y - this.vb.y) * k;
     this.vb.w = nw; this.vb.h = nw; this.setVB();
   };
-  Map.prototype.reset = function () { this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB(); };
+  Map.prototype.reset = function () { this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB(); };
   Map.prototype.focus = function (x, y) {
+    this.anim = null;
     if (this.vb.w > 700) { this.vb.w = this.vb.h = 600; }
     this.vb.x = x - this.vb.w / 2; this.vb.y = y - this.vb.h / 2; this.setVB();
+  };
+  // плавный подлёт (клик по кластеру)
+  Map.prototype.flyTo = function (x, y, w) {
+    const reduce = globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const from = Object.assign({}, this.vb), to = { x: x - w / 2, y: y - w / 2, w, h: w };
+    if (reduce) { this.vb = to; this.setVB(); return; }
+    const t0 = performance.now(), dur = 320, token = {};
+    this.anim = token;
+    const step = (t) => {
+      if (this.anim !== token) return;
+      const q = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - q, 3);
+      // ширину интерполируем в логарифме — зум выглядит равномерным
+      const cw = Math.exp(Math.log(from.w) + (Math.log(to.w) - Math.log(from.w)) * e);
+      const cx = from.x + from.w / 2 + (x - from.x - from.w / 2) * e, cy = from.y + from.h / 2 + (y - from.y - from.h / 2) * e;
+      this.vb = { x: cx - cw / 2, y: cy - cw / 2, w: cw, h: cw }; this.setVB();
+      if (q < 1) requestAnimationFrame(step); else this.anim = null;
+    };
+    requestAnimationFrame(step);
+  };
+  Map.prototype.zoomCluster = function (id) {
+    const c = this.clusterById && this.clusterById[id]; if (!c) return;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const st of c.items) { x0 = Math.min(x0, st.x); y0 = Math.min(y0, st.y); x1 = Math.max(x1, st.x); y1 = Math.max(y1, st.y); }
+    // вписать точки кластера в ~половину окна, но приближать хотя бы в 1,8 раза — иначе он не распадётся
+    const w = Math.max(MIN_W, Math.min(this.vb.w / 1.8, Math.max(x1 - x0, y1 - y0) * 2.4 + 60));
+    if (this.tip) this.tip.hidden = true;
+    this.flyTo((x0 + x1) / 2, (y0 + y1) / 2, w);
   };
   Map.prototype.bind = function () {
     const el = this.el, self = this;
@@ -3794,7 +4009,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.addEventListener('wheel', (e) => { e.preventDefault(); self.zoom(e.deltaY > 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY); }, { passive: false });
     el.addEventListener('pointerdown', (e) => {
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pts.size === 1) { start = { x: e.clientX, y: e.clientY, vb: Object.assign({}, self.vb) }; moved = false; }
+      if (pts.size === 1) { self.anim = null; start = { x: e.clientX, y: e.clientY, vb: Object.assign({}, self.vb) }; moved = false; }
       if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), w: self.vb.w }; }
     });
     el.addEventListener('pointermove', (e) => {
@@ -3821,18 +4036,27 @@ var BK = globalThis.BK || (globalThis.BK = {});
       el.classList.remove('dragging');
       if (e.type === 'pointerup' && !moved && !wasPinch && start) {
         const t = e.target.closest ? e.target.closest('[data-kind]') : null;
-        if (self.opts.onClick) self.opts.onClick(t ? { kind: t.dataset.kind, id: t.dataset.id } : null);
+        if (t && t.dataset.kind === 'cluster') self.zoomCluster(t.dataset.id);
+        else if (self.opts.onClick) self.opts.onClick(t ? { kind: t.dataset.kind, id: t.dataset.id } : null);
       }
       if (!pts.size) start = null;
     };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-    el.addEventListener('pointerleave', (e) => { if (self.tip) self.tip.hidden = true; });
+    el.addEventListener('pointerleave', () => { if (self.tip) self.tip.hidden = true; });
+  };
+  Map.prototype.clusterTip = function (id) {
+    const c = this.clusterById && this.clusterById[id]; if (!c) return '';
+    const nums = c.items.map((st) => st.num).sort((a, b) => a - b);
+    const probs = {}; for (const i of c.infos) if (i.prob) probs[i.prob] = (probs[i.prob] || 0) + 1;
+    const ds = [...new Set(c.items.map((st) => (BK.DISTRICTS.find((d) => d.id === st.district) || {}).name).filter(Boolean))];
+    const pl = PROB_ORDER.filter((k) => probs[k]).map((k) => `${PROB[k].toLowerCase()}: ${probs[k]}`).join(' · ');
+    return `<b>${nw(c.items.length, 'точка', 'точки', 'точек')} · ${esc(ds.slice(0, 2).join(', '))}${ds.length > 2 ? '…' : ''}</b><br>№${nums.slice(0, 8).join(', №')}${nums.length > 8 ? '…' : ''}${pl ? '<br>' + pl : ''}<br><span class="tip-hint">Нажмите, чтобы приблизить</span>`;
   };
   Map.prototype.hover = function (e) {
-    if (!this.tip || !this.opts.tipFor) return;
+    if (!this.tip) return;
     const t = e.target.closest ? e.target.closest('[data-kind]') : null;
     if (!t) { this.tip.hidden = true; return; }
-    const html = this.opts.tipFor(t.dataset.kind, t.dataset.id);
+    const html = t.dataset.kind === 'cluster' ? this.clusterTip(t.dataset.id) : this.opts.tipFor ? this.opts.tipFor(t.dataset.kind, t.dataset.id) : '';
     if (!html) { this.tip.hidden = true; return; }
     this.tip.innerHTML = html; this.tip.hidden = false;
     const r = this.el.parentNode.getBoundingClientRect();
@@ -3842,64 +4066,231 @@ var BK = globalThis.BK || (globalThis.BK = {});
     this.tip.style.left = x + 'px'; this.tip.style.top = y + 'px';
   };
   Map.prototype.markerScale = function () {
-    const r = this.el.getBoundingClientRect();
-    const px = Math.min(r.width, r.height) || 800;
-    const upp = this.vb.w / px; // единиц карты на пиксель
-    return Math.max(0.6, Math.min(3.2, upp * 1.15));
+    return Math.max(0.4, Math.min(3.2, this.upp() * 1.15));
+  };
+
+  /* Кластеры: агломеративно сливаем ближайшие узлы, пока их кружки на экране перекрываются.
+     Зависит только от масштаба (не от сдвига), поэтому при перетаскивании кластеры не «прыгают». */
+  const clRad = (n) => 11 + Math.min(n, 30) * 0.45; // радиус кружка кластера при scale(1); кольцо и подложка — ещё +5,5
+  function clusterize(stores, upp, keepId, kpx) {
+    // маленькая сеть: сливаем только сильно перекрытые кружки — номера важнее аккуратности
+    const slack = stores.length <= 8 ? -0.45 : 0;
+    const RPX_STORE = 12.5 * kpx, rpxCluster = (n) => (clRad(n) + 5.5) * kpx;
+    const nodes = stores.map((st) => ({ x: st.x, y: st.y, items: [st], keep: st.id === keepId }));
+    for (;;) {
+      let best = null, bd = 1e9;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i]; if (a.keep) continue;
+        const ra = a.items.length > 1 ? rpxCluster(a.items.length) : RPX_STORE;
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j]; if (b.keep) continue;
+          const rb = b.items.length > 1 ? rpxCluster(b.items.length) : RPX_STORE;
+          const d = Math.hypot(a.x - b.x, a.y - b.y) / upp; // в пикселях
+          const q = d - (ra + rb) * (1 + slack) - (slack ? 0 : 3); // кружки ближе 3 px друг к другу сливаем
+          if (q < 0 && q < bd) { bd = q; best = [i, j]; }
+        }
+      }
+      if (!best) break;
+      const a = nodes[best[0]], b = nodes[best[1]], n = a.items.length + b.items.length;
+      a.x = (a.x * a.items.length + b.x * b.items.length) / n; a.y = (a.y * a.items.length + b.y * b.items.length) / n;
+      a.items = a.items.concat(b.items); nodes.splice(best[1], 1);
+    }
+    return nodes;
+  }
+
+  /* Маркеры обновляются точечно: если набор узлов тот же, заменяем только изменившиеся <g>.
+     На ×10 за тик меняются 1–2 кружка (кольцо настроения, значок), а не все 60. */
+  Map.prototype.patch = function (parts) {
+    const keys = parts.map((q) => q[0]).join('|'), prev = this.lastParts;
+    if (!prev || keys !== this.lastKeys || this.gM.children.length !== parts.length) {
+      this.gM.innerHTML = parts.map((q) => q[1]).join('');
+    } else {
+      let tmp = null;
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i][1] === prev[i][1]) continue;
+        tmp = tmp || document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        tmp.innerHTML = parts[i][1];
+        this.gM.replaceChild(tmp.firstElementChild, this.gM.children[i]);
+      }
+    }
+    this.lastParts = parts; this.lastKeys = keys;
   };
   Map.prototype.render = function (S, sel) {
     const E = BK.Engine;
     this.lastS = S; this.lastSel = sel;
-    const k = this.markerScale().toFixed(3);
-    // большая сеть на мелком масштабе: маршруты бледнее, смайлики — только у недовольных, иначе карта превращается в кашу
-    const crowded = S.stores.length > 24 && this.vb.w > 560;
-    (this.el.parentNode || this.el).classList.toggle('crowded', crowded);
+    const layer = this.layer, upp = this.upp(), kk = this.markerScale(), k = kk.toFixed(3);
+    const isSel = (kind, id) => sel && sel.kind === kind && sel.id === id;
+    const selStore = sel && sel.kind === 'store' ? sel.id : null;
+    // подписи держат экранный размер, но при сильном отдалении на телефоне мельчают, чтобы не закрывать город
+    const lk = Math.max(0.45, Math.min(1.6, upp * 0.95)).toFixed(2);
+    if (lk !== this.lastLk) { this.el.style.setProperty('--lk', lk); this.lastLk = lk; }
+    const far = upp > 1.9; if (far !== this.lastFar) { this.el.classList.toggle('far', far); this.lastFar = far; }
+    const wrap = this.wrap;
+    if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
+
+    // кластеры пересчитываем только при смене масштаба, числа точек или выделения
+    const ckey = upp.toFixed(3) + '|' + S.stores.length + '|' + selStore;
+    // на предельном приближении кластеров нет: точки показываем все, даже если стоят вплотную
+    if (ckey !== this.ckey) { this.ckey = ckey; this.nodes = this.vb.w <= MIN_W + 1 ? S.stores.map((st) => ({ x: st.x, y: st.y, items: [st] })) : clusterize(S.stores, upp, selStore, kk / upp); }
+    const infoById = {}; for (const st of S.stores) infoById[st.id] = storeInfo(S, st, layer);
+    this.clusterById = {};
+
+    // маршруты доставки: в слое «Доставка» — ярко, в остальных — еле видны
     let r = '';
-    for (const st of S.stores) {
-      if (st.status === 'opening') continue;
-      const p = E.nearestProd(S, st); if (!p) continue;
-      r += `<line class="m-route" x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${st.x.toFixed(1)}" y2="${st.y.toFixed(1)}"/>`;
+    const seen = new Set();
+    for (const n of this.nodes) {
+      for (const st of n.items) {
+        if (st.status === 'opening') continue;
+        const p = E.nearestProd(S, st); if (!p) continue;
+        const tx = n.items.length > 1 ? n.x : st.x, ty = n.items.length > 1 ? n.y : st.y;
+        const key = p.id + ':' + tx.toFixed(0) + ',' + ty.toFixed(0); if (seen.has(key)) continue; seen.add(key);
+        r += `<line class="m-route" x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}"/>`;
+      }
     }
-    // DOM трогаем, только если разметка изменилась: на ×10 с 40–60 точками это убирает лишние пересчёты стилей и перерисовку карты
+    r = `<g class="rt-${layer === 'delivery' ? 'on' : 'off'}">${r}</g>`;
     if (r !== this.lastR) { this.gR.innerHTML = r; this.lastR = r; }
-    let m = '';
-    const isSel = (k, id) => sel && sel.kind === k && sel.id === id;
-    // офис
+
+    const pre = [], offers = [], singles = [], clusters = []; let selM = null;
     const hq = { x: 402, y: 772 };
-    m += `<g class="m-hq" data-kind="hq" data-id="hq" transform="translate(${hq.x},${hq.y}) scale(${k})" style="cursor:pointer"><rect x="-9" y="-9" width="18" height="18" rx="3"/><path d="${OFFICE}" transform="scale(.8)"/></g>`;
-    for (const o of S.prodOffers) m += `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`;
+    pre.push(['hq', `<g class="m-hq" data-kind="hq" data-id="hq" transform="translate(${hq.x},${hq.y}) scale(${k})"><rect x="-9" y="-9" width="18" height="18" rx="3"/><path d="${OFFICE}" transform="scale(.8)"/></g>`]);
+    for (const o of S.prodOffers) pre.push(['po' + o.id, `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`]);
     for (const o of S.offers) {
       const pulse = S.phase === 'setup_store' || S.stores.length < 2 ? ' pulse' : '';
-      m += `<g class="m-offer${isSel('offer', o.id) ? ' sel' : ''}${pulse}" data-kind="offer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><circle r="11"/><path d="M-4.5,0 H4.5 M0,-4.5 V4.5"/></g>`;
+      offers.push(['o' + o.id, `<g class="m-offer${isSel('offer', o.id) ? ' sel' : ''}${pulse}" data-kind="offer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><circle r="11"/><path d="M-4.5,0 H4.5 M0,-4.5 V4.5"/></g>`]);
     }
     for (const p of S.productions) {
-      m += `<g class="m-prod ${p.status}${isSel('prod', p.id) ? ' sel' : ''}" data-kind="prod" data-id="${p.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/>`;
-      if (p.status === 'open' && (p.load || 0) > 0.95) m += `<circle class="m-alert" cx="12" cy="-12" r="6"/><text class="m-alert-t" x="12" y="-12">!</text>`;
-      m += `</g>`;
+      let g = `<g class="m-prod ${p.status}${isSel('prod', p.id) ? ' sel' : ''}" data-kind="prod" data-id="${p.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/>`;
+      if (p.status === 'open' && (p.load || 0) > 0.95) g += `<circle class="m-alert" cx="12" cy="-12" r="6"/><text class="m-alert-t" x="12" y="-12">!</text>`;
+      pre.push(['p' + p.id, g + `</g>`]);
     }
-    for (const st of S.stores) {
-      const closed = st.status === 'open' && ((st.closedUntil && st.closedUntil > S.day) || !st.staff.length);
-      const cls = st.status === 'opening' ? 'opening' : st.status === 'repair' ? 'repair' : closed ? 'closed' : 'open';
-      m += `<g class="m-store ${cls}${isSel('store', st.id) ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
-      const rad = st.size === 'large' ? 13 : st.size === 'small' ? 9.5 : 11;
-      m += `<circle class="b" r="${rad}"/><text>${st.num}</text>`;
-      const mood = storeMood(st);
-      if (mood && st.status !== 'opening' && (!crowded || mood === 'sad' || isSel('store', st.id))) m += faceSvg(mood, rad * 0.75, -rad - 5, 6.5);
-      const vac = E.vacancies(st);
-      if (st.status !== 'opening' && (vac > 0 || st.staff.length < BK.CFG.SIZES[st.size].staffMin)) m += `<circle class="m-alert" cx="${-rad * 0.8}" cy="${-rad * 0.8}" r="5.5"/><text class="m-alert-t" x="${-rad * 0.8}" y="${-rad * 0.8}">${vac || '!'}</text>`;
-      m += `</g>`;
+    const cfg = BK.CFG;
+    for (const n of this.nodes) {
+      if (n.items.length > 1) {
+        const infos = n.items.map((st) => infoById[st.id]);
+        const id = n.items[0].id; this.clusterById[id] = { items: n.items, infos, x: n.x, y: n.y };
+        const cnt = n.items.length, rad = clRad(cnt), rr = rad + 3, C = 2 * Math.PI * rr;
+        // кольцо долей: в слое «Настроение» — по людям, в остальных — по точкам
+        let parts;
+        if (layer === 'mood') {
+          const c = { happy: 0, mid: 0, sad: 0 };
+          for (const st of n.items) for (const e of st.staff) c[BK.moodKind(e.mood)]++;
+          parts = ['happy', 'mid', 'sad'].map((q) => [MOOD_COL[q], c[q]]);
+        } else if (layer === 'delivery') parts = [['var(--map-route)', 1]];
+        else {
+          const c = { good: 0, warn: 0, bad: 0, none: 0 };
+          for (const i of infos) c[i.tone]++;
+          parts = ['good', 'warn', 'bad', 'none'].map((q) => [TONE_COL[q], c[q]]);
+        }
+        const tot = parts.reduce((a, p) => a + p[1], 0) || 1;
+        let off = 0, ring = '';
+        if (!parts.some((p) => p[1])) ring = `<circle r="${rr}" class="ring" stroke="var(--line-2)"/>`;
+        for (const [col, v] of parts) {
+          if (!v) continue; const len = C * v / tot, gap = parts.filter((p) => p[1]).length > 1 ? 1.6 : 0;
+          ring += `<circle r="${rr}" class="ring" stroke="${col}" stroke-dasharray="${Math.max(0.5, len - gap).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}"/>`;
+          off += len;
+        }
+        const pr = PROB_ORDER.find((q) => infos.some((i) => i.prob === q));
+        clusters.push(['c' + id, `<g class="m-cl" data-kind="cluster" data-id="${id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${k})"><circle class="bg" r="${(rr + 2.5).toFixed(1)}"/><g transform="rotate(-90)">${ring}</g><circle class="b" r="${rad.toFixed(1)}"/><text style="font-size:${(11.5 + Math.min(cnt, 20) * 0.3).toFixed(1)}px">${cnt}</text>${pr ? badge(pr, rr * 0.74, -rr * 0.74) : ''}</g>`]);
+      } else {
+        const st = n.items[0], inf = infoById[st.id];
+        const s1 = isSel('store', st.id);
+        let g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
+        const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
+        if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
+        g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
+        // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
+        if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
+        if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
+        g += `</g>`;
+        if (s1) selM = ['s' + st.id, g]; else singles.push(['s' + st.id, g]);
+      }
     }
-    if (m !== this.lastM) { this.gM.innerHTML = m; this.lastM = m; }
+    // кластеры поверх одиночных точек, выделенная точка — поверх всего
+    this.patch(pre.concat(offers, singles, clusters, selM ? [selM] : []));
+    this.renderUi(S, infoById);
     this.renderRivals(S, k);
   };
   // сеть-соперник: приглушённые ромбы отдельным слоем под маркерами игрока (слой создаётся при первой отрисовке)
   Map.prototype.renderRivals = function (S, k) {
     const R = BK.Engine.rivalSummary ? BK.Engine.rivalSummary(S) : null;
-    if (!this.gRv) { this.gRv = document.createElementNS(NS, 'g'); this.gRv.setAttribute('class', 'rivals'); this.gM.parentNode.insertBefore(this.gRv, this.gM); }
+    if (!this.gRv) { this.gRv = document.createElementNS('http://www.w3.org/2000/svg', 'g'); this.gRv.setAttribute('class', 'rivals'); this.gM.parentNode.insertBefore(this.gRv, this.gM); }
     let h = '';
     if (R) for (const o of R.stores) h += `<g class="m-rival" data-kind="rival" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-5.5" y="-5.5" width="11" height="11" rx="1.5" transform="rotate(45)"/></g>`;
     if (h !== this.lastRv) { this.gRv.innerHTML = h; this.lastRv = h; (this.el.parentNode || this.el).classList.toggle('has-rival', !!h); }
   };
+
+  /* ---------- легенда, линейка, картуш ---------- */
+  const ring3 = (cols) => { // значок кластера для легенды
+    const C = 2 * Math.PI * 10; let off = 0, s = '';
+    for (const [c, f] of cols) { s += `<circle r="10" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="${(C * f - 1.2).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90)"/>`; off += C * f; }
+    return `<svg viewBox="-13 -13 26 26" class="lg-cl" aria-hidden="true">${s}<circle r="7.5" fill="var(--surface)" stroke="var(--line-2)"/><text text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="var(--ink)" font-family="var(--f-mono)">8</text></svg>`;
+  };
+  const dot = (col, dash) => `<svg viewBox="0 0 16 16" class="lg-sw" aria-hidden="true"><circle cx="8" cy="8" r="5.6" fill="var(--surface)" stroke="${col}" stroke-width="2.4"${dash ? ' stroke-dasharray="2.5 2"' : ''}/></svg>`;
+  const bdgIcon = (k) => `<svg viewBox="-8 -8 16 16" class="lg-sw" aria-hidden="true">${badge(k, 0, 0)}</svg>`;
+  Map.prototype.renderUi = function (S, infoById) {
+    if (!this.uiLegend) return;
+    const E = BK.Engine, layer = this.layer;
+    const infos = S.stores.map((st) => infoById[st.id]);
+    const row = (sw, label, v) => `<span class="lg-r">${sw}<span>${label}</span><b>${v}</b></span>`;
+    let h = '';
+    if (layer === 'mood') {
+      const c = { happy: 0, mid: 0, sad: 0 };
+      for (const st of S.stores) for (const e of st.staff) c[BK.moodKind(e.mood)]++;
+      h += `<span class="lg-t">Слой · настроение команды</span>`;
+      h += row(BK.faceIcon('happy'), 'Довольны', c.happy) + row(BK.faceIcon('mid'), 'Терпят', c.mid) + row(BK.faceIcon('sad'), 'Недовольны', c.sad);
+      h += `<span class="lg-h">${ring3([['var(--face-happy)', 0.7], ['var(--face-mid)', 0.2], ['var(--face-sad)', 0.1]])}<span>Кластер: число точек,<br>кольцо — доли людей</span></span>`;
+    } else if (layer === 'profit') {
+      const c = { good: 0, warn: 0, bad: 0, none: 0 }; for (const i of infos) c[i.tone]++;
+      h += `<span class="lg-t">Слой · маржа за месяц</span>`;
+      h += row(dot('var(--good)'), '15 % и выше', c.good) + row(dot('var(--warn)'), 'От 0 до 15 %', c.warn) + row(dot('var(--bad)'), 'Убыток', c.bad);
+      if (c.none) h += row(dot('var(--line-2)', true), 'Ещё нет отчёта', c.none);
+      h += `<span class="lg-h">${ring3([['var(--good)', 0.7], ['var(--warn)', 0.2], ['var(--bad)', 0.1]])}<span>Кластер: число точек,<br>кольцо — доли по марже</span></span>`;
+    } else if (layer === 'staff') {
+      const c = { good: 0, warn: 0, bad: 0, none: 0 }; let vac = 0;
+      for (const i of infos) { c[i.tone]++; vac += i.vac; }
+      h += `<span class="lg-t">Слой · штат точек</span>`;
+      h += row(dot('var(--good)'), 'Полный штат', c.good) + row(dot('var(--warn)'), 'Есть вакансии', c.warn) + row(dot('var(--bad)'), 'Меньше минимума', c.bad);
+      h += `<span class="lg-h">${ring3([['var(--good)', 0.7], ['var(--warn)', 0.2], ['var(--bad)', 0.1]])}<span>Открытых вакансий: <b class="num">${vac}</b><br>кольцо — доли точек</span></span>`;
+    } else {
+      h += `<span class="lg-t">Слой · доставка из цехов</span>`;
+      for (const p of S.productions) {
+        const n = S.stores.filter((st) => st.status !== 'opening' && E.nearestProd(S, st) === p).length;
+        h += `<span class="lg-r"><svg viewBox="0 0 16 16" class="lg-sw" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5" fill="var(--prod-bg)"/></svg><span>${esc(p.name)}${p.status === 'open' ? ` · ${nw(n, 'точка', 'точки', 'точек')}` : ' · открывается'}</span><b>${Math.round((p.load || 0) * 100)} %</b></span>`;
+      }
+      h += `<span class="lg-h"><svg viewBox="0 0 26 10" class="lg-rt" aria-hidden="true"><path d="M1 5H25" stroke="var(--map-route)" stroke-width="1.8" stroke-dasharray="2 3.5" stroke-linecap="round"/></svg><span>Маршрут от ближайшего цеха,<br>справа — загрузка цеха</span></span>`;
+    }
+    const probs = {}; for (const i of infos) if (i.prob) probs[i.prob] = (probs[i.prob] || 0) + 1;
+    const pk = PROB_ORDER.filter((q) => probs[q]);
+    if (pk.length) h += `<span class="lg-p">${pk.map((q) => `<span>${bdgIcon(q)}${PROB[q]}: ${probs[q]}</span>`).join('')}</span>`;
+    if (h !== this.lastLegend) { this.uiLegend.innerHTML = h; this.lastLegend = h; }
+
+    // масштабная линейка: шаг 0,5–10 км, чтобы деление было не короче 22 px
+    const pxKm = KM / this.upp();
+    const step = [0.5, 1, 2, 5, 10].find((q) => pxKm * q >= 22) || 10, w = pxKm * step;
+    const f = (v) => String(v).replace('.', ',');
+    const sc = `<div class="sc-bars" style="width:${(w * 2).toFixed(0)}px"><i></i><i></i><i></i></div><div class="sc-lbl" style="width:${(w * 2).toFixed(0)}px"><span style="left:0">0</span><span style="left:${w.toFixed(0)}px">${f(step)} км</span><span style="left:${(w * 2).toFixed(0)}px">${f(step * 2)}</span></div>`;
+    if (sc !== this.lastSc) { this.uiScale.innerHTML = sc; this.lastSc = sc; }
+
+    // картуш: лист = год игры
+    const d = E.dateOf(S.day), sheet = d.y - BK.CFG.START_YEAR + 1;
+    const denom = this.upp() * (1e6 / KM) / 0.2646; // 1 px ≈ 0,2646 мм на экране 96 dpi
+    const mag = Math.pow(10, Math.floor(Math.log10(denom)) - 1), den = Math.round(denom / mag) * mag;
+    const nm = /[«»"„“]/.test(S.company) ? S.company : `«${S.company}»`;
+    const open = S.stores.filter((st) => st.status !== 'opening').length;
+    // картуш строится один раз, дальше меняется только текст полей (дата — каждый игровой день)
+    if (!this.ct) {
+      this.uiCart.innerHTML = `<div class="ct-in"><div class="ct-c ct-full"><small>Градплан сети</small><div class="ct-t"></div></div>
+      <div class="ct-c"><small>Масштаб</small><div class="ct-v"></div></div>
+      <div class="ct-c"><small>Дата</small><div class="ct-v"></div></div>
+      <div class="ct-c ct-last"><small>Точек</small><div class="ct-v"></div></div>
+      <div class="ct-c ct-last"><small>Исполнил</small><div class="ct-v ct-name"></div></div></div>`;
+      this.ct = [...this.uiCart.querySelectorAll('.ct-t, .ct-v')];
+    }
+    const vals = [`Уфа · лист ${sheet}`, `1 : ${den.toLocaleString('ru-RU')}`, `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`,
+      `${open}${S.stores.length > open ? '+' + (S.stores.length - open) : ''} · цехов ${S.productions.length}`, nm];
+    vals.forEach((v, i) => { if (this.ct[i].textContent !== v) this.ct[i].textContent = v; });
+  };
+
   BK.MapView = Map;
   BK.mapStatic = staticLayer;
 })();
@@ -4838,15 +5229,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   <div class="main">
     <div class="mapwrap">
       <svg class="map" id="map" role="img" aria-label="Карта Уфы с точками сети"></svg>
-      <div class="mapctl"><button data-act="zoomIn" aria-label="Приблизить">+</button><button data-act="zoomOut" aria-label="Отдалить">−</button><button data-act="zoomReset" aria-label="Весь город" style="font-size:13px">⌂</button></div>
-      <div class="maplegend">
-        <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="var(--surface)" stroke="var(--crust)" stroke-width="2"/></svg>Точка</span>
-        <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--river)" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Свободное помещение</span>
-        <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--ink)"/></svg>Производство</span>
-        <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--crust)"/></svg>Офис</span>
-        <span class="lg-rival"><svg viewBox="0 0 14 14"><rect x="3" y="3" width="8" height="8" rx="1" transform="rotate(45 7 7)" fill="var(--rival, #9580a8)" fill-opacity=".6"/></svg>Конкурент</span>
-        <span>${BK.faceIcon('happy')}${BK.faceIcon('mid')}${BK.faceIcon('sad')}Настроение команды<i class="crowd-note">(издалека — только недовольные)</i></span>
-      </div>
+      <div class="mapctl"><button data-act="zoomIn" aria-label="Приблизить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button data-act="zoomOut" aria-label="Отдалить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button data-act="zoomReset" aria-label="Весь город"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg></button></div>
       <div class="maptip" hidden></div>
       <div class="setupbanner" id="setupbanner" hidden></div>
     </div>
