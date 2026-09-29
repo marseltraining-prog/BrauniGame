@@ -20,6 +20,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
     gear: '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M8 5.2A2.8 2.8 0 1 0 8 10.8 2.8 2.8 0 1 0 8 5.2Zm6.3 3.8-.1-2 1.4-1.2-1.4-2.4-1.8.5-1.6-1-.4-1.9H7.6l-.4 1.9-1.6 1-1.8-.5L2.4 5.8l1.4 1.2-.1 2-1.3 1.2 1.4 2.4 1.8-.6 1.6 1 .4 1.9h2.8l.4-1.9 1.6-1 1.8.6 1.4-2.4Z"/></svg>',
     help: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1" fill="currentColor"/></svg>',
   };
+  /* ---------------- тема: авто / светлая / тёмная ---------------- */
+  const THEME_KEY = 'bk-ufa-theme';
+  const THEMES = { auto: 'Авто', light: 'Светлая', dark: 'Тёмная' };
+  const THEME_ICON = {
+    auto: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4Z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    dark: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7Z" fill="currentColor"/></svg>',
+  };
+  const hostTheme = document.documentElement.getAttribute('data-theme');
+  function loadTheme() { try { const t = localStorage.getItem(THEME_KEY); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; } }
+  function applyTheme(t) {
+    ui.theme = t;
+    const root = document.documentElement;
+    if (t !== 'auto') root.setAttribute('data-theme', t);
+    else if (hostTheme) root.setAttribute('data-theme', hostTheme); else root.removeAttribute('data-theme');
+    const b = document.querySelector('.hud [data-act="theme"]');
+    if (b) { b.innerHTML = THEME_ICON[t]; b.setAttribute('aria-label', `Тема: ${THEMES[t].toLowerCase()}. Сменить тему`); b.title = `Тема: ${THEMES[t].toLowerCase()} (нажмите, чтобы сменить)`; }
+    document.querySelectorAll('.themeseg [data-arg]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.arg === t ? 'true' : 'false'));
+  }
+  function setTheme(t) {
+    try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch (e) { /* без хранилища тема живёт до перезагрузки */ }
+    applyTheme(t);
+  }
+  const themeSeg = () => `<div class="themeseg" role="group" aria-label="Тема оформления">${Object.keys(THEMES).map((k) => `<button type="button" data-act="theme" data-arg="${k}" aria-pressed="${ui.theme === k}">${THEME_ICON[k]}${THEMES[k]}</button>`).join('')}</div>`;
+
   const LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--crust)"/><path d="M7 19c0-5 4-9 9-9s9 4 9 9v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" fill="#fff"/><path d="M12 13.5l1.5 4M16 12.5v5M20 13.5l-1.5 4" stroke="var(--crust)" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
   /* ---------------- сохранения ---------------- */
@@ -56,6 +81,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
       <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры">${ICON.gear}</button>
     </div>
@@ -101,7 +127,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
-    el.innerHTML = `<div class="start-in"><div>
+    el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
       <h1>Хлебная<br>карта <em>Уфы</em></h1>
       <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. 10 млн ₽ на старте, одно производство — и весь город на карте.</p>
       <div class="rules">
@@ -316,6 +342,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repay: (d) => { const before = S.loan; const r = E.repayLoan(S, +d.arg); res(r, r.ok ? `Погашено ${H.fm(before - S.loan)}${S.loan ? '' : ' — кредит закрыт'}` : null); },
     zoomIn: () => map.zoom(1 / 1.3), zoomOut: () => map.zoom(1.3), zoomReset: () => map.reset(),
     settings: () => openSettings(), help: () => openHelp(),
+    theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: () => { const st = loadSave(); if (st) continueGame(st); },
     closeModal: () => closeModal(),
   };
@@ -323,7 +350,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const t = e.target.closest('[data-act]');
     if (!t || t.disabled) return;
     const fn = ACT[t.dataset.act];
-    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal') { e.preventDefault(); fn(t.dataset); }
+    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); fn(t.dataset); }
   }
   function onInput(e) {
     const t = e.target; if (!t.dataset || !t.dataset.inp || !S) return;
@@ -405,7 +432,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const id of S.chef.pending) {
         const p = E.byId(BK.PRODUCTS, id); const ok = E.eqUnlocked(S, p.req);
         const reqName = p.req ? (E.byId(BK.EQUIPMENT, p.req) || {}).name : '';
-        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip" style="color:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
+        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
           <span class="cm"><span>цена ${H.n0(p.price * pl)} ₽</span><span>фудкост ${H.pct(p.fc)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span><span>популярность ${p.pop}</span>${ok ? '' : `<span class="negc">нужно: ${H.esc(reqName)}</span>`}</span></label>`;
       }
       html += `</div><h3 style="font-size:13px;margin-top:6px">Вывести из меню</h3><div class="chefgrid">`;
@@ -503,7 +530,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
+    applyTheme(loadTheme());
     shell();
+    applyTheme(ui.theme);
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
     requestAnimationFrame(frame);

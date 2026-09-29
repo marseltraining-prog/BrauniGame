@@ -8,7 +8,7 @@
   --surface-2: #eef1f3;
   --ink: #18223a;
   --ink-2: #4a5570;
-  --ink-3: #7b8499;
+  --ink-3: #596378;
   --line: #c9d0d8;
   --line-2: #b2bcc7;
   --crust: #c46f17;
@@ -25,34 +25,63 @@
   --bad-soft: #f5d6cf;
   --district: #f3f5f6;
   --district-2: #e9edf0;
+  /* текстовые варианты акцентов: темнее заливок, чтобы текст держал контраст ≥ 4.5 на фоне и на мягких плашках */
+  --good-t: #1e6b41; --warn-t: #7f5405; --bad-t: #a3301c; --river-t: #235f6b; --crust-t: #94500b;
+  --btn-primary: #b0600f; --btn-primary-h: #96510c; --on-primary: #fff; --on-bad: #fff;
+  /* «инверсные» плашки: подсказка на карте, баннер шагов */
+  --inv-bg: var(--ink); --inv-ink: var(--surface); --inv-accent: var(--crust-2); --inv-line: transparent;
+  /* карта */
+  --map-land: var(--paper-2); --map-edge: var(--line-2); --map-river: var(--river); --map-river-o: .85; --map-label: var(--ink-3);
+  --map-park: var(--good); --map-park-o: .14; --map-rail: var(--ink-3); --map-route: var(--crust);
+  --prod-bg: var(--ink); --prod-ink: var(--surface);
+  --face-happy: #4fb57a; --face-mid: #e5b53c; --face-sad: #e2553f; --face-ink: #1b1b1b; --face-edge: rgba(0,0,0,.25);
+  --backdrop: rgba(12, 16, 26, .55); --modal-line: transparent;
   --shadow: 0 1px 2px rgba(24, 34, 58, .08), 0 6px 20px rgba(24, 34, 58, .08);
   --r: 10px;
   --f-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
   --f-body: 'Golos Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --f-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
+/* Тёмная тема — «ночной чертёж». Один набор дважды: по системной настройке (если игрок не выбрал светлую) и по явному выбору «Тёмная». */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #10141c; --paper-2: #151a24; --surface: #1a202b; --surface-2: #222a37;
-    --ink: #e7eaf0; --ink-2: #b3bbcb; --ink-3: #7f889b; --line: #2d3645; --line-2: #3b4658;
+    --paper: #0f141c; --paper-2: #0c1118; --surface: #1a202b; --surface-2: #222a37;
+    --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0; --line: #2d3645; --line-2: #3d4a5e;
     --crust: #e8963d; --crust-2: #f2b066; --crust-soft: #3a2a18;
-    --river: #5fb2c2; --river-soft: #1d3a42; --rye: #c89a6a;
+    --river: #5fb2c2; --river-soft: #16303a; --rye: #c89a6a;
     --good: #52b67f; --good-soft: #17352a; --warn: #e0a63a; --warn-soft: #3a2f16; --bad: #ea6b55; --bad-soft: #3f1f1a;
-    --district: #1b2230; --district-2: #202838;
+    --district: #161e2b; --district-2: #1a2332;
+    --good-t: #5cc28a; --warn-t: #e6ad45; --bad-t: #f07a65; --river-t: #6cc0cf; --crust-t: #efa555;
+    --btn-primary: #e8963d; --btn-primary-h: #f2a852; --on-primary: #1b1206; --on-bad: #1b0d0a;
+    --inv-bg: #2a3243; --inv-ink: #e7eaf0; --inv-accent: #f2b066; --inv-line: #3d4a5e;
+    --map-land: #0f141c; --map-edge: #34506a; --map-river: #3e8fa0; --map-river-o: .75; --map-label: #9fb3c8;
+    --map-park: #52b67f; --map-park-o: .12; --map-rail: #7d8fa8; --map-route: #f2b066;
+    --prod-bg: #dfe6f0; --prod-ink: #141a24;
+    --face-edge: rgba(0,0,0,.55);
+    --backdrop: rgba(4, 6, 10, .72); --modal-line: #2d3645;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #10141c; --paper-2: #151a24; --surface: #1a202b; --surface-2: #222a37;
-  --ink: #e7eaf0; --ink-2: #b3bbcb; --ink-3: #7f889b; --line: #2d3645; --line-2: #3b4658;
+  --paper: #0f141c; --paper-2: #0c1118; --surface: #1a202b; --surface-2: #222a37;
+  --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0; --line: #2d3645; --line-2: #3d4a5e;
   --crust: #e8963d; --crust-2: #f2b066; --crust-soft: #3a2a18;
-  --river: #5fb2c2; --river-soft: #1d3a42; --rye: #c89a6a;
+  --river: #5fb2c2; --river-soft: #16303a; --rye: #c89a6a;
   --good: #52b67f; --good-soft: #17352a; --warn: #e0a63a; --warn-soft: #3a2f16; --bad: #ea6b55; --bad-soft: #3f1f1a;
-  --district: #1b2230; --district-2: #202838;
+  --district: #161e2b; --district-2: #1a2332;
+  --good-t: #5cc28a; --warn-t: #e6ad45; --bad-t: #f07a65; --river-t: #6cc0cf; --crust-t: #efa555;
+  --btn-primary: #e8963d; --btn-primary-h: #f2a852; --on-primary: #1b1206; --on-bad: #1b0d0a;
+  --inv-bg: #2a3243; --inv-ink: #e7eaf0; --inv-accent: #f2b066; --inv-line: #3d4a5e;
+  --map-land: #0f141c; --map-edge: #34506a; --map-river: #3e8fa0; --map-river-o: .75; --map-label: #9fb3c8;
+  --map-park: #52b67f; --map-park-o: .12; --map-rail: #7d8fa8; --map-route: #f2b066;
+  --prod-bg: #dfe6f0; --prod-ink: #141a24;
+  --face-edge: rgba(0,0,0,.55);
+  --backdrop: rgba(4, 6, 10, .72); --modal-line: #2d3645;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
 }
+:root[data-theme="light"] { color-scheme: light; }
 
 html, body { height: 100%; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
@@ -81,11 +110,12 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .stat { display: flex; flex-direction: column; line-height: 1.15; }
 .stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
 .stat .v { font-family: var(--f-mono); font-size: 14px; font-weight: 600; }
-.stat .v.neg { color: var(--bad); }
+.stat .v.neg { color: var(--bad-t); }
 .goal { min-width: 190px; }
 .goal .bar { height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; margin-top: 4px; }
 .goal .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--crust), var(--crust-2)); }
-.iconbtn { border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 5px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.iconbtn { border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 5px 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 34px; min-height: 32px; color: var(--ink-2); }
+.iconbtn:hover { color: var(--ink); border-color: var(--ink-3); }
 .iconbtn svg { width: 16px; height: 16px; }
 
 /* ---------- main layout ---------- */
@@ -98,24 +128,25 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .maplegend { position: absolute; left: 12px; bottom: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--ink-2); display: flex; gap: 12px; flex-wrap: wrap; max-width: calc(100% - 24px); }
 .maplegend span { display: inline-flex; align-items: center; gap: 5px; }
 .maplegend svg { width: 14px; height: 14px; }
-.maptip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); padding: 6px 9px; border-radius: 6px; font-size: 12px; max-width: 240px; z-index: 4; box-shadow: var(--shadow); }
+.maptip { position: absolute; pointer-events: none; background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); padding: 6px 9px; border-radius: 6px; font-size: 12px; max-width: 240px; z-index: 4; box-shadow: var(--shadow); }
 .maptip b { font-weight: 600; }
-.setupbanner { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 10px; box-shadow: var(--shadow); font-size: 13px; max-width: calc(100% - 100px); text-align: center; z-index: 3; }
-.setupbanner b { color: var(--crust-2); font-family: var(--f-display); font-size: 12px; font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: .02em; }
+.setupbanner { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); padding: 10px 16px; border-radius: 10px; box-shadow: var(--shadow); font-size: 13px; max-width: calc(100% - 100px); text-align: center; z-index: 3; }
+.setupbanner b { color: var(--inv-accent); font-family: var(--f-display); font-size: 12px; font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: .02em; }
 
 /* map svg */
 .m-water { fill: var(--river-soft); }
-.m-land { fill: var(--paper-2); }
-.m-district { fill: var(--district); stroke: var(--line-2); stroke-width: 1.2; transition: fill .2s; }
+.m-land { fill: var(--map-land); }
+.m-district { fill: var(--district); stroke: var(--map-edge); stroke-width: 1.2; transition: fill .2s; }
 .m-district.alt { fill: var(--district-2); }
 .m-district.hot { fill: var(--crust-soft); }
-.m-river { fill: none; stroke: var(--river); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
-.m-rail { fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-dasharray: 7 5; opacity: .6; }
-.m-park { fill: var(--good); opacity: .14; }
-.m-dlabel { font-family: var(--f-display); font-size: 13px; font-weight: 500; fill: var(--ink-3); text-anchor: middle; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
-.m-rlabel { font-family: var(--f-body); font-style: italic; font-size: 13px; fill: var(--river); pointer-events: none; }
-.m-small { font-family: var(--f-body); font-size: 10px; fill: var(--ink-3); pointer-events: none; }
-.m-route { fill: none; stroke: var(--crust); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .55; }
+.m-river { fill: none; stroke: var(--map-river); stroke-linecap: round; stroke-linejoin: round; opacity: var(--map-river-o); }
+.m-rail { fill: none; stroke: var(--map-rail); stroke-width: 2; stroke-dasharray: 7 5; opacity: .6; }
+.m-park { fill: var(--map-park); opacity: var(--map-park-o); }
+.m-dlabel { font-family: var(--f-display); font-size: 13px; font-weight: 500; fill: var(--map-label); text-anchor: middle; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
+.m-dlabel, .m-rlabel, .m-small { paint-order: stroke; stroke: var(--district); stroke-width: 3px; stroke-linejoin: round; stroke-opacity: .55; }
+.m-rlabel { font-family: var(--f-body); font-style: italic; font-size: 13px; fill: var(--river-t); pointer-events: none; }
+.m-small { font-family: var(--f-body); font-size: 10px; fill: var(--map-label); pointer-events: none; }
+.m-route { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .55; }
 .mapwrap.crowded .m-route { opacity: .22; }
 .maplegend .crowd-note { display: none; font-style: normal; color: var(--ink-3); }
 .mapwrap.crowded .maplegend .crowd-note { display: inline; }
@@ -135,21 +166,21 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .m-offer.pulse circle { animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 50% { stroke-width: 3.5; } }
 .m-prod { cursor: pointer; }
-.m-prod rect { fill: var(--ink); stroke: var(--surface); stroke-width: 2; }
-.m-prod path { fill: var(--surface); }
+.m-prod rect { fill: var(--prod-bg); stroke: var(--surface); stroke-width: 2; }
+.m-prod path { fill: var(--prod-ink); }
 .m-prod.opening rect { fill: var(--ink-3); }
 .m-prod.sel rect { fill: var(--crust); }
-.m-prodoffer rect { fill: color-mix(in srgb, var(--ink) 12%, transparent); stroke: var(--ink); stroke-width: 1.8; stroke-dasharray: 4 3; }
-.m-prodoffer path { fill: var(--ink); }
+.m-prodoffer rect { fill: color-mix(in srgb, var(--prod-bg) 12%, transparent); stroke: var(--prod-bg); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.m-prodoffer path { fill: var(--prod-bg); }
 .m-prodoffer { cursor: pointer; }
-.m-prodoffer.sel rect { fill: var(--ink); } .m-prodoffer.sel path { fill: var(--surface); }
-.m-hq rect { fill: var(--crust); } .m-hq path { fill: #fff; }
-.m-face circle { stroke: rgba(0,0,0,.25); stroke-width: .8; }
-.m-face.happy circle { fill: #4fb57a; } .m-face.mid circle { fill: #e5b53c; } .m-face.sad circle { fill: #e2553f; }
-.m-face path, .m-face .eye { stroke: #1b1b1b; fill: none; stroke-width: 1.2; stroke-linecap: round; }
-.m-face .eye { fill: #1b1b1b; stroke: none; }
+.m-prodoffer.sel rect { fill: var(--prod-bg); } .m-prodoffer.sel path { fill: var(--prod-ink); }
+.m-hq rect { fill: var(--crust); stroke: var(--surface); stroke-width: 1.5; } .m-hq path { fill: var(--on-primary); }
+.m-face circle { stroke: var(--face-edge); stroke-width: .8; }
+.m-face.happy circle { fill: var(--face-happy); } .m-face.mid circle { fill: var(--face-mid); } .m-face.sad circle { fill: var(--face-sad); }
+.m-face path, .m-face .eye { stroke: var(--face-ink); fill: none; stroke-width: 1.2; stroke-linecap: round; }
+.m-face .eye { fill: var(--face-ink); stroke: none; }
 .m-alert { fill: var(--bad); }
-.m-alert-t { fill: #fff; font: 700 9px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
+.m-alert-t { fill: var(--on-bad); font: 700 9px var(--f-mono); text-anchor: middle; dominant-baseline: central; }
 @media (prefers-reduced-motion: reduce) { .m-offer.pulse circle { animation: none; } }
 
 /* ---------- panel ---------- */
@@ -171,7 +202,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .kpi .d { font-size: 11px; color: var(--ink-3); }
 .kpi .d.faces { display: flex; gap: 4px 8px; align-items: center; flex-wrap: wrap; }
 .kpi.wide { grid-column: 1 / -1; }
-.pos { color: var(--good); } .negc { color: var(--bad); } .warnc { color: var(--warn); }
+.pos { color: var(--good-t); } .negc { color: var(--bad-t); } .warnc { color: var(--warn-t); }
 .card { border: 1px solid var(--line); border-radius: var(--r); padding: 11px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
 .card.click { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .card.click:hover { border-color: var(--line-2); box-shadow: var(--shadow); }
@@ -190,17 +221,19 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .kv span:first-child { color: var(--ink-3); }
 .kv span:last-child { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
-.chip.good { background: var(--good-soft); color: var(--good); }
-.chip.warn { background: var(--warn-soft); color: var(--warn); }
-.chip.bad { background: var(--bad-soft); color: var(--bad); }
-.chip.crust { background: var(--crust-soft); color: var(--crust); }
-.chip.river { background: var(--river-soft); color: var(--river); }
+.chip.good { background: var(--good-soft); color: var(--good-t); }
+.chip.warn { background: var(--warn-soft); color: var(--warn-t); }
+.chip.bad { background: var(--bad-soft); color: var(--bad-t); }
+.chip.crust { background: var(--crust-soft); color: var(--crust-t); }
+.chip.river { background: var(--river-soft); color: var(--river-t); }
+/* категория продукта: цвет категории приходит из данных через --cat, текст подмешиваем к основному, чтобы читался в обеих темах */
+.chip.cat { background: color-mix(in srgb, var(--cat) 18%, var(--surface)); color: color-mix(in srgb, var(--cat) 55%, var(--ink)); }
 .btn { border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; justify-content: center; white-space: nowrap; }
 .btn:hover:not(:disabled) { border-color: var(--ink-3); }
-.btn.primary { background: var(--crust); border-color: var(--crust); color: #fff; }
-.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--crust) 88%, #000); }
+.btn.primary { background: var(--btn-primary); border-color: var(--btn-primary); color: var(--on-primary); }
+.btn.primary:hover:not(:disabled) { background: var(--btn-primary-h); border-color: var(--btn-primary-h); }
 .btn.dark { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-.btn.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+.btn.danger { color: var(--bad-t); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
 .btn.sm { padding: 4px 9px; font-size: 12px; }
 .btn.block { width: 100%; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -265,7 +298,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .ladder .n { font-family: var(--f-mono); font-weight: 700; color: var(--ink-3); }
 .logitem { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 8px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
 .logitem .d { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
-.logitem.good .t { color: var(--good); } .logitem.bad .t { color: var(--bad); } .logitem.warn .t { color: var(--warn); }
+.logitem.good .t { color: var(--good-t); } .logitem.bad .t { color: var(--bad-t); } .logitem.warn .t { color: var(--warn-t); }
 .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 4px 10px; font-size: 12px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
@@ -273,12 +306,12 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .empty { padding: 18px; text-align: center; color: var(--ink-3); border: 1px dashed var(--line-2); border-radius: var(--r); font-size: 13px; }
 
 /* ---------- modal ---------- */
-.modal-bg { position: fixed; inset: 0; background: rgba(12, 16, 26, .55); display: grid; place-items: center; z-index: 50; padding: 16px; }
-.modal { background: var(--surface); border-radius: 14px; max-width: 560px; width: 100%; max-height: calc(100% - 32px); overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+.modal-bg { position: fixed; inset: 0; background: var(--backdrop); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal { background: var(--surface); border: 1px solid var(--modal-line); border-radius: 14px; max-width: 560px; width: 100%; max-height: calc(100% - 32px); overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; }
 .modal:focus { outline: none; }
 .modal-h { padding: 18px 20px 10px; display: flex; flex-direction: column; gap: 6px; }
 .modal-h .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); font-weight: 600; }
-.modal-h .eyebrow.neg { color: var(--bad); } .modal-h .eyebrow.pos { color: var(--good); } .modal-h .eyebrow.crisis { color: var(--bad); }
+.modal-h .eyebrow.neg { color: var(--bad-t); } .modal-h .eyebrow.pos { color: var(--good-t); } .modal-h .eyebrow.crisis { color: var(--bad-t); }
 .modal-h h2 { font-family: var(--f-display); font-size: 20px; font-weight: 600; line-height: 1.2; }
 .modal-b { padding: 4px 20px 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
 .modal-f { padding: 12px 20px 18px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
@@ -313,7 +346,15 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload { margin-top: 14px; max-width: 460px; font-size: 13px; color: var(--ink-2); }
 .start .codeload summary { cursor: pointer; width: fit-content; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
-.start-map { width: 100%; height: auto; }
+.start-map { width: 100%; height: auto; border-radius: 16px; }
+/* переключатель темы на стартовом экране */
+.start-in { position: relative; }
+.start-top { position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.themeseg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.themeseg button { border: 0; background: transparent; min-height: 40px; padding: 0 14px; font-size: 13px; cursor: pointer; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.themeseg button + button { border-left: 1px solid var(--line); }
+.themeseg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); font-weight: 600; }
+.themeseg svg, .iconbtn.theme svg { width: 16px; height: 16px; }
 
 /* ---------- toasts ---------- */
 /* на широком экране уведомления живут над картой, чтобы не закрывать кнопки правой панели */
@@ -337,7 +378,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .stats { margin-left: 0; width: 100%; gap: 12px; justify-content: space-between; }
   .goal { min-width: 0; flex: 1 1 100%; order: 9; }
   .brand-name { max-width: 150px; }
-  .start-in { grid-template-columns: 1fr; padding-block: 28px; gap: 20px; }
+  .iconbtn { min-width: 40px; min-height: 40px; }
+  .stat .k { font-size: 11px; }
+  .back { padding: 10px 0; }
+  .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
+  .start-top { position: static; order: -2; justify-content: space-between; }
   .start-map { max-width: 360px; margin: 0 auto; order: -1; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
   .maplegend { display: none; }
@@ -3107,7 +3152,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const p = E_.byId(BK.PRODUCTS, it.id);
       const sug = p.price * pl, price = sug * it.pm, fc = p.fc / it.pm;
       const tr = S.trends[p.cat];
-      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip" style="background:color-mix(in srgb, ${BK.CATEGORIES[p.cat].color} 18%, transparent);color:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div></div>
+      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div></div>
         <div class="pr"><div class="stepper"><button data-act="price" data-arg="${p.id}" data-arg2="-0.05" aria-label="Дешевле">−</button><span title="${pct(it.pm)} от рекомендованной">${n0(price)} ₽</span><button data-act="price" data-arg="${p.id}" data-arg2="0.05" aria-label="Дороже">+</button></div></div></div>`;
     }
     s += `</div></div>`;
@@ -3271,6 +3316,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
     gear: '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M8 5.2A2.8 2.8 0 1 0 8 10.8 2.8 2.8 0 1 0 8 5.2Zm6.3 3.8-.1-2 1.4-1.2-1.4-2.4-1.8.5-1.6-1-.4-1.9H7.6l-.4 1.9-1.6 1-1.8-.5L2.4 5.8l1.4 1.2-.1 2-1.3 1.2 1.4 2.4 1.8-.6 1.6 1 .4 1.9h2.8l.4-1.9 1.6-1 1.8.6 1.4-2.4Z"/></svg>',
     help: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1" fill="currentColor"/></svg>',
   };
+  /* ---------------- тема: авто / светлая / тёмная ---------------- */
+  const THEME_KEY = 'bk-ufa-theme';
+  const THEMES = { auto: 'Авто', light: 'Светлая', dark: 'Тёмная' };
+  const THEME_ICON = {
+    auto: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4Z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    dark: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7Z" fill="currentColor"/></svg>',
+  };
+  const hostTheme = document.documentElement.getAttribute('data-theme');
+  function loadTheme() { try { const t = localStorage.getItem(THEME_KEY); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; } }
+  function applyTheme(t) {
+    ui.theme = t;
+    const root = document.documentElement;
+    if (t !== 'auto') root.setAttribute('data-theme', t);
+    else if (hostTheme) root.setAttribute('data-theme', hostTheme); else root.removeAttribute('data-theme');
+    const b = document.querySelector('.hud [data-act="theme"]');
+    if (b) { b.innerHTML = THEME_ICON[t]; b.setAttribute('aria-label', `Тема: ${THEMES[t].toLowerCase()}. Сменить тему`); b.title = `Тема: ${THEMES[t].toLowerCase()} (нажмите, чтобы сменить)`; }
+    document.querySelectorAll('.themeseg [data-arg]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.arg === t ? 'true' : 'false'));
+  }
+  function setTheme(t) {
+    try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch (e) { /* без хранилища тема живёт до перезагрузки */ }
+    applyTheme(t);
+  }
+  const themeSeg = () => `<div class="themeseg" role="group" aria-label="Тема оформления">${Object.keys(THEMES).map((k) => `<button type="button" data-act="theme" data-arg="${k}" aria-pressed="${ui.theme === k}">${THEME_ICON[k]}${THEMES[k]}</button>`).join('')}</div>`;
+
   const LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--crust)"/><path d="M7 19c0-5 4-9 9-9s9 4 9 9v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" fill="#fff"/><path d="M12 13.5l1.5 4M16 12.5v5M20 13.5l-1.5 4" stroke="var(--crust)" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
   /* ---------------- сохранения ---------------- */
@@ -3307,6 +3377,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
       <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры">${ICON.gear}</button>
     </div>
@@ -3352,7 +3423,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
-    el.innerHTML = `<div class="start-in"><div>
+    el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
       <h1>Хлебная<br>карта <em>Уфы</em></h1>
       <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. 10 млн ₽ на старте, одно производство — и весь город на карте.</p>
       <div class="rules">
@@ -3567,6 +3638,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repay: (d) => { const before = S.loan; const r = E.repayLoan(S, +d.arg); res(r, r.ok ? `Погашено ${H.fm(before - S.loan)}${S.loan ? '' : ' — кредит закрыт'}` : null); },
     zoomIn: () => map.zoom(1 / 1.3), zoomOut: () => map.zoom(1.3), zoomReset: () => map.reset(),
     settings: () => openSettings(), help: () => openHelp(),
+    theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: () => { const st = loadSave(); if (st) continueGame(st); },
     closeModal: () => closeModal(),
   };
@@ -3574,7 +3646,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const t = e.target.closest('[data-act]');
     if (!t || t.disabled) return;
     const fn = ACT[t.dataset.act];
-    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal') { e.preventDefault(); fn(t.dataset); }
+    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); fn(t.dataset); }
   }
   function onInput(e) {
     const t = e.target; if (!t.dataset || !t.dataset.inp || !S) return;
@@ -3656,7 +3728,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const id of S.chef.pending) {
         const p = E.byId(BK.PRODUCTS, id); const ok = E.eqUnlocked(S, p.req);
         const reqName = p.req ? (E.byId(BK.EQUIPMENT, p.req) || {}).name : '';
-        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip" style="color:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
+        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
           <span class="cm"><span>цена ${H.n0(p.price * pl)} ₽</span><span>фудкост ${H.pct(p.fc)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span><span>популярность ${p.pop}</span>${ok ? '' : `<span class="negc">нужно: ${H.esc(reqName)}</span>`}</span></label>`;
       }
       html += `</div><h3 style="font-size:13px;margin-top:6px">Вывести из меню</h3><div class="chefgrid">`;
@@ -3754,7 +3826,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
+    applyTheme(loadTheme());
     shell();
+    applyTheme(ui.theme);
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
     requestAnimationFrame(frame);
