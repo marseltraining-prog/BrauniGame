@@ -29,6 +29,172 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   const canPay = (S, c) => S.cash >= c;
 
+  /* ---------- тренды, мини-графики, цель (HUD и «Сводка») ---------- */
+  const MON3 = ['янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.']; // «к янв.», «к мая»
+  const MONL = ['янв.', 'фев.', 'март', 'апр.', 'май', 'июнь', 'июль', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.']; // подпись «Выручка, фев.»
+  const MONS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  // проценты «3,9 %» (со знаком — если sign)
+  const pctS = (v, sign) => { const a = Math.abs(v * 100); return (sign && v < 0 ? '−' : '') + (a >= 10 ? a.toFixed(0) : a.toFixed(1)).replace('.', ',') + ' %'; };
+  // изменение к прошлому значению: ▲ 3,9 % / ▼ 1,2 млн ₽ (если база ≤ 0 — в деньгах)
+  function delta(cur, prev, tail, o) {
+    if (cur == null || prev == null) return '';
+    o = o || {};
+    let up, txt;
+    if (prev > 0 && cur >= 0 && !o.money && cur / prev < 10) { const r = cur / prev - 1; up = r >= 0; txt = pctS(r); } else { const d = cur - prev; up = d >= 0; txt = fm(Math.abs(d)); }
+    return `<span class="delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${txt}${tail ? `<span class="dt"> ${tail}</span>` : ''}</span>`;
+  }
+  // мини-график: линия, последняя точка — акцентом; пунктир нуля, если ряд пересекает ноль
+  function spark(vals, w, h) {
+    vals = vals.filter((v) => Number.isFinite(v));
+    if (vals.length < 2) return '';
+    const min = Math.min(...vals), max = Math.max(...vals), pad = 2.5;
+    const X = (i) => pad + (i * (w - pad * 2)) / (vals.length - 1), Y = (v) => h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
+    const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+    const li = vals.length - 1;
+    const zero = min < 0 && max > 0 ? `<line x1="0" x2="${w}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--bad)" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/>` : '';
+    return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${zero}<path d="${d}" fill="none" stroke="var(--ink-3)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" opacity=".8"/><circle cx="${X(li).toFixed(1)}" cy="${Y(vals[li]).toFixed(1)}" r="2.4" fill="var(--crust)"/></svg>`;
+  }
+  // «≈ 8 мес.», «≈ 1,9 года», «≈ 12 лет»
+  function etaStr(months) {
+    if (months < 12) return `≈ ${months} мес.`;
+    const y = months / 12, r = y >= 10 ? Math.round(y) : Math.round(y * 10) / 10;
+    return '≈ ' + (Number.isInteger(r) ? nw(r, 'год', 'года', 'лет') : String(r).replace('.', ',') + ' года');
+  }
+  /* Прогресс к цели: оборот за 12 мес., прирост за месяц и оценка срока при текущем темпе.
+     Темп — рост средней выручки за 3 мес. к такой же год назад (сезонность сокращается), в первые годы — за полгода.
+     Дальше выручка продлевается этим темпом, пока скользящая сумма 12 месяцев не дойдёт до цели. */
+  function goalInfo(S) {
+    const T = C().WIN_ANNUAL_REVENUE, h = S.history, n = h.length;
+    const rolling = E().rolling12(S);
+    const sum = (a) => a.reduce((x, y) => x + y.rev, 0);
+    const gain = n >= 2 ? rolling - sum(h.slice(-13, -1)) : null;
+    const p = Math.min(1, rolling / T);
+    let eta = null, why = '';
+    if (S.won || rolling >= T) eta = 0;
+    else if (n < 6) why = 'оценка срока — после полугода работы';
+    else {
+      const span = n >= 15 ? 12 : n >= 9 ? 6 : 3;
+      const now = sum(h.slice(-3)) / 3, then = sum(h.slice(-3 - span, n - span)) / 3;
+      let g = then > 0 && now > 0 ? Math.pow(now / then, 1 / span) - 1 : 0;
+      g = Math.max(-0.03, Math.min(0.06, g));
+      const win = h.slice(-12).map((x) => x.rev);
+      let s = win.reduce((a, b) => a + b, 0), base = now;
+      for (let k = 1; k <= 600; k++) {
+        base *= 1 + g; win.push(base); s += base;
+        if (win.length > 12) s -= win.shift();
+        if (s >= T) { eta = k; break; }
+      }
+      if (eta == null) why = 'выручка не растёт — оценки срока нет';
+    }
+    const pctTxt = p > 0 && p < 0.001 ? '< 0,1\u00a0%' : p >= 0.1 || p === 0 ? Math.floor(p * 100) + ' %' : (Math.floor(p * 1000) / 10).toFixed(1).replace('.', ',') + ' %';
+    return { rolling, p, pctTxt, left: Math.max(0, T - rolling), gain, eta, etaShort: eta ? etaStr(eta) : '', etaLong: S.won || eta === 0 ? 'цель взята' : eta ? `${etaStr(eta)} при текущем росте` : why };
+  }
+  // полоса прогресса к цели (один цвет — амбер) с отметками 1 / 2,5 / 4 млрд
+  const GOAL_MS = [0.2, 0.5, 0.8];
+  const goalBar = (p) => `<div class="gbar"><i style="width:${(Math.min(1, p) * 100).toFixed(1)}%"></i>${GOAL_MS.map((m) => `<span class="ms${p >= m ? ' done' : ''}" style="left:${m * 100}%"></span>`).join('')}</div>`;
+  // настроение продавцов сети
+  function moodCounts(S) {
+    let happy = 0, mid = 0, sad = 0;
+    for (const st of S.stores) for (const e of st.staff) { const k = BK.moodKind(e.mood); if (k === 'happy') happy++; else if (k === 'mid') mid++; else sad++; }
+    return { happy, mid, sad, total: happy + mid + sad };
+  }
+  const ICO = {
+    team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
+    rub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20V4h5.5a4 4 0 0 1 0 8H6M6 16h8"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>',
+    factory: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 20V11l5-3v3l5-3v3l5-3V4h3v16z"/></svg>',
+    store: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v10h16V10"/><path d="M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M10 20v-5h4v5"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    chef: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-4 3.6-7 8-7s8 3 8 7v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 9.5l1 3M13 9l.5 3M16.5 10l-.5 2.5"/></svg>',
+    bank: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-5 9 5M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/></svg>',
+  };
+
+  /* ---------- «Требует внимания»: что игроку нужно решить сейчас (собирается из состояния, не из тостов) ---------- */
+  function quitReason(S, e, st) {
+    const g = (m, f) => BK.byGender(e.name, m, f);
+    if (e.fatigue > 50) return g('устал', 'устала') + ' от переработок';
+    if (S.pay.seller < S.market.seller * 0.99) return 'зарплата ниже рынка';
+    if (st.staff.length < st.staffTarget) return 'не хватает коллег';
+    return 'низкий настрой в команде';
+  }
+  const nums = (list, k = 3) => list.slice(0, k).map((x) => '№' + x.num).join(', ') + (list.length > k ? '…' : '');
+  function attention(S) {
+    const cfg = C(), E_ = E(), items = [];
+    const counts = { dash: 0, team: 0, stores: 0, prod: 0, fin: 0, menu: 0, market: 0 };
+    if (S.phase !== 'play') return { items, counts };
+    const add = (o) => items.push(o);
+    const H = S.history, lastM = H[H.length - 1];
+    // деньги
+    if (S.cash < 0) {
+      counts.fin++;
+      add({ lvl: 'bad', ic: 'rub', t: S.negMonths > 0 ? `Кассовый разрыв ${S.negMonths}-й месяц` : 'Кассовый разрыв', d: `На счёте ${fm(S.cash)}, резерв пуст. ${S.negMonths > 0 ? `Если и на ${cfg.BANKRUPT_MONTHS}-й расчёт счёт в минусе — банкротство.` : 'Возьмите кредит или отложите покупки.'}`, b: { act: 'tab', arg: 'fin', label: 'Кредит', primary: true } });
+    } else if (S.stores.length) {
+      const f = billsForecast(S);
+      if (f.cashAt1 + S.reserve < 0) { counts.fin++; add({ lvl: S.negMonths > 0 ? 'bad' : 'warn', ic: 'rub', t: `К 1-му числу не хватит ≈ ${fm(-(f.cashAt1 + S.reserve))}`, d: `Через ${nw(f.left + 1, 'день', 'дня', 'дней')} спишутся аренда, зарплаты и налоги ≈ ${fm(f.bills)}.`, b: { act: 'tab', arg: 'fin', label: 'Финансы' } }); }
+      else if (S.loan > 0 && S.cash > S.loan + f.bills * 1.5) add({ lvl: 'info', ic: 'bank', t: `Кредит ${fm(S.loan)} можно погасить`, d: `Денег хватает; проценты ≈ ${fm(S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12)} в месяц.`, b: { act: 'repay', arg: 1e15, label: 'Погасить' } });
+    }
+    // штат: вакансии, перегруз, кто может уволиться
+    const vac = [], risk = [], tired = []; let vacN = 0, tiredN = 0;
+    for (const st of S.stores) {
+      if (st.status === 'opening') continue;
+      const v = E_.vacancies(st); if (v) { vac.push(st); vacN += v; }
+      let t = 0;
+      for (const e of st.staff) {
+        if (e.fatigue > 55) t++;
+        if (e.mood < cfg.MOOD_UNHAPPY && e.unhappy >= (cfg.UNHAPPY_WARN_AFTER || 5)) risk.push({ e, st, left: Math.max(1, cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) - e.unhappy) });
+      }
+      if (t) { tiredN += t; if (!v && t * 2 >= st.staff.length) tired.push(st); }
+    }
+    const staffStores = new Set(vac.map((s) => s.id).concat(risk.map((r) => r.st.id)));
+    counts.team = staffStores.size;
+    if (vac.length) {
+      vac.sort((a, b) => E_.vacancies(b) - E_.vacancies(a));
+      const crit = vac.some((st) => st.staff.length * 2 < st.staffTarget);
+      const lim = E_.ownerHireLeft(S) === 0 ? ' · лимит найма на неделю исчерпан — нужен HR' : '';
+      add({ lvl: crit ? 'bad' : 'warn', ic: 'team', t: vac.length === 1 ? `Нехватка штата на точке №${vac[0].num}` : `Нехватка штата на ${vac.length} точках`, d: `${vac.length > 1 ? nums(vac) + ' · ' : ''}не хватает ${nw(vacN, 'человека', 'человек', 'человек')}${tiredN ? ` · ${tiredN} чел. устали` : ''}${lim}`, b: { act: 'pickCand', arg: vac[0].id, label: `Нанять ${vacN}`, primary: true } });
+    }
+    if (risk.length) {
+      risk.sort((a, b) => a.left - b.left);
+      const r0 = risk[0], st = new Set(risk.map((r) => r.st.id)).size;
+      add({ lvl: r0.left <= 7 ? 'bad' : 'warn', ic: 'alert', t: risk.length === 1 ? `Может уволиться через ${r0.left} дн.` : `${risk.length} чел. могут уволиться`, d: risk.length === 1 ? `${esc(r0.e.name)}, №${r0.st.num} · ${quitReason(S, r0.e, r0.st)}` : `Ближайший — через ${r0.left} дн.: ${esc(r0.e.name)}, №${r0.st.num} · ${quitReason(S, r0.e, r0.st)}${st > 1 ? ` · точек: ${st}` : ''}`, b: { act: 'openStore', arg: r0.st.id, label: 'Открыть' } });
+    }
+    if (tired.length) { add({ lvl: 'warn', ic: 'team', t: tired.length === 1 ? `Команда №${tired[0].num} перегружена` : `Перегружены команды на ${tired.length} точках`, d: `${tired.length > 1 ? nums(tired) + ' · ' : ''}гостей больше, чем успевают обслужить: добавьте людей в штат или обучите`, b: { act: 'openStore', arg: tired[0].id, label: 'Открыть' } }); }
+    // точки в убытке 2+ месяца подряд
+    const loss = S.stores.filter((st) => st.status !== 'opening' && st.last && (st.lossStreak || 0) >= 2).sort((a, b) => a.last.profit - b.last.profit);
+    if (loss.length) {
+      counts.stores += loss.length;
+      const w = loss[0], mon = lastM ? ' за ' + E_.MONTHS[lastM.m] : ' за месяц';
+      add({ lvl: 'bad', ic: 'rub', t: loss.length === 1 ? `Точка №${w.num} в убытке ${w.lossStreak}-й месяц` : `${loss.length} ${plural(loss.length, 'точка', 'точки', 'точек')} в убытке 2+ месяца`, d: loss.length === 1 ? `${dname(w.district)}, ${esc(w.address)} · ${fm(w.last.profit)}${mon}` : `${nums(loss)} · худшая №${w.num}: ${fm(w.last.profit)}${mon}`, b: { act: 'openStore', arg: w.id, label: 'Открыть' } });
+    }
+    // производство
+    const cu = S.cache ? S.cache.capUse : 0;
+    if (cu > 0.9 && S.productions.length) {
+      counts.prod = 1;
+      const open = S.stores.filter((s) => s.status === 'open').length || 1, cap = S.cache.cap || 0, units = S.cache.units || 0;
+      const more = Math.floor((cap - units) / (units / open || 1));
+      const one = S.productions.length === 1;
+      add({ lvl: cu > 1 ? 'bad' : 'warn', ic: 'factory', t: cu > 1 ? `${one ? 'Цех не справляется' : 'Цеха не справляются'}: спрос ${pctS(cu)}` : `${one ? 'Цех загружен' : 'Цеха загружены'} на ${pctS(cu)}`, d: cu > 1 ? 'Продажи теряются — купите оборудование или откройте ещё цех.' : more >= 1 ? `Ещё ${nw(more, 'точка', 'точки', 'точек')} — и выпечки не хватит` : 'Ещё одна точка — и выпечки не хватит', b: { act: 'tab', arg: 'prod', label: 'Оборудование' } });
+    }
+    // меню, офис, зарплаты, рынок
+    if (S.chef.pending) { counts.menu = 1; add({ lvl: 'warn', ic: 'chef', t: 'Шеф-пекарь ждёт решения', d: `5 новинок: добавьте до ${cfg.CHEF_PICK} и выведите до ${cfg.CHEF_REMOVE}.`, b: { act: 'chef', label: 'Выбрать', primary: true } }); }
+    if (!S.office.hr && S.stores.length > cfg.HR_REQUIRED_STORES) add({ lvl: 'warn', ic: 'team', t: 'Нужен HR-отдел', d: `Без HR — не больше ${nw(cfg.OWNER_HIRES_PER_WEEK, 'найма', 'наймов', 'наймов')} в неделю, поиск дольше.`, b: { act: 'tab', arg: 'team', label: 'Команда' } });
+    if (!S.office.academy && S.stores.length > cfg.TRAIN_REQUIRED_STORES) add({ lvl: 'warn', ic: 'team', t: 'Нужен отдел обучения', d: `Вручную — не больше ${nw(cfg.OWNER_TRAINS_PER_WEEK, 'обучения', 'обучений', 'обучений')} в неделю.`, b: { act: 'tab', arg: 'team', label: 'Команда' } });
+    if (S.pay.seller < S.market.seller * 0.97) add({ lvl: 'warn', ic: 'rub', t: 'Зарплаты ниже рынка', d: `Рынок платит ${fm(S.market.seller)}, вы — ${fm(S.pay.seller)}: растёт текучка.`, b: { act: 'tab', arg: 'team', label: 'Зарплаты' } });
+    if (S.prodOffers.length && S.productions.length) { counts.market = 1; add({ lvl: 'info', ic: 'factory', t: 'Можно открыть ещё один цех', d: 'Ближе к точкам — дешевле доставка и больше мощности.', b: { act: 'tab', arg: 'market', label: 'Рынок' } }); }
+    // ближайший праздник (≤ 7 дней)
+    if (E_.upcomingHolidays) for (const h of E_.upcomingHolidays(S, 3)) {
+      if (h.active || h.inDays > 7) continue;
+      add({ lvl: 'info', ic: 'cal', t: h.inDays === 0 ? `${esc(h.name)} — сегодня` : `${esc(h.name)} через ${nw(h.inDays, 'день', 'дня', 'дней')}`, d: esc(h.effect) });
+      break;
+    }
+    const ord = { bad: 0, warn: 1, info: 2 };
+    items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
+    counts.dash = items.filter((x) => x.lvl === 'bad').length;
+    return { items, counts };
+  }
+  BK.attention = attention;
+  const attRow = (a) => `<div class="it"><span class="ic ${a.lvl}">${ICO[a.ic] || ICO.alert}</span><div class="tx"><div class="tt">${a.t}${a.lvl === 'bad' ? '<span class="new" aria-hidden="true"></span>' : ''}</div><div class="ds">${a.d}</div></div>${a.b ? `<button class="btn${a.b.primary ? ' primary' : ''}" data-act="${a.b.act}"${a.b.arg != null ? ` data-arg="${esc(a.b.arg)}"` : ''}>${a.b.label}</button>` : ''}</div>`;
+
   /* ---------- оценка предложения ---------- */
   function estimateOffer(S, o) {
     const sz = C().SIZES[o.size];
@@ -88,7 +254,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="field bake"><label for="bakeLvl">Сколько печь — <b>${L.name}</b></label>
         <input type="range" id="bakeLvl" min="-3" max="3" step="1" value="${W.bake}" data-inp="bake" aria-valuetext="${esc(L.name)}">
         <div class="bake-scale" aria-hidden="true"><span>Сильный дефицит</span><span>Норма</span><span>Сильный перерасход</span></div></div>
-      <div class="wastesum">${lp && lp.waste != null ? `Прошлый месяц — списано: <b>${fm(lp.waste)}</b> · упущено продаж: <b>~${fm(lp.lostBake || 0)}</b>` : 'Итог по списаниям появится после первого месяца работы.'}</div>
+      ${wasteSummary(S, lp)}
       <div class="field"><span class="flabel">Вечерняя скидка <span class="hint">— за 2 часа до закрытия</span></span>
         <div class="seg disc" role="group" aria-label="Вечерняя скидка">${cfg.EVE_DISCOUNTS.map((d, i) => `<button data-act="eveDisc" data-arg="${i}" aria-pressed="${W.disc === i}">${d ? pct(d) : 'Выкл'}</button>`).join('')}</div>
         <span class="hint">Больше скидка — меньше списаний, но часть гостей ждёт вечера и платит меньше. Гости не любят, когда условия часто меняются: меняйте не чаще раза в ${Math.round(cfg.DISC_CHANGE_DAYS / 30)} месяца.</span></div>`;
@@ -97,6 +263,27 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const erpN = S.productions.filter((p) => p.equip.erp).length;
     s += `<div class="hint">Меню ${nw(S.menu.length, 'позиция', 'позиции', 'позиций')}: ${wz.menuF > 1.001 ? `списания +${Math.round((wz.menuF - 1) * 100)}% (шире меню — больше остатков)` : wz.menuF < 0.999 ? `списания −${Math.round((1 - wz.menuF) * 100)}% (узкое меню)` : 'списания как обычно'}. ${erpN ? `ERP-планирование: остатков меньше на ${Math.round(cfg.WASTE_ERP_CUT * wz.erp * 100)}%.` : `ERP-планирование в цехе снизит остатки на ${Math.round(cfg.WASTE_ERP_CUT * 100)}%.`}</div></div>`;
     return s;
+  }
+
+  /* Итог прошлого месяца по выпечке. Списания — по себестоимости, упущенные продажи — по цене продажи (выручка);
+     чтобы их можно было сравнить, упущенная выручка пересчитывается в прибыль: минус себестоимость и налог с выручки
+     (аренда и зарплаты от лишних продаж не растут). */
+  function wasteSummary(S, lp) {
+    if (!lp || lp.waste == null) return `<div class="wastesum"><span class="hint">Итог по списаниям появится после первого месяца работы.</span></div>`;
+    const lost = lp.lostBake || 0;
+    const fcShare = lp.rev > 0 ? Math.max(0, Math.min(0.9, (lp.fc - lp.waste) / lp.rev)) : 0.35;
+    const margin = Math.max(0, 1 - fcShare - E().currentTaxRate(S));
+    const lostProfit = lost * margin;
+    // соседние деления ползунка: сколько изменятся списания и недополученная прибыль (по таблице BAKE_LEVELS)
+    const cfg = C(), i = E().wasteState(S).bake + 3, L = cfg.BAKE_LEVELS[i], D = L.lost > 0 ? lost / L.lost : 0;
+    const step = (j) => { const M = cfg.BAKE_LEVELS[j]; if (!M) return null; return { name: M.name, net: -D * (M.lost - L.lost) * margin - lp.waste * (M.waste / L.waste - 1) }; };
+    const best = [step(i - 1), step(i + 1)].filter(Boolean).sort((a, b) => b.net - a.net)[0];
+    const worse = best && best.net > Math.max(1e4, lp.rev * 0.001) ? `Оценка: на делении «${best.name}» осталось бы ≈ <b>+${fm(best.net)}</b> в месяц (без учёта рейтинга свежести).` : 'По деньгам текущий уровень близок к лучшему.';
+    return `<div class="wastesum"><div class="ws-h">Прошлый месяц</div>
+      <div class="ws-r"><span>Списано <small>себестоимость выброшенной выпечки</small></span><b>${fm(lp.waste)}</b></div>
+      <div class="ws-r"><span>Упущено продаж <small>выручка по цене продажи: к вечеру не хватило выпечки</small></span><b>~${fm(lost)}</b></div>
+      <div class="ws-r"><span>…это недополученная прибыль <small>выручка минус себестоимость и налог</small></span><b>≈ ${fm(lostProfit)}</b></div>
+      <div class="hint">Сравнивайте списания с недополученной <b>прибылью</b>, а не с выручкой. ${lost > 0 || lp.waste > 0 ? worse : ''}</div></div>`;
   }
 
   /* ---------- прогноз: хватит ли денег на расчёт 1-го числа ---------- */
@@ -175,7 +362,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('→ маркетинг', fm(p.marketing || 0), 'subr');
     }
     s += `</table>`;
-    if (full && p.lostBake != null) s += `<div class="kv lostrow" title="Гости, которым к вечеру не хватило выпечки. Это не расход, а недополученная выручка — в прибыль не входит."><span>Упущенные продажи (оценка)</span><span>~${fm(p.lostBake)}</span></div>`;
+    if (full && p.lostBake != null) s += `<div class="kv lostrow" title="Гости, которым к вечеру не хватило выпечки. Это не расход, а недополученная выручка — в прибыль не входит."><span>Упущенные продажи — выручка (оценка)</span><span>~${fm(p.lostBake)}</span></div>`;
     return s;
   }
 
@@ -207,27 +394,73 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.alerts = alerts;
 
   /* ---------- СВОДКА ---------- */
+  // Выручка и прибыль за 12 месяцев: выручка — столбец, прибыль — его нижняя часть (убыток — вниз от нуля), прошлый месяц — акцентом
+  function revChart12(S) {
+    const h = S.history.slice(-12);
+    if (!h.length) return `<div class="empty">График появится после первого месяца работы.</div>`;
+    const N = 12, W = 404, H = 112, top = 16, bot = 16;
+    const max = Math.max(1, ...h.map((x) => x.rev));
+    const minP = Math.min(0, ...h.map((x) => x.profit));
+    const negShare = minP < 0 ? Math.min(0.4, -minP / max) : 0;
+    const zeroY = top + (H - top - bot) / (1 + negShare);
+    const k = (zeroY - top) / max, floorY = H - bot;
+    const slot = W / N, bw = Math.min(24, slot * 0.7), off = N - h.length;
+    const li = h.length - 1;
+    let s = `<svg class="chart12" viewBox="0 0 ${W} ${H}" role="img" aria-label="Выручка и прибыль за ${nw(h.length, 'месяц', 'месяца', 'месяцев')}">`;
+    h.forEach((x, i) => {
+      const cx = (off + i) * slot + slot / 2, x0 = (cx - bw / 2).toFixed(1), cur = i === li;
+      const rh = Math.max(0, x.rev) * k, ph = x.profit >= 0 ? Math.min(rh, x.profit * k) : Math.min(floorY - zeroY, -x.profit * k);
+      s += `<g><title>${E().MONTHS[x.m]} ${x.y}: выручка ${fm(x.rev)}, ${x.profit >= 0 ? 'прибыль' : 'убыток'} ${fm(Math.abs(x.profit))}</title>`;
+      s += `<rect class="rv${cur ? ' cur' : ''}" x="${x0}" y="${(zeroY - rh).toFixed(1)}" width="${bw.toFixed(1)}" height="${rh.toFixed(1)}" rx="3"/>`;
+      if (ph > 0.3) s += x.profit >= 0 ? `<rect class="pf${cur ? ' cur' : ''}" x="${x0}" y="${(zeroY - ph).toFixed(1)}" width="${bw.toFixed(1)}" height="${ph.toFixed(1)}" rx="2"/>` : `<rect class="ls${cur ? ' cur' : ''}" x="${x0}" y="${zeroY.toFixed(1)}" width="${bw.toFixed(1)}" height="${ph.toFixed(1)}" rx="2"/>`;
+      if ((li - i) % 3 === 0) s += `<text x="${cx.toFixed(1)}" y="${H - 3}" text-anchor="middle"${cur ? ' class="curm"' : ''}>${MONS[x.m]}</text>`;
+      s += `</g>`;
+    });
+    if (negShare) s += `<line class="zero" x1="0" x2="${W}" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}"/>`;
+    const lx = (off + li) * slot + slot / 2 + bw / 2;
+    s += `<text class="lastv" x="${lx.toFixed(1)}" y="${(zeroY - Math.max(0, h[li].rev) * k - 5).toFixed(1)}" text-anchor="end">${fm(h[li].rev).replace(/\u00a0₽$/, '')}</text>`;
+    s += `</svg><div class="legend"><span><i class="lg-rv"></i>Выручка</span><span><i class="lg-pf"></i>Из неё прибыль</span>${minP < 0 ? '<span><i class="lg-ls"></i>Убыток</span>' : ''}</div>`;
+    return s;
+  }
+  function goalCard(S) {
+    const g = goalInfo(S), T = C().WIN_ANNUAL_REVENUE, r = g.rolling;
+    const big = r >= 1e9 ? (r / 1e9).toFixed(2).replace('.', ',') : r >= 1e6 ? (r / 1e6).toFixed(r >= 1e8 ? 0 : 1).replace('.', ',') + '\u00a0млн' : fm(r).replace(/\u00a0₽$/, '');
+    return `<div class="goalcard${S.won ? ' won' : ''}">
+      <div class="top"><span class="caps">Цель · оборот за 12 мес.</span>${g.gain != null ? `<span class="gd">${g.gain >= 0 ? '▲' : '▼'}\u00a0${fm(Math.abs(g.gain))} за месяц</span>` : ''}</div>
+      <div class="big">${big} <span>из ${fm(T).replace(/,00/, '')}</span><em>${g.pctTxt}</em></div>
+      ${goalBar(g.p)}
+      <div class="ticks" aria-hidden="true"><span style="left:20%">1</span><span style="left:50%">2,5</span><span style="left:80%">4 млрд</span></div>
+      <div class="foot"><span>${S.won ? `Взята за ${etaStr(Math.max(1, Math.round((S.wonDay || S.day) / 30.4))).replace('≈ ', '')}` : `Осталось <b class="num">${fm(g.left)}</b>`}</span><span>${g.etaLong}</span></div></div>`;
+  }
   function dash(S, ui) {
     const E_ = E();
     if (S.phase === 'setup_prod' || S.phase === 'setup_store') return setupPanel(S, ui);
-    const last = S.history[S.history.length - 1];
-    const rolling = E_.rolling12(S);
-    const open = S.stores.filter((s) => s.status !== 'opening').length;
-    let happy = 0, mid = 0, sad = 0;
-    for (const st of S.stores) for (const e of st.staff) { const k = BK.moodKind(e.mood); if (k === 'happy') happy++; else if (k === 'mid') mid++; else sad++; }
-    let s = `<div class="sec"><div class="kpis">
-      <div class="kpi wide"><span class="k">Оборот за 12 месяцев — цель ${fm(C().WIN_ANNUAL_REVENUE)}</span><span class="v">${fm(rolling)} <small class="hint">(${pct(rolling / C().WIN_ANNUAL_REVENUE, 1)})</small></span>${meter(rolling / C().WIN_ANNUAL_REVENUE, 'ok')}</div>
-      <div class="kpi"><span class="k">Выручка за месяц</span><span class="v">${last ? fm(last.rev) : '—'}</span><span class="d">с 1-го числа: ${fm(S.month.rev)}</span></div>
-      <div class="kpi"><span class="k">Прибыль за месяц</span><span class="v ${last && last.profit < 0 ? 'negc' : ''}">${last ? fm(last.profit) : '—'}</span><span class="d">${last && last.rev ? 'маржа ' + pct(last.profit / last.rev) : '&nbsp;'}</span></div>
-      <div class="kpi"><span class="k">Точки</span><span class="v">${open}${S.stores.length > open ? ` <small class="hint">+${S.stores.length - open} скоро</small>` : ''}</span><span class="d">${nw(S.productions.length, 'цех', 'цеха', 'цехов')}</span></div>
-      <div class="kpi"><span class="k">Команда</span><span class="v">${E_.allStaff(S) + E_.bakersTotal(S)}</span><span class="d faces" title="Настроение персонала точек">${BK.faceIcon('happy')}${happy} ${BK.faceIcon('mid')}${mid} ${BK.faceIcon('sad')}${sad}<span>· пекарей ${E_.bakersTotal(S)}</span></span></div>
-      ${(() => { const nr = E_.networkRating(S); const lp = last && last.pnl; return `<div class="kpi"><span class="k">Рейтинг сети на картах</span><span class="v">${nr != null ? `${rstars(nr)} ${r1(nr)}` : '—'}</span><span class="d">среднее по точкам</span></div>
-      <div class="kpi"><span class="k">Списано за месяц</span><span class="v">${lp && lp.waste != null ? fm(lp.waste) : '—'}</span><span class="d">${lp && lp.waste != null && last.rev ? pct(lp.waste / last.rev, 1) + ' выручки · вкладка «Цех»' : 'выпечка и списания — во вкладке «Цех»'}</span></div>`; })()}
-    </div></div>`;
-    const al = alerts(S);
-    if (al.length) s += `<div class="sec"><h3>Требует внимания</h3>${al.map((a) => `<div class="alert ${a.cls}" data-act="${a.act}" data-arg="${a.arg || ''}"><div><div class="a-t">${a.t}</div><div>${a.d}</div></div></div>`).join('')}</div>`;
+    const h = S.history, last = h[h.length - 1], prev = h[h.length - 2];
+    const open = S.stores.filter((s) => s.status !== 'opening').length, soon = S.stores.length - open;
+    const mc = moodCounts(S);
+    const to = prev ? 'к ' + MON3[prev.m] : '';
+    const revs = h.slice(-12).map((x) => x.rev), profs = h.slice(-12).map((x) => x.profit);
+    let s = goalCard(S);
+    s += `<div class="dkpis">
+      <div class="dkpi"><div class="lab">${last ? 'Выручка за ' + E_.MONTHS[last.m] : 'Выручка с 1-го числа'}</div><div class="v">${fm(last ? last.rev : S.month.rev)}</div>
+        <div class="row2">${last && prev ? delta(last.rev, prev.rev, to) : `<span class="delta muted">${last ? 'первый месяц' : 'идёт первый месяц'}</span>`}${spark(revs, 64, 20)}</div>
+        ${last ? `<div class="sub">с 1-го числа: <span class="num">${fm(S.month.rev)}</span></div>` : ''}</div>
+      <div class="dkpi"><div class="lab">Прибыль${last && last.rev ? ' · маржа ' + pctS(last.profit / last.rev, true) : ''}</div><div class="v${last && last.profit < 0 ? ' negc' : ''}">${last ? fm(last.profit) : '—'}</div>
+        <div class="row2">${last && prev ? delta(last.profit, prev.profit, to) : `<span class="delta muted">${last ? 'первый месяц' : 'после 1-го числа'}</span>`}${spark(profs, 64, 20)}</div>
+        ${last ? `<div class="sub">за год: <span class="num">${fm(h.slice(-12).reduce((a, x) => a + x.profit, 0))}</span></div>` : ''}</div>
+    </div>`;
+    s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
+    s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
+    const A = attention(S), items = A.items, MAX = 6;
+    const shown = ui.attAll ? items : items.slice(0, MAX);
+    s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
+      ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
     s += holidaysBlock(S);
-    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
+    const nr = E_.networkRating(S), lp = last && last.pnl;
+    s += `<div class="dkpis mini">
+      <div class="dkpi"><div class="lab">Рейтинг сети на картах</div><div class="v">${nr != null ? `${rstars(nr)} ${r1(nr)}` : '—'}</div><div class="sub">среднее по точкам</div></div>
+      <div class="dkpi click" data-act="tab" data-arg="prod"><div class="lab">Списано за месяц</div><div class="v">${lp && lp.waste != null ? fm(lp.waste) : '—'}</div><div class="sub">${lp && lp.waste != null && last.rev ? pctS(lp.waste / last.rev) + ' выручки · «Цех» →' : 'выпечка и списания — «Цех» →'}</div></div>
+    </div>`;
     s += `<div class="sec"><h3>Отчёт за прошлый месяц${last ? ` <small>${E_.MONTHS[last.m]} ${last.y}</small>` : ''}</h3>${pnlTable(last && last.pnl, true)}</div>`;
     return s;
   }
@@ -530,6 +763,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div></div>`;
     const lastM = S.history[S.history.length - 1];
     s += `<div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
+    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
       ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
@@ -566,6 +800,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Panels = { dash, stores, market, production, menu, team, finance, journal, offerCard, prodOfferCard };
-  BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw };
+  BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw, pctS, delta, spark, goalInfo, goalBar, moodCounts, MONL, MON3 };
   BK.UIH.rating = { ratingInfo, rstars, r1 };
 })();

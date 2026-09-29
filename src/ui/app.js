@@ -71,7 +71,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     document.body.insertAdjacentHTML('afterbegin', `
 <div id="app">
   <header class="hud">
-    <div class="brand">${LOGO}<div><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта Уфы</div></div></div>
+    <div class="brand">${LOGO}<div class="brand-tx"><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта Уфы</div></div></div>
     <div class="clock"><span class="date" id="hud-date"></span>
       <div class="speed" role="group" aria-label="Скорость времени">
         <button data-speed="0" aria-label="Пауза" title="Пауза (пробел)">${ICON.pause}</button>
@@ -80,10 +80,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <button data-speed="10" aria-label="Скорость 10" title="10 дней в секунду">${ICON.p10}</button>
       </div></div>
     <div class="stats">
-      <div class="stat" title="Деньги на расчётном счёте: из них платите аренду, зарплаты и покупки"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
-      <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
-      <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
-      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот<span class="long"> 12 мес / 5 млрд</span></span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <div class="stat s-cash" title="Деньги на расчётном счёте: из них платите аренду, зарплаты и покупки. Изменение — к концу прошлого месяца"><span class="k">Счёт</span><div class="vr"><span class="v" id="hud-cash"></span><span class="spk" id="hud-cash-sp"></span></div><span class="dl" id="hud-cash-d"></span></div>
+      <div class="stat s-rev" title="Выручка сети за прошлый полный месяц и изменение к позапрошлому"><span class="k" id="hud-rev-k">Выручка</span><div class="vr"><span class="v" id="hud-rev"></span><span class="spk" id="hud-rev-sp"></span></div><span class="dl" id="hud-rev-d"></span></div>
+      <div class="stat s-res" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв и приносит проценты"><span class="k">Резерв</span><div class="vr"><span class="v" id="hud-res"></span></div><span class="dl muted" id="hud-res-d"></span></div>
+      <div class="stat s-st"><span class="k">Точки</span><div class="vr"><span class="v" id="hud-stores"></span><span class="moodbar" id="hud-mood"></span></div><span class="dl muted" id="hud-st-d"></span></div>
+      <span class="vsep" aria-hidden="true"></span>
+      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><div class="gr"><span class="k" id="hud-goal-k"><span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span></span><span class="gp" id="hud-goal-p"></span></div><div class="gr"><span class="v" id="hud-goal"></span><span class="dl muted" id="hud-goal-eta"></span></div><div id="hud-goalbar"></div></div>
     </div>
     <div class="hudbtns">
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
@@ -221,17 +223,35 @@ var BK = globalThis.BK || (globalThis.BK = {});
   let hudCache = '';
   function renderHud() {
     if (!S) return;
-    const rolling = E.rolling12(S);
-    const key = [S.day, Math.round(S.cash / 1000), Math.round(S.reserve / 1000), S.stores.length, ui.speed, S.company, Math.round(rolling / 1e6), S.won].join('|');
+    const key = [S.day, Math.round(S.cash / 1000), Math.round(S.reserve / 1000), S.stores.length, ui.speed, S.company, S.history.length, S.won].join('|');
     if (key === hudCache) return; hudCache = key;
+    const g = H.goalInfo(S), hist = S.history, last = hist[hist.length - 1], prev = hist[hist.length - 2];
+    const set = (id, html) => { const el = document.getElementById(id); if (el.innerHTML !== html) el.innerHTML = html; };
     $('#hud-name').textContent = S.company;
-    $('#hud-date').textContent = E.fmtDate(S.day);
+    const t = E.dateOf(S.day);
+    set('hud-date', `<span class="long">${E.fmtDate(S.day)}</span><span class="short">${t.d} ${E.MONTHS_G[t.m].slice(0, 3)} ${t.y}</span>`);
+    // счёт: изменение — к концу прошлого месяца (закрытие к закрытию), линия — остатки на конец месяцев + сейчас
     const cash = $('#hud-cash'); cash.textContent = H.fm(S.cash); cash.classList.toggle('neg', S.cash < 0);
+    set('hud-cash-sp', hist.length ? H.spark(hist.slice(-11).map((x) => x.cash).concat([S.cash]), 40, 18) : '');
+    set('hud-cash-d', last && prev ? H.delta(last.cash, prev.cash, 'за мес.') : '');
+    // выручка прошлого полного месяца
+    set('hud-rev-k', last ? `Выручка, ${H.MONL[last.m]}` : 'Выручка с 1-го');
+    set('hud-rev', H.fm(last ? last.rev : S.month.rev));
+    set('hud-rev-sp', hist.length > 1 ? H.spark(hist.slice(-12).map((x) => x.rev), 40, 18) : '');
+    set('hud-rev-d', last && prev ? H.delta(last.rev, prev.rev, 'к ' + H.MON3[prev.m]) : '<span class="delta muted">первый месяц</span>');
     $('#hud-res').textContent = H.fm(S.reserve);
-    const open = S.stores.filter((s) => s.status !== 'opening').length;
-    $('#hud-stores').textContent = open + (S.stores.length > open ? '+' + (S.stores.length - open) : '');
-    $('#hud-goal').innerHTML = H.fm(rolling) + (S.won ? '<span class="long"> · цель взята</span>' : '');
-    $('#hud-goalbar').style.width = Math.min(100, rolling / C.WIN_ANNUAL_REVENUE * 100).toFixed(1) + '%';
+    set('hud-res-d', `${H.pctS(Math.max(0, S.macro.keyRate - C.RESERVE_SPREAD))} годовых`);
+    const open = S.stores.filter((s) => s.status !== 'opening').length, soon = S.stores.length - open;
+    set('hud-stores', `${open}${soon ? `<small class="soon" title="открываются">+${soon}</small>` : ''}`);
+    const mc = H.moodCounts(S), pc = (n) => (mc.total ? n / mc.total * 100 : 0).toFixed(1);
+    set('hud-mood', mc.total ? `<i style="width:${pc(mc.happy)}%;background:var(--face-happy)"></i><i style="width:${pc(mc.mid)}%;background:var(--face-mid)"></i><i style="width:${pc(mc.sad)}%;background:var(--face-sad)"></i>` : '');
+    $('#hud-mood').title = mc.total ? `Настроение команды: довольны ${mc.happy}, терпят ${mc.mid}, недовольны ${mc.sad}` : '';
+    set('hud-st-d', mc.total ? `${Math.round(mc.happy / mc.total * 100)}\u00a0% довольны` : 'команды пока нет');
+    // цель
+    set('hud-goal-p', S.won ? 'взята' : g.pctTxt);
+    $('#hud-goal').textContent = H.fm(g.rolling);
+    set('hud-goal-eta', S.won ? '' : g.etaShort);
+    set('hud-goalbar', H.goalBar(g.p));
     document.querySelectorAll('[data-speed]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.speed === ui.speed)));
     const ban = $('#setupbanner');
     if (S.phase === 'setup_prod') { ban.hidden = false; ban.innerHTML = '<b>Шаг 1 · Производство</b>Выберите помещение под цех — на карте или в списке справа'; }
@@ -240,19 +260,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- панель ---------------- */
+  // бейджи вкладок: число проблем (штат — «Команда», убыточные/перегруженные точки — «Точки»), точка — «есть что решить»
   function tabDots() {
-    const d = {};
-    if (!S) return d;
-    const al = BK.alerts(S);
-    if (al.some((a) => a.cls === 'bad')) d.dash = 1;
-    if (S.chef.pending) d.menu = 1;
-    if ((S.cache && S.cache.capUse > 1)) d.prod = 1;
-    if (S.prodOffers.length && S.productions.length) d.market = 1;
-    return d;
+    if (!S) return {};
+    const c = BK.attention(S).counts;
+    return { dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0 };
   }
   function renderTabs() {
     const dots = tabDots();
-    $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${dots[k] ? '<span class="dot"></span>' : ''}</button>`).join('');
+    const mark = (k) => { const v = dots[k]; if (!v || ui.tab === k) return ''; return v === 'dot' ? '<span class="dot" aria-hidden="true"></span>' : `<em class="badge" aria-label="проблем: ${v}">${v}</em>`; };
+    const html = TABS.map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
+    if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; }
   }
   function renderPanel() {
     if (!S) return;
@@ -389,6 +407,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: () => { const st = loadSave(); if (st) continueGame(st); },
     closeModal: () => closeModal(),
+    attAll: () => { ui.attAll = !ui.attAll; refresh(); },
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
@@ -523,7 +542,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Точек</span><span class="v">${S.stores.length}</span></div>
       <div class="kpi"><span class="k">Команда</span><span class="v">${staffN + E.bakersTotal(S)}</span></div>
       <div class="kpi"><span class="k">Резерв</span><span class="v">${H.fm(S.reserve)}</span></div>
-      <div class="kpi wide"><span class="k">До цели (оборот 12 мес)</span><span class="v">${H.pct(E.rolling12(S) / C.WIN_ANNUAL_REVENUE, 1)}</span>${H.meter(E.rolling12(S) / C.WIN_ANNUAL_REVENUE, 'ok')}</div></div>
+      <div class="kpi wide"><span class="k">До цели (оборот 12 мес)</span><span class="v">${H.pct(E.rolling12(S) / C.WIN_ANNUAL_REVENUE, 1)}</span>${H.goalBar(E.rolling12(S) / C.WIN_ANNUAL_REVENUE)}</div></div>
       <p class="hint" style="margin:0">Цены, аренда и рыночные зарплаты проиндексированы на инфляцию. Проверьте зарплаты во вкладке «Команда».${S.chef.pending ? ' Шеф-пекарь ждёт решения по новинкам.' : ''}</p>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Продолжить</button></div>`, { closable: true });
   }
@@ -574,6 +593,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function openSettings() {
     openModal(`<div class="modal-h"><span class="eyebrow">Меню игры</span><h2>${H.esc(S.company)}</h2></div><div class="modal-b">
+      <div class="row sp settings-top"><div class="field"><span class="flabel">Тема оформления</span>${themeSeg()}</div><button class="btn" data-act="help">Как играть</button></div>
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
