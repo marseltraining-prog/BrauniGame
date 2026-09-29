@@ -349,8 +349,10 @@ async function mapTests(b, vp, sv) {
     if (u.tab !== 'stores' || u.id !== target.id) issues.push(`[${tag}] клик по точке не открыл её карточку`);
     if (target.d < (mobile ? 16 : 14)) issues.push(`[${tag}] маркер точки мелкий: ${target.d}px`);
   }
-  // предложение аренды
-  const off = await p.evaluate(() => { for (const el of document.querySelectorAll('#map .m-offer')) { const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; const t = document.elementFromPoint(x, y); if (t && t.closest('[data-kind]') === el) return { id: el.dataset.id, x, y }; } return null; });
+  // предложение аренды (на телефоне клик по точке прокручивает страницу к её карточке — сначала вернуться наверх, потом искать координаты)
+  await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(50);
+  // берём «+», не задетый соседними маркерами целиком (центр и края): палец с поправкой касания иначе попадает в соседний кластер
+  const off = await p.evaluate(() => { for (const el of document.querySelectorAll('#map .m-offer')) { const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; const pts = [[x, y], [r.left + 1, y], [r.right - 1, y], [x, r.top + 1], [x, r.bottom - 1]]; if (pts.every(([a, b]) => { const t = document.elementFromPoint(a, b); return t && t.closest('[data-kind]') === el; })) return { id: el.dataset.id, x, y }; } return null; });
   if (off) {
     await p.evaluate(() => window.scrollTo(0, 0)); await tap(off);
     const u = await p.evaluate(() => ({ tab: BK.App.ui.tab, sel: BK.App.ui.sel, card: !!document.querySelector('.card.sel') }));

@@ -94,14 +94,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   <div class="main">
     <div class="mapwrap">
       <svg class="map" id="map" role="img" aria-label="Карта Уфы с точками сети"></svg>
-      <div class="mapctl"><button data-act="zoomIn" aria-label="Приблизить">+</button><button data-act="zoomOut" aria-label="Отдалить">−</button><button data-act="zoomReset" aria-label="Весь город" style="font-size:13px">⌂</button></div>
-      <div class="maplegend">
-        <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="var(--surface)" stroke="var(--crust)" stroke-width="2"/></svg>Точка</span>
-        <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--river)" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Свободное помещение</span>
-        <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--ink)"/></svg>Производство</span>
-        <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--crust)"/></svg>Офис</span>
-        <span>${BK.faceIcon('happy')}${BK.faceIcon('mid')}${BK.faceIcon('sad')}Настроение команды<i class="crowd-note">(издалека — только недовольные)</i></span>
-      </div>
+      <div class="mapctl"><button data-act="zoomIn" aria-label="Приблизить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button data-act="zoomOut" aria-label="Отдалить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button data-act="zoomReset" aria-label="Весь город"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg></button></div>
       <div class="maptip" hidden></div>
       <div class="setupbanner" id="setupbanner" hidden></div>
     </div>

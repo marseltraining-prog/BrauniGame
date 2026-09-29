@@ -74,11 +74,14 @@ async function layoutCheck(p, label, opts = {}) {
         if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') continue;
         const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) continue;
         const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+        // содержимое горизонтально прокручиваемой строки (чипы слоёв карты на телефоне) законно уходит за край — до него докручивают;
+        // строка = прокрутка по X при неизменной высоте, чтобы не освобождать от проверки обычные прокручиваемые панели
+        const hs = (() => { for (let e = el.parentElement; e; e = e.parentElement) { const ox = getComputedStyle(e).overflowX; if ((ox === 'auto' || ox === 'scroll') && e.scrollWidth > e.clientWidth + 1 && e.scrollHeight <= e.clientHeight + 1) { const er = e.getBoundingClientRect(); return er.left >= -1.5 && er.right <= W + 1.5; } } return false; })();
         // выход за пределы окна по горизонтали
-        if (r.right > W + 1.5 || r.left < -1.5) out.push(`ЗА КРАЕМ ЭКРАНА ${desc(el)} [${Math.round(r.left)}…${Math.round(r.right)}]`);
+        if (!hs && (r.right > W + 1.5 || r.left < -1.5)) out.push(`ЗА КРАЕМ ЭКРАНА ${desc(el)} [${Math.round(r.left)}…${Math.round(r.right)}]`);
         // выход за пределы контейнера с обрезкой
         const clip = clipOf(el);
-        if (clip && !el.closest('.map')) { const cr = clip.getBoundingClientRect(); if (r.right > cr.right + 1.5 && cs.position !== 'fixed' && cs.position !== 'absolute') out.push(`ОБРЕЗАН КОНТЕЙНЕРОМ ${desc(el)} (${desc(clip).slice(0, 30)}) на ${Math.round(r.right - cr.right)}px`); }
+        if (clip && !hs && !el.closest('.map')) { const cr = clip.getBoundingClientRect(); if (r.right > cr.right + 1.5 && cs.position !== 'fixed' && cs.position !== 'absolute') out.push(`ОБРЕЗАН КОНТЕЙНЕРОМ ${desc(el)} (${desc(clip).slice(0, 30)}) на ${Math.round(r.right - cr.right)}px`); }
         // обрезанный текст (ellipsis / overflow hidden)
         if ((cs.textOverflow === 'ellipsis' || cs.overflowX === 'hidden') && el.scrollWidth > el.clientWidth + 1 && el.childElementCount === 0) out.push(`ТЕКСТ ОБРЕЗАН ${desc(el)} (${el.scrollWidth}>${el.clientWidth})`);
         // только видимые элементы в окне
