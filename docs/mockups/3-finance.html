@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Финансы — макет</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: 340px minmax(0,1fr); min-height: 0; }
+  .left { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--surface); min-height: 0; }
+  .mapwrap { position: relative; overflow: hidden; background: var(--map-land); height: 360px; flex: none; border-bottom: 1px solid var(--line); }
+  .mapwrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .accts { padding: 14px 18px; display: flex; flex-direction: column; }
+  .acc { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .acc:first-of-type { border-top: 0; padding-top: 4px; }
+  .acc .k { font-size: 12.5px; color: var(--ink-2); }
+  .acc .v { font-family: var(--f-mono); font-size: 15px; font-weight: 600; text-align: right; }
+  .acc .s { font-size: 11.5px; color: var(--ink-3); }
+  .loan { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; }
+  .loan .lt, .loan .lt2, .loan .lsc { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+  .loan .lt b { font-size: 14px; color: var(--ink); }
+  .loan .ltrack { position: relative; height: 4px; border-radius: 2px; background: var(--surface-3); margin: 12px 0 6px; }
+  .loan .ltrack i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--ink-2); }
+  .loan .ltrack span { position: absolute; top: -6px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink-2); }
+  .loan .lsc { font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); margin-bottom: 8px; }
+  .loan .lt2 b { color: var(--ink); font-size: 12.5px; }
+  .acc .a { font-size: 12px; color: var(--crust-t); font-weight: 600; text-align: right; }
+  .maptag { position: absolute; left: 12px; top: 12px; display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: var(--ink); color: var(--surface); font-size: 12.5px; font-weight: 500; box-shadow: var(--shadow); }
+  .maptag svg { width: 14px; height: 14px; }
+  .maplegend { position: absolute; right: 12px; bottom: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 11px; color: var(--ink-2); display: flex; gap: 10px; box-shadow: var(--shadow); }
+  .maplegend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 2px solid; margin-right: 4px; vertical-align: -1px; }
+  .tip { position: absolute; background: var(--ink); color: var(--surface); border-radius: 8px; padding: 8px 11px; font-size: 12px; box-shadow: var(--shadow-lg); white-space: nowrap; }
+  .tip b { display: block; font-weight: 600; }
+  .tip .n { font-family: var(--f-mono); color: #f5a08f; }
+  .tip:after { content: ''; position: absolute; left: 12px; top: -5px; width: 10px; height: 10px; background: var(--ink); transform: rotate(45deg); }
+  .content { background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+  .content .tabs { padding: 0 20px; }
+  .wrap { padding: 14px 22px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  .head { display: flex; align-items: center; gap: 14px; }
+  .head h1 { font-family: var(--f-display); font-size: 19px; font-weight: 600; letter-spacing: -.005em; }
+  .head .muted { font-size: 13px; }
+  .seg { display: flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; margin-left: auto; }
+  .seg span { padding: 0 11px; height: 26px; display: grid; place-items: center; font-size: 12.5px; color: var(--ink-2); border-radius: 6px; font-weight: 500; }
+  .seg span.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); font-weight: 600; }
+  .row1 { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); gap: 14px; }
+  .card { padding: 14px 16px; }
+  .card .sec-h { margin-bottom: 6px; }
+  .wf text { font-family: var(--f-mono); }
+  .dist .stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; margin: 4px 0 12px; }
+  .dist .stack i { display: block; height: 100%; }
+  .sl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+  .sl:first-of-type { border-top: 0; }
+  .sl .nm { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .sl .nm i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .sl .rub { font-family: var(--f-mono); font-size: 13px; font-weight: 600; text-align: right; }
+  .sl .rub small { font-weight: 400; color: var(--ink-3); font-size: 11px; }
+  .sl .track { position: relative; height: 18px; display: flex; align-items: center; }
+  .sl .track:before { content: ''; position: absolute; left: 0; right: 0; height: 4px; border-radius: 2px; background: var(--surface-3); }
+  .sl .track .fill { position: absolute; left: 0; height: 4px; border-radius: 2px; }
+  .sl .track .knob { position: absolute; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--surface); border: 2px solid; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+  .sl .pct { font-family: var(--f-mono); font-size: 12px; font-weight: 600; width: 44px; text-align: right; }
+  .sl .hint { grid-column: 1 / -1; font-size: 11.5px; color: var(--ink-3); }
+  .table { padding: 0; overflow: hidden; }
+  .table .top { display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; }
+  .table .top h3 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); margin-right: 8px; }
+  .fchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; font-weight: 500; border: 1px solid var(--line); color: var(--ink-2); }
+  .fchip b { font-family: var(--f-mono); font-size: 11px; }
+  .fchip.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .fchip.bad b { color: var(--bad-t); }
+  .search { margin-left: auto; display: flex; align-items: center; gap: 6px; height: 28px; width: 190px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); color: var(--ink-3); font-size: 12px; }
+  .search svg { width: 14px; height: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--ink-3); padding: 7px 10px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+  th.r, td.r { text-align: right; }
+  th.sorted { color: var(--ink); font-weight: 600; }
+  th .ar { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; color: var(--crust-t); }
+  td { padding: 0 10px; height: 35px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td:first-child, th:first-child { padding-left: 16px; } td:last-child, th:last-child { padding-right: 16px; }
+  td .num { font-size: 12.5px; }
+  .no { font-family: var(--f-mono); font-weight: 700; font-size: 12px; display: inline-grid; place-items: center; min-width: 30px; height: 22px; border-radius: 11px; border: 2px solid; }
+  .addr b { font-weight: 600; } .addr span { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+  .rt { display: inline-flex; align-items: center; gap: 4px; font-family: var(--f-mono); font-size: 12.5px; }
+  .rt svg { width: 13px; height: 13px; color: var(--crust-2); }
+  .cell-bar { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .cell-bar .b { width: 84px; height: 6px; background: var(--surface-3); border-radius: 3px; position: relative; overflow: hidden; }
+  .cell-bar .b i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+  .cell-bar .num { width: 66px; text-align: right; }
+  .staff { display: inline-flex; align-items: center; gap: 8px; }
+  .dots { display: inline-flex; gap: 2px; }
+  .dots i { width: 7px; height: 7px; border-radius: 2px; background: var(--ink-3); opacity: .7; }
+  .dots i.miss { background: transparent; border: 1.3px solid var(--bad); opacity: 1; }
+  tr.hl td { background: color-mix(in srgb, var(--bad) 7%, var(--surface)); }
+  tr.hl td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+  .act { color: var(--crust-t); font-size: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <div class="left"><div class="mapwrap"><svg id="map"></svg><div class="maptag" id="mt"></div>
+      <div class="maplegend"><span><i style="border-color:var(--good)"></i>маржа ≥ 15 %</span><span><i style="border-color:var(--warn)"></i>ниже</span><span><i style="border-color:var(--bad)"></i>убыток</span></div>
+      <div class="tip" id="tip"><b>№41 · ул. Левитана, 117</b>Дёма · прибыль <span class="n">−1,2 млн ₽</span></div>
+    </div>
+    <div class="accts"><div class="sec-h"><h3>Счета</h3><span class="muted">на 14 марта</span></div>
+      <div class="acc"><span class="k">Расчётный счёт</span><span class="v">2,84 млрд ₽</span><span class="s up">▲ 71,7 млн за февраль</span><span></span></div>
+      <div class="acc"><span class="k">Резервный фонд</span><span class="v">412 млн ₽</span><span class="s">доход 7,8 % годовых · ≈ 2,7 млн/мес</span><span class="a">Вывести</span></div>
+      <div class="acc"><span class="k">Кредит</span><span class="v">0 ₽</span><span class="s">лимит 1,68 млрд · ставка 14,8 %</span><span></span></div>
+      <div class="loan"><div class="lt"><span>Взять</span><b class="num">120 млн ₽</b></div>
+        <div class="ltrack"><i style="width:7.1%"></i><span style="left:7.1%"></span></div>
+        <div class="lsc"><span>0</span><span>1,68 млрд</span></div>
+        <div class="lt2"><span>Проценты ≈ <b class="num">1,48 млн ₽/мес</b></span><span class="btn primary" style="height:28px">Взять</span></div></div>
+      <div class="acc"><span class="k">Налоги</span><span class="v">ОСНО</span><span class="s">НДС ≈ 5 % выручки + 25 % прибыли</span><span></span></div>
+    </div></div>
+    <div class="content">
+      <div id="tabs"></div>
+      <div class="wrap">
+        <div class="head"><h1>Финансы</h1><span class="muted">Февраль 2039 · расчёт прошёл 1 марта</span>
+          <div class="seg"><span class="on">Месяц</span><span>Квартал</span><span>Год</span></div></div>
+        <div class="row1">
+          <div class="card">
+            <div class="sec-h"><h3>Куда ушла выручка</h3><span class="muted">млн ₽ · маржа 23 %</span></div>
+            <div id="wf"></div>
+          </div>
+          <div class="card dist">
+            <div class="sec-h"><h3>Распределение прибыли</h3><span class="muted">88,4 млн ₽</span></div>
+            <div class="stack" id="stack"></div>
+            <div id="sliders"></div>
+          </div>
+        </div>
+        <div class="card table">
+          <div class="top"><h3>Точки</h3>
+            <span class="fchip on">Все <b>44</b></span><span class="fchip bad">Убыточные <b>1</b></span><span class="fchip bad">Нехватка штата <b>3</b></span><span class="fchip">Центр <b>8</b></span>
+            <span class="search" id="srch"></span></div>
+          <table>
+            <thead><tr><th>№</th><th>Адрес · район</th><th>Рейтинг</th><th class="r">Выручка, фев.</th><th class="r sorted">Прибыль <span style="color:var(--crust-t)">▲</span> <span style="font-weight:400;color:var(--ink-3)">от худших</span></th><th>Настроение</th><th>Штат</th><th class="r"></th></tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script src="map.js"></script>
+<script src="ui.js"></script>
+<script>
+  document.getElementById('hud').innerHTML = HUD();
+  document.getElementById('tabs').innerHTML = TABS('Финансы', { 'Команда': 3 });
+  document.getElementById('mt').innerHTML = 'Слой: прибыль';
+  document.getElementById('srch').innerHTML = IC.search + 'Номер, улица…';
+  const svg = document.getElementById('map');
+  MK.render(svg, { vb: [20, 330, 740, 782], k: 1.6, noCluster: ['dema'], lk: 1.6, routes: false, profitStroke: true, sel: 41, alerts: false, par: 'xMidYMid meet', labelDy: { center: -52, zaton: -56, dema: -62, nizh: -40, inors: -58, grove: -52, glumilino: -48 }, labelDx: { zaton: -30, dema: 20 } });
+  // подсказка над №41
+  const s41 = MK.STORES.find((s) => s.n === 41); const p = svg.createSVGPoint(); p.x = s41.x; p.y = s41.y;
+  const q = p.matrixTransform(svg.getScreenCTM()); const box = svg.getBoundingClientRect();
+  const tip = document.getElementById('tip'); tip.style.left = (q.x - box.left - 16) + 'px'; tip.style.top = (q.y - box.top + 20) + 'px';
+  const fmt = (v) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1).replace('.', ',');
+
+  // ---------- Водопад ----------
+  (function () {
+    const steps = [
+      ['Выручка', 381.5, 'total'], ['Фудкост', -95.4], ['Аренда', -30.8], ['ФОТ', -101.2], ['Доставка', -14.2], ['Налоги', -42.9], ['Списания', -8.6],
+      ['Прибыль', 88.4, 'profit'], ['Резерв', -8.8, 'd', 'var(--river)'], ['Премии', -4.4, 'd', 'var(--good)'], ['Маркетинг', -3.5, 'd', 'var(--rye)'], ['На счёт', -71.7, 'd', 'var(--crust)'],
+    ];
+    const W = 620, H = 236, top = 22, bot = 40, n = steps.length, gap = 12, bw = (W - 20 - gap * (n - 1)) / n;
+    const Y = (v) => top + (1 - v / 400) * (H - top - bot);
+    let s = `<svg class="wf" width="100%" viewBox="0 0 ${W} ${H}" style="display:block">`;
+    [0, 100, 200, 300, 400].forEach((g) => { s += `<line x1="0" x2="${W}" y1="${Y(g)}" y2="${Y(g)}" stroke="var(--line)" stroke-width="1" ${g ? 'stroke-dasharray="2 3"' : ''}/>`; if (g) s += `<text x="${W}" y="${Y(g) - 4}" font-size="9" fill="var(--ink-3)" text-anchor="end">${g}</text>`; });
+    let run = 0; const xOf = (i) => 10 + i * (bw + gap) + (i >= 8 ? 8 : 0);
+    steps.forEach(([name, v, kind, col], i) => {
+      let a, b, fill;
+      if (kind === 'total') { a = 0; b = v; run = v; fill = 'var(--ink-2)'; }
+      else if (kind === 'profit') { a = 0; b = v; run = v; fill = 'var(--good)'; }
+      else { a = run + v; b = run; run = a; fill = col || 'var(--bad)'; }
+      const x = xOf(i), y1 = Y(b), y2 = Y(a);
+      s += `<rect x="${x}" y="${y1}" width="${bw}" height="${Math.max(2, y2 - y1)}" rx="2.5" fill="${fill}" opacity="${kind === 'd' ? .9 : kind ? 1 : .85}"/>`;
+      if (i < n - 1) s += `<line x1="${x + bw}" x2="${xOf(i + 1)}" y1="${Y(run)}" y2="${Y(run)}" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 2"/>`;
+      const lab = kind === 'total' || kind === 'profit' ? fmt(v) : fmt(v);
+      s += `<text x="${x + bw / 2}" y="${y1 - 5}" font-size="10" font-weight="600" fill="${kind === 'profit' ? 'var(--good-t)' : kind === 'total' ? 'var(--ink)' : kind === 'd' ? 'var(--ink-2)' : 'var(--bad-t)'}" text-anchor="middle">${lab}</text>`;
+      s += `<text x="${x + bw / 2}" y="${H - bot + 15}" font-size="9.5" fill="var(--ink-2)" text-anchor="middle" style="font-family:var(--f-body);font-weight:${kind === 'total' || kind === 'profit' ? 600 : 400}">${name}</text>`;
+    });
+    const xd = xOf(8) - 10;
+    s += `<line x1="${xd}" x2="${xd}" y1="${top - 8}" y2="${H - bot + 24}" stroke="var(--line-2)" stroke-dasharray="3 3"/>`;
+    s += `<text x="${xd + 6}" y="${H - 4}" font-size="9" fill="var(--ink-3)" style="font-family:var(--f-display);letter-spacing:.12em">РАСПРЕДЕЛЕНИЕ</text>`;
+    s += `<text x="10" y="${H - 4}" font-size="9" fill="var(--ink-3)" style="font-family:var(--f-display);letter-spacing:.12em">ОТ ВЫРУЧКИ К ПРИБЫЛИ</text>`;
+    document.getElementById('wf').innerHTML = s + '</svg>';
+  })();
+
+  // ---------- Ползунки ----------
+  const D = [['Резерв', 10, 8.8, 'var(--river)', 'Сейчас 412 млн ₽, закроет кассовый разрыв'], ['Премии', 5, 4.4, 'var(--good)', 'Настроение +4, текучесть ниже'], ['Маркетинг', 4, 3.5, 'var(--rye)', 'Трафик в марте +7 %'], ['На счёт', 81, 71.7, 'var(--crust)', 'Остаток — на развитие']];
+  document.getElementById('stack').innerHTML = D.map((d) => `<i style="width:${d[1]}%;background:${d[3]}"></i>`).join('');
+  document.getElementById('sliders').innerHTML = D.map(([n, pct, rub, c, h], i) => i < 3
+    ? `<div class="sl"><span class="nm"><i style="background:${c}"></i>${n}</span><span class="rub">≈ ${fmt(rub)} млн ₽<small>/мес</small></span><div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 44px;gap:10px;align-items:center"><div class="track"><span class="fill" style="width:${pct * 2.5}%;background:${c}"></span><span class="knob" style="left:${pct * 2.5}%;border-color:${c}"></span></div><span class="pct">${pct} %</span></div><span class="hint">${h}</span></div>`
+    : `<div class="sl"><span class="nm"><i style="background:${c}"></i>${n} · ${pct} %</span><span class="rub">${fmt(rub)} млн ₽<small>/мес</small></span><span class="hint">${h}</span></div>`).join('');
+
+  // ---------- Таблица ----------
+  const S = MK.STORES.slice().sort((a, b) => a.profit - b.profit).slice(0, 9);
+  const maxRev = Math.max(...MK.STORES.map((s) => s.rev)), maxPr = Math.max(...MK.STORES.map((s) => s.profit));
+  const stroke = (s) => (s.profit < 0 ? 'var(--bad)' : s.profit / s.rev < 0.15 ? 'var(--warn)' : 'var(--good)');
+  const act = { 41: 'Разобрать', 27: 'Нанять 2', 31: 'Нанять 3', 12: 'Нанять 2' };
+  document.getElementById('tb').innerHTML = S.map((s) => {
+    const [have, need] = s.staff.split('/').map(Number);
+    const dots = Array.from({ length: need }, (_, i) => `<i class="${i >= have ? 'miss' : ''}"></i>`).join('');
+    const prW = Math.abs(s.profit) / maxPr * 50;
+    const prBar = s.profit < 0 ? `<i style="right:50%;width:${prW}%;background:var(--bad)"></i>` : `<i style="left:50%;width:${prW}%;background:${s.profit / s.rev < 0.15 ? 'var(--warn)' : 'var(--good)'}"></i>`;
+    const mood = { happy: 'довольны', mid: 'терпят', sad: 'недовольны' }[s.mood];
+    return `<tr class="${s.n === 41 ? 'hl' : ''}"><td><span class="no" style="border-color:${stroke(s)}">${s.n}</span></td>
+      <td class="addr"><b>${s.street}</b><span>${s.dn}</span></td>
+      <td><span class="rt">${IC.starFill}${s.rating.toFixed(1).replace('.', ',')}</span></td>
+      <td class="r"><div class="cell-bar"><span class="b"><i style="left:0;width:${s.rev / maxRev * 100}%;background:var(--ink-3);opacity:.55"></i></span><span class="num">${fmt(s.rev)} млн</span></div></td>
+      <td class="r"><div class="cell-bar"><span class="b"><i style="left:50%;width:1px;background:var(--line-2)"></i>${prBar}</span><span class="num ${s.profit < 0 ? 'down' : ''}" style="font-weight:600">${fmt(s.profit)} млн</span></div></td>
+      <td><span class="staff">${MK.faceIcon(s.mood, 16)}<span class="muted" style="font-size:12px">${mood}</span></span></td>
+      <td><span class="staff"><span class="num" style="${have < need ? 'color:var(--bad-t);font-weight:600' : ''}">${s.staff}</span><span class="dots">${dots}</span></span></td>
+      <td class="r">${act[s.n] ? `<span class="act">${act[s.n]} →</span>` : ''}</td></tr>`;
+  }).join('');
+</script>
+</body>
+</html>
