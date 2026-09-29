@@ -305,6 +305,23 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 4px 10px; font-size: 12px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+/* рейтинг точки на картах: звёзды с дробным заполнением */
+.rstars { position: relative; display: inline-block; font-size: 11px; line-height: 1; letter-spacing: 1px; color: var(--line-2); vertical-align: 0; font-family: var(--f-body); }
+.rstars::before { content: "★★★★★"; }
+.rstars::after { content: "★★★★★"; position: absolute; left: 0; top: 0; width: var(--r); overflow: hidden; white-space: nowrap; color: var(--crust-2); }
+.kpi .v .rstars { font-size: 13px; }
+.chip.rating { gap: 5px; cursor: help; }
+.chip.rating b { font-family: var(--f-mono); font-weight: 600; }
+/* выпечка и списания */
+.bake input[type=range] { width: 100%; accent-color: var(--crust); margin: 2px 0 0; }
+.bake-scale { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 11px; color: var(--ink-3); gap: 6px; }
+.bake-scale span:nth-child(2) { text-align: center; } .bake-scale span:last-child { text-align: right; }
+.wastesum { font-size: 13px; padding: 7px 10px; border-radius: 8px; background: var(--surface-2); }
+.wastesum b { font-family: var(--f-mono); font-weight: 600; }
+.flabel { font-size: 12px; color: var(--ink-2); }
+.seg.disc { align-self: flex-start; }
+.seg.disc button { min-width: 52px; padding: 6px 12px; font-size: 13px; }
+.kv.lostrow { font-size: 12px; padding-top: 2px; }
 .confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 10px; background: var(--bad-soft); border-radius: 8px; font-size: 13px; }
 .empty { padding: 18px; text-align: center; color: var(--ink-3); border: 1px dashed var(--line-2); border-radius: var(--r); font-size: 13px; }
 
@@ -399,6 +416,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .stepper button { width: 36px; height: 36px; }
   .btn.sm { min-height: 34px; }
   .seg button { min-height: 34px; }
+  .seg.disc { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-self: stretch; }
+  .seg.disc button { min-height: 40px; }
+  .bake input[type=range] { height: 40px; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
@@ -529,7 +549,7 @@ BK.CFG = {
   KM_PER_UNIT: 1 / 33,
   DELIVERY_UNITS_REF: 350,      // изделий/день, при которых доставка = база + км (больше — дороже по √)
   PROD_FC_MAX_CUT: 0.12,        // оборудование снижает фудкост не больше чем на 12%
-  FOODCOST_MULT: 1.22,          // списания, упаковка, потери сверх рецептурного фудкоста
+  FOODCOST_MULT: 1.12,          // упаковка и потери сверх рецептурного фудкоста (списания — отдельно, см. блок «Списания»; вместе при «норме» ≈ прежние 1,22)
 
   // --- меню ---
   MENU_MIN: 5, MENU_MAX: 16,
@@ -547,6 +567,38 @@ BK.CFG = {
   CASHGAP_LOYALTY: 6,           // отрицательный счёт в день расчёта = задержка зарплаты (−6 к настроению, затухает на 10% в месяц)
   MARKETING_EFF: 0.18,          // макс. прирост трафика от маркетинга
   MARKETING_HALF: 60000,        // ₽ на точку в месяц для половины эффекта
+
+  // --- рейтинг точки на картах (1–5★) ---
+  RATING_START: 4.0,            // новая точка; при 4,0★ поток гостей не меняется
+  RATING_DAYS: 45,              // рейтинг — скользящее среднее ~1,5 месяца (меняется плавно)
+  RATING_W: { train: 0.2, repair: 0.15, mood: 0.25, staff: 0.2, fresh: 0.2 }, // веса составляющих (каждая — от 1 до 5)
+  RATING_TRAIN: [3.0, 0.5],     // оценка сервиса: 3,0 при среднем уровне 1, +0,5 за уровень (уровень 5 → 5,0)
+  RATING_REPAIR: [3.4, 4.0, 4.5, 5.0], // оценка интерьера по ступени ремонта 0..3
+  RATING_MOOD_EXP: 0.8,         // оценка настроения: 1 + 4·(настроение/100)^k
+  RATING_TRAFFIC_LO: 0.10,      // ниже 4,0★: −10% новых гостей за звезду (3,0★ → −10%)
+  RATING_TRAFFIC_HI: 0.05,      // выше 4,0★: +5% за звезду (5,0★ → +5%) — небольшая прибавка поверх сервиса, ремонта и настроения
+
+  // --- списания: «Сколько печь» и вечерняя скидка ---
+  // 7 делений ползунка (−3…+3): waste — множитель остатков, lost — доля спроса, ушедшая без покупки (пустые полки вечером),
+  // fresh — оценка свежести для рейтинга. «Норма» (середина) = прежняя экономика.
+  BAKE_LEVELS: [
+    { name: 'Сильный дефицит', waste: 0.4, lost: 0.085, fresh: 2.6 },
+    { name: 'Дефицит',         waste: 0.6, lost: 0.05,  fresh: 3.5 },
+    { name: 'Чуть меньше',     waste: 0.8, lost: 0.03,  fresh: 4.3 },
+    { name: 'Норма',           waste: 1.0, lost: 0.02,  fresh: 4.6 },
+    { name: 'Чуть больше',     waste: 1.3, lost: 0.013, fresh: 4.5 },
+    { name: 'Перерасход',      waste: 1.7, lost: 0.008, fresh: 4.1 },
+    { name: 'Сильный перерасход', waste: 2.2, lost: 0.005, fresh: 3.7 },
+  ],
+  WASTE_BASE: 0.10,             // при «норме» не продаётся ~10% выпечки (по себестоимости — это и есть списания)
+  WASTE_MENU_REF: 10, WASTE_MENU_K: 0.03, // каждая позиция меню сверх 10 → +3% списаний, меньше 10 → −3%
+  WASTE_ERP_CUT: 0.3,           // ERP-планирование в цехе — остатков на 30% меньше
+  EVE_DISCOUNTS: [0, 0.3, 0.4, 0.5],   // вечерняя скидка: выкл / 30% / 40% / 50%
+  EVE_SELL: [0, 0.35, 0.45, 0.55],     // какую долю остатков раскупают со скидкой
+  EVE_CAP: [0, 0.025, 0.04, 0.06],     // …но не больше этой доли объёма (вечерних гостей ограниченно)
+  EVE_CANNIBAL: [0, 0.06, 0.07, 0.075], // доля выручки, которую гости переносят на вечер ради скидки (теряем скидку с неё)
+  DISC_CHANGE_DAYS: 90,         // менять скидку без штрафа — не чаще раза в 3 месяца
+  DISC_PENALTY_DAYS: 30, DISC_PENALTY_RATING: 0.4, // иначе на месяц −0,4★ у всех точек (≈ −4% новых гостей)
 
   // --- события ---
   EVENT_MIN_DAYS: 18, EVENT_MAX_DAYS: 34,
@@ -2221,7 +2273,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (lms.some((l) => l.healthy)) healthy = 1.05;
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
-    const demand = traffic * conv;
+    const demand = traffic * conv * ratingMult(S, st); // рейтинг на картах — небольшая прибавка/потеря новых гостей
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -2230,6 +2282,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C();
     const ms = menuStats(S);
     S.cache = { ms };
+    dailyRatings(S);
     let totalUnits = 0;
     const rows = [];
     for (const st of S.stores) {
@@ -2261,23 +2314,27 @@ var BK = globalThis.BK || (globalThis.BK = {});
     fcMult *= modScope(S, 'foodcost', 'global', null);
     const fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
     S.cache.fcPct = fcPct;
+    const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
+    S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
     let dayRev = 0;
     for (const r of rows) {
       if (!r) continue;
       const { st, d } = r;
-      const checks = r.checks * fill;
-      const rev = checks * d.check;
+      const checks = bakeChecks(r.checks * fill, d, wz);
+      const revFull = checks * d.check, rev = revFull * wz.revMult;
       const lost = (d.demand - checks) * d.check;
       st.today = { checks, rev, load: r.load, lost, check: d.check, traffic: d.traffic, closed: false };
       st.cpd = st.cpd != null ? st.cpd * 0.95 + checks * 0.05 : checks; // сглаженные чеки в день (для доставки)
-      st.m.rev += rev; st.m.checks += checks; st.m.fc += rev * fcPct; st.m.lost += Math.max(0, lost);
+      st.m.rev += rev; st.m.checks += checks; st.m.fc += revFull * fcPct; st.m.lost += Math.max(0, lost);
+      const wst = revFull * fcRec * wz.waste; st.m.fc += wst; st.m.waste = (st.m.waste || 0) + wst; dayFc += revFull * fcPct + wst;
+      S.month.waste = (S.month.waste || 0) + wst; S.month.lostBake = (S.month.lostBake || 0) + revFull / (1 - wz.lost) * wz.lost;
       dayRev += rev;
       S.month.lost += Math.max(0, lost);
     }
     S.cash += dayRev; S.month.rev += dayRev; S.cumRevenue += dayRev; S.yearRev += dayRev;
     let dayChecks = 0; for (const r of rows) if (r) dayChecks += r.st.today.checks;
     S.month.checks += dayChecks;
-    spend(S, dayRev * fcPct, 'fc');
+    spend(S, dayFc, 'fc');
     S.cache.dayRev = dayRev;
     // производство: загрузка
     for (const p of S.productions) {
@@ -2285,6 +2342,76 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const units = totalUnits * (cap > 0 ? prodCapacity(S, p) / cap : 0);
       p.need = cfg.PROD_STAFF_BASE + Math.ceil(Math.min(units, prodCapacity(S, p) || units) / cfg.PROD_UNITS_PER_BAKER);
     }
+  }
+
+  /* ---------------- рейтинг точки на картах и списания ---------------- */
+  // S.waste: { bake: −3…+3 (ползунок «Сколько печь»), disc: 0…3 (вечерняя скидка), discDay, penUntil } — старые сохранения получают значения по умолчанию
+  function wasteState(S) {
+    if (!S.waste) S.waste = { bake: 0, disc: 0, discDay: -9999, penUntil: 0 };
+    return S.waste;
+  }
+  function bakeLevel(S) { const cfg = C(); return cfg.BAKE_LEVELS[clamp(Math.round(wasteState(S).bake), -3, 3) + 3]; }
+  // факторы дня для всей сети: продажи, выручка со скидкой, списания (доля от проданного объёма)
+  function wasteFactors(S, ms) {
+    const cfg = C(), W = wasteState(S), L = bakeLevel(S), lost0 = cfg.BAKE_LEVELS[3].lost;
+    const i = clamp(W.disc | 0, 0, cfg.EVE_DISCOUNTS.length - 1), d = cfg.EVE_DISCOUNTS[i];
+    const n = ms ? ms.n : S.menu.length;
+    let erpCap = 0, capAll = 0; // доля мощности цехов с ERP-планированием
+    for (const p of S.productions) if (p.status === 'open') { const c = prodCapacity(S, p); capAll += c; if (p.equip.erp) erpCap += c; }
+    const erp = capAll > 0 ? erpCap / capAll : 0;
+    const menuF = Math.max(0.5, 1 + cfg.WASTE_MENU_K * (n - cfg.WASTE_MENU_REF));
+    const left = cfg.WASTE_BASE * L.waste * menuF * (1 - cfg.WASTE_ERP_CUT * erp); // непроданное без скидки
+    const sold = Math.min(left * cfg.EVE_SELL[i], cfg.EVE_CAP[i]); // раскупили вечером со скидкой
+    return { sales: (1 - L.lost) / (1 - lost0), lost: L.lost, revMult: 1 - cfg.EVE_CANNIBAL[i] * d + sold * (1 - d), waste: left - sold, disc: d, erp, menuF };
+  }
+  function bakeChecks(c, d, wz) { const x = c * wz.sales; return wz.sales > 1 ? Math.min(x, Math.max(c, d.thr)) : x; } // перерасход не продаст больше, чем успевает команда
+  function ratingParts(S, st) {
+    const cfg = C();
+    let lv = 0, md = 0; for (const e of st.staff) { lv += e.lvl; md += e.mood; }
+    const n = st.staff.length;
+    const avgLvl = n ? lv / n : 1, mood = n ? md / n : 60;
+    const ratio = st.staffTarget ? Math.min(1, n / st.staffTarget) : 1;
+    return {
+      train: clamp(cfg.RATING_TRAIN[0] + cfg.RATING_TRAIN[1] * (avgLvl - 1), 1, 5),
+      repair: cfg.RATING_REPAIR[st.repair || 0],
+      mood: clamp(1 + 4 * Math.pow(clamp(mood, 0, 100) / 100, cfg.RATING_MOOD_EXP), 1, 5),
+      staff: clamp(5 - 8 * (1 - ratio), 1, 5),
+      fresh: bakeLevel(S).fresh,
+    };
+  }
+  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s; }
+  function discPenalty(S) { const W = wasteState(S); return W.penUntil > S.day ? C().DISC_PENALTY_RATING : 0; }
+  // рейтинг, который видят гости (с временным штрафом за частую смену скидки)
+  function storeRating(S, st) { return clamp((st.rating != null ? st.rating : C().RATING_START) - (st.num != null ? discPenalty(S) : 0), 1, 5); }
+  function ratingMult(S, st) {
+    const cfg = C(), r = storeRating(S, st) - cfg.RATING_START;
+    return 1 + (r < 0 ? cfg.RATING_TRAFFIC_LO : cfg.RATING_TRAFFIC_HI) * r;
+  }
+  function dailyRatings(S) {
+    const k = 1 / C().RATING_DAYS;
+    for (const st of S.stores) {
+      if (st.rating == null) st.rating = C().RATING_START;
+      if (st.status !== 'open' || !st.staff.length) continue;
+      st.rating += (ratingTarget(S, st) - st.rating) * k;
+    }
+  }
+  function networkRating(S) {
+    let s = 0, n = 0; for (const st of S.stores) if (st.status !== 'opening') { s += storeRating(S, st); n++; }
+    return n ? s / n : null;
+  }
+  function setBake(S, v) { wasteState(S).bake = clamp(Math.round(+v || 0), -3, 3); }
+  function discFreeDay(S) { return wasteState(S).discDay + C().DISC_CHANGE_DAYS; }
+  function setEveDiscount(S, i) {
+    const cfg = C(), W = wasteState(S);
+    i = clamp(i | 0, 0, cfg.EVE_DISCOUNTS.length - 1);
+    if (i === W.disc) return { ok: true, penalty: false };
+    const penalty = S.day < discFreeDay(S);
+    if (penalty) {
+      W.penUntil = S.day + cfg.DISC_PENALTY_DAYS;
+      log(S, `Вечерняя скидка сменилась слишком скоро — гости раздражены: рейтинг точек −${String(cfg.DISC_PENALTY_RATING).replace('.', ',')}★ до ${fmtDate(W.penUntil)}.`, 'warn');
+    }
+    W.disc = i; W.discDay = S.day;
+    return { ok: true, penalty };
   }
 
   function unhappyReason(S, fatigue, under) {
@@ -3014,6 +3141,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (a >= 1e4) return s + Math.round(a / 1e3) + '\u00a0тыс\u00a0₽';
     return s + Math.round(a).toLocaleString('ru-RU') + '\u00a0₽';
   };
+  // рейтинг точки и списания (отдельно от основного списка, чтобы не править его)
+  Object.assign(BK.Engine, { wasteState, wasteFactors, ratingParts, ratingTarget, storeRating, ratingMult, networkRating, setBake, setEveDiscount, discFreeDay, discPenalty });
 })();
 
 /* ui/map.js */
@@ -3299,6 +3428,51 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   BK.estimateOffer = estimateOffer;
 
+  /* ---------- рейтинг точки на картах ---------- */
+  const r1 = (v) => v.toFixed(1).replace('.', ',');
+  const RPARTS = [['train', 'Обучение персонала', 'обучите команду'], ['repair', 'Ремонт', 'сделайте следующую ступень ремонта'], ['mood', 'Настроение команды', 'поднимите настроение: зарплата, премии, культура'], ['staff', 'Укомплектованность', 'наберите полный штат'], ['fresh', 'Свежесть выпечки', 'поставьте «Сколько печь» ближе к норме (вкладка «Цех»)']];
+  function ratingInfo(S, st) {
+    const E_ = E(), cfg = C();
+    const r = E_.storeRating(S, st), p = E_.ratingParts(S, st), pen = E_.discPenalty(S);
+    const weak = RPARTS.filter(([k]) => p[k] < 4.6).sort((a, b) => cfg.RATING_W[b[0]] * (5 - p[b[0]]) - cfg.RATING_W[a[0]] * (5 - p[a[0]])).slice(0, 2);
+    const eff = E_.ratingMult(S, st) - 1;
+    const tip = `Рейтинг на картах ${r1(r)} из 5. Складывается из: ${RPARTS.map(([k, l]) => `${l.toLowerCase()} ${r1(p[k])}`).join(', ')}${pen ? `; штраф за частую смену вечерней скидки −${r1(pen)}` : ''}. Меняется плавно, за 1–2 месяца. ${weak.length ? 'Поднимут рейтинг: ' + weak.map((w) => w[2]).join('; ') + '.' : 'Все составляющие на высоте.'} Новых гостей: ${eff >= 0 ? '+' : '−'}${Math.abs(Math.round(eff * 100))}%.`;
+    return { r, p, pen, weak, eff, tip };
+  }
+  const rstars = (r) => `<span class="rstars" style="--r:${Math.round(r / 5 * 100)}%" aria-hidden="true"></span>`;
+  const ratingChip = (S, st) => { const i = ratingInfo(S, st); return `<span class="chip rating" title="${esc(i.tip)}">${rstars(i.r)}<b>${r1(i.r)}</b></span>`; };
+  function ratingSection(S, st) {
+    const i = ratingInfo(S, st);
+    let s = `<div class="sec"><h3>Рейтинг на картах <small>${rstars(i.r)} ${r1(i.r)} из 5</small></h3><div class="grid2">`;
+    for (const [k, l] of RPARTS) s += kv(l, `${r1(i.p[k])}${meter(i.p[k] / 5, i.p[k] >= 4.3 ? 'ok' : i.p[k] >= 3.5 ? 'warm' : 'hot')}`);
+    s += `</div>${i.pen ? `<div class="hint warnc">Гости раздражены частой сменой вечерней скидки: −${r1(i.pen)}★ до ${E().fmtDate(E().wasteState(S).penUntil)}.</div>` : ''}
+      <div class="hint">Отзывы гостей на картах: рейтинг меняется плавно, за 1–2 месяца. Сейчас он даёт ${i.eff >= 0 ? '+' : '−'}${Math.abs(Math.round(i.eff * 100))}% новых гостей (3★ — −10%, 5★ — +5%). ${i.weak.length ? 'Поднимут рейтинг: ' + i.weak.map((w) => w[2]).join('; ') + '.' : 'Все составляющие на высоте.'}</div></div>`;
+    return s;
+  }
+
+  /* ---------- выпечка и списания (вкладка «Цех») ---------- */
+  function wastePanel(S) {
+    const cfg = C(), E_ = E(), W = E_.wasteState(S);
+    const L = cfg.BAKE_LEVELS[W.bake + 3];
+    const last = S.history[S.history.length - 1], lp = last && last.pnl;
+    const wz = E_.wasteFactors(S, E_.menuStats(S));
+    const free = E_.discFreeDay(S), cool = S.day < free, pen = E_.discPenalty(S);
+    let s = `<div class="sec" id="waste"><h3>Выпечка и списания <small>на всю сеть</small></h3>
+      <p class="hint" style="margin:0">Непроданная к закрытию выпечка списывается — вы теряете её себестоимость. Печь меньше — списаний меньше, но к вечеру полки пустеют и часть гостей уходит без покупки. Печь больше — полки полные, но и выбрасывать приходится больше.</p>
+      <div class="field bake"><label for="bakeLvl">Сколько печь — <b>${L.name}</b></label>
+        <input type="range" id="bakeLvl" min="-3" max="3" step="1" value="${W.bake}" data-inp="bake" aria-valuetext="${esc(L.name)}">
+        <div class="bake-scale" aria-hidden="true"><span>Сильный дефицит</span><span>Норма</span><span>Сильный перерасход</span></div></div>
+      <div class="wastesum">${lp && lp.waste != null ? `Прошлый месяц — списано: <b>${fm(lp.waste)}</b> · упущено продаж: <b>~${fm(lp.lostBake || 0)}</b>` : 'Итог по списаниям появится после первого месяца работы.'}</div>
+      <div class="field"><span class="flabel">Вечерняя скидка <span class="hint">— за 2 часа до закрытия</span></span>
+        <div class="seg disc" role="group" aria-label="Вечерняя скидка">${cfg.EVE_DISCOUNTS.map((d, i) => `<button data-act="eveDisc" data-arg="${i}" aria-pressed="${W.disc === i}">${d ? pct(d) : 'Выкл'}</button>`).join('')}</div>
+        <span class="hint">Больше скидка — меньше списаний, но часть гостей ждёт вечера и платит меньше. Гости не любят, когда условия часто меняются: меняйте не чаще раза в ${Math.round(cfg.DISC_CHANGE_DAYS / 30)} месяца.</span></div>`;
+    if (pen) s += `<div class="alert warn"><div><div class="a-t">Частая смена скидки раздражает гостей</div><div>Рейтинг всех точек −${r1(cfg.DISC_PENALTY_RATING)}★ до ${E_.fmtDate(W.penUntil)}. Без штрафа менять можно с ${E_.fmtDate(free)}.</div></div></div>`;
+    else if (cool) s += `<div class="alert warn"><div><div class="a-t">Частая смена скидки раздражает гостей</div><div>Если сменить скидку сейчас — рейтинг точек −${r1(cfg.DISC_PENALTY_RATING)}★ на месяц. Без штрафа можно с ${E_.fmtDate(free)}.</div></div></div>`;
+    const erpN = S.productions.filter((p) => p.equip.erp).length;
+    s += `<div class="hint">Меню ${nw(S.menu.length, 'позиция', 'позиции', 'позиций')}: ${wz.menuF > 1.001 ? `списания +${Math.round((wz.menuF - 1) * 100)}% (шире меню — больше остатков)` : wz.menuF < 0.999 ? `списания −${Math.round((1 - wz.menuF) * 100)}% (узкое меню)` : 'списания как обычно'}. ${erpN ? `ERP-планирование: остатков меньше на ${Math.round(cfg.WASTE_ERP_CUT * wz.erp * 100)}%.` : `ERP-планирование в цехе снизит остатки на ${Math.round(cfg.WASTE_ERP_CUT * 100)}%.`}</div></div>`;
+    return s;
+  }
+
   /* ---------- прогноз: хватит ли денег на расчёт 1-го числа ---------- */
   function billsForecast(S) {
     const cfg = C(), E_ = E(), pl = S.macro.priceLevel, tx = 1 + cfg.PAYROLL_TAX;
@@ -3354,7 +3528,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td${cls === 'subr' ? ' class="sub"' : ''}>${k}</td><td>${v}</td></tr>`;
     let s = `<table class="tbl">`;
     s += row('Выручка', fm(p.rev));
-    s += row('Себестоимость (фудкост)', '−' + fm(p.fc));
+    s += row('Себестоимость (фудкост)', '−' + fm(p.fc - (p.waste || 0)));
+    if (p.waste != null) s += row('Списания', '−' + fm(p.waste));
     s += row('Аренда', '−' + fm(p.rent));
     s += row('ФОТ (зарплаты и взносы)', '−' + fm(p.payroll));
     if (p.delivery != null) s += row('Доставка', '−' + fm(p.delivery));
@@ -3374,6 +3549,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('→ маркетинг', fm(p.marketing || 0), 'subr');
     }
     s += `</table>`;
+    if (full && p.lostBake != null) s += `<div class="kv lostrow" title="Гости, которым к вечеру не хватило выпечки. Это не расход, а недополученная выручка — в прибыль не входит."><span>Упущенные продажи (оценка)</span><span>~${fm(p.lostBake)}</span></div>`;
     return s;
   }
 
@@ -3419,6 +3595,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Прибыль за месяц</span><span class="v ${last && last.profit < 0 ? 'negc' : ''}">${last ? fm(last.profit) : '—'}</span><span class="d">${last && last.rev ? 'маржа ' + pct(last.profit / last.rev) : '&nbsp;'}</span></div>
       <div class="kpi"><span class="k">Точки</span><span class="v">${open}${S.stores.length > open ? ` <small class="hint">+${S.stores.length - open} скоро</small>` : ''}</span><span class="d">${nw(S.productions.length, 'цех', 'цеха', 'цехов')}</span></div>
       <div class="kpi"><span class="k">Команда</span><span class="v">${E_.allStaff(S) + E_.bakersTotal(S)}</span><span class="d faces" title="Настроение персонала точек">${BK.faceIcon('happy')}${happy} ${BK.faceIcon('mid')}${mid} ${BK.faceIcon('sad')}${sad}<span>· пекарей ${E_.bakersTotal(S)}</span></span></div>
+      ${(() => { const nr = E_.networkRating(S); const lp = last && last.pnl; return `<div class="kpi"><span class="k">Рейтинг сети на картах</span><span class="v">${nr != null ? `${rstars(nr)} ${r1(nr)}` : '—'}</span><span class="d">среднее по точкам</span></div>
+      <div class="kpi"><span class="k">Списано за месяц</span><span class="v">${lp && lp.waste != null ? fm(lp.waste) : '—'}</span><span class="d">${lp && lp.waste != null && last.rev ? pct(lp.waste / last.rev, 1) + ' выручки · вкладка «Цех»' : 'выпечка и списания — во вкладке «Цех»'}</span></div>`; })()}
     </div></div>`;
     const al = alerts(S);
     if (al.length) s += `<div class="sec"><h3>Требует внимания</h3>${al.map((a) => `<div class="alert ${a.cls}" data-act="${a.act}" data-arg="${a.arg || ''}"><div><div class="a-t">${a.t}</div><div>${a.d}</div></div></div>`).join('')}</div>`;
@@ -3452,7 +3630,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const L = st.last;
       s += `<div class="card click" data-act="openStore" data-arg="${st.id}">
         <div class="card-h"><div><div class="card-t">№${st.num} · ${esc(st.address)}</div><div class="card-s">${dname(st.district)} · ${fmtShort(st.size)}, ${st.area} м² · ремонт ${st.repair}/3</div></div>${mood ? BK.faceIcon(mood) : ''}</div>
-        <div class="row">${statusChip(S, st)}<span class="chip">Штат ${st.staff.length}/${st.staffTarget}${st.incoming.length ? ` +${st.incoming.length}` : ''}</span>${st.today && !st.today.closed ? `<span class="chip">${n0(st.today.checks)} чеков/день</span>` : ''}</div>
+        <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}<span class="chip">Штат ${st.staff.length}/${st.staffTarget}${st.incoming.length ? ` +${st.incoming.length}` : ''}</span>${st.today && !st.today.closed ? `<span class="chip">${n0(st.today.checks)} чеков/день</span>` : ''}</div>
         <div class="grid2">${kv('Выручка, мес', L ? fm(L.rev) : '—')}${kv('Прибыль, мес', L ? `<span class="${L.profit >= 0 ? 'pos' : 'negc'}">${fm(L.profit)}</span>` : '—')}</div>
       </div>`;
     }
@@ -3466,7 +3644,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const prod = E_.nearestProd(S, st);
     let s = `<button class="back" data-act="closeStoreView">← Все точки</button>`;
     s += `<div class="sec"><div class="card-h"><div><h2 style="font-family:var(--f-display);font-size:18px">№${st.num} · ${esc(st.address)}</h2><div class="card-s">${dname(st.district)} · ${fmtLong(st.size)}, ${st.area} м²</div></div></div>
-      <div class="row">${statusChip(S, st)}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}</div></div>`;
+      <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}</div></div>`;
     if (T && !T.closed) {
       s += `<div class="sec"><h3>Сегодня</h3><div class="kpis">
         <div class="kpi"><span class="k">Чеков</span><span class="v">${n0(T.checks)}</span><span class="d">трафик ${n0(T.traffic)} чел.</span></div>
@@ -3474,6 +3652,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="kpi wide"><span class="k">Загрузка персонала${T.load > 1 ? ` — теряем ${fm(T.lost)} в день из-за очередей` : ''}</span><span class="v">${pct(Math.min(T.load, 9.99))}</span>${meter(T.load / 1.1)}</div>
       </div></div>`;
     }
+    if (st.status !== 'opening') s += ratingSection(S, st);
     s += `<div class="sec"><h3>Помещение</h3><div class="grid2">
       ${kv('Аренда', fm(E_.storeRentMonth(st)) + '/мес')}${kv('Ставка', n0(st.rentM2) + ' ₽/м²')}
       ${kv('Оплата', st.payMode === 'year' ? (st.rentPaidUntil > S.day ? 'оплачено до ' + E_.fmtDate(st.rentPaidUntil) : 'раз в год') : 'помесячно')}${kv('Трафик', n0(st.traffic) + ' чел./день')}
@@ -3570,6 +3749,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const next = S.productions.length === 1 ? cfg.SECOND_PROD_STORES : S.productions.length === 2 ? cfg.THIRD_PROD_STORES : null;
     if (next && !S.prodOffers.length) s += `<div class="hint">Следующее производство можно открыть при ${next} точках (сейчас ${S.stores.length}).</div>`;
     s += `</div>`;
+    s += wastePanel(S);
     for (const p of S.productions) {
       const pc = E_.prodCapacity(S, p);
       const served = S.stores.filter((st) => E_.nearestProd(S, st) === p).length;
@@ -3709,6 +3889,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(S.macro.keyRate + cfg.LOAN_SPREAD, 1)}</span></div>
       <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
+    const lastM = S.history[S.history.length - 1];
+    s += `<div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
       ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
@@ -3746,6 +3928,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Panels = { dash, stores, market, production, menu, team, finance, journal, offerCard, prodOfferCard };
   BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw };
+  BK.UIH.rating = { ratingInfo, rstars, r1 };
 })();
 
 /* ui/app.js */
@@ -3812,6 +3995,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
     st.notify = []; st.flags = st.flags || {};
+    if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     return st;
   }
@@ -4073,7 +4257,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'store') {
       const st = E.byId(S.stores, id); if (!st) return '';
       const mood = BK.storeMood(st);
-      return `<b>№${st.num} · ${e(st.address)}</b><br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}`;
+      const rt = st.status !== 'opening' && H.rating ? ` · ${H.rating.r1(E.storeRating(S, st))}★` : '';
+      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}`;
     }
     if (kind === 'offer') {
       const o = E.byId(S.offers, id); if (!o) return '';
@@ -4138,6 +4323,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: () => { const st = loadSave(); if (st) continueGame(st); },
     closeModal: () => closeModal(),
+    eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
     const t = e.target.closest('[data-act]');
@@ -4153,6 +4339,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ui.dragging = e.type === 'input';
       if (e.type === 'change') { ui.dragging = false; refresh(); }
     } else if (t.dataset.inp === 'hireStore') { ui.hireStore = t.value; refresh(); }
+    else if (t.dataset.inp === 'bake') {
+      E.setBake(S, +t.value);
+      const lab = t.closest('.field'), L = C.BAKE_LEVELS[E.wasteState(S).bake + 3]; if (lab) lab.querySelector('b').textContent = L.name; t.setAttribute('aria-valuetext', L.name);
+      ui.dragging = e.type === 'input';
+      if (e.type === 'change') { ui.dragging = false; refresh(); }
+    }
   }
   function onKey(e) {
     const tg = e.target.tagName;

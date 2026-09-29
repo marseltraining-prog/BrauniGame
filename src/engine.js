@@ -345,7 +345,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (lms.some((l) => l.healthy)) healthy = 1.05;
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
-    const demand = traffic * conv;
+    const demand = traffic * conv * ratingMult(S, st); // рейтинг на картах — небольшая прибавка/потеря новых гостей
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -354,6 +354,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C();
     const ms = menuStats(S);
     S.cache = { ms };
+    dailyRatings(S);
     let totalUnits = 0;
     const rows = [];
     for (const st of S.stores) {
@@ -385,23 +386,27 @@ var BK = globalThis.BK || (globalThis.BK = {});
     fcMult *= modScope(S, 'foodcost', 'global', null);
     const fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
     S.cache.fcPct = fcPct;
+    const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
+    S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
     let dayRev = 0;
     for (const r of rows) {
       if (!r) continue;
       const { st, d } = r;
-      const checks = r.checks * fill;
-      const rev = checks * d.check;
+      const checks = bakeChecks(r.checks * fill, d, wz);
+      const revFull = checks * d.check, rev = revFull * wz.revMult;
       const lost = (d.demand - checks) * d.check;
       st.today = { checks, rev, load: r.load, lost, check: d.check, traffic: d.traffic, closed: false };
       st.cpd = st.cpd != null ? st.cpd * 0.95 + checks * 0.05 : checks; // сглаженные чеки в день (для доставки)
-      st.m.rev += rev; st.m.checks += checks; st.m.fc += rev * fcPct; st.m.lost += Math.max(0, lost);
+      st.m.rev += rev; st.m.checks += checks; st.m.fc += revFull * fcPct; st.m.lost += Math.max(0, lost);
+      const wst = revFull * fcRec * wz.waste; st.m.fc += wst; st.m.waste = (st.m.waste || 0) + wst; dayFc += revFull * fcPct + wst;
+      S.month.waste = (S.month.waste || 0) + wst; S.month.lostBake = (S.month.lostBake || 0) + revFull / (1 - wz.lost) * wz.lost;
       dayRev += rev;
       S.month.lost += Math.max(0, lost);
     }
     S.cash += dayRev; S.month.rev += dayRev; S.cumRevenue += dayRev; S.yearRev += dayRev;
     let dayChecks = 0; for (const r of rows) if (r) dayChecks += r.st.today.checks;
     S.month.checks += dayChecks;
-    spend(S, dayRev * fcPct, 'fc');
+    spend(S, dayFc, 'fc');
     S.cache.dayRev = dayRev;
     // производство: загрузка
     for (const p of S.productions) {
@@ -409,6 +414,76 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const units = totalUnits * (cap > 0 ? prodCapacity(S, p) / cap : 0);
       p.need = cfg.PROD_STAFF_BASE + Math.ceil(Math.min(units, prodCapacity(S, p) || units) / cfg.PROD_UNITS_PER_BAKER);
     }
+  }
+
+  /* ---------------- рейтинг точки на картах и списания ---------------- */
+  // S.waste: { bake: −3…+3 (ползунок «Сколько печь»), disc: 0…3 (вечерняя скидка), discDay, penUntil } — старые сохранения получают значения по умолчанию
+  function wasteState(S) {
+    if (!S.waste) S.waste = { bake: 0, disc: 0, discDay: -9999, penUntil: 0 };
+    return S.waste;
+  }
+  function bakeLevel(S) { const cfg = C(); return cfg.BAKE_LEVELS[clamp(Math.round(wasteState(S).bake), -3, 3) + 3]; }
+  // факторы дня для всей сети: продажи, выручка со скидкой, списания (доля от проданного объёма)
+  function wasteFactors(S, ms) {
+    const cfg = C(), W = wasteState(S), L = bakeLevel(S), lost0 = cfg.BAKE_LEVELS[3].lost;
+    const i = clamp(W.disc | 0, 0, cfg.EVE_DISCOUNTS.length - 1), d = cfg.EVE_DISCOUNTS[i];
+    const n = ms ? ms.n : S.menu.length;
+    let erpCap = 0, capAll = 0; // доля мощности цехов с ERP-планированием
+    for (const p of S.productions) if (p.status === 'open') { const c = prodCapacity(S, p); capAll += c; if (p.equip.erp) erpCap += c; }
+    const erp = capAll > 0 ? erpCap / capAll : 0;
+    const menuF = Math.max(0.5, 1 + cfg.WASTE_MENU_K * (n - cfg.WASTE_MENU_REF));
+    const left = cfg.WASTE_BASE * L.waste * menuF * (1 - cfg.WASTE_ERP_CUT * erp); // непроданное без скидки
+    const sold = Math.min(left * cfg.EVE_SELL[i], cfg.EVE_CAP[i]); // раскупили вечером со скидкой
+    return { sales: (1 - L.lost) / (1 - lost0), lost: L.lost, revMult: 1 - cfg.EVE_CANNIBAL[i] * d + sold * (1 - d), waste: left - sold, disc: d, erp, menuF };
+  }
+  function bakeChecks(c, d, wz) { const x = c * wz.sales; return wz.sales > 1 ? Math.min(x, Math.max(c, d.thr)) : x; } // перерасход не продаст больше, чем успевает команда
+  function ratingParts(S, st) {
+    const cfg = C();
+    let lv = 0, md = 0; for (const e of st.staff) { lv += e.lvl; md += e.mood; }
+    const n = st.staff.length;
+    const avgLvl = n ? lv / n : 1, mood = n ? md / n : 60;
+    const ratio = st.staffTarget ? Math.min(1, n / st.staffTarget) : 1;
+    return {
+      train: clamp(cfg.RATING_TRAIN[0] + cfg.RATING_TRAIN[1] * (avgLvl - 1), 1, 5),
+      repair: cfg.RATING_REPAIR[st.repair || 0],
+      mood: clamp(1 + 4 * Math.pow(clamp(mood, 0, 100) / 100, cfg.RATING_MOOD_EXP), 1, 5),
+      staff: clamp(5 - 8 * (1 - ratio), 1, 5),
+      fresh: bakeLevel(S).fresh,
+    };
+  }
+  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s; }
+  function discPenalty(S) { const W = wasteState(S); return W.penUntil > S.day ? C().DISC_PENALTY_RATING : 0; }
+  // рейтинг, который видят гости (с временным штрафом за частую смену скидки)
+  function storeRating(S, st) { return clamp((st.rating != null ? st.rating : C().RATING_START) - (st.num != null ? discPenalty(S) : 0), 1, 5); }
+  function ratingMult(S, st) {
+    const cfg = C(), r = storeRating(S, st) - cfg.RATING_START;
+    return 1 + (r < 0 ? cfg.RATING_TRAFFIC_LO : cfg.RATING_TRAFFIC_HI) * r;
+  }
+  function dailyRatings(S) {
+    const k = 1 / C().RATING_DAYS;
+    for (const st of S.stores) {
+      if (st.rating == null) st.rating = C().RATING_START;
+      if (st.status !== 'open' || !st.staff.length) continue;
+      st.rating += (ratingTarget(S, st) - st.rating) * k;
+    }
+  }
+  function networkRating(S) {
+    let s = 0, n = 0; for (const st of S.stores) if (st.status !== 'opening') { s += storeRating(S, st); n++; }
+    return n ? s / n : null;
+  }
+  function setBake(S, v) { wasteState(S).bake = clamp(Math.round(+v || 0), -3, 3); }
+  function discFreeDay(S) { return wasteState(S).discDay + C().DISC_CHANGE_DAYS; }
+  function setEveDiscount(S, i) {
+    const cfg = C(), W = wasteState(S);
+    i = clamp(i | 0, 0, cfg.EVE_DISCOUNTS.length - 1);
+    if (i === W.disc) return { ok: true, penalty: false };
+    const penalty = S.day < discFreeDay(S);
+    if (penalty) {
+      W.penUntil = S.day + cfg.DISC_PENALTY_DAYS;
+      log(S, `Вечерняя скидка сменилась слишком скоро — гости раздражены: рейтинг точек −${String(cfg.DISC_PENALTY_RATING).replace('.', ',')}★ до ${fmtDate(W.penUntil)}.`, 'warn');
+    }
+    W.disc = i; W.discDay = S.day;
+    return { ok: true, penalty };
   }
 
   function unhappyReason(S, fatigue, under) {
@@ -1138,4 +1213,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (a >= 1e4) return s + Math.round(a / 1e3) + '\u00a0тыс\u00a0₽';
     return s + Math.round(a).toLocaleString('ru-RU') + '\u00a0₽';
   };
+  // рейтинг точки и списания (отдельно от основного списка, чтобы не править его)
+  Object.assign(BK.Engine, { wasteState, wasteFactors, ratingParts, ratingTarget, storeRating, ratingMult, networkRating, setBake, setEveDiscount, discFreeDay, discPenalty });
 })();
