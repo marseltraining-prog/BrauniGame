@@ -61,6 +61,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
     st.notify = []; st.flags = st.flags || {};
+    if (!st.difficulty) st.difficulty = 'normal'; // сохранения до уровней сложности — «Нормальный»
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     return st;
@@ -132,6 +133,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- стартовый экран ---------------- */
+  // уровни сложности: числа — в CFG.DIFFICULTY, здесь только тексты для игрока
+  const DIFF_UI = {
+    easy: { cash: '20 млн ₽', win: '~11 лет', desc: 'Вдвое больше денег, гостей чуть больше, неприятности мягче и реже, команда терпеливее, кредит дешевле.' },
+    normal: { cash: '10 млн ₽', win: '~15 лет', desc: 'Баланс по задумке: 70% событий — неприятности, кризис раз в 2–3 года.' },
+    hard: { cash: '8 млн ₽', win: '19+ лет', desc: 'Меньше денег и гостей, аренда и кредит дороже, кризисы чаще и больнее, текучка жёстче. Победа не гарантирована.' },
+  };
+  const diffName = (d) => (C.DIFFICULTY && C.DIFFICULTY[d || 'normal'] ? C.DIFFICULTY[d || 'normal'].name : 'Нормальный');
+  function diffPicker() {
+    return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
+  }
   function startScreen() {
     const saved = loadSave();
     const el = $('#start');
@@ -139,27 +150,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.hidden = false;
     el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
       <h1>Хлебная<br>карта <em>Уфы</em></h1>
-      <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. 10 млн ₽ на старте, одно производство — и весь город на карте.</p>
+      <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. Стартовый капитал, одно производство — и весь город на карте.</p>
       <div class="rules">
-        <div><b>10 млн ₽</b>стартовый капитал</div>
+        <div class="r-diff"><b id="ruleCash">10 млн ₽</b>стартовый капитал</div>
         <div><b>5 млрд ₽</b>цель — оборот за 12 месяцев</div>
-        <div><b>~15 лет</b>на победу у сильного игрока</div>
+        <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
     </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
+    const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
+    $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
-  function newGame(name) {
-    S = E.newGame({ company: name });
+  function newGame(name, difficulty) {
+    S = E.newGame({ company: name, difficulty });
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
@@ -537,7 +550,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openWinModal() {
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b>, открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
@@ -575,6 +588,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openSettings() {
     openModal(`<div class="modal-h"><span class="eyebrow">Меню игры</span><h2>${H.esc(S.company)}</h2></div><div class="modal-b">
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
+      <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>

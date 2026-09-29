@@ -5,6 +5,11 @@
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const C = () => BK.CFG;
+  // уровень сложности: множитель/добавка из CFG.DIFFICULTY (старые сохранения без S.difficulty — «Нормальный»)
+  function diffK(S, key) {
+    const D = C().DIFFICULTY || {}, d = D[(S && S.difficulty) || 'normal'] || D.normal || {};
+    return d[key] != null ? d[key] : D.normal && D.normal[key] != null ? D.normal[key] : 0;
+  }
 
   /* ---------------- утилиты ---------------- */
   function rnd(S) { // mulberry32
@@ -66,11 +71,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(opts) {
     const cfg = C();
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
+    const dk = (k) => diffK({ difficulty }, k);
     const S = {
-      v: 1, seed, rng: seed, ids: 0, day: 0,
+      v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
-      cash: cfg.START_CASH, reserve: 0, loan: 0, cumRevenue: 0,
+      cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
       market: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
       pay: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
@@ -83,7 +90,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       chef: { pending: null, lastYear: cfg.START_YEAR },
       candidates: [], candDay: -999,
       mods: [],
-      ev: { next: 30, nextCrisis: 30 * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1]), last: {}, once: {}, pending: null, lastCrisis: null, recent: [], queue: [] },
+      ev: { next: 30, nextCrisis: Math.round(30 * dk('crisisGap') * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1])), last: {}, once: {}, pending: null, lastCrisis: null, recent: [], queue: [] },
       month: {}, history: [], log: [], notify: [], flags: {}, negMonths: 0,
       yearRev: 0, lastMonthRev: 0, speed: 1,
       stats: { hires: 0, quits: 0, eventsSeen: 0, peakStores: 0 },
@@ -137,7 +144,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       rentM2 = Math.pow(rentM2, 1 - cfg.RENT_FAIR_W) * Math.pow(fair, cfg.RENT_FAIR_W);
       value = fair / rentM2;
     }
-    rentM2 = round(rentM2, 10);
+    rentM2 = round(rentM2 * diffK(S, 'rent'), 10);
     const p = freeSpot(S, d, 42);
     const payMode = rnd(S) < 0.62 ? 'month' : 'year';
     return {
@@ -153,19 +160,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (initial) {
       while (S.offers.length < want) S.offers.push(makeStoreOffer(S));
       S.offerRefreshDay = S.day + C().OFFER_REFRESH_DAYS;
-      S.nextOfferDay = S.day + ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]);
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
       return;
     }
     if (S.offers.length < want && S.day >= (S.nextOfferDay || 0)) {
       S.offers.push(makeStoreOffer(S));
-      S.nextOfferDay = S.day + ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]);
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
     }
   }
   function makeProdOffer(S, d) {
     const pl = S.macro.priceLevel;
     const area = round(rr(S, 120, 300), 10);
     const p = freeSpot(S, d, 38);
-    return { id: nextId(S, 'po'), district: d.id, x: p.x, y: p.y, address: `${pick(S, d.streets)}, ${ri(S, 1, 90)}`, area, rentM2: round(rr(S, d.prodRent[0], d.prodRent[1]) * pl, 10) };
+    return { id: nextId(S, 'po'), district: d.id, x: p.x, y: p.y, address: `${pick(S, d.streets)}, ${ri(S, 1, 90)}`, area, rentM2: round(rr(S, d.prodRent[0], d.prodRent[1]) * pl * diffK(S, 'rent'), 10) };
   }
   function genProdOffers(S, n) {
     S.prodOffers = [];
@@ -436,7 +443,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
     const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
-    const demand = traffic * conv * hol.dem * ratingMult(S, st); // рейтинг на картах — небольшая прибавка/потеря новых гостей
+    const demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -611,26 +618,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const e = st.staff[i];
         e.fatigue += (fatT - e.fatigue) * 0.1;
         const stagn = e.lvl <= 2 && S.day - e.lvlDay > 180 ? 5 : 0;
-        const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
+        const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + diffK(S, 'mood') + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
         e.mood = clamp(e.mood + (target - e.mood) * 0.08, 0, 100);
         if (e.mood < cfg.MOOD_UNHAPPY) e.unhappy++; else e.unhappy = Math.max(0, e.unhappy - 2);
         // личное предупреждение: сотрудник недоволен уже N дней — игрок узнаёт об этом заранее
         if (e.unhappy === (cfg.UNHAPPY_WARN_AFTER || 5) && S.day - (e.warnDay || -999) > 30) { e.warnDay = S.day; warnList.push(e); }
         const QP = cfg.QUIT_P || [0.00018, 0.0007, 0.002]; // вероятность уйти за день: довольный / нейтральный / недовольный
         let p = e.mood >= cfg.MOOD_HAPPY ? QP[0] : e.mood >= cfg.MOOD_UNHAPPY ? QP[1] : QP[2];
-        p *= 1 - 0.08 * (e.lvl - 1);
-        if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) || rnd(S) < p) {
+        p *= (1 - 0.08 * (e.lvl - 1)) * diffK(S, 'quit');
+        if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) || rnd(S) < p) {
           st.staff.splice(i, 1);
           S.stats.quits++;
           const g = (m, f) => BK.byGender(e.name, m, f);
-          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
+          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
           log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) ${g('уволился', 'уволилась')}: ${why}.`, 'bad');
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
       if (st.staff.length < staffBefore) quitStores.push(st);
       if (warnList.length) {
-        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) - e.unhappy)));
+        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) - e.unhappy)));
         let ft = 0; for (const e of warnList) ft += e.fatigue; ft /= warnList.length;
         const why = unhappyReason(S, ft, under);
         const names = warnList.map((e) => e.name).join(', ');
@@ -792,7 +799,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
-    const interest = S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12;
+    const interest = S.loan * loanRate(S) / 12;
     spend(S, interest, 'interest');
     const resInc = S.reserve * Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD) / 12;
     S.reserve += resInc;
@@ -912,8 +919,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fireRandomEvent(S, t) {
     const cfg = C();
-    S.ev.next = S.day + ri(S, cfg.EVENT_MIN_DAYS, cfg.EVENT_MAX_DAYS);
-    const kind = rnd(S) < cfg.EVENT_POS_SHARE ? 'pos' : 'neg';
+    S.ev.next = S.day + Math.round(ri(S, cfg.EVENT_MIN_DAYS, cfg.EVENT_MAX_DAYS) * diffK(S, 'evGap'));
+    const kind = rnd(S) < cfg.EVENT_POS_SHARE + diffK(S, 'posAdd') ? 'pos' : 'neg';
     let pool = BK.EVENTS.filter((e) => !e.crisis && e.kind === kind && eventEligible(S, e, t));
     if (!pool.length) pool = BK.EVENTS.filter((e) => !e.crisis && eventEligible(S, e, t));
     if (!pool.length) return;
@@ -942,7 +949,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fireCrisis(S) {
     const cfg = C();
-    S.ev.nextCrisis = S.day + 30 * ri(S, cfg.CRISIS_MIN_MONTHS, cfg.CRISIS_MAX_MONTHS);
+    S.ev.nextCrisis = S.day + Math.round(30 * diffK(S, 'crisisGap') * ri(S, cfg.CRISIS_MIN_MONTHS, cfg.CRISIS_MAX_MONTHS));
     S.ev.next = Math.max(S.ev.next, S.day + 20);
     if (!S.stores.some((s) => s.status !== 'opening')) return;
     const pool = BK.EVENTS.filter((e) => e.crisis && e.id !== S.ev.lastCrisis);
@@ -989,6 +996,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return open;
   }
   function costOf(S, c, tg) {
+    const k = diffK(S, 'cost');
+    return k === 1 ? costOf0(S, c, tg) : Math.round(costOf0(S, c, tg) * k);
+  }
+  function costOf0(S, c, tg) {
     if (!c) return 0;
     if (typeof c === 'number') return Math.round(c * S.macro.priceLevel);
     if (c.perStore) return Math.round(c.perStore * S.macro.priceLevel * Math.max(1, storesInScope(S, tg).length));
@@ -1017,7 +1028,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return out;
   }
   const pct = (m) => `${m >= 1 ? '+' : '−'}${Math.round(Math.abs(m - 1) * 100)}%`;
+  // сила негативных эффектов по уровню сложности: отклонение «в плохую сторону» × sev (хорошие эффекты не трогаем)
+  function diffEffects(S, effects) {
+    const k = diffK(S, 'sev');
+    if (k === 1 || !effects) return effects;
+    const lo = (m) => clamp(1 - (1 - m) * k, 0.05, 1), hi = (m) => 1 + (m - 1) * k;
+    return effects.map((f) => {
+      const g = Object.assign({}, f);
+      switch (f.t) {
+        case 'traffic': case 'competitor': case 'check': case 'conv': case 'capacity': if (f.m < 1) g.m = +lo(f.m).toFixed(3); break;
+        case 'foodcost': case 'delivery': case 'rent': case 'salary': if (f.m > 1) g.m = +hi(f.m).toFixed(3); break;
+        case 'close': g.d = Math.max(1, Math.round(f.d * k)); break;
+        case 'cash': for (const key of ['v', 'perStore', 'revPct']) if (f[key] != null && f[key] < 0) g[key] = f[key] * k; break;
+        case 'staffQuit': g.n = Math.max(1, Math.round((f.n || 1) * k)); break;
+        case 'tax': case 'keyRate': if (f.add > 0) g.add = f.add * k; break;
+        case 'loyalty': if (f.add < 0) g.add = Math.round(f.add * k); break;
+        default: break;
+      }
+      return g;
+    });
+  }
   function applyEffects(S, effects, tg) {
+    effects = diffEffects(S, effects);
     const out = [];
     const cfg = C();
     const addMod = (t, m, d, scopeOverride) => S.mods.push({ t, m, until: S.day + (d || 30), scope: scopeOverride || tg.scope, target: tg.target });
@@ -1259,14 +1291,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function loanLimit(S) {
     const h = S.history.slice(-3); const avg = h.length ? h.reduce((a, x) => a + x.rev, 0) / h.length : 0;
-    let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT);
+    let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT) * diffK(S, 'loanMult');
     if (S.ev && S.day < (S.ev.creditSqueezeUntil || 0)) lim *= C().CRISIS_LOAN_MULT != null ? C().CRISIS_LOAN_MULT : 1; // кризис: лимит урезан
     return lim;
   }
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd'); }
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
-    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
+    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${(loanRate(S) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
     return { ok: true, amount };
   }
   function repayLoan(S, amount) {
@@ -1290,7 +1323,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Engine = {
-    newGame, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
+    newGame, diffK, loanRate, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
     storeOpenCost, prodOpenCost, chooseProduction, rentStore, refreshOffers, repairCost, startRepair, train, trainAll, trainCost, hire, hireCost, hireDays,
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
     setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
