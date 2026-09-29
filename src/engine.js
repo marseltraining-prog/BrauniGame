@@ -764,6 +764,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       st.m.rent += rent; st.m.payroll = pay; st.m.util = util; st.m.delivery = del;
       st.m.profit = st.m.rev - st.m.fc - st.m.rent - pay - util - del - st.m.rev * currentTaxRate(S);
       st.last = st.m;
+      st.lossStreak = st.m.profit < 0 ? (st.lossStreak || 0) + 1 : 0; // месяцев подряд в убытке (для «Требует внимания»); в старых сохранениях поля нет → 0
       st.hist = (st.hist || []).concat([Math.round(st.m.rev)]).slice(-12);
       st.m = { rev: 0, checks: 0, fc: 0, rent: 0, lost: 0 };
     }
