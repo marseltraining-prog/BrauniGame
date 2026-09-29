@@ -281,6 +281,7 @@ function play(opts) {
       out.push({ year: t.y - CFG.START_YEAR, stores: S.stores.length, rev: Math.round(rev / 1e6), profit: Math.round(prof / 1e6), cash: Math.round(S.cash / 1e6), reserve: Math.round(S.reserve / 1e6), loan: Math.round(S.loan / 1e6), staff: E.allStaff(S), 'turn%': avgStaff ? Math.round(yQuits / avgStaff * 100) : 0, capUse: +(S.cache.capUse || 0).toFixed(2), avgLvl: +(avgLvl(S)).toFixed(2), mood: Math.round(avgMood(S)), menu: S.menu.length, prods: S.productions.length, cult: S.culture, pm: S.menu[0] ? S.menu[0].pm : 1, pl: +pl().toFixed(2), rv: rivalN(S) });
       yQuits = 0; yStaffDays = 0; yDays = 0;
     }
+    if (opts.onDay) opts.onDay(S, P, mem); // внешняя стратегия поверх бота (sim/corp.js — города России)
     if (S.won && !mem.won) { mem.won = { year: +(S.day / 365).toFixed(1), stores: S.stores.length, rv: rivalN(S), rvL: rivalLoss(S) }; out.push({ WON_YEAR: mem.won.year, stores: S.stores.length }); if (opts.stopOnWin) break; }
   }
   return { S, out, mem, lost: S.lost, lostYear: S.lost ? +(S.day / 365).toFixed(1) : null, won: mem.won || null };
@@ -552,7 +553,7 @@ function summarize(r) {
   };
 }
 
-module.exports = { play, estStore, summarize, PROFILES };
+module.exports = { play, estStore, summarize, PROFILES, manage, settlementEstimate };
 if (require.main === module) {
   const flags = {}, pos = [];
   for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }

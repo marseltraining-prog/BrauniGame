@@ -15,7 +15,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const dname = (id) => (E().byId(BK.DISTRICTS, id) || {}).name || id;
   const lname = (id) => (E().byId(BK.LANDMARKS, id) || {}).name || id;
-  const km = (a, b) => (E().dist(a, b) * C().KM_PER_UNIT).toFixed(1).replace('.', ',');
+  const km = (a, b) => (E().dist(a, b) * E().kmPerUnit()).toFixed(1).replace('.', ',');
   const stars = (l) => `<span class="stars" title="Уровень ${l} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= l ? 'on' : ''}"></i>`).join('')}</span>`;
   const btn = (act, label, o = {}) => `<button class="btn ${o.cls || ''}" data-act="${act}"${o.arg != null ? ` data-arg="${esc(o.arg)}"` : ''}${o.arg2 != null ? ` data-arg2="${esc(o.arg2)}"` : ''}${o.dis ? ' disabled' : ''}${o.title ? ` title="${esc(o.title)}"` : ''}>${label}${o.cost != null ? ` <span class="cost">${fm(o.cost)}</span>` : ''}</button>`;
   const kv = (k, v) => `<div class="fact"><span class="fk">${k}</span><span class="fv">${v}</span></div>`;
@@ -445,12 +445,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function dash(S, ui) {
     const E_ = E();
     if (S.phase === 'setup_prod' || S.phase === 'setup_store') return setupPanel(S, ui);
+    const cs = E_.citySetup && E_.citySetup(S);
+    if (cs) return citySetupPanel(S, ui, cs);
     const h = S.history, last = h[h.length - 1], prev = h[h.length - 2];
     const open = S.stores.filter((s) => s.status !== 'opening').length, soon = S.stores.length - open;
     const mc = moodCounts(S);
     const to = prev ? 'к ' + MON3[prev.m] : '';
     const revs = h.slice(-12).map((x) => x.rev), profs = h.slice(-12).map((x) => x.profit);
-    let s = goalCard(S);
+    let s = BK.Russia ? BK.Russia.dashStrip(S) : '';
+    s += goalCard(S);
     s += `<div class="dkpis">
       <div class="dkpi"><div class="lab">${last ? 'Выручка за ' + E_.MONTHS[last.m] : 'Выручка с 1-го числа'}</div><div class="v">${fm(last ? last.rev : S.month.rev)}</div>
         <div class="row2">${last && prev ? delta(last.rev, prev.rev, to) : `<span class="delta muted">${last ? 'первый месяц' : 'идёт первый месяц'}</span>`}${spark(revs, 64, 20)}</div>
@@ -484,7 +487,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const when = h.active ? `идёт<small>ещё ${h.end - S.day + 1} дн.</small>` : h.inDays === 0 ? 'сегодня' : `${h.inDays}<small>${plural(h.inDays, 'день', 'дня', 'дней')}</small>`;
       return `<div class="hol${h.neg ? ' neg' : ''}${h.active ? ' now' : ''}"><div class="when">${when}</div><div class="hb"><div class="ht">${esc(h.name)} <small>${range(h.start, h.end)}</small></div><div class="hd">${esc(h.effect)}</div></div></div>`;
     });
-    return rows.length ? `<div class="sec"><h3>Ближайшие даты <small>календарь Уфы</small></h3>${rows.join('')}</div>` : '';
+    return rows.length ? `<div class="sec"><h3>Ближайшие даты <small>${!BK.CITY || BK.CITY.id === 'ufa' ? 'календарь Уфы' : esc(BK.CITY.name)}</small></h3>${rows.join('')}</div>` : '';
   }
 
   function setupPanel(S, ui) {
@@ -495,6 +498,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     } else {
       s += `<p style="margin:0">Теперь первая <b>торговая точка</b>. Смотрите на трафик и платёжеспособность района: рядом со школой чек низкий, у бизнес-центра — высокий. Время пойдёт после аренды.</p>`;
       s += `<p class="hint" style="margin:0">Оставьте запас на первые месяцы: зарплаты и аренду платят 1-го числа, а выручка набирается постепенно. Не хватает — возьмите кредит во вкладке «Финансы».</p>`;
+      s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
+    }
+    return s;
+  }
+
+  // запуск нового города (Россия): как старт в Уфе, но время идёт — Уфа и другие города работают на автопилоте
+  function citySetupPanel(S, ui, step) {
+    const name = esc(BK.CITY ? BK.CITY.name : '');
+    let s = BK.Russia ? BK.Russia.dashStrip(S) : '';
+    s += `<div class="sec"><h3>${step === 'prod' ? 'Запуск · шаг 1 из 2' : 'Запуск · шаг 2 из 2'} <small>${name}</small></h3>`;
+    if (step === 'prod') {
+      s += `<p style="margin:0">Новый город начинается с <b>цеха</b>: отсюда выпечка поедет во все точки города. Ближе к центру — дороже аренда, дешевле доставка.</p>`;
+      s += `<p class="hint" style="margin:0">Время не стоит: пока вы выбираете, остальные города работают на автопилоте.</p>`;
+      s += `</div><div class="sec">${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
+    } else {
+      s += `<p style="margin:0">Цех арендован. Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
       s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
     }
     return s;
@@ -597,7 +616,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const E_ = E();
     const c = E_.prodOpenCost(S, o);
     const center = BK.CENTER_POINT;
-    const avgKm = S.stores.length ? S.stores.reduce((a, st) => a + E_.dist(o, st), 0) / S.stores.length * C().KM_PER_UNIT : E_.dist(o, center) * C().KM_PER_UNIT;
+    const avgKm = S.stores.length ? S.stores.reduce((a, st) => a + E_.dist(o, st), 0) / S.stores.length * E_.kmPerUnit() : E_.dist(o, center) * E_.kmPerUnit();
     const del = (C().DELIVERY_BASE + C().DELIVERY_PER_KM * avgKm) * S.macro.priceLevel;
     const sel = ui.sel && ui.sel.kind === 'prodOffer' && ui.sel.id === o.id;
     return `<div class="card${sel ? ' sel' : ''}">
@@ -813,7 +832,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function rivalChip(S, o) { // «рядом конкурент: N точек» — в карточке точки и помещения
     const r = E().rivalNear ? E().rivalNear(S, o) : null; if (!r || !r.n) return '';
     const name = E().rivalSummary(S).name;
-    return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * C().KM_PER_UNIT).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
+    return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * E().kmPerUnit()).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
   }
   function rivalBlock(S) { // «Конкурент: Хлебный двор — N точек, растёт/слабеет» (вкладка «Рынок»; можно вставить и в «Сводку»)
     const r = E().rivalSummary ? E().rivalSummary(S) : null; if (!r) return '';

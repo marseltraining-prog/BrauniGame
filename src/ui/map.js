@@ -3,7 +3,7 @@
    стрелка севера, масштабная линейка и картуш. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
-  const KM = 33; // единиц карты в 1 км
+  const kmU = () => 1 / (BK.Engine && BK.Engine.kmPerUnit ? BK.Engine.kmPerUnit() : 1 / 33); // единиц карты в 1 км (Уфа — 33)
   const MIN_W = 160; // предельное приближение (ширина окна в единицах карты)
   const LAYER_KEY = 'bk-ufa-maplayer';
 
@@ -60,10 +60,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<path class="m-city-edge" d="${city}"/>`;
     for (const p of M.parks) s += `<circle class="m-park" cx="${p.x}" cy="${p.y}" r="${p.r}"/>`;
     s += `<path class="m-rail" d="${smooth(M.rail)}"/>`;
+    // море / залив (сгенерированные города у воды)
+    for (const w of M.sea || []) s += `<path class="m-sea" d="${pathOf(w.pts, true)}"/><path class="m-coast" d="${pathOf(w.pts.slice(0, -2))}"/>`;
     // реки: мягкий «разлив» и русло
-    s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
-    s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
-    for (const l of M.labels) s += `<text class="m-rlabel" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
+    if (M.rivers) {
+      for (const r of M.rivers) s += `<path class="m-river-edge" stroke-width="${(r.w * 2.1).toFixed(0)}" d="${smooth(r.pts)}"/>`;
+      for (const r of M.rivers) s += `<path class="m-river" stroke-width="${r.w}" d="${smooth(r.pts)}"/>`;
+    } else {
+      s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
+      s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
+    }
+    for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
       for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (LABEL_DX[d.id] || 0)}" y="${d.y + (LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
       for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
@@ -100,7 +107,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
     truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
     layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 5-9 5-9-5z"/><path d="M3 14l9 5 9-5"/></svg>',
+    globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.2 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.2-3.8-8.5s1.2-6.1 3.8-8.5Z"/></svg>',
   };
+  BK.ICON_GLOBE = IC.globe;
   const LAYERS = [['profit', 'Прибыль', IC.rub], ['mood', 'Настроение', IC.mood], ['staff', 'Штат', IC.team], ['delivery', 'Доставка', IC.truck]];
   const TONE_COL = { good: 'var(--good)', warn: 'var(--warn)', bad: 'var(--bad)', none: 'var(--line-2)' };
   const MOOD_COL = { happy: 'var(--face-happy)', mid: 'var(--face-mid)', sad: 'var(--face-sad)' };
@@ -145,6 +154,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = el.querySelector('.routes'); this.gM = el.querySelector('.markers');
+    this.cityId = (BK.CITY && BK.CITY.id) || 'ufa'; this.cityMap = BK.MAP;
     this.wrap = el.parentNode;
     this.px = { w: 800, h: 800 };
     this.buildUi();
@@ -161,7 +171,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const div = (cls, html) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; w.appendChild(d); return d; };
     this.uiLayers = div('maplayers');
     this.uiLayers.setAttribute('role', 'group'); this.uiLayers.setAttribute('aria-label', 'Слой карты');
-    this.uiLayers.innerHTML = `<button type="button" class="ml-toggle" aria-label="Легенда слоя" aria-expanded="false">${IC.layers}</button>` +
+    this.uiLayers.innerHTML = `<button type="button" class="ml-crumb" data-act="russia" hidden title="Карта России (R)"></button><span class="ml-div" hidden aria-hidden="true"></span><button type="button" class="ml-toggle" aria-label="Легенда слоя" aria-expanded="false">${IC.layers}</button>` +
       LAYERS.map(([k, n, i]) => `<button type="button" class="ml-chip" data-layer="${k}" aria-pressed="${this.layer === k}">${i}<span>${n}</span></button>`).join('');
     this.uiLegend = div('maplegend');
     this.uiNorth = div('mapnorth', '<svg viewBox="0 0 30 42" aria-hidden="true"><circle cx="15" cy="27" r="13" fill="none" stroke="currentColor" stroke-width="1"/><path d="M15 2 L21 27 L15 23 L9 27Z" fill="currentColor"/><path d="M15 23 L21 27 L15 38 L9 27Z" fill="none" stroke="currentColor" stroke-width="1"/></svg><span>С</span>');
@@ -169,7 +179,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     this.uiScale = div('mapscale'); this.uiScale.setAttribute('aria-hidden', 'true');
     this.uiCart = div('mapcart');
     this.uiLayers.addEventListener('click', (e) => {
-      const b = e.target.closest('button'); if (!b) return;
+      const b = e.target.closest('button'); if (!b || b.classList.contains('ml-crumb')) return;
       if (b.classList.contains('ml-toggle')) { const open = !w.classList.contains('legend-open'); w.classList.toggle('legend-open', open); b.setAttribute('aria-expanded', String(open)); return; }
       this.setLayer(b.dataset.layer);
     });
@@ -355,8 +365,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     this.lastParts = parts; this.lastKeys = keys;
   };
+  // другой город (Россия): перестроить статичный слой и сбросить кеши маркеров
+  Map.prototype.setCity = function () {
+    const id = (BK.CITY && BK.CITY.id) || 'ufa';
+    if (this.cityId === id && this.cityMap === BK.MAP) return false;
+    const first = this.cityId == null;
+    this.cityId = id; this.cityMap = BK.MAP;
+    if (first) return false;
+    this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
+    this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
+    this.lastParts = null; this.lastKeys = null; this.lastR = null; this.lastRv = null; this.ckey = null;
+    this.el.setAttribute('aria-label', `Карта: ${(BK.CITY && BK.CITY.name) || 'Уфа'}, точки сети`);
+    this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.el.setAttribute('viewBox', '0 0 1000 1000');
+    return true;
+  };
   Map.prototype.render = function (S, sel) {
     const E = BK.Engine;
+    this.setCity();
     this.lastS = S; this.lastSel = sel;
     const layer = this.layer, upp = this.upp(), kk = this.markerScale(), k = kk.toFixed(3);
     const isSel = (kind, id) => sel && sel.kind === kind && sel.id === id;
@@ -367,6 +392,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const far = upp > 1.9; if (far !== this.lastFar) { this.el.classList.toggle('far', far); this.lastFar = far; }
     const wrap = this.wrap;
     if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
+    if (wrap) { const cs = !!(E.citySetup && E.citySetup(S)); if (cs !== this.lastCs) { wrap.classList.toggle('m-citysetup', cs); this.lastCs = cs; } } // запуск нового города (Россия)
 
     // кластеры пересчитываем только при смене масштаба, числа точек или выделения
     const ckey = upp.toFixed(3) + '|' + S.stores.length + '|' + selStore;
@@ -391,7 +417,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (r !== this.lastR) { this.gR.innerHTML = r; this.lastR = r; }
 
     const pre = [], offers = [], singles = [], clusters = []; let selM = null;
-    const hq = { x: 402, y: 772 };
+    const hq = BK.MAP.hq || { x: 402, y: 772 };
     pre.push(['hq', `<g class="m-hq" data-kind="hq" data-id="hq" transform="translate(${hq.x},${hq.y}) scale(${k})"><rect x="-9" y="-9" width="18" height="18" rx="3"/><path d="${OFFICE}" transform="scale(.8)"/></g>`]);
     for (const o of S.prodOffers) pre.push(['po' + o.id, `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`]);
     for (const o of S.offers) {
@@ -469,6 +495,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const bdgIcon = (k) => `<svg viewBox="-8 -8 16 16" class="lg-sw" aria-hidden="true">${badge(k, 0, 0)}</svg>`;
   Map.prototype.renderUi = function (S, infoById) {
     if (!this.uiLegend) return;
+    // «хлебные крошки» второго акта: Россия › город (кнопка ведёт на карту России)
+    const ru = !!(S.corp && S.corp.unlockedDay != null), cn = (BK.CITY && BK.CITY.name) || 'Уфа', ck = ru ? cn : '';
+    if (ck !== this.lastCrumb) {
+      this.lastCrumb = ck;
+      const b = this.uiLayers.querySelector('.ml-crumb'), dv = this.uiLayers.querySelector('.ml-div');
+      b.hidden = dv.hidden = !ru;
+      b.innerHTML = `${IC.globe}<span class="cr-ru">Россия</span><span class="cr-sep" aria-hidden="true">›</span><b>${esc(cn)}</b>`;
+      b.setAttribute('aria-label', `Россия › ${cn}. Открыть карту России`);
+    }
     const E = BK.Engine, layer = this.layer;
     const infos = S.stores.map((st) => infoById[st.id]);
     const row = (sw, label, v) => `<span class="lg-r">${sw}<span>${label}</span><b>${v}</b></span>`;
@@ -505,7 +540,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (h !== this.lastLegend) { this.uiLegend.innerHTML = h; this.lastLegend = h; }
 
     // масштабная линейка: шаг 0,5–10 км, чтобы деление было не короче 22 px
-    const pxKm = KM / this.upp();
+    const pxKm = kmU() / this.upp();
     const step = [0.5, 1, 2, 5, 10].find((q) => pxKm * q >= 22) || 10, w = pxKm * step;
     const f = (v) => String(v).replace('.', ',');
     const sc = `<div class="sc-bars" style="width:${(w * 2).toFixed(0)}px"><i></i><i></i><i></i></div><div class="sc-lbl" style="width:${(w * 2).toFixed(0)}px"><span style="left:0">0</span><span style="left:${w.toFixed(0)}px">${f(step)} км</span><span style="left:${(w * 2).toFixed(0)}px">${f(step * 2)}</span></div>`;
@@ -513,7 +548,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
     // картуш: лист = год игры
     const d = E.dateOf(S.day), sheet = d.y - BK.CFG.START_YEAR + 1;
-    const denom = this.upp() * (1e6 / KM) / 0.2646; // 1 px ≈ 0,2646 мм на экране 96 dpi
+    const denom = this.upp() * (1e6 / kmU()) / 0.2646; // 1 px ≈ 0,2646 мм на экране 96 dpi
     const mag = Math.pow(10, Math.floor(Math.log10(denom)) - 1), den = Math.round(denom / mag) * mag;
     const nm = /[«»"„“]/.test(S.company) ? S.company : `«${S.company}»`;
     const open = S.stores.filter((st) => st.status !== 'opening').length;
@@ -526,7 +561,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="ct-c ct-last"><small>Исполнил</small><div class="ct-v ct-name"></div></div></div>`;
       this.ct = [...this.uiCart.querySelectorAll('.ct-t, .ct-v')];
     }
-    const vals = [`Уфа · лист ${sheet}`, `1 : ${den.toLocaleString('ru-RU')}`, `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`,
+    const vals = [`${(BK.CITY && BK.CITY.name) || 'Уфа'} · лист ${sheet}`, `1 : ${den.toLocaleString('ru-RU')}`, `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`,
       `${open}${S.stores.length > open ? '+' + (S.stores.length - open) : ''} · цехов ${S.productions.length}`, nm];
     vals.forEach((v, i) => { if (this.ct[i].textContent !== v) this.ct[i].textContent = v; });
   };
