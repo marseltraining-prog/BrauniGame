@@ -301,7 +301,97 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function prodRentMonth(p) { return p.area * p.rentM2; }
 
   /* ---------------- ежедневная симуляция ---------------- */
-  const SEASON = [0.92, 0.9, 0.95, 0.98, 1.0, 0.96, 0.93, 0.95, 1.03, 1.04, 1.05, 1.18];
+  const SEASON = [0.92, 0.9, 0.95, 0.98, 1.0, 0.96, 0.93, 0.95, 1.03, 1.04, 1.05, 1.12]; // декабрьский пик — частично в празднике «Новый год» (календарь ниже)
+
+  /* ---------------- календарь праздников Уфы ----------------
+     Даты считаются из номера года (ничего не хранится в состоянии). Числа — CFG.HOLIDAYS. */
+  const holYears = {};
+  function dayIdx(y, m, d) { return Math.round((Date.UTC(y, m, d) - Date.UTC(C().START_YEAR, 0, 1)) / 864e5); }
+  function orthodoxEaster(y) { // алгоритм Гаусса для юлианской Пасхи + 13 дней (верно для 1900–2099)
+    const a = y % 4, b = y % 7, c = y % 19, d = (19 * c + 15) % 30, e = (2 * a + 4 * b - d + 34) % 7;
+    return dayIdx(y, Math.floor((d + e + 114) / 31) - 1, ((d + e + 114) % 31) + 1 + 13);
+  }
+  function lunarDays(y, base) { // даты лунного праздника в году y: опорная дата + k × 354,37 дня
+    const isl = C().HOLIDAY_ISLAMIC, p = base.split('-').map(Number), b = dayIdx(p[0], p[1] - 1, p[2]);
+    const y0 = dayIdx(y, 0, 1), y1 = dayIdx(y + 1, 0, 1), out = [];
+    for (let k = Math.floor((y0 - b) / isl.step) - 1; k <= Math.ceil((y1 - b) / isl.step) + 1; k++) { const x = b + Math.round(k * isl.step); if (x >= y0 && x < y1) out.push(x); }
+    return out;
+  }
+  function holidaysOfYear(y) {
+    const key = y + ':' + C().START_YEAR;
+    if (holYears[key]) return holYears[key];
+    const H = C().HOLIDAYS || {}, list = [];
+    const add = (id, start, end) => { if (H[id]) list.push({ id, name: H[id].name, start, end }); };
+    add('newyear', dayIdx(y, 11, 22), dayIdx(y, 11, 31));
+    add('march8', dayIdx(y, 2, 5), dayIdx(y, 2, 8));
+    for (const x of lunarDays(y, C().HOLIDAY_ISLAMIC.uraza)) add('uraza', x - 1, x + 1);
+    for (const x of lunarDays(y, C().HOLIDAY_ISLAMIC.kurban)) add('kurban', x - 1, x + 1);
+    const j13 = dayIdx(y, 5, 13), sat = j13 + (6 - new Date(Date.UTC(y, 5, 13)).getUTCDay() + 7) % 7;
+    add('sabantuy', sat, sat + 1);
+    add('sept1', dayIdx(y, 8, 1), dayIdx(y, 8, 7));
+    add('summer', dayIdx(y, 6, 1), dayIdx(y, 7, 31));
+    const easter = orthodoxEaster(y);
+    add('lent', easter - 48, easter - 1);
+    list.sort((a, b) => a.start - b.start);
+    return (holYears[key] = list);
+  }
+  function holidaysAround(day) { const y = dateOf(day).y; return holidaysOfYear(y - 1).concat(holidaysOfYear(y), holidaysOfYear(y + 1)); }
+  function menuCatShares(S) { // доля выручки категории в меню (веса как в menuStats)
+    const sh = {}; let tot = 0;
+    for (const it of S.menu) { const p = byId(BK.PRODUCTS, it.id); if (!p) continue; const w = p.pop * (0.55 + 0.9 * (S.trends[p.cat] || 50) / 100) * p.price * it.pm; sh[p.cat] = (sh[p.cat] || 0) + w; tot += w; }
+    for (const k in sh) sh[k] /= tot || 1;
+    return sh;
+  }
+  let holDay = null;
+  function holidayDay(S, day) { // общие множители сети на день: dem (поток), chk (чек), lm (по соседству)
+    const key = S.seed + ':' + day + ':' + S.menu.map((m) => m.id).join();
+    if (holDay && holDay.key === key) return holDay;
+    const H = C().HOLIDAYS || {}, act = holidaysAround(day).filter((h) => h.start <= day && day <= h.end);
+    let rev = 1, catAdd = 0; const lm = {};
+    const sh = act.length ? menuCatShares(S) : {};
+    for (const h of act) {
+      const c = H[h.id];
+      rev *= c.rev || 1;
+      if (c.cat) for (const k in c.cat) catAdd += (sh[k] || 0) * c.cat[k];
+      if (c.lm) for (const k in c.lm) lm[k] = (lm[k] || 1) * c.lm[k];
+    }
+    return (holDay = { key, act, dem: Math.sqrt(rev), chk: Math.sqrt(rev) * (1 + catAdd), lm });
+  }
+  function holidayMult(S, st, t) { // множители праздника для точки; без полной даты (оценка помещений) — нейтрально
+    if (t.y == null || !C().HOLIDAYS) return { dem: 1, chk: 1 };
+    const h = holidayDay(S, dayIdx(t.y, t.m, t.d));
+    let f = 1; for (const id of st.landmarks) if (h.lm[id]) f *= h.lm[id];
+    const cl = C().HOLIDAY_LM_CLAMP || [0.7, 1.6];
+    return { dem: h.dem * (f === 1 ? 1 : clamp(f, cl[0], cl[1])), chk: h.chk };
+  }
+  const LM_AT = { school: 'у школ', uni: 'у вузов', park: 'в парках' };
+  const CAT_SHORT = { desserts: 'десерты', sweet: 'сладкая выпечка', national: 'национальная выпечка', pies: 'пироги' };
+  function holidayEffectText(id) { // «выручка +25%, десерты +60%»
+    const c = (C().HOLIDAYS || {})[id]; if (!c) return '';
+    const p = (x) => (x >= 0 ? '+' : '−') + Math.round(Math.abs(x) * 100) + '%';
+    const out = [];
+    if (c.rev && c.rev !== 1) out.push('выручка ' + p(c.rev - 1));
+    if (c.cat) for (const k in c.cat) out.push((CAT_SHORT[k] || (BK.CATEGORIES[k] ? BK.CATEGORIES[k].name.toLowerCase() : k)) + ' ' + p(c.cat[k]));
+    if (c.lm) for (const k in c.lm) out.push((LM_AT[k] || k) + ' ' + p(c.lm[k] - 1));
+    return out.join(', ');
+  }
+  function upcomingHolidays(S, n) { // ближайшие (и идущие) даты календаря
+    const out = [];
+    for (const h of holidaysAround(S.day)) if (h.end >= S.day && out.length < (n || 3)) out.push(Object.assign({ inDays: h.start - S.day, active: h.start <= S.day, effect: holidayEffectText(h.id), neg: isNegHoliday(h.id) }, h));
+    return out;
+  }
+  function isNegHoliday(id) { const c = (C().HOLIDAYS || {})[id] || {}; return (c.rev || 1) < 1 || Object.values(c.lm || {}).some((v) => v < 1); }
+  function holidayNotice(S) { // за N дней до начала — тост и запись в журнале
+    const N = C().HOLIDAY_NOTICE_DAYS || 7, c = C().HOLIDAYS || {};
+    for (const h of holidaysAround(S.day)) {
+      if (h.start - S.day !== N) continue;
+      const lms = Object.keys(c[h.id].lm || {});
+      if (!c[h.id].rev && !S.stores.some((st) => st.landmarks.some((l) => lms.includes(l)))) continue; // только про соседство, которого у сети нет
+      const text = `${h.name} через ${N} дн. (${fmtDate(h.start)}${h.end > h.start ? ' — ' + fmtDate(h.end) : ''}): ${holidayEffectText(h.id)}.`;
+      log(S, text, isNegHoliday(h.id) ? 'warn' : 'good');
+      toast(S, `${h.name} через ${N} дн.`, holidayEffectText(h.id) + '.', isNegHoliday(h.id) ? 'warn' : 'good');
+    }
+  }
 
   function storeDemand(S, st, t, ms) {
     const cfg = C();
@@ -345,7 +435,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (lms.some((l) => l.healthy)) healthy = 1.05;
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
-    const demand = traffic * conv;
+    const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
+    const demand = traffic * conv * hol.dem;
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -567,6 +658,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     dailyStores(S, t);
     dailyStaff(S);
     dailyMisc(S, t);
+    holidayNotice(S);
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (fireQueuedEvent(S)) { /* отложенное последствие прошлого решения */ }
@@ -1128,6 +1220,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
     setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
     allStaff, bakersTotal, refreshCandidates, proposeChef, dist, byId, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
+    holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult,
   };
 
   /* форматирование денег (общая функция) */
