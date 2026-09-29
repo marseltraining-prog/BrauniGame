@@ -83,7 +83,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       chef: { pending: null, lastYear: cfg.START_YEAR },
       candidates: [], candDay: -999,
       mods: [],
-      ev: { next: 30, nextCrisis: 30 * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1]), last: {}, once: {}, pending: null, lastCrisis: null, recent: [] },
+      ev: { next: 30, nextCrisis: 30 * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1]), last: {}, once: {}, pending: null, lastCrisis: null, recent: [], queue: [] },
       month: {}, history: [], log: [], notify: [], flags: {}, negMonths: 0,
       yearRev: 0, lastMonthRev: 0, speed: 1,
       stats: { hires: 0, quits: 0, eventsSeen: 0, peakStores: 0 },
@@ -113,13 +113,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
   }
-  function makeStoreOffer(S) {
+  function makeStoreOffer(S, opts) { // opts (опц.): { district, lm, size } — для помещений из событий
     const cfg = C();
-    const d = wpick(S, BK.DISTRICTS, (x) => districtWeight(S, x));
-    const sizeKey = wpick(S, ['small', 'standard', 'large'], (k) => ({ small: 0.3, standard: 0.5, large: 0.2 })[k]);
+    const d = (opts && opts.district && byId(BK.DISTRICTS, opts.district)) || wpick(S, BK.DISTRICTS, (x) => districtWeight(S, x));
+    const sizeKey = (opts && cfg.SIZES[opts.size] && opts.size) || wpick(S, ['small', 'standard', 'large'], (k) => ({ small: 0.3, standard: 0.5, large: 0.2 })[k]);
     const sz = cfg.SIZES[sizeKey];
     const area = ri(S, sz.min, sz.max);
-    const lms = [pick(S, BK.LANDMARKS)];
+    const lms = [(opts && opts.lm && byId(BK.LANDMARKS, opts.lm)) || pick(S, BK.LANDMARKS)];
     if (rnd(S) < 0.45) { const l2 = pick(S, BK.LANDMARKS); if (l2.id !== lms[0].id) lms.push(l2); }
     let tr = 1, sv = 1, rm = 1;
     for (const l of lms) { tr *= l.tr; sv *= l.solv; rm *= l.rent; }
@@ -529,7 +529,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.day >= S.offerRefreshDay) {
       S.offerRefreshDay = S.day + cfg.OFFER_REFRESH_DAYS;
       const n = Math.ceil(S.offers.length * 0.4);
-      for (let i = 0; i < n; i++) S.offers.splice(ri(S, 0, S.offers.length - 1), 1);
+      for (let i = 0; i < n; i++) { // помещения из событий (special) живут до своего срока
+        const k = ri(S, 0, S.offers.length - 1);
+        if (!S.offers[k].special) S.offers.splice(k, 1);
+      }
     }
     genStoreOffers(S);
     refreshCandidates(S);
@@ -566,6 +569,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     dailyMisc(S, t);
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
+    else if (fireQueuedEvent(S)) { /* отложенное последствие прошлого решения */ }
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
     if (S.flags.quitsToday) {
       const autohire = S.office.hr && S.office.autohireOn;
@@ -726,6 +730,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- события ---------------- */
   function eventEligible(S, e, t) {
+    if (e.followUp) return false; // последствия приходят только из очереди S.ev.queue
     const openStores = S.stores.filter((s) => s.status !== 'opening');
     if ((e.minStores || 1) > openStores.length) return false;
     if ((e.minYear || 0) > S.day / 365) return false;
@@ -747,6 +752,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!pool.length) return;
     const e = wpick(S, pool, (x) => x.weight || 1);
     startEvent(S, e);
+  }
+  // Отложенные события (цепочки): эффект {t:'schedule'} кладёт {id, day, tg} в S.ev.queue
+  function fireQueuedEvent(S) {
+    const q = S.ev.queue;
+    if (!q || !q.length) return false;
+    const i = q.findIndex((x) => x.day <= S.day);
+    if (i < 0) return false;
+    const it = q.splice(i, 1)[0];
+    const e = byId(BK.EVENTS, it.id);
+    if (!e || !S.stores.some((s) => s.status !== 'opening')) return false;
+    let tg = null;
+    if (it.tg && it.tg.scope === e.scope) { // та же точка / цех / район, если они ещё существуют
+      const r = rebuildTarget(S, it.tg);
+      const ok = r.scope === 'global' || (r.scope === 'store' && r.store && r.store.status !== 'opening') || (r.scope === 'production' && r.prod && r.prod.status === 'open') || (r.scope === 'district' && r.district);
+      if (ok) tg = r;
+    }
+    if (!tg && e.scope === 'production' && !S.productions.some((p) => p.status === 'open')) return false;
+    startEvent(S, e, tg);
+    S.ev.next = Math.max(S.ev.next, S.day + 7); // не сваливать случайное событие в тот же день
+    return true;
   }
   function fireCrisis(S) {
     const cfg = C();
@@ -773,8 +798,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function fillText(s, tg) {
     return String(s || '').replace(/\{store\}/g, tg.store ? tg.store.address : 'точка').replace(/\{district\}/g, tg.district ? tg.district.name : 'город').replace(/\{prod\}/g, tg.prod ? tg.prod.address : 'цех');
   }
-  function startEvent(S, e) {
-    const tg = resolveTarget(S, e);
+  function startEvent(S, e, tgForced) {
+    const tg = tgForced || resolveTarget(S, e);
     S.ev.last[e.id] = S.day; if (e.once) S.ev.once[e.id] = true;
     S.stats.eventsSeen++;
     const inst = { id: e.id, kind: e.kind, crisis: !!e.crisis, title: e.title, text: fillText(e.text, tg), tg: { scope: tg.scope, target: tg.target }, day: S.day, effectsText: [] };
@@ -877,6 +902,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
         }
         case 'trend': S.trends[f.cat] = clamp((S.trends[f.cat] || 50) + f.add, 5, 98); out.push(`тренд «${BK.CATEGORIES[f.cat] ? BK.CATEGORIES[f.cat].name : f.cat}» ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
         case 'loyalty': S.loyaltyMod = clamp(S.loyaltyMod + f.add, -30, 30); out.push(`настроение команды ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
+        case 'schedule': { // отложенное последствие: скрыто от игрока, намёк — в тексте выбора
+          if (f.p != null && rnd(S) >= f.p) break;
+          if (!S.ev.queue) S.ev.queue = []; // старые сохранения
+          if (S.ev.queue.some((x) => x.id === f.id)) break;
+          const a = f.after || [90, 180];
+          S.ev.queue.push({ id: f.id, day: S.day + ri(S, a[0], a[1]), tg: { scope: tg.scope, target: tg.target } });
+          break;
+        }
+        case 'offer': { // особое помещение на рынке (со скидкой к аренде)
+          const o = makeStoreOffer(S, { district: f.district || (tg.scope === 'district' ? tg.target : null), lm: f.lm, size: f.size });
+          if (f.rent) o.rentM2 = round(o.rentM2 * f.rent, 10);
+          o.expires = S.day + (f.days || 60); o.special = true;
+          S.offers.push(o);
+          const dn = byId(BK.DISTRICTS, o.district);
+          out.push(`помещение на рынке: ${dn ? dn.name + ', ' : ''}${o.address}${f.rent ? `, аренда ${pct(f.rent)}` : ''}`); break;
+        }
         default: break;
       }
     }
@@ -946,7 +987,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fee = Math.round(C().REALTOR_FEE * S.macro.priceLevel);
     if (S.cash < fee) return { ok: false, msg: 'Не хватает денег' };
     spend(S, fee, 'other');
-    S.offers = []; genStoreOffers(S, true);
+    S.offers = S.offers.filter((o) => o.special); genStoreOffers(S, true);
     return { ok: true };
   }
   function repairCost(S, st) { const r = C().REPAIRS[st.repair + 1]; return r ? Math.round(r.perM2 * st.area * S.macro.priceLevel) : 0; }
