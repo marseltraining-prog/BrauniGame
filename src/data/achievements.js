@@ -15,7 +15,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const RAR = { c: 'обычное', r: 'редкое', e: 'эпическое' };
   const CATS = [
     ['stores', 'Точки'], ['money', 'Оборот'], ['team', 'Команда'], ['rating', 'Рейтинг'], ['menu', 'Меню и цех'],
-    ['events', 'События'], ['finance', 'Финансы'], ['holidays', 'Праздники'], ['city', 'Город и темп'], ['secret', 'Секретные'],
+    ['events', 'События'], ['finance', 'Финансы'], ['holidays', 'Праздники'], ['city', 'Город и темп'], ['russia', 'Россия'], ['secret', 'Секретные'],
   ];
   const HEAVY_EVERY = 7; // «тяжёлые» условия (перебор всех сотрудников) — раз в неделю
 
@@ -32,6 +32,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const cnt = (id, cat, icon, rar, name, desc, get, goal, o) => Object.assign({ id, cat, icon, rar, name, desc, test: (S, X) => get(S, X) >= goal, prog: (S, X) => [get(S, X), goal] }, o || {});
   const flag = (id, cat, icon, rar, name, desc, test, o) => Object.assign({ id, cat, icon, rar, name, desc, test }, o || {});
   const M = (v) => v * 1e6;
+  // второй акт: города и точки всей сети (S.corp — corp.js / directors.js)
+  const ruCities = (S) => (S.corp && S.corp.cities ? Object.keys(S.corp.cities).length : 0);
+  const ruHas = (id) => (S) => !!(S.corp && S.corp.cities && S.corp.cities[id]);
+  const netStores = (S) => (S.corp && BK.Corp && BK.Corp.on(S) ? BK.Corp.summary(S).stores : S.stores.length);
 
   /* ---------- список (порядок = порядок на экране внутри категории) ---------- */
   const LIST = [
@@ -100,6 +104,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     flag('fast', 'city', '🚀', 'e', 'Стремительный рост', 'Десять точек за первые три года', (S) => S.stores.length >= 10 && S.day <= 3 * 365, { prog: (S) => [S.day <= 3 * 365 ? S.stores.length : 0, 10], missed: (S) => S.day > 3 * 365 }),
     cnt('y10', 'city', '🎂', 'r', 'Десять лет в деле', 'Сеть работает 10 лет', (S) => Math.floor(S.day / 365), 10),
     cnt('y15', 'city', '🎖', 'e', 'Пятнадцать лет', 'Сеть работает 15 лет', (S) => Math.floor(S.day / 365), 15),
+    // Россия (второй акт)
+    cnt('ru2', 'russia', '🧭', 'r', 'Второй город', 'Открыть первый город за пределами Уфы', ruCities, 2),
+    cnt('ru3', 'russia', '🛤', 'r', 'Три города', 'Три города в сети', ruCities, 3),
+    cnt('ru5', 'russia', '🚆', 'e', 'Пять городов', 'Пять городов в сети', ruCities, 5),
+    cnt('ru10', 'russia', '🌐', 'e', 'Десять городов', 'Десять городов в сети', ruCities, 10),
+    flag('ruMsk', 'russia', '🏛', 'e', 'Москва', 'Открыть город в Москве', ruHas('moscow')),
+    flag('ruSpb', 'russia', '⚓', 'e', 'Петербург', 'Открыть город в Санкт-Петербурге', ruHas('spb')),
+    flag('ruDirYear', 'russia', '🏅', 'r', 'Директор года', 'Выбрать лучшего директора года', (S) => !!(S.corp && S.corp.dirYear && Object.keys(S.corp.dirYear).length)),
+    cnt('ruS100', 'russia', '💯', 'r', 'Сто точек', '100 точек во всех городах сети', netStores, 100),
+    cnt('ruS200', 'russia', '🧱', 'e', 'Двести точек', '200 точек во всех городах сети', netStores, 200),
+    cnt('ruS300', 'russia', '🏗', 'e', 'Триста точек', '300 точек во всех городах сети', netStores, 300),
+    flag('ruFed', 'russia', '🦅', 'e', 'Федеральная сеть', '10 городов по 10+ точек и оборот сети 40 млрд ₽ за 12 месяцев', (S) => !!(S.corp && S.corp.fed && S.corp.fed.goalDay != null)),
     // Секретные (до получения скрыты)
     flag('s13', 'secret', '🐈', 'c', 'Чёртова дюжина', 'Открыть точку №13', (S) => (S.flags.storeNum || 0) >= 13, { secret: true }),
     flag('sPrice', 'secret', '👑', 'c', 'Хлеб по цене золота', 'Все цены в меню на 50% выше рекомендованных', (S) => S.menu.length > 0 && S.menu.every((m) => m.pm >= 1.5), { secret: true }),

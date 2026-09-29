@@ -1,6 +1,8 @@
-/* QA второго акта (этап Р1): большое сохранение (бот good, 10 лет — накопленный оборот > 10 млрд) → окно «Сеть переросла город»,
+/* QA второго акта (этапы Р1–Р2): большое сохранение (бот good, 10 лет — накопленный оборот > 10 млрд) → окно «Сеть переросла город»,
    карта России, вход в Казань, цех и точка, 6 месяцев жизни, возврат в Уфу (агрегат Уфы), сохранение/загрузка с двумя городами,
-   старое сохранение без S.corp. Экраны 1440 и 390 в светлой и тёмной теме.
+   старое сохранение без S.corp. Р2: найм директора в Казань, отчёт во входящих, решение просьбы (да / отказ по сроку),
+   приоритет и бюджет города, вход в Екатеринбург под директором, Уфа под директором, «Сравнение городов», достижения,
+   сохранение Р1 (без полей директоров). Экраны 1440 / 390 / 360 в светлой и тёмной теме, цели на телефоне ≥ 40 px.
    Запуск: node qa/russia.js [папка=qa/shots/russia]   Итог — <папка>/issues.txt, код выхода 1 при проблемах. */
 const fs = require('fs'), path = require('path');
 const { chromium, openPage, layoutCheck, realTicks } = require('./lib');
@@ -136,6 +138,7 @@ async function flow(b, sv) {
   notes.push(`возврат в Уфу: точек ${u3.stores}, людей ${u3.staff}; Казань упакована (${u3.kzN} точек)`);
   await realTicks(p, 3); await clear(p);
   await shot('12-ufa-back');
+  await directors(p, tag, shot);
   // сохранение и загрузка с двумя городами
   const before = await p.evaluate(() => { BK.App.save(); const S = BK.App.state; return { day: S.day, cash: Math.round(S.cash), cities: Object.keys(S.corp.cities).join(), size: localStorage.getItem('bk-ufa-save-v1').length }; });
   notes.push(`сохранение с двумя городами: ${Math.round(before.size / 1024)} КБ`);
@@ -152,6 +155,12 @@ async function flow(b, sv) {
   const kz3 = await p.evaluate(() => ({ city: BK.CITY.name, geo: JSON.stringify(BK.DISTRICTS.map((d) => [d.id, d.x, d.y])), stores: BK.App.state.stores.length, ok: BK.App.state.stores.every((s) => BK.DISTRICTS.some((d) => d.id === s.district)) }));
   if (kz3.city !== 'Казань' || kz3.geo !== kzGeo || !kz3.ok) issues.push(`[${tag}] загрузка с активной Казанью: город ${kz3.city}, карта ${kz3.geo === kzGeo ? 'та же' : 'ДРУГАЯ'}, районы точек ${kz3.ok}`);
   await realTicks(p, 3); await clear(p); await shot('13-kazan-loaded');
+  // Уфа под директором: игрок в Казани, Уфу ведёт директор — отчёт Уфы во входящих, модель с директором
+  await live(p, 40, false); await realTicks(p, 1); await clear(p);
+  const uf = await p.evaluate(() => { const S = BK.App.state, u = S.corp.cities.ufa; return { dir: u.directorId, mods: !!BK.Dir.mods(S, u), rep: S.corp.inbox.some((it) => it.kind === 'report' && it.city === 'ufa'), rating: u.hist.slice(-1)[0][5], n: u.packed ? u.packed.stores.length : -1 }; });
+  if (!uf.dir || !uf.mods || !uf.rep) issues.push(`[${tag}] Уфа под директором: ${JSON.stringify(uf)}`);
+  notes.push(`Уфа под директором: ${uf.n} точек, рейтинг ${uf.rating}, отчёт во входящих — ${uf.rep ? 'да' : 'нет'}`);
+  const nCities = await p.evaluate(() => Object.keys(BK.App.state.corp.cities).length);
   // код сохранения → стартовый экран → загрузка (другое «устройство»)
   const code = await p.evaluate(() => { BK.App.ACT.settings(); document.getElementById('copyCode').click(); return document.getElementById('saveCode').value; });
   await p.evaluate(() => BK.App.ACT.closeModal());
@@ -162,7 +171,7 @@ async function flow(b, sv) {
   await p.evaluate(() => { const s = BK.Slots; if (s && s.beforeNew) s.beforeNew = () => true; });
   await p.click('#startCodeBtn'); await p.waitForTimeout(300);
   const imp = await p.evaluate(() => ({ s: !!BK.App.state, city: BK.CITY.name, cities: BK.App.state && Object.keys(BK.App.state.corp.cities).length }));
-  if (!imp.s || imp.city !== 'Казань' || imp.cities !== 2) issues.push(`[${tag}] загрузка из кода: ${JSON.stringify(imp)}`);
+  if (!imp.s || imp.city !== 'Казань' || imp.cities !== nCities) issues.push(`[${tag}] загрузка из кода: ${JSON.stringify(imp)}`);
   // сохранение первого акта без S.corp и с оборотом < 10 млрд: как раньше
   const small = await p.evaluate(() => { const S = BK.App.state; return S.day; });
   void small;
@@ -170,6 +179,90 @@ async function flow(b, sv) {
   const state = await p.evaluate(() => { const c = Object.assign({}, BK.App.state); delete c.cache; c.notify = []; return JSON.stringify(c); });
   await p.context().close();
   return JSON.parse(state);
+}
+
+// Р2: директора — найм, отчёт, просьба, приоритет и бюджет, вход под директором, сравнение, достижения
+async function directors(p, tag, shot) {
+  const S0 = await p.evaluate(() => ({ cands: BK.App.state.corp.dirCand.length, dirs: BK.App.state.corp.directors.length }));
+  if (S0.cands < 3 || S0.dirs) issues.push(`[${tag}] кандидаты в директора: ${JSON.stringify(S0)}`);
+  await p.keyboard.press('r'); await p.waitForTimeout(700);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'rudirs' })); await shot('14-dirs');
+  // найм в Казань через окно кандидата
+  await p.click('.dcand [data-act="hireDir"]'); await p.waitForTimeout(200);
+  await shot('15-m-hire');
+  await p.click('#modal [data-hire="kazan"]'); await p.waitForTimeout(200);
+  const k1 = await p.evaluate(() => { const S = BK.App.state, c = S.corp.cities.kazan, d = BK.Dir.dirOf(S, c); return { d: d && d.name, cap: c.budget.capex, prio: c.priority, plan: !!c.plan }; });
+  if (!k1.d || !(k1.cap > 0) || !k1.plan) issues.push(`[${tag}] найм директора в Казань: ${JSON.stringify(k1)}`);
+  notes.push(`директор Казани: ${k1.d}, бюджет года ${Math.round(k1.cap / 1e6)} млн, приоритет ${k1.prio}`);
+  // второй — в резерв, затем назначить на Уфу (где игрок — заместитель)
+  await p.evaluate(() => { if (!BK.App.state.corp.dirCand.length) BK.Engine.dirRefresh(BK.App.state, true); BK.App.ACT.hireDir({ arg: BK.App.state.corp.dirCand[0].id }); }); await p.waitForTimeout(150);
+  await p.click('#modal [data-hire=""]'); await p.waitForTimeout(150);
+  await p.evaluate(() => BK.App.ACT.ruHireFor({ arg: 'ufa' })); await p.waitForTimeout(150);
+  await p.click('#modal [data-assign]'); await p.waitForTimeout(150);
+  const u1 = await p.evaluate(() => ({ ufa: BK.App.state.corp.cities.ufa.directorId, res: BK.App.state.corp.directors.filter((d) => !d.city).length }));
+  if (!u1.ufa || u1.res) issues.push(`[${tag}] назначение из резерва на Уфу: ${JSON.stringify(u1)}`);
+  // месяц — отчёт Казани во входящих
+  await live(p, 35, false); await realTicks(p, 1); await clear(p);
+  const r1 = await p.evaluate(() => { const S = BK.App.state; const it = S.corp.inbox.find((x) => x.kind === 'report' && x.city === 'kazan'); return it ? { phrase: it.phrase, rev: it.rev, stores: it.stores } : null; });
+  if (!r1 || !r1.phrase || /\{|undefined|NaN/.test(r1.phrase) || !(r1.rev > 0)) issues.push(`[${tag}] отчёт Казани: ${JSON.stringify(r1)}`);
+  else notes.push(`отчёт Казани: выручка ${Math.round(r1.rev / 1e6)} млн, точек ${r1.stores}; «${r1.phrase}»`);
+  // просьба бюджета → ответ «да»
+  await p.evaluate(() => { const c = BK.App.state.corp.cities.kazan; c.wantBudget = { n: 2, cost: 20e6, day: BK.App.state.day }; c.budget.open = false; }); // открытия выключены — просьба не «сгорит» об открытие
+  await live(p, 32, false); await realTicks(p, 1); await clear(p);
+  await p.evaluate(() => BK.App.ACT.ruRep({ arg: BK.App.state.corp.inbox.find((x) => x.city === 'kazan' && (x.reqs || []).some((r) => r.t === 'budget' && r.st === 'open')).id }));
+  await p.waitForTimeout(250); await shot('16-inbox');
+  const b0 = await p.evaluate(() => BK.App.state.corp.cities.kazan.budget.capex);
+  await p.click('.rep.need [data-act="repAns"][data-arg2="0:yes"]'); await p.waitForTimeout(200);
+  const b1 = await p.evaluate(() => { const S = BK.App.state, it = S.corp.inbox.find((x) => (x.reqs || []).some((r) => r.t === 'budget')); return { cap: S.corp.cities.kazan.budget.capex, st: it.reqs.find((r) => r.t === 'budget').st, amount: it.reqs.find((r) => r.t === 'budget').amount }; });
+  await p.evaluate(() => { BK.App.state.corp.cities.kazan.budget.open = true; });
+  if (b1.st !== 'yes' || Math.abs(b1.cap - b0 - b1.amount) > 1) issues.push(`[${tag}] ответ «да» на бюджет: было ${b0}, ${JSON.stringify(b1)}`);
+  // просьба без ответа → отказ по сроку, −1 лояльности (+ помесячный дрейф)
+  const l0 = await p.evaluate(() => { const S = BK.App.state; S.corp.cities.kazan.wantBudget = { n: 1, cost: 15e6, day: S.day }; S.corp.cities.kazan.budget.open = false; S.corp.inbox = S.corp.inbox.filter((x) => !(x.reqs || []).some((r) => r.t === 'budget')); return 0; });
+  void l0;
+  await live(p, 64, false); await realTicks(p, 1); await clear(p);
+  const df = await p.evaluate(() => { BK.App.state.corp.cities.kazan.budget.open = true; return BK.App.state.corp.inbox.filter((x) => (x.reqs || []).some((r) => r.st === 'default')).length; });
+  if (!df) issues.push(`[${tag}] отказ по умолчанию не сработал`);
+  // карточка города: приоритет и бюджет
+  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'kazan' })); await p.waitForTimeout(200);
+  await p.click('[data-act="ruPrio"][data-arg="kazan"][data-arg2="growth"]'); await p.waitForTimeout(100);
+  const cap0 = await p.evaluate(() => BK.App.state.corp.cities.kazan.budget.capex);
+  await p.click('[data-act="ruBudget"][data-arg="kazan"][data-arg2="capex+"]'); await p.waitForTimeout(100);
+  const kc = await p.evaluate(() => ({ prio: BK.App.state.corp.cities.kazan.priority, cap: BK.App.state.corp.cities.kazan.budget.capex }));
+  if (kc.prio !== 'growth' || !(kc.cap > cap0)) issues.push(`[${tag}] приоритет/бюджет Казани: ${JSON.stringify(kc)}`);
+  await p.evaluate(() => { const c = document.querySelector('.ru-card'); if (c) c.scrollIntoView(); });
+  await shot('17-kazan-dir-card');
+  // вход в Екатеринбург под директором (ждём, пока штаб освободится)
+  await p.evaluate(() => { const S = BK.App.state, E = BK.Engine; let n = 0; while (E.enterLock(S, 'ekb') && n++ < 500) { if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []); S.notify.length = 0; E.tick(S); } if (S.cash < 3e9) S.cash = 3e9; BK.App.closeModal(); });
+  await realTicks(p, 1); await clear(p);
+  await p.evaluate(() => { if (!BK.App.state.corp.dirCand.length) BK.Engine.dirRefresh(BK.App.state, true); BK.App.ACT.ruEnter({ arg: 'ekb' }); }); await p.waitForTimeout(200);
+  await shot('18-m-enter-dir');
+  await p.click('#modal input[name="who"][value^="c:"]'); await p.click('#ruEnterOk'); await p.waitForTimeout(400);
+  const e1 = await p.evaluate(() => { const S = BK.App.state, c = S.corp.cities.ekb; return c ? { active: S.corp.active, dir: c.directorId, packed: !!c.packed, stores: c.packed ? c.packed.stores.length : 0, prods: c.packed ? c.packed.productions.length : 0 } : null; });
+  if (!e1 || e1.active !== 'ufa' || !e1.dir || !e1.packed || e1.stores < 1 || e1.prods !== 1) issues.push(`[${tag}] вход в Екатеринбург под директором: ${JSON.stringify(e1)}`);
+  await live(p, 70, false); await realTicks(p, 1); await clear(p);
+  const e2 = await p.evaluate(() => { const S = BK.App.state, h = S.corp.cities.ekb.hist; return { rev: h.length ? h[h.length - 1][2] : 0, open: S.corp.cities.ekb.packed.stores.filter((s) => s.status !== 'opening').length }; });
+  if (!(e2.rev > 0) || !e2.open) issues.push(`[${tag}] Екатеринбург под директором не работает: ${JSON.stringify(e2)}`);
+  notes.push(`Екатеринбург под директором через 2 мес.: открыто ${e2.open} точек, выручка ${Math.round(e2.rev / 1e6)} млн/мес`);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'rucmp' })); await shot('19-cmp');
+  const cm = await p.evaluate(() => ({ rows: document.querySelectorAll('table.cmp tbody tr').length, cities: Object.keys(BK.App.state.corp.cities).length }));
+  if (cm.rows !== cm.cities) issues.push(`[${tag}] «Сравнение городов»: строк ${cm.rows}, городов ${cm.cities}`);
+  await p.evaluate(() => { const d = BK.App.state.corp.directors[0]; BK.App.ACT.ruDir({ arg: d.id }); }); await shot('20-dir-detail');
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ru' })); await shot('21-corp');
+  const ach = await p.evaluate(() => ['ru2', 'ru3'].filter((id) => !BK.Ach.isOn(BK.App.state, id)));
+  if (ach.length) issues.push(`[${tag}] нет достижений: ${ach.join(', ')}`);
+  await p.evaluate(() => { BK.App.state.notify.push({ type: 'fed' }); }); await realTicks(p, 1); await p.waitForTimeout(250);
+  const fm = await p.evaluate(() => !!document.querySelector('#modal .ru-stamp'));
+  if (!fm) issues.push(`[${tag}] нет окна «Федеральная сеть»`);
+  await shot('22-m-fed');
+  await p.evaluate(() => BK.App.ACT.closeModal());
+  await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(200);
+}
+
+// цели на телефоне: новые кнопки второго акта — не меньше 40 px по высоте
+async function touchTargets(p, label) {
+  const bad = await p.evaluate(() => [...document.querySelectorAll('#pbody .fchip, #pbody .btn.stp, #pbody .ra .btn, #pbody .rqb .btn, #pbody .dbtns .btn, #pbody .seg.prio button, #pbody .seg.sm button, #pbody .rfoot .btn, #pbody .nom .btn, #pbody .cmpc .btn, #pbody .dcand .btn, #modal .choice, #modal .wopt')]
+    .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 39.5; }).slice(0, 5).map((e) => `${e.className} «${e.textContent.trim().slice(0, 20)}» ${Math.round(e.getBoundingClientRect().height)}px`));
+  return bad.map((x) => `[${label}] ЦЕЛЬ < 40 px: ${x}`);
 }
 
 async function screens(b, vp, theme, st) {
@@ -188,19 +281,30 @@ async function screens(b, vp, theme, st) {
   if (mobile) { const vis = await p.evaluate(() => { const b = document.querySelector('.ml-crumb'); const r = b.getBoundingClientRect(); return !b.hidden && r.width > 30 && r.right <= innerWidth; }); if (!vis) issues.push(`[${tag}] кнопка «Россия» на карте не видна`); }
   await p.click('.ml-crumb'); await p.waitForTimeout(700);
   await shot('02-russia');
-  if (mobile) await shot('03-russia-full', { full: true }); // панель под картой — снимок всей страницы
-  // карточка свободного города и вход
-  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'ekb' })); await p.waitForTimeout(150);
+  const tt = async (n) => { if (mobile) issues.push(...await touchTargets(p, `${tag} ${n}`)); };
+  if (mobile) { await shot('03-russia-full', { full: true }); await tt('03'); }
+  // карточка города под директором
+  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'kazan' })); await p.waitForTimeout(150);
   if (mobile) await p.evaluate(() => { const c = document.querySelector('.ru-card'); window.scrollTo(0, c.getBoundingClientRect().top + scrollY - document.querySelector('.hud').offsetHeight - 12); });
-  await shot('04-russia-ekb');
+  await shot('04-kazan'); await tt('04');
+  if (mobile) await shot('04b-kazan-full', { full: true });
   await p.evaluate(() => window.scrollTo(0, 0));
-  await p.evaluate(() => BK.App.ACT.ruEnter({ arg: 'ekb' })); await shot('05-m-enter-ekb');
-  await p.click('#ruEnterOk'); await p.waitForTimeout(800); await clear(p);
-  await shot('06-ekb-setup');
-  if (mobile) await shot('07-ekb-setup-full', { full: true });
+  for (const [tab, n] of [['rudirs', '05-dirs'], ['ruinbox', '06-inbox'], ['rucmp', '07-cmp']]) {
+    await p.evaluate((t) => { BK.App.ACT.tab({ arg: t }); if (t === 'rudirs') { const d = BK.App.state.corp.directors[0]; if (d) { BK.App.ui.dirSel = d.id; BK.App.ACT.tab({ arg: t }); } } }, tab);
+    await shot(n); await tt(n);
+    if (mobile) await shot(n + '-full', { full: true });
+    await p.evaluate(() => window.scrollTo(0, 0));
+  }
+  await p.evaluate(() => BK.App.ACT.ruHireFor({ arg: 'kazan' })); await shot('08-m-hire'); await tt('08');
+  await p.evaluate(() => BK.App.ACT.closeModal());
+  const free = await p.evaluate(() => BK.CITIES.map((d) => d.id).find((id) => !BK.App.state.corp.cities[id] && !BK.Engine.enterLock(BK.App.state, id)));
+  if (free) { await p.evaluate((id) => BK.App.ACT.ruEnter({ arg: id }), free); await shot('09-m-enter'); await tt('09'); await p.evaluate(() => BK.App.ACT.closeModal()); }
+  await p.evaluate(() => { BK.App.state.notify.push({ type: 'fed' }); }); await realTicks(p, 1); await p.waitForTimeout(250);
+  await shot('10-m-fed');
+  await p.evaluate(() => BK.App.ACT.closeModal());
   // окно выхода в Россию
   await p.evaluate(() => { BK.App.state.notify.push({ type: 'corp' }); }); await realTicks(p, 1); await p.waitForTimeout(250);
-  await shot('08-m-unlock');
+  await shot('11-m-unlock');
   await p.evaluate(() => BK.App.ACT.closeModal());
   errors.push(...p.errs.map((e) => `[${tag}] ${e}`));
   await p.context().close();
@@ -220,6 +324,23 @@ async function oldSave(b, sv) {
   await p.context().close();
 }
 
+// сохранение Р1: корпорация без полей директоров — грузится, ensure ставит значения по умолчанию
+async function r1Save(b, st) {
+  const tag = 'сохранение Р1';
+  const sv = JSON.parse(JSON.stringify(st)), cr = sv.corp;
+  for (const k of ['directors', 'dirCand', 'dirCandDay', 'inbox', 'fed', 'dirYear', 'dirSeq', 'repSeq', 'q0']) delete cr[k];
+  for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['directorId', 'priority', 'budget', 'plan', 'dev', 'wantBudget', 'closeReq', 'budgetCutY']) delete c[k]; c.hist = c.hist.map((x) => x.slice(0, 7)); if (c.packed) for (const s of c.packed.stores) { delete s.mn0; delete s.byDir; } }
+  const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 3 });
+  await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await realTicks(p, 40); await clear(p);
+  const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { dirs: Array.isArray(cr.directors), cand: cr.dirCand.length, inbox: Array.isArray(cr.inbox), budgets: Object.values(cr.cities).every((c) => c.budget && c.dev), hist: Object.values(cr.cities).every((c) => c.hist.slice(-1)[0].length === 9) }; });
+  if (!r.dirs || r.cand < 3 || !r.inbox || !r.budgets || !r.hist) issues.push(`[${tag}] ${JSON.stringify(r)}`);
+  await p.keyboard.press('r'); await p.waitForTimeout(600);
+  for (const t of ['ru', 'rudirs', 'ruinbox', 'rucmp']) { await p.evaluate((x) => BK.App.ACT.tab({ arg: x }), t); await p.waitForTimeout(150); issues.push(...await textProblems(p, `${tag} ${t}`)); }
+  errors.push(...p.errs.map((e) => `[${tag}] ${e}`));
+  await p.context().close();
+}
+
 (async () => {
   const t0 = Date.now();
   log('генерирую сохранения ботом…');
@@ -232,7 +353,8 @@ async function oldSave(b, sv) {
   const b = await chromium.launch();
   log('сценарий (1440, светлая)'); const st = await flow(b, pre);
   log('старое сохранение'); await oldSave(b, young);
-  for (const vp of ['d1440', 'm390']) for (const th of ['light', 'dark']) { log('экраны', vp, th); await screens(b, vp, th, st); }
+  log('сохранение Р1'); await r1Save(b, st);
+  for (const vp of ['d1440', 'm390', 'm360']) for (const th of ['light', 'dark']) { log('экраны', vp, th); await screens(b, vp, th, st); }
   await b.close();
   const uniq = [...new Set(issues)], errs = [...new Set(errors)];
   const txt = ['# Замеры и заметки', ...notes, '', `# Проблемы (${uniq.length})`, ...uniq, '', `# Ошибки консоли (${errs.length})`, ...errs].join('\n');

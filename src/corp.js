@@ -313,8 +313,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         let closed = s.status === 'repair' || n === 0 ? 0 : 1;
         if (s.lostDays && closed) { closed = clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = 0; } // ремонт директора: точка закрыта несколько дней
         const r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr;
-        // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга (для «На точку к прогнозу»)
-        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * Math.max(0.3, ramp) * gmD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC; }
+        // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню и ценами сети (для «На точку к прогнозу»)
+        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * Math.max(0.3, ramp) * gmD * prD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
         const f1 = r * pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1);
         const rn = s.payMode === 'month' ? E.storeRentMonth(s) * frac * (dm ? dm.rentK : 1) : 0;
         if (s.payMode === 'year' && S.day >= (s.rentPaidUntil || 0)) { const y = E.storeRentMonth(s) * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT); rent += y; s.rentPaidUntil = S.day + 365; }

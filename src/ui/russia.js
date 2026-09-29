@@ -163,7 +163,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = BK.CITY_BY_ID[id], st = BK.Corp.cityStats(S, id);
     if (!d) return '';
     let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.km ? ` · ${H().n0(d.km)} км от Уфы` : ''}`;
-    if (st) s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' : 'Автопилот: без роста'}`;
+    if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
     else { const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`; }
     return s;
   }
@@ -173,7 +173,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.S = S;
     const k = upp(), sm = BK.Corp.summary(S); if (!sm) return;
     const own = {}; for (const c of sm.cities) own[c.id] = c;
-    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev).join()].join('|');
+    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join()].join('|');
     if (key === view.lastKey && !force) return;
     view.lastKey = key;
     const narrow = view.px.w < 700;
@@ -194,6 +194,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         g += `<circle class="ring t-${tone}" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/><circle class="b" r="${R.toFixed(1)}" stroke-width="${(1.4 * k).toFixed(2)}"/>`;
         g += `<text class="n" style="font-size:${((c.stores >= 100 ? 9.5 : 11) * k).toFixed(2)}px">${c.stores}</text>`;
         if (c.status === 'launch' && !c.stores) g += `<circle class="launch" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/>`;
+        const bd = BK.CorpUI && BK.CorpUI.mapBadge(S, d.id); // инициалы директора или «!» — нет директора
+        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; }
       } else {
         const lock = E().enterLock(S, d.id);
         if (sel) g += `<circle class="selring" r="${(r + 5 * k).toFixed(1)}" stroke-width="${(2 * k).toFixed(2)}"/>`;
@@ -286,7 +288,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function cityCard(S, id) {
     const d = BK.CITY_BY_ID[id]; if (!d) return '';
     const h = H(), c = BK.Corp.cityStats(S, id);
-    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.km ? ` · ${h.n0(d.km)} км от Уфы` : ' · родной город'} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : ''}">${c.active ? 'вы управляете' : 'автопилот'}</span>` : ''}</div>`;
+    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.km ? ` · ${h.n0(d.km)} км от Уфы` : ' · родной город'} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
     s += chips(d);
     if (d.feat) s += `<div class="hint">${esc(d.feat)}</div>`;
     if (c) {
@@ -294,17 +296,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<div class="kpis"><div class="kpi"><span class="k">Выручка за месяц</span><span class="v">${c.lastRev != null ? fm(c.lastRev) : '—'}</span><span class="d">${hist.length > 1 ? h.spark(hist.map((x) => x[2]), 64, 18) : 'первый месяц'}</span></div>
         <div class="kpi"><span class="k">Прибыль за месяц</span><span class="v ${c.lastProfit < 0 ? 'negc' : ''}">${c.lastProfit != null ? fm(c.lastProfit) : '—'}</span><span class="d">${c.lastRev ? 'маржа ' + h.pctS(c.lastProfit / c.lastRev, true) : 'до вычета офиса сети'}</span></div>
         <div class="kpi"><span class="k">Точки · цеха</span><span class="v">${c.open}${c.soon ? ` <small class="pos">+${c.soon}</small>` : ''} · ${c.prods}</span><span class="d">команда ${c.staff}</span></div>
-        <div class="kpi"><span class="k">Рейтинг на картах</span><span class="v">${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : '—'}</span><span class="d">${c.active ? 'как в городе' : 'сползает к 3,5★ без вас'}</span></div></div>`;
+        <div class="kpi"><span class="k">Рейтинг на картах</span><span class="v">${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : '—'}</span><span class="d">${c.active ? 'как в городе' : hasDir(S, id) ? 'ведёт директор' : 'сползает к 3,5★ без вас'}</span></div></div>`;
       if (id !== 'ufa') s += awBar(c.aw);
+      if (BK.CorpUI) s += BK.CorpUI.cityBlocks(S, id);
       if (c.active) s += `<div class="row sp"><span class="hint">Этот город считается подробно: вы нанимаете, учите и открываете точки сами.</span><button class="btn primary" data-act="ruBack">К карте города</button></div>`;
-      else s += `<div class="row sp"><span class="hint">Без вас город только живёт: новых точек нет, найм медленный, рейтинг сползает. Зайдите, чтобы вести его самому.</span><button class="btn primary" data-act="ruGo" data-arg="${id}">Зайти в город</button></div>`;
+      else s += `<div class="row sp"><span class="hint">${hasDir(S, id) ? 'Зайдите, чтобы вести город самому: директор станет заместителем (дольше 2 месяцев — лояльность падает).' : 'Без директора город только живёт. Зайдите, чтобы вести его самому.'}</span><button class="btn primary" data-act="ruGo" data-arg="${id}">Зайти в город</button></div>`;
     } else {
       const lock = E().enterLock(S, id), cost = E().enterCost(S, id), aw = BK.Corp.awStart(S, id);
       s += `<div class="grid2">${h.kv('Вход: регистрация и маркетинг', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
-      s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Вы переедете сюда и будете управлять сами, а прежний город перейдёт на автопилот.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
+      s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Запустите город сами (переезд) или поручите директору — тогда вы останетесь, где были.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
     }
     return s + `</div>`;
   }
+  const hasDir = (S, id) => !!(S.corp.cities[id] && S.corp.cities[id].directorId);
+  function modeTxt(S, id) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); return dr ? 'директор ' + (BK.CorpUI ? BK.CorpUI.initials(dr.name) : '') : 'нет директора'; }
   function panel(S, ui) {
     const h = H(), sm = BK.Corp.summary(S); if (!sm) return '<div class="empty">Россия откроется, когда оборот сети за всё время дойдёт до 10 млрд ₽.</div>';
     const hs = S.history, last = hs[hs.length - 1];
@@ -312,6 +317,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec ru-head"><div class="dkpis">
       <div class="dkpi"><div class="lab">Выручка сети${last ? ' за ' + E().MONTHS[last.m] : ''}</div><div class="v">${fm(last ? last.rev : S.month.rev)}</div><div class="sub">за 12 мес.: <span class="num">${fm(roll)}</span></div></div>
       <div class="dkpi"><div class="lab">Прибыль сети</div><div class="v ${last && last.profit < 0 ? 'negc' : ''}">${last ? fm(last.profit) : '—'}</div><div class="sub">${h.nw(sm.cities.length, 'город', 'города', 'городов')} · ${h.nw(sm.stores, 'точка', 'точки', 'точек')}</div></div></div></div>`;
+    if (BK.CorpUI) s = `<div class="sec">${BK.CorpUI.fedCard(S)}</div>` + s + BK.CorpUI.attentionHtml(S, 5);
     // доля городов в выручке за 12 мес.
     const tot = sm.cities.reduce((a, c) => a + Math.max(0, c.rev12), 0);
     if (tot > 0) {
@@ -322,13 +328,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sel = ui.ruSel || sm.active;
     s += `<div class="sec"><h3>${BK.Corp.cityStats(S, sel) ? 'Город' : 'Новый город'} <small>нажмите на кружок на карте</small></h3>${cityCard(S, sel)}</div>`;
     s += `<div class="sec"><h3>Наши города</h3>${sm.cities.map((c) => cityRow(S, c, sel)).join('')}
-      <p class="hint" style="margin:0">Подробно считается только город, где вы сейчас. Остальные — на автопилоте раз в месяц: точки работают, но не растут. Директора, которые будут вести города за вас, появятся позже.</p></div>`;
+      <p class="hint" style="margin:0">Подробно считается только город, где вы сейчас. Остальные ведут директора: раз в месяц нанимают и учат людей, открывают и закрывают точки в пределах бюджета и присылают отчёт. Город без директора только живёт.</p></div>`;
     s += `<div class="sec"><h3>Куда дальше <small>ближайшие к сети</small></h3>${nextCities(S).slice(0, 4).map((id) => freeRow(S, id, sel)).join('')}<button class="linkbtn" data-act="tab" data-arg="rucities">Все города России →</button></div>`;
     return s;
   }
   function cityRow(S, c, sel) {
     const h = H(), d = BK.CITY_BY_ID[c.id];
-    return `<div class="card click ru-row${sel === c.id ? ' sel' : ''}" data-act="ruSel" data-arg="${c.id}"><div class="card-h"><div><div class="card-t">${esc(d.name)} ${c.active ? '<span class="chip crust">вы здесь</span>' : '<span class="chip">автопилот</span>'}</div><div class="card-s">${h.nw(c.open, 'точка', 'точки', 'точек')}${c.soon ? ` (+${c.soon})` : ''} · ${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : 'нет рейтинга'}${c.id !== 'ufa' ? ' · узнаваемость ' + Math.round(c.aw * 100) + ' %' : ''}</div></div>
+    return `<div class="card click ru-row${sel === c.id ? ' sel' : ''}" data-act="ruSel" data-arg="${c.id}"><div class="card-h"><div><div class="card-t">${esc(d.name)} ${c.active ? '<span class="chip crust">вы здесь</span>' : hasDir(S, c.id) ? `<span class="chip">${esc(modeTxt(S, c.id))}</span>` : '<span class="chip bad">нет директора</span>'}</div><div class="card-s">${h.nw(c.open, 'точка', 'точки', 'точек')}${c.soon ? ` (+${c.soon})` : ''} · ${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : 'нет рейтинга'}${c.id !== 'ufa' ? ' · узнаваемость ' + Math.round(c.aw * 100) + ' %' : ''}</div></div>
       <div class="ru-rv"><b>${c.lastRev != null ? fm(c.lastRev) : '—'}</b><span class="${c.lastProfit < 0 ? 'negc' : 'pos'}">${c.lastProfit != null ? (c.lastProfit >= 0 ? '+' : '') + fm(c.lastProfit) : 'первый месяц'}</span></div></div></div>`;
   }
   function nextCities(S) { // не наши города по расстоянию до ближайшего нашего
@@ -354,7 +360,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sm = BK.Corp.summary(S), others = sm.cities.filter((c) => !c.active);
     if (!others.length) return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}Открыт выход в Россию: можно открыть второй город.</span><button class="btn sm primary" data-act="russia">Карта России</button></div>`;
     const h = H(), rev = others.reduce((a, c) => a + (c.lastRev || 0), 0), n = others.reduce((a, c) => a + c.open, 0), has = others.some((c) => c.lastRev != null);
-    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>На автопилоте: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
+    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
   BK.Russia = { build, render, open, close, isOpen, select, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };

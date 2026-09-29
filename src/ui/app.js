@@ -14,7 +14,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ['dash', 'Сводка'], ['stores', 'Точки'], ['market', 'Рынок'], ['prod', 'Цех'],
     ['menu', 'Меню'], ['team', 'Команда'], ['fin', 'Финансы'], ['log', 'Журнал'],
   ];
-  const RU_TABS = [['ru', 'Россия'], ['rucities', 'Города'], ['fin', 'Финансы'], ['log', 'Журнал']]; // вид «карта России»
+  const RU_TABS = [['ru', 'Корпорация'], ['rucities', 'Города'], ['rudirs', 'Директора'], ['ruinbox', 'Отчёты'], ['rucmp', 'Сравнение'], ['fin', 'Финансы'], ['log', 'Журнал']]; // вид «карта России»
+  const isRuTab = (t) => /^ru/.test(t || '');
+  const RU_WIDE = { rudirs: 1, ruinbox: 1, rucmp: 1 }; // широкая панель на ПК (таблицы и отчёты)
   const ICON = {
     pause: '<svg viewBox="0 0 16 14"><rect x="3" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
     p1: '<svg viewBox="0 0 16 14"><path d="M4 1 L13 7 L4 13 Z" fill="currentColor"/></svg>',
@@ -181,7 +183,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
   function continueGame(st) {
-    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (ui.tab === 'ru' || ui.tab === 'rucities') ui.tab = 'dash';
+    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
   }
@@ -233,6 +235,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
+      else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
     }
   }
 
@@ -264,11 +267,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     set('hud-mood', mc.total ? `<i style="width:${pc(mc.happy)}%;background:var(--face-happy)"></i><i style="width:${pc(mc.mid)}%;background:var(--face-mid)"></i><i style="width:${pc(mc.sad)}%;background:var(--face-sad)"></i>` : '');
     $('#hud-mood').title = mc.total ? `Настроение команды: довольны ${mc.happy}, терпят ${mc.mid}, недовольны ${mc.sad}` : '';
     set('hud-st-d', mc.total ? `${Math.round(mc.happy / mc.total * 100)}\u00a0% довольны` : 'команды пока нет');
-    // цель
-    set('hud-goal-p', S.won ? 'взята' : g.pctTxt);
-    $('#hud-goal').textContent = H.fm(g.rolling);
-    set('hud-goal-eta', S.won ? '' : g.etaShort);
-    set('hud-goalbar', H.goalBar(g.p));
+    // цель: первый акт — 5 млрд по Уфе; во втором акте (2+ города или победа в Уфе) — «Федеральная сеть»
+    const fed = BK.CorpUI && BK.CorpUI.fedMode(S), gs = $('.hud .goal');
+    gs.classList.toggle('fed', !!fed);
+    if (fed) {
+      const hg = BK.CorpUI.hudGoal(S);
+      set('hud-goal-k', '<span class="long">Цель · Федеральная сеть</span><span class="short">Федеральная сеть</span>');
+      set('hud-goal-p', hg.p); $('#hud-goal').textContent = hg.v; set('hud-goal-eta', ''); set('hud-goalbar', hg.bars);
+      gs.title = 'Цель второго акта: 10 городов по 10+ точек и оборот сети 40 млрд ₽ за 12 месяцев';
+    } else {
+      set('hud-goal-k', '<span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span>');
+      set('hud-goal-p', S.won ? 'взята' : g.pctTxt);
+      $('#hud-goal').textContent = H.fm(g.rolling);
+      set('hud-goal-eta', S.won ? '' : g.etaShort);
+      set('hud-goalbar', H.goalBar(g.p));
+      gs.title = 'Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽';
+    }
     document.querySelectorAll('[data-speed]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.speed === ui.speed)));
     const ban = $('#setupbanner'), cs = E.citySetup && E.citySetup(S), cn = BK.CITY ? H.esc(BK.CITY.name) : '';
     if (S.phase === 'setup_prod') { ban.hidden = false; ban.innerHTML = '<b>Шаг 1 · Производство</b>Выберите помещение под цех — на карте или в списке справа'; }
@@ -282,7 +296,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function tabDots() {
     if (!S) return {};
     const c = BK.attention(S).counts;
-    return { dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0 };
+    return { dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0, ruinbox: BK.Dir && BK.Corp.on(S) ? BK.Dir.inboxOpen(S) : 0 };
   }
   function renderTabs() {
     const dots = tabDots();
@@ -296,7 +310,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     renderTabs();
     const body = $('#pbody');
     const scroll = body.scrollTop;
-    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab }[ui.tab] || P.dash;
+    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
+    const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
+    if (main.classList.contains('ru-wide') !== wide) { main.classList.toggle('ru-wide', wide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
     let html;
     if ((S.phase === 'setup_prod' || S.phase === 'setup_store') && ui.tab !== 'log') html = P.dash(S, ui);
     else if (ui.view !== 'russia' && E.citySetup && E.citySetup(S) && ui.tab !== 'log' && ui.tab !== 'fin') html = P.dash(S, ui); // запуск нового города
@@ -437,6 +453,33 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ruZoom: (d) => BK.Russia.zoom(d.arg),
     ruEnter: (d) => openEnterModal(d.arg),
     ruGo: (d) => openGoModal(d.arg),
+    // директора (этап Р2)
+    ruHireFor: (d) => openHireModal({ cityId: d.arg }),
+    hireDir: (d) => openHireModal({ candId: d.arg }),
+    ruDir: (d) => { const was = ui.tab === 'rudirs' && ui.dirSel === d.arg; ui.tab = 'rudirs'; ui.dirSel = was ? null : d.arg; ui.confirmDirFire = null; refresh(); if (!was) requestAnimationFrame(() => { const el = document.querySelector('.drowc.sel'); if (el) el.scrollIntoView({ block: 'nearest' }); }); },
+    ruRep: (d) => { ui.tab = 'ruinbox'; ui.repOpen = d.arg; ui.repFilter = 'all'; refresh(); requestAnimationFrame(() => { const el = document.getElementById('rep-' + d.arg); if (el) el.scrollIntoView({ block: 'start' }); }); },
+    dirPay: (d) => res(E.dirSalary(S, d.arg, +d.arg2)),
+    askDirFire: (d) => { ui.confirmDirFire = d.arg; refresh(); },
+    dirFire: (d) => { ui.confirmDirFire = null; ui.dirSel = null; res(E.dirFire(S, d.arg)); },
+    dirRefresh: () => res(E.dirRefresh(S, true), 'Кадровое агентство прислало новых кандидатов'),
+    repAns: (d) => { const [i, ch] = String(d.arg2).split(':'); res(E.dirAnswer(S, d.arg, +i, ch)); },
+    repPraise: (d) => res(E.dirPraise(S, d.arg), 'Директор отмечен: лояльность +2'),
+    repAward: (d) => res(E.dirAward(S, d.arg, d.arg2), 'Директор года выбран'),
+    repFilter: (d) => { ui.repFilter = d.arg; refresh(); },
+    cmpF: (d) => { ui.cmpF = d.arg; refresh(); },
+    cmpSort: (d) => { ui.cmpSort = d.arg; refresh(); },
+    ruPrio: (d) => res(E.citySetPriority(S, d.arg, d.arg2)),
+    ruBudget: (d) => {
+      const c = S.corp.cities[d.arg]; if (!c) return; const b = c.budget, a = d.arg2, pl = S.macro.priceLevel;
+      const step = Math.max(5e6 * pl, b.capex * 0.1);
+      if (a === 'capex+') E.citySetBudget(S, d.arg, { capex: b.capex + step });
+      else if (a === 'capex-') E.citySetBudget(S, d.arg, { capex: Math.max(0, b.capex - step) });
+      else if (a === 'pay+' || a === 'pay-') E.citySetBudget(S, d.arg, { pay: Math.round(((c.payK || 1) + (a === 'pay+' ? 0.01 : -0.01)) * 100) / 100 });
+      else if (a === 'train+' || a === 'train-') E.citySetBudget(S, d.arg, { train: b.train + (a === 'train+' ? 1 : -1) });
+      else if (a === 'open1' || a === 'open0') E.citySetBudget(S, d.arg, { open: a === 'open1' });
+      else if (a === 'close1' || a === 'close0') E.citySetBudget(S, d.arg, { close: a === 'close1' });
+      refresh();
+    },
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
@@ -453,6 +496,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ui.dragging = e.type === 'input';
       if (e.type === 'change') { ui.dragging = false; refresh(); }
     } else if (t.dataset.inp === 'hireStore') { ui.hireStore = t.value; refresh(); }
+    else if (t.dataset.inp === 'dirAssign' && e.type === 'change') { const r = E.dirAssign(S, t.dataset.arg, t.value || null); res(r, r.ok ? (t.value ? `Директор назначен: ${BK.CITY_BY_ID[t.value].name}` : 'Директор в резерве') : null); BK.Russia.render(S, true); }
     else if (t.dataset.inp === 'bake') {
       E.setBake(S, +t.value);
       const lab = t.closest('.field'), L = C.BAKE_LEVELS[E.wasteState(S).bake + 3]; if (lab) lab.querySelector('b').textContent = L.name; t.setAttribute('aria-valuetext', L.name);
@@ -600,7 +644,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = E.dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
     openModal(`<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>РОССИЯ</b><small>${dt} · лист 2</small></div></div><span class="eyebrow pos">Второй акт</span><h2>Сеть переросла город</h2></div><div class="modal-b">
       <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — в Уфе ей стало тесно. Открыт выход в Россию: ${BK.CITIES.length - 1} городов — от Стерлитамака до Новосибирска.</p>
-      <ul class="ru-list"><li><b>Новый город</b> начинается как Уфа: регистрация, свой цех и первые точки.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные на автопилоте: работают, но не растут.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
+      <ul class="ru-list"><li><b>Новый город</b> начинается как Уфа: регистрация, свой цех и первые точки.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные ведут <b>директора</b>: нанимайте их во вкладке «Директора», задавайте бюджет и приоритет, отвечайте на отчёты.</li><li><b>Цель второго акта</b> — «Федеральная сеть»: 10 городов по 10+ точек и 40 млрд ₽ оборота за 12 месяцев.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
       </div><div class="modal-f"><button class="btn primary block" id="ruOpen">Открыть карту России</button><button class="btn block" data-act="closeModal">Позже</button></div>`, { closable: true });
     $('#ruOpen').addEventListener('click', () => { closeModal(); openRussia(); });
   }
@@ -615,7 +659,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function cityView(anim) { // вернуться к карте активного города
     const was = ui.view === 'russia';
     ui.view = 'city';
-    if (ui.tab === 'ru' || ui.tab === 'rucities') ui.tab = ui.prevTab && ui.prevTab !== 'ru' && ui.prevTab !== 'rucities' ? ui.prevTab : 'dash';
+    if (isRuTab(ui.tab)) ui.tab = ui.prevTab && !isRuTab(ui.prevTab) ? ui.prevTab : 'dash';
+    const mn = $('.main'); if (mn) mn.classList.remove('ru-wide');
     const wrap = $('.mapwrap'); if (!wrap || !BK.Russia) return;
     if (!anim || !was) { if (BK.Russia.isOpen()) { const r = wrap.querySelector('.rumap'); if (r) r.hidden = true; wrap.classList.remove('ru-on'); } $('#map').style.visibility = ''; }
     else BK.Russia.close(S, wrap, $('#map'));
@@ -630,18 +675,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (lock) { toast('Пока нельзя', lock, 'warn'); return; }
     openModal(`<div class="modal-h"><span class="eyebrow">Новый город</span><h2>Открыть ${H.esc(d.name)}?</h2></div><div class="modal-b">
       <p style="margin:0">Регистрация, разрешения и стартовый маркетинг — <b>${H.fm(cost)}</b>. Дальше — как в начале игры: цех и первые точки из своих денег. Стартовая узнаваемость бренда — ${Math.round(BK.Corp.awStart(S, id) * 100)} %.</p>
-      <p class="hint" style="margin:0">${enterText(id)}</p></div>
+      ${BK.CorpUI ? BK.CorpUI.enterChoices(S, id) : `<p class="hint" style="margin:0">${enterText(id)}</p>`}</div>
       <div class="modal-f"><button class="btn primary block" id="ruEnterOk"${S.cash < cost ? ' disabled' : ''}>Открыть город <span class="cost">${H.fm(cost)}</span></button><button class="btn block" data-act="closeModal">Отмена</button></div>`, { closable: true });
     $('#ruEnterOk').addEventListener('click', () => {
-      const r = E.enterCity(S, id); closeModal();
+      const w = $('#modal input[name="who"]:checked'), who = w ? w.value : '';
+      let dirId = null;
+      if (who.startsWith('d:')) dirId = who.slice(2);
+      else if (who.startsWith('c:')) { const h = E.dirHire(S, who.slice(2), null); if (!h.ok) { toast('Не получилось', h.msg, 'warn'); return; } dirId = h.d.id; }
+      const r = dirId ? E.enterCity(S, id, { director: dirId }) : E.enterCity(S, id); closeModal();
       if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; }
-      afterSwitch(); toast(`${d.name}: вход открыт`, 'Выберите помещение под цех.', 'good'); save();
+      if (dirId) { ui.ruSel = id; BK.Russia.select(id); BK.Russia.render(S, true); refresh(); toast(`${d.name}: запуск начался`, `Директор откроет цех и ${H.nw(r.opened || 0, 'точку', 'точки', 'точек')}. Отчёт — 1-го числа.`, 'good'); }
+      else { afterSwitch(); toast(`${d.name}: вход открыт`, 'Выберите помещение под цех.', 'good'); }
+      save();
     });
+  }
+  function openHireModal(o) {
+    const html = BK.CorpUI.hireModal(S, o); if (!html) return;
+    openModal(html, { closable: true });
+    const done = (r, msg) => { closeModal(); if (!r.ok) { toast('Не получилось', r.msg || '', 'warn'); return; } toast(msg, '', 'good'); BK.Russia.render(S, true); save(); };
+    $('#modal').querySelectorAll('[data-hire]').forEach((b) => b.addEventListener('click', () => { const r = E.dirHire(S, o.candId, b.dataset.hire || null); done(r, r.ok ? `${r.d.name} — ${b.dataset.hire ? 'директор: ' + BK.CITY_BY_ID[b.dataset.hire].name : 'в резерве'}` : ''); }));
+    $('#modal').querySelectorAll('[data-assign]').forEach((b) => b.addEventListener('click', () => done(E.dirAssign(S, b.dataset.assign, o.cityId), `Директор назначен: ${BK.CITY_BY_ID[o.cityId].name}`)));
+    $('#modal').querySelectorAll('[data-cand]').forEach((b) => b.addEventListener('click', () => { const r = E.dirHire(S, b.dataset.cand, o.cityId); done(r, r.ok ? `${r.d.name} — директор: ${BK.CITY_BY_ID[o.cityId].name}` : ''); }));
   }
   function openGoModal(id) {
     const d = BK.CITY_BY_ID[id], cur = BK.CITY_BY_ID[S.corp.active];
     openModal(`<div class="modal-h"><span class="eyebrow">Переезд</span><h2>Зайти ${H.esc(d.in)}?</h2></div><div class="modal-b"><p style="margin:0">Вы берёте управление ${H.esc(d.in)} на себя: люди, цены и новые точки — снова в ваших руках. Команды восстановятся по уровням, но имена будут новые: без вас вы не знали людей лично.</p>
-      <p class="hint" style="margin:0">${H.esc(cur.name)} перейдёт на автопилот: точки работают, но новых не будет, найм медленный, обучения нет, рейтинг сползает к 3,5★.</p></div>
+      <p class="hint" style="margin:0">${S.corp.cities[S.corp.active].directorId ? `${H.esc(cur.name)} останется директору — он будет вести город и присылать отчёты.` : `${H.esc(cur.name)} без директора перейдёт на автопилот: точки работают, но новых не будет, найм медленный, обучения нет, рейтинг сползает к 3,5★.`}${S.corp.cities[id].directorId ? ` Директор ${H.esc(d.in)} станет вашим заместителем.` : ''}</p></div>
       <div class="modal-f"><button class="btn primary block" id="ruGoOk">Зайти</button><button class="btn block" data-act="closeModal">Отмена</button></div>`, { closable: true });
     $('#ruGoOk').addEventListener('click', () => { const r = E.switchCity(S, id); closeModal(); if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; } afterSwitch(); save(); });
   }
