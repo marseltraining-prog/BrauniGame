@@ -52,11 +52,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- сохранения ---------------- */
   function save() {
     if (!S) return;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
+    try { localStorage.setItem(BK.Slots.key(), JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
   }
   function stripState(st) { const c = Object.assign({}, st); delete c.cache; c.notify = []; return c; }
-  function loadSave() { try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
-  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
   function exportCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(stripState(S))))); }
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
@@ -64,6 +63,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!st.difficulty) st.difficulty = 'normal'; // сохранения до уровней сложности — «Нормальный»
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
+    if (BK.Ach) BK.Ach.ensure(st); // достижения: уже выполненные в старом сохранении начисляются тихо
     return st;
   }
 
@@ -139,7 +139,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
   }
   function startScreen() {
-    const saved = loadSave();
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
@@ -154,7 +153,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       </div>
       <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${rivalOpt()}
-      ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
+      ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
@@ -162,9 +161,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
+    BK.Slots.bind(el);
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
-      try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
+      try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
   // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
@@ -227,6 +227,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'year') ui.modalQueue.push(() => openYearModal(n));
       else if (n.type === 'won') ui.modalQueue.unshift(() => openWinModal());
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
+      else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
     }
   }
 
@@ -417,7 +418,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     zoomIn: () => map.zoom(1 / 1.3), zoomOut: () => map.zoom(1.3), zoomReset: () => map.reset(),
     settings: () => openSettings(), help: () => openHelp(),
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
-    continue: () => { const st = loadSave(); if (st) continueGame(st); },
+    continue: (d) => { if (d && d.arg) BK.Slots.setActive(+d.arg); const st = loadSave(); if (st) continueGame(st); },
+    achievements: () => BK.Extras.openAchievements(), summary: () => BK.Extras.openSummary(),
     closeModal: () => closeModal(),
     attAll: () => { ui.attAll = !ui.attAll; refresh(); },
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
@@ -570,15 +572,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
       <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
-      </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
-    $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
+    $('#newAfter').addEventListener('click', toStart);
   }
   function openLostModal() {
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>
-      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button></div>`);
-    $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+    $('#newAfter').addEventListener('click', toStart);
   }
   function openTutorialModal() {
     openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
@@ -608,6 +610,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row sp settings-top"><div class="field"><span class="flabel">Тема оформления</span>${themeSeg()}</div><button class="btn" data-act="help">Как играть</button></div>
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
+      ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>
@@ -621,10 +624,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
     $('#loadCode').addEventListener('click', () => { try { const st = importCode($('#saveCode').value); continueGame(st); save(); toast('Игра загружена', '', 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); } });
     $('#newGameBtn').addEventListener('click', () => {
-      $('#newConfirm').innerHTML = `<div class="confirm">Текущая игра будет удалена. <button class="btn sm danger" id="newYes">Начать заново</button></div>`;
-      $('#newYes').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
+      $('#newConfirm').innerHTML = `<div class="confirm">Эта игра останется в своём слоте. Новую можно начать в свободном слоте или вместо любой игры. <button class="btn sm danger" id="newYes">К списку игр</button></div>`;
+      $('#newYes').addEventListener('click', toStart);
     });
   }
+
+  function toStart() { save(); closeModal(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
@@ -638,7 +643,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();

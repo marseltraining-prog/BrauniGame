@@ -333,14 +333,21 @@ async function mapTests(b, vp, sv) {
   const tap = async (pt) => { if (mobile) await p.touchscreen.tap(pt.x, pt.y); else await p.mouse.click(pt.x, pt.y); await p.waitForTimeout(120); };
   const res = [];
   // маркер точки: найти видимый и не перекрытый другими маркерами
-  const target = await p.evaluate(() => {
+  const findTarget = () => p.evaluate(() => {
+    // палец «притягивается» к ближайшей кнопке (touch adjustment) — берём точки не ближе 24 px от плавающих элементов карты
+    const ui = [...document.querySelectorAll('.maplayers, .maplegend, .mapctl, .mapcart, .mapscale')].map((e) => e.getBoundingClientRect()).filter((q) => q.width);
+    const nearUi = (x, y) => ui.some((q) => x > q.left - 24 && x < q.right + 24 && y > q.top - 24 && y < q.bottom + 24);
     for (const el of document.querySelectorAll('#map .m-store')) {
       const r = el.querySelector('circle.b').getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (nearUi(x, y)) continue;
       const top = document.elementFromPoint(x, y); const g = top && top.closest('[data-kind]');
       if (g === el) return { id: el.dataset.id, x, y, d: Math.round(r.width) };
     }
     return null;
   });
+  let target = await findTarget();
+  // на телефоне при полном отдалении почти все точки в кластерах — приблизить и искать снова
+  for (let i = 0; i < 3 && !target; i++) { await p.evaluate(() => BK.App.ACT.zoomIn()); await p.waitForTimeout(250); target = await findTarget(); }
   if (!target) issues.push(`[${tag}] не нашлось кликабельного маркера точки`);
   else {
     await tap(target);
