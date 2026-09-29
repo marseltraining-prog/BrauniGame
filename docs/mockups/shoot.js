@@ -7,6 +7,10 @@ const list = [
   ['2-event-modal', 1440, 900],
   ['3-finance', 1440, 900],
   ['4-mobile', 390, 844],
+  ['russia-1-map', 1440, 900],
+  ['russia-2-city', 1440, 900],
+  ['russia-3-corp', 1440, 900],
+  ['russia-4-mobile', 390, 844],
 ];
 (async () => {
   const only = process.argv.slice(2);
