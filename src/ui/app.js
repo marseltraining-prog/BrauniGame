@@ -14,6 +14,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ['dash', 'Сводка'], ['stores', 'Точки'], ['market', 'Рынок'], ['prod', 'Цех'],
     ['menu', 'Меню'], ['team', 'Команда'], ['fin', 'Финансы'], ['log', 'Журнал'],
   ];
+  const RU_TABS = [['ru', 'Россия'], ['rucities', 'Города'], ['fin', 'Финансы'], ['log', 'Журнал']]; // вид «карта России»
   const ICON = {
     pause: '<svg viewBox="0 0 16 14"><rect x="3" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
     p1: '<svg viewBox="0 0 16 14"><path d="M4 1 L13 7 L4 13 Z" fill="currentColor"/></svg>',
@@ -64,6 +65,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     if (BK.Ach) BK.Ach.ensure(st); // достижения: уже выполненные в старом сохранении начисляются тихо
+    if (BK.Corp) BK.Corp.ensure(st); // Россия: карта активного города; старое сохранение с оборотом ≥ 10 млрд — выход открывается сразу
     return st;
   }
 
@@ -109,6 +111,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 <div id="start"></div>`);
     map = new BK.MapView($('#map'), { onClick: mapClick, tipFor });
     map.tip = $('.maptip');
+    if (BK.Russia) BK.Russia.build($('.mapwrap'));
     // высота HUD → CSS-переменная: на телефоне уведомления встают сразу под липкий HUD
     const hud = $('.hud'), setHud = () => document.documentElement.style.setProperty('--hud-h', Math.round(hud.getBoundingClientRect().height) + 'px');
     setHud(); if (globalThis.ResizeObserver) new ResizeObserver(setHud).observe(hud); else window.addEventListener('resize', setHud);
@@ -139,6 +142,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
   }
   function startScreen() {
+    if (BK.useCity) BK.useCity(null); // обложка — карта Уфы
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
@@ -173,11 +177,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   function newGame(name, difficulty) {
     S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
-    ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
+    ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
   function continueGame(st) {
-    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = '';
+    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (ui.tab === 'ru' || ui.tab === 'rucities') ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
   }
@@ -199,7 +203,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         handleNotify();
         if (ui.modal || S.ev.pending || S.chef.pending) { acc = 0; break; }
       }
-      if (n) { ui.dirty = true; map.render(S, ui.sel); }
+      if (n) { ui.dirty = true; map.render(S, ui.sel); if (ui.view === 'russia') BK.Russia.render(S); }
     }
     // после банкротства — только итоговое окно: событие или шеф, пришедшие в тот же день, его не перекрывают
     if (S.lost) { if (!ui.modal && ui.modalQueue.length) ui.modalQueue.shift()(); }
@@ -228,6 +232,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'won') ui.modalQueue.unshift(() => openWinModal());
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
+      else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
     }
   }
 
@@ -235,7 +240,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   let hudCache = '', hudParts = {};
   function renderHud() {
     if (!S) return;
-    const key = [S.day, Math.round(S.cash / 1000), Math.round(S.reserve / 1000), S.stores.length, ui.speed, S.company, S.history.length, S.won].join('|');
+    const key = [S.day, Math.round(S.cash / 1000), Math.round(S.reserve / 1000), S.stores.length, ui.speed, S.company, S.history.length, S.won, S.corp ? S.corp.active : '', ui.view].join('|');
     if (key === hudCache) return; hudCache = key;
     const g = H.goalInfo(S), hist = S.history, last = hist[hist.length - 1], prev = hist[hist.length - 2];
     const set = (id, html) => { if (hudParts[id] === html) return; hudParts[id] = html; document.getElementById(id).innerHTML = html; };
@@ -265,9 +270,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     set('hud-goal-eta', S.won ? '' : g.etaShort);
     set('hud-goalbar', H.goalBar(g.p));
     document.querySelectorAll('[data-speed]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.speed === ui.speed)));
-    const ban = $('#setupbanner');
+    const ban = $('#setupbanner'), cs = E.citySetup && E.citySetup(S), cn = BK.CITY ? H.esc(BK.CITY.name) : '';
     if (S.phase === 'setup_prod') { ban.hidden = false; ban.innerHTML = '<b>Шаг 1 · Производство</b>Выберите помещение под цех — на карте или в списке справа'; }
     else if (S.phase === 'setup_store') { ban.hidden = false; ban.innerHTML = '<b>Шаг 2 · Первая точка</b>Выберите помещение для пекарни — кружки с плюсом на карте'; }
+    else if (cs && ui.view !== 'russia') { ban.hidden = false; ban.innerHTML = cs === 'prod' ? `<b>${cn} · шаг 1 · цех</b>Выберите помещение под производство — квадраты на карте` : `<b>${cn} · шаг 2 · первая точка</b>Выберите помещение — кружки с плюсом на карте`; }
     else ban.hidden = true;
   }
 
@@ -281,7 +287,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function renderTabs() {
     const dots = tabDots();
     const mark = (k) => { const v = dots[k]; if (!v || ui.tab === k) return ''; return v === 'dot' ? '<span class="dot" aria-hidden="true"></span>' : `<em class="badge" aria-label="проблем: ${v}">${v}</em>`; };
-    const html = TABS.map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
+    const html = (ui.view === 'russia' ? RU_TABS : TABS).map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
     if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; }
   }
   function renderPanel() {
@@ -290,9 +296,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     renderTabs();
     const body = $('#pbody');
     const scroll = body.scrollTop;
-    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal }[ui.tab] || P.dash;
+    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab }[ui.tab] || P.dash;
     let html;
     if ((S.phase === 'setup_prod' || S.phase === 'setup_store') && ui.tab !== 'log') html = P.dash(S, ui);
+    else if (ui.view !== 'russia' && E.citySetup && E.citySetup(S) && ui.tab !== 'log' && ui.tab !== 'fin') html = P.dash(S, ui); // запуск нового города
     else html = fn(S, ui);
     if (html !== ui.lastHtml) {
       // смена вкладки — полная замена; обновление той же вкладки — точечно (morph), чтобы не пересобирать
@@ -336,9 +343,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!hit) { ui.sel = null; map.render(S, ui.sel); return; }
     ui.sel = hit;
     if (hit.kind === 'store') { ui.tab = 'stores'; ui.storeId = hit.id; }
-    else if (hit.kind === 'offer') { ui.tab = S.phase === 'play' ? 'market' : 'dash'; }
+    else if (hit.kind === 'offer') { ui.tab = setupNow() ? 'dash' : 'market'; }
     else if (hit.kind === 'prod') ui.tab = 'prod';
-    else if (hit.kind === 'prodOffer') ui.tab = S.phase === 'play' ? 'market' : 'dash';
+    else if (hit.kind === 'prodOffer') ui.tab = setupNow() ? 'dash' : 'market';
     else if (hit.kind === 'hq') ui.tab = 'team';
     refresh();
     requestAnimationFrame(() => {
@@ -347,6 +354,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else $('#pbody').scrollTop = 0;
     });
   }
+  const setupNow = () => S.phase !== 'play' || !!(E.citySetup && E.citySetup(S)); // старт игры или запуск нового города
   function tipFor(kind, id) {
     if (!S) return '';
     const e = H.esc;
@@ -384,7 +392,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     focusProdOffer: (d) => { const o = E.byId(S.prodOffers, d.arg); if (o) { ui.sel = { kind: 'prodOffer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
     rent: (d) => {
       const r = E.rentStore(S, d.arg);
-      if (r.ok) { ui.sel = { kind: 'store', id: r.store.id }; toast('Помещение арендовано', `${r.store.address}. Открытие через ${C.OPEN_DAYS} дн.`, 'good'); if (S.phase === 'play' && S.stores.length === 1) { ui.tab = 'dash'; ui.modalQueue.push(openTutorialModal); } }
+      if (r.ok) { ui.sel = { kind: 'store', id: r.store.id }; toast('Помещение арендовано', `${r.store.address}. Открытие через ${C.OPEN_DAYS} дн.`, 'good'); if (S.phase === 'play' && S.stores.length === 1 && !S.corp) { ui.tab = 'dash'; ui.modalQueue.push(openTutorialModal); } else if (S.corp && S.stores.length === 1) ui.tab = 'dash'; }
       res(r);
     },
     rentProd: (d) => { const r = E.chooseProduction(S, d.arg); if (r.ok) toast('Производство арендовано', `Запуск через ${C.PROD_OPEN_DAYS} дн.`, 'good'); ui.sel = null; res(r); },
@@ -422,13 +430,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     achievements: () => BK.Extras.openAchievements(), summary: () => BK.Extras.openSummary(),
     closeModal: () => closeModal(),
     attAll: () => { ui.attAll = !ui.attAll; refresh(); },
+    // второй акт: карта России, выбор города, вход и переезд между городами
+    russia: () => { if (ui.view === 'russia') cityView(true); else openRussia(); },
+    ruBack: () => cityView(true),
+    ruSel: (d) => { ui.ruSel = d.arg; BK.Russia.select(d.arg); if (ui.tab !== 'ru' && ui.tab !== 'rucities') ui.tab = 'ru'; BK.Russia.render(S, true); refresh(); },
+    ruZoom: (d) => BK.Russia.zoom(d.arg),
+    ruEnter: (d) => openEnterModal(d.arg),
+    ruGo: (d) => openGoModal(d.arg),
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
     const t = e.target.closest('[data-act]');
     if (!t || t.disabled) return;
     const fn = ACT[t.dataset.act];
-    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); fn(t.dataset); }
+    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); if (fn) fn(t.dataset); }
   }
   function onInput(e) {
     const t = e.target; if (!t.dataset || !t.dataset.inp || !S) return;
@@ -456,6 +471,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (ui.modal) return;
     if (e.key === '1') setSpeed(1); if (e.key === '2') setSpeed(3); if (e.key === '3') setSpeed(10);
+    if ((e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') && BK.Corp && BK.Corp.on(S)) ACT.russia();
   }
 
   /* ---------------- уведомления ---------------- */
@@ -570,10 +586,70 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openWinModal() {
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${ufaStoresText()}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', toStart);
+  }
+  function ufaStoresText() { // в Уфе (после выхода в Россию активным может быть другой город)
+    const u = S.corp && BK.Corp ? BK.Corp.cityStats(S, 'ufa') : null;
+    return u && !u.active ? `${H.nw(u.stores, 'точку', 'точки', 'точек')} и ${H.nw(u.prods, 'производство', 'производства', 'производств')}` : `${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}`;
+  }
+  /* ---------------- второй акт: Россия ---------------- */
+  function openCorpModal() {
+    const d = E.dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
+    openModal(`<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>РОССИЯ</b><small>${dt} · лист 2</small></div></div><span class="eyebrow pos">Второй акт</span><h2>Сеть переросла город</h2></div><div class="modal-b">
+      <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — в Уфе ей стало тесно. Открыт выход в Россию: ${BK.CITIES.length - 1} городов — от Стерлитамака до Новосибирска.</p>
+      <ul class="ru-list"><li><b>Новый город</b> начинается как Уфа: регистрация, свой цех и первые точки.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные на автопилоте: работают, но не растут.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
+      </div><div class="modal-f"><button class="btn primary block" id="ruOpen">Открыть карту России</button><button class="btn block" data-act="closeModal">Позже</button></div>`, { closable: true });
+    $('#ruOpen').addEventListener('click', () => { closeModal(); openRussia(); });
+  }
+  function openRussia() {
+    if (!S || !BK.Corp || !BK.Corp.on(S)) return;
+    const wrap = $('.mapwrap');
+    if (ui.view !== 'russia') { ui.prevTab = ui.tab; ui.view = 'russia'; ui.tab = 'ru'; ui.ruSel = S.corp.active; BK.Russia.select(ui.ruSel); }
+    if (map.tip) map.tip.hidden = true;
+    BK.Russia.open(S, wrap, $('#map'));
+    hudCache = ''; refresh();
+  }
+  function cityView(anim) { // вернуться к карте активного города
+    const was = ui.view === 'russia';
+    ui.view = 'city';
+    if (ui.tab === 'ru' || ui.tab === 'rucities') ui.tab = ui.prevTab && ui.prevTab !== 'ru' && ui.prevTab !== 'rucities' ? ui.prevTab : 'dash';
+    const wrap = $('.mapwrap'); if (!wrap || !BK.Russia) return;
+    if (!anim || !was) { if (BK.Russia.isOpen()) { const r = wrap.querySelector('.rumap'); if (r) r.hidden = true; wrap.classList.remove('ru-on'); } $('#map').style.visibility = ''; }
+    else BK.Russia.close(S, wrap, $('#map'));
+    if (S) { hudCache = ''; refresh(); }
+  }
+  function enterText(id) {
+    const d = BK.CITY_BY_ID[id], cur = BK.CITY_BY_ID[S.corp.active];
+    return `Вы переедете ${H.esc(d.in)} и будете вести город сами. ${H.esc(cur.name)} перейдёт на автопилот: точки работают, но новых не будет, найм медленный, обучения нет, рейтинг сползает к 3,5★.`;
+  }
+  function openEnterModal(id) {
+    const d = BK.CITY_BY_ID[id], cost = E.enterCost(S, id), lock = E.enterLock(S, id);
+    if (lock) { toast('Пока нельзя', lock, 'warn'); return; }
+    openModal(`<div class="modal-h"><span class="eyebrow">Новый город</span><h2>Открыть ${H.esc(d.name)}?</h2></div><div class="modal-b">
+      <p style="margin:0">Регистрация, разрешения и стартовый маркетинг — <b>${H.fm(cost)}</b>. Дальше — как в начале игры: цех и первые точки из своих денег. Стартовая узнаваемость бренда — ${Math.round(BK.Corp.awStart(S, id) * 100)} %.</p>
+      <p class="hint" style="margin:0">${enterText(id)}</p></div>
+      <div class="modal-f"><button class="btn primary block" id="ruEnterOk"${S.cash < cost ? ' disabled' : ''}>Открыть город <span class="cost">${H.fm(cost)}</span></button><button class="btn block" data-act="closeModal">Отмена</button></div>`, { closable: true });
+    $('#ruEnterOk').addEventListener('click', () => {
+      const r = E.enterCity(S, id); closeModal();
+      if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; }
+      afterSwitch(); toast(`${d.name}: вход открыт`, 'Выберите помещение под цех.', 'good'); save();
+    });
+  }
+  function openGoModal(id) {
+    const d = BK.CITY_BY_ID[id], cur = BK.CITY_BY_ID[S.corp.active];
+    openModal(`<div class="modal-h"><span class="eyebrow">Переезд</span><h2>Зайти ${H.esc(d.in)}?</h2></div><div class="modal-b"><p style="margin:0">Вы берёте управление ${H.esc(d.in)} на себя: люди, цены и новые точки — снова в ваших руках. Команды восстановятся по уровням, но имена будут новые: без вас вы не знали людей лично.</p>
+      <p class="hint" style="margin:0">${H.esc(cur.name)} перейдёт на автопилот: точки работают, но новых не будет, найм медленный, обучения нет, рейтинг сползает к 3,5★.</p></div>
+      <div class="modal-f"><button class="btn primary block" id="ruGoOk">Зайти</button><button class="btn block" data-act="closeModal">Отмена</button></div>`, { closable: true });
+    $('#ruGoOk').addEventListener('click', () => { const r = E.switchCity(S, id); closeModal(); if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; } afterSwitch(); save(); });
+  }
+  function afterSwitch() { // новый активный город: карта, панель, анимация «приближение»
+    ui.sel = null; ui.storeId = null; ui.ruSel = S.corp.active; BK.Russia.select(ui.ruSel); ui.prevTab = 'dash';
+    map.reset(); map.render(S, null);
+    if (ui.view === 'russia') { BK.Russia.render(S, true); requestAnimationFrame(() => cityView(true)); }
+    else { ui.tab = 'dash'; refresh(); }
   }
   function openLostModal() {
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
@@ -629,7 +705,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
 
-  function toStart() { save(); closeModal(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
+  function toStart() { save(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
@@ -643,7 +719,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart, openRussia, cityView };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();

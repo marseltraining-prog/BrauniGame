@@ -70,6 +70,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- новая игра ---------------- */
   function newGame(opts) {
     const cfg = C();
+    if (BK.useCity) BK.useCity(null); // карта и районы — Уфы (после игры в другом городе)
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
     const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const dk = (k) => diffK({ difficulty }, k);
@@ -109,6 +110,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- генерация предложений ---------------- */
   function districtWeight(S, d) {
+    if (d.w != null) return d.w; // сгенерированные города: вес — поле района (у Уфы поля нет — таблица ниже)
     const w = { center: 1.4, grove: 1.2, october: 1.3, sipaylovo: 1.2, glumilino: 0.9, chernikovka: 1.2, inors: 0.9, north: 0.5, shaksha: 0.5, nizh: 0.8, zaton: 0.8, dema: 1.0 };
     return w[d.id] || 1;
   }
@@ -136,7 +138,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let rentM2 = rr(S, d.rent[0], d.rent[1]) * rm * sizeRent * pl, value = 1;
     const traffic = round(rr(S, d.traffic[0], d.traffic[1]) * tr, 50);
     const solv = round(rr(S, d.solv[0], d.solv[1]) * sv, 5); // в ценах 2027 (умножается на уровень цен)
-    const comp = +rr(S, 0.84, 1).toFixed(2);
+    const cr = (BK.CITY && BK.CITY.compRange) || [0.84, 1]; // конкуренция города (у Уфы — прежний диапазон)
+    const comp = +rr(S, cr[0], cr[1]).toFixed(2);
     if (cfg.RENT_FAIR_W) { // хорошее место стоит дороже: ставка тянется к доле ожидаемой выручки точки
       const refB = cfg.RENT_REF_BASKET * pl, Sv = solv * pl;
       const chk = refB <= Sv ? refB + cfg.UPSELL * (Sv - refB) : Math.sqrt(refB * Sv);
@@ -177,7 +180,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function genProdOffers(S, n) {
     S.prodOffers = [];
-    const groups = [['center', 'grove', 'october'], ['sipaylovo', 'glumilino', 'chernikovka', 'inors', 'zaton', 'dema', 'nizh'], ['north', 'shaksha', 'north', 'nizh']];
+    const groups = (BK.MAP && BK.MAP.prodGroups) || [['center', 'grove', 'october'], ['sipaylovo', 'glumilino', 'chernikovka', 'inors', 'zaton', 'dema', 'nizh'], ['north', 'shaksha', 'north', 'nizh']];
     if (S.productions.length) { // для второго/третьего цеха — районы подальше от существующих
       const far = BK.DISTRICTS.slice().sort((a, b) => Math.min(...S.productions.map((p) => dist(p, b))) - Math.min(...S.productions.map((p) => dist(p, a))));
       for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, far[Math.min(far.length - 1, i * 2 + ri(S, 0, 1))]));
@@ -282,12 +285,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function deliveryCost(S, st) {
     const p = nearestProd(S, st); if (!p) return 0;
-    const km = dist(p, st) * C().KM_PER_UNIT;
+    const km = dist(p, st) * kmPerUnit();
     // объём: чем больше изделий в день возит точка, тем больше рейсов (√ — рейсы укрупняются)
     const ref = C().DELIVERY_UNITS_REF;
     const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * C().ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
     return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st);
   }
+  function kmPerUnit() { return (BK.CITY && BK.CITY.kmPerUnit) || C().KM_PER_UNIT; } // масштаб активного города (Уфа — KM_PER_UNIT)
   function storeRentMonth(st) { return st.area * st.rentM2; }
   function rentReview(S, st, idx) { // новая ставка ₽/м²: индексация, а у успешной точки — не ниже доли оборота
     const cfg = C();
@@ -352,16 +356,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   let holDay = null;
   function holidayDay(S, day) { // общие множители сети на день: dem (поток), chk (чек), lm (по соседству)
-    const key = S.seed + ':' + day + ':' + S.menu.map((m) => m.id).join();
+    const cal = BK.CITY && BK.CITY.cal; // календарный профиль города: доля байрамов и сила Сабантуя (у Уфы нет — всё в полную силу)
+    const key = S.seed + ':' + day + ':' + S.menu.map((m) => m.id).join() + (cal ? ':' + BK.CITY.id : '');
     if (holDay && holDay.key === key) return holDay;
     const H = C().HOLIDAYS || {}, act = holidaysAround(day).filter((h) => h.start <= day && day <= h.end);
     let rev = 1, catAdd = 0; const lm = {};
     const sh = act.length ? menuCatShares(S) : {};
     for (const h of act) {
       const c = H[h.id];
-      rev *= c.rev || 1;
-      if (c.cat) for (const k in c.cat) catAdd += (sh[k] || 0) * c.cat[k];
-      if (c.lm) for (const k in c.lm) lm[k] = (lm[k] || 1) * c.lm[k];
+      const f = cal ? (h.id === 'uraza' || h.id === 'kurban' ? cal.muslim : h.id === 'sabantuy' ? cal.sab : 1) : 1;
+      if (f === 1) {
+        rev *= c.rev || 1;
+        if (c.cat) for (const k in c.cat) catAdd += (sh[k] || 0) * c.cat[k];
+        if (c.lm) for (const k in c.lm) lm[k] = (lm[k] || 1) * c.lm[k];
+      } else {
+        rev *= 1 + ((c.rev || 1) - 1) * f;
+        if (c.cat) for (const k in c.cat) catAdd += (sh[k] || 0) * c.cat[k] * f;
+        if (c.lm) for (const k in c.lm) lm[k] = (lm[k] || 1) * (1 + (c.lm[k] - 1) * f);
+      }
     }
     return (holDay = { key, act, dem: Math.sqrt(rev), chk: Math.sqrt(rev) * (1 + catAdd), lm });
   }
@@ -410,6 +422,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fwd = 7 / (5 + 2 * wk);
     let dayF = t.dow >= 5 ? fwd * wk : fwd;
     let season = SEASON[t.m];
+    if (BK.CITY && BK.CITY.season) season *= BK.CITY.season[t.m]; // сезонный профиль города (у Уфы нет)
     if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= 1.25;
     let cannibal = 1, inDistrict = 0;
     for (const o of S.stores) {
@@ -444,7 +457,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
     const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
-    const demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
+    let demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
+    if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; } // узнаваемость бренда в новом городе (у Уфы — ровно 1)
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -762,13 +776,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function monthly(S, t) {
     const cfg = C();
     const M = S.month;
-    const nEmp = allStaff(S) + bakersTotal(S);
+    const agg = S.corp && BK.Corp ? BK.Corp.monthly(S, t) : null; // города на «автопилоте»: выручка и расходы — в общий месяц (corp.js)
+    const nEmp = allStaff(S) + bakersTotal(S) + (agg ? agg.emp : 0);
     for (const st of S.stores) {
       if (st.status === 'opening') { st.last = null; continue; }
-      const rent = st.payMode === 'month' ? storeRentMonth(st) : 0;
+      const mk = st.mountK != null ? st.mountK : 1; // город смонтирован посреди месяца — постоянные расходы за его часть (остальное — в агрегате)
+      if (st.mountK != null) delete st.mountK;
+      const rent = st.payMode === 'month' ? storeRentMonth(st) * mk : 0;
       let pay = 0; for (const e of st.staff) pay += salaryOf(S, e.lvl) * (1 + cfg.PAYROLL_TAX);
-      const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * st.area) * S.macro.priceLevel;
-      const del = deliveryCost(S, st);
+      pay *= mk;
+      const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * st.area) * S.macro.priceLevel * mk;
+      const del = deliveryCost(S, st) * mk;
       spend(S, rent, 'rent'); spend(S, pay, 'payroll'); spend(S, util, 'util'); spend(S, del, 'delivery');
       st.m.rent += rent; st.m.payroll = pay; st.m.util = util; st.m.delivery = del;
       st.m.profit = st.m.rev - st.m.fc - st.m.rent - pay - util - del - st.m.rev * currentTaxRate(S);
@@ -778,9 +796,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       st.m = { rev: 0, checks: 0, fc: 0, rent: 0, lost: 0 };
     }
     for (const p of S.productions) {
-      const rent = prodRentMonth(p);
-      const pay = p.staff * S.pay.baker * (1 + cfg.PAYROLL_TAX);
-      const util = (cfg.PROD_UTIL_BASE + cfg.PROD_UTIL_PER_M2 * p.area) * S.macro.priceLevel;
+      const mk = p.mountK != null ? p.mountK : 1;
+      if (p.mountK != null) delete p.mountK;
+      const rent = prodRentMonth(p) * mk;
+      const pay = p.staff * S.pay.baker * (1 + cfg.PAYROLL_TAX) * mk;
+      const util = (cfg.PROD_UTIL_BASE + cfg.PROD_UTIL_PER_M2 * p.area) * S.macro.priceLevel * mk;
       spend(S, rent, 'rent'); spend(S, pay, 'payroll'); spend(S, util, 'util');
       p.lastCost = rent + pay + util;
       // текучка пекарей
@@ -791,7 +811,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const upkeep = cfg.CULTURE[S.culture].upkeep * nEmp * S.macro.priceLevel
       + Object.keys(cfg.OFFICE_UPGRADES).reduce((a, k) => a + (S.office[k] ? cfg.OFFICE_UPGRADES[k].upkeep * S.macro.priceLevel : 0), 0);
     const hq = Math.max(0, S.stores.length - cfg.HQ_FREE_STORES) * cfg.HQ_PER_STORE * S.macro.priceLevel
-      + (S.stores.length > cfg.HQ_FREE_STORES ? M.rev * (cfg.HQ_REV_SHARE || 0) : 0) // управляющая компания: бухгалтерия, IT, закупки, маркетинг
+      + (S.stores.length > cfg.HQ_FREE_STORES ? (agg ? M.rev - agg.rev : M.rev) * (cfg.HQ_REV_SHARE || 0) : 0) // управляющая компания: бухгалтерия, IT, закупки, маркетинг (города на автопилоте платят её в агрегате)
       + hrCount(S) * cfg.HR_SALARY * (1 + cfg.PAYROLL_TAX) * S.macro.priceLevel
       + trainersCount(S) * cfg.TRAINER_SALARY * (1 + cfg.PAYROLL_TAX) * S.macro.priceLevel;
     spend(S, upkeep + hq, 'upkeep');
@@ -816,13 +836,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       S.cash -= toRes; S.reserve += toRes;
       spend(S, bonus, 'bonus'); spend(S, mkt, 'marketing');
     }
-    const openStores = S.stores.filter((s) => s.status !== 'opening').length || 1;
+    const openStores = (S.stores.filter((s) => s.status !== 'opening').length + (agg ? agg.stores : 0)) || 1;
     S.lastBonusPerEmp = nEmp ? bonus / nEmp : 0;
     S.lastMarketingPerStore = mkt / openStores;
     M.toReserve = toRes;
     // история
     const prev = dateOf(S.day - 1);
     S.history.push({ y: prev.y, m: prev.m, rev: M.rev, profit, cash: S.cash, reserve: S.reserve, stores: S.stores.filter((s) => s.status !== 'opening').length, staff: allStaff(S), fc: M.fc, pnl: Object.assign({}, M) });
+    if (S.corp && BK.Corp) BK.Corp.afterMonth(S, S.history[S.history.length - 1], agg); // выручка Уфы (c1), история городов
     if (S.history.length > 480) S.history.shift();
     S.lastMonthRev = M.rev;
     // банкротство
@@ -851,13 +872,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       log(S, `ПОБЕДА! Оборот за 12 месяцев — ${BK.fmtMoney(rolling)}.`, 'good');
     }
     S.stats.peakStores = Math.max(S.stats.peakStores, S.stores.length);
+    if (BK.Corp) BK.Corp.check(S); // накопленный оборот ≥ 10 млрд — открывается выход в Россию (свой ГСЧ, основной поток не трогает)
     const mname = MONTHS[prev.m];
     S.notify.push({ type: 'month', title: `Итоги: ${mname} ${prev.y}`, rev: M.rev, profit });
     log(S, `Итоги месяца (${mname} ${prev.y}): выручка ${BK.fmtMoney(M.rev)}, прибыль ${BK.fmtMoney(profit)}.`, profit >= 0 ? 'good' : 'bad');
     resetMonth(S);
     if (t.m === 0) yearly(S, t);
   }
-  function rolling12(S) { let s = 0; const h = S.history.slice(-12); for (const x of h) s += x.rev; return s; }
+  function rolling12(S) { let s = 0; const h = S.history.slice(-12); for (const x of h) s += x.c1 != null ? x.c1 : x.rev; return s; } // после выхода в Россию — оборот Уфы (цель первого акта)
   function currentTaxRate(S) {
     const cfg = C();
     const base = S.macro.regime === 'osno' ? cfg.OSNO_VAT : cfg.TAX_USN;
@@ -875,6 +897,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (st.rentM2 > old * (1 + infl * 0.85) * 1.03) log(S, `Арендодатель пересмотрел ставку: ${st.address} — ${BK.fmtMoney(old)} → ${BK.fmtMoney(st.rentM2)} за м² (оборот точки вырос).`, 'warn');
     }
     for (const p of S.productions) p.rentM2 = Math.round(p.rentM2 * (1 + infl * 0.85));
+    if (S.corp && BK.Corp) BK.Corp.yearly(S, infl, rentReview); // индексация аренды в городах на автопилоте
     log(S, `Новый ${t.y} год. Инфляция прошлого года ${(infl * 100).toFixed(1).replace('.', ',')}%: цены, аренда и рыночные зарплаты проиндексированы.`, 'info');
     // налоговый режим
     const prevRegime = S.macro.regime;
@@ -909,7 +932,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function eventEligible(S, e, t) {
     if (e.followUp) return false; // последствия приходят только из очереди S.ev.queue
     const openStores = S.stores.filter((s) => s.status !== 'opening');
-    if ((e.minStores || 1) > openStores.length) return false;
+    if ((e.minStores || 1) > openStores.length + (S.corp && BK.Corp ? BK.Corp.otherStores(S) : 0)) return false; // порог «от N точек» — по всей сети
     if ((e.minYear || 0) > S.day / 365) return false;
     if (e.once && S.ev.once[e.id]) return false;
     const last = S.ev.last[e.id];
@@ -1331,7 +1354,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
     setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
     allStaff, bakersTotal, refreshCandidates, proposeChef, dist, byId, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
-    holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult,
+    holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult, kmPerUnit,
   };
 
   /* форматирование денег (общая функция) */
@@ -1494,4 +1517,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { name: R.name || C().RIVAL_NAME, n, delta: n - y, months: R.hist.length, opened: R.opened, closed: R.closed, grabbed: R.grabbed, stores: R.stores };
   }
   Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
+  // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
+  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight };
 })();
