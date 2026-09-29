@@ -405,6 +405,24 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload summary { cursor: pointer; width: fit-content; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
 .start-map { width: 100%; height: auto; border-radius: 16px; }
+/* выбор уровня сложности */
+.diffpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.diffpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.diffopts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.diffopt { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); cursor: pointer; min-width: 0; }
+.diffopt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; } /* невидимая радиокнопка на всю карточку */
+.diffopt .dn { font-weight: 600; font-size: 14px; }
+.diffopt .dm { font-family: var(--f-mono); font-size: 11.5px; line-height: 1.35; color: var(--ink-3); }
+.diffopt:hover { border-color: var(--ink-3); }
+.diffopt:has(input:focus-visible) { outline: 2px solid var(--crust); outline-offset: 2px; }
+.diffopt:has(input:checked) { border: 2px solid var(--crust); padding: 8px 9px; background: var(--crust-soft); }
+.diffopt:has(input:checked) .dm { color: var(--ink-2); }
+.diffopt::after, .diffbadge::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--warn); }
+.diffopt::after { position: absolute; top: 10px; right: 10px; margin: 0; }
+.diffopt:has(input:checked)::after { top: 9px; right: 9px; }
+.diffopt.easy::after, .diffbadge.easy::before { background: var(--good); }
+.diffopt.hard::after, .diffbadge.hard::before { background: var(--bad); }
+.diffdesc { margin: 8px 0 4px; font-size: 13px; color: var(--ink-2); min-height: 3.2em; }
 /* переключатель темы на стартовом экране */
 .start-in { position: relative; }
 .start-top { position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
@@ -466,7 +484,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
-  .start-map { max-width: min(360px, 30vh); margin: 0 auto; order: -1; }
+  .start-map { max-width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start .rules .r-diff { display: none; } /* капитал и срок победы — уже в карточках сложности */
+  .diffopt { padding: 8px; } .diffopt:has(input:checked) { padding: 7px; } .diffopt .dn { font-size: 13.5px; } .diffopt .dm { font-size: 11px; } .diffopt::after { display: none; } .diffdesc { min-height: 0; margin-top: 6px; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
   .maplegend { display: none; }
   .setupbanner { display: none; }
@@ -774,6 +794,19 @@ BK.CFG = {
   EVENT_POS_SHARE: 0.3,
   CRISIS_MIN_MONTHS: 24, CRISIS_MAX_MONTHS: 36,
   CRISIS_FIRST_MONTHS: [34, 46], // первый кризис — не раньше конца 3-го года: сеть успевает встать на ноги
+
+  // --- уровни сложности (engine.js: diffK(S, key)); «Нормальный» — нейтральные значения, баланс не меняется ---
+  // cash — множитель стартового капитала; posAdd — добавка к доле позитивных событий EVENT_POS_SHARE; sev — сила негативных эффектов (отклонение от 1 × sev);
+  // cost — цена вариантов в событиях; evGap / crisisGap — множители интервалов между событиями и кризисами;
+  // patience — сколько дней недовольства сверх UNHAPPY_QUIT_DAYS терпит сотрудник; quit — множитель шанса уволиться;
+  // mood — прибавка к настроению; spreadAdd — добавка к надбавке банка LOAN_SPREAD; rent — множитель аренды новых помещений;
+  // demand — множитель спроса (гостей) на всех точках; offerGap — множитель интервала между новыми помещениями на рынке (темп роста);
+  // loanMult — множитель кредитного лимита.
+  DIFFICULTY: {
+    easy:   { name: 'Лёгкий',    cash: 2,   posAdd: 0.12, sev: 0.6, cost: 0.75, evGap: 1.15, crisisGap: 1.4,  patience: 20,  quit: 0.6, mood: 6,  spreadAdd: -0.02, rent: 0.95, demand: 1.15, offerGap: 0.75, loanMult: 1.5 },
+    normal: { name: 'Нормальный', cash: 1,  posAdd: 0,   sev: 1,   cost: 1,    evGap: 1,    crisisGap: 1,    patience: 0,   quit: 1,   mood: 0,  spreadAdd: 0,     rent: 1,    demand: 1,    offerGap: 1,    loanMult: 1 },
+    hard:   { name: 'Хардкор',   cash: 0.8, posAdd: -0.08, sev: 1.3, cost: 1.2,  evGap: 0.85, crisisGap: 0.75, patience: -10, quit: 1.4, mood: -3, spreadAdd: 0.02,  rent: 1.1,  demand: 0.9,  offerGap: 1.25, loanMult: 1 },
+  },
 
   // --- календарь праздников Уфы (engine.js: holidaysOfYear / holidayMult) ---
   // rev — множитель выручки всей сети (половина через поток гостей, половина через чек: √rev × √rev);
@@ -2144,6 +2177,11 @@ BK.EVENTS = [
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const C = () => BK.CFG;
+  // уровень сложности: множитель/добавка из CFG.DIFFICULTY (старые сохранения без S.difficulty — «Нормальный»)
+  function diffK(S, key) {
+    const D = C().DIFFICULTY || {}, d = D[(S && S.difficulty) || 'normal'] || D.normal || {};
+    return d[key] != null ? d[key] : D.normal && D.normal[key] != null ? D.normal[key] : 0;
+  }
 
   /* ---------------- утилиты ---------------- */
   function rnd(S) { // mulberry32
@@ -2205,11 +2243,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(opts) {
     const cfg = C();
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
+    const dk = (k) => diffK({ difficulty }, k);
     const S = {
-      v: 1, seed, rng: seed, ids: 0, day: 0,
+      v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
-      cash: cfg.START_CASH, reserve: 0, loan: 0, cumRevenue: 0,
+      cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
       market: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
       pay: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
@@ -2222,7 +2262,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       chef: { pending: null, lastYear: cfg.START_YEAR },
       candidates: [], candDay: -999,
       mods: [],
-      ev: { next: 30, nextCrisis: 30 * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1]), last: {}, once: {}, pending: null, lastCrisis: null, recent: [], queue: [] },
+      ev: { next: 30, nextCrisis: Math.round(30 * dk('crisisGap') * ri({ rng: seed ^ 77 }, (cfg.CRISIS_FIRST_MONTHS || [cfg.CRISIS_MIN_MONTHS])[0], (cfg.CRISIS_FIRST_MONTHS || [0, cfg.CRISIS_MAX_MONTHS])[1])), last: {}, once: {}, pending: null, lastCrisis: null, recent: [], queue: [] },
       month: {}, history: [], log: [], notify: [], flags: {}, negMonths: 0,
       yearRev: 0, lastMonthRev: 0, speed: 1,
       stats: { hires: 0, quits: 0, eventsSeen: 0, peakStores: 0 },
@@ -2277,7 +2317,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       rentM2 = Math.pow(rentM2, 1 - cfg.RENT_FAIR_W) * Math.pow(fair, cfg.RENT_FAIR_W);
       value = fair / rentM2;
     }
-    rentM2 = round(rentM2, 10);
+    rentM2 = round(rentM2 * diffK(S, 'rent'), 10);
     const p = freeSpot(S, d, 42);
     const payMode = rnd(S) < 0.62 ? 'month' : 'year';
     return {
@@ -2293,19 +2333,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (initial) {
       while (S.offers.length < want) S.offers.push(makeStoreOffer(S));
       S.offerRefreshDay = S.day + C().OFFER_REFRESH_DAYS;
-      S.nextOfferDay = S.day + ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]);
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
       return;
     }
     if (S.offers.length < want && S.day >= (S.nextOfferDay || 0)) {
       S.offers.push(makeStoreOffer(S));
-      S.nextOfferDay = S.day + ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]);
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
     }
   }
   function makeProdOffer(S, d) {
     const pl = S.macro.priceLevel;
     const area = round(rr(S, 120, 300), 10);
     const p = freeSpot(S, d, 38);
-    return { id: nextId(S, 'po'), district: d.id, x: p.x, y: p.y, address: `${pick(S, d.streets)}, ${ri(S, 1, 90)}`, area, rentM2: round(rr(S, d.prodRent[0], d.prodRent[1]) * pl, 10) };
+    return { id: nextId(S, 'po'), district: d.id, x: p.x, y: p.y, address: `${pick(S, d.streets)}, ${ri(S, 1, 90)}`, area, rentM2: round(rr(S, d.prodRent[0], d.prodRent[1]) * pl * diffK(S, 'rent'), 10) };
   }
   function genProdOffers(S, n) {
     S.prodOffers = [];
@@ -2576,7 +2616,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const conv = cfg.BASE_CONV * ms.appeal * svcConv * rep.conv * priceConv * staffF * moodF * healthy * modMult(S, 'conv', st);
     check *= rep.check * svcCheck * modMult(S, 'check', st);
     const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
-    const demand = traffic * conv * hol.dem * ratingMult(S, st); // рейтинг на картах — небольшая прибавка/потеря новых гостей
+    const demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -2751,26 +2791,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const e = st.staff[i];
         e.fatigue += (fatT - e.fatigue) * 0.1;
         const stagn = e.lvl <= 2 && S.day - e.lvlDay > 180 ? 5 : 0;
-        const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
+        const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + diffK(S, 'mood') + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
         e.mood = clamp(e.mood + (target - e.mood) * 0.08, 0, 100);
         if (e.mood < cfg.MOOD_UNHAPPY) e.unhappy++; else e.unhappy = Math.max(0, e.unhappy - 2);
         // личное предупреждение: сотрудник недоволен уже N дней — игрок узнаёт об этом заранее
         if (e.unhappy === (cfg.UNHAPPY_WARN_AFTER || 5) && S.day - (e.warnDay || -999) > 30) { e.warnDay = S.day; warnList.push(e); }
         const QP = cfg.QUIT_P || [0.00018, 0.0007, 0.002]; // вероятность уйти за день: довольный / нейтральный / недовольный
         let p = e.mood >= cfg.MOOD_HAPPY ? QP[0] : e.mood >= cfg.MOOD_UNHAPPY ? QP[1] : QP[2];
-        p *= 1 - 0.08 * (e.lvl - 1);
-        if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) || rnd(S) < p) {
+        p *= (1 - 0.08 * (e.lvl - 1)) * diffK(S, 'quit');
+        if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) || rnd(S) < p) {
           st.staff.splice(i, 1);
           S.stats.quits++;
           const g = (m, f) => BK.byGender(e.name, m, f);
-          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
+          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
           log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) ${g('уволился', 'уволилась')}: ${why}.`, 'bad');
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
       if (st.staff.length < staffBefore) quitStores.push(st);
       if (warnList.length) {
-        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) - e.unhappy)));
+        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + diffK(S, 'patience') + (e.patience || 0) - e.unhappy)));
         let ft = 0; for (const e of warnList) ft += e.fatigue; ft /= warnList.length;
         const why = unhappyReason(S, ft, under);
         const names = warnList.map((e) => e.name).join(', ');
@@ -2934,7 +2974,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
-    const interest = S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12;
+    const interest = S.loan * loanRate(S) / 12;
     spend(S, interest, 'interest');
     const resInc = S.reserve * Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD) / 12;
     S.reserve += resInc;
@@ -3054,8 +3094,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fireRandomEvent(S, t) {
     const cfg = C();
-    S.ev.next = S.day + ri(S, cfg.EVENT_MIN_DAYS, cfg.EVENT_MAX_DAYS);
-    const kind = rnd(S) < cfg.EVENT_POS_SHARE ? 'pos' : 'neg';
+    S.ev.next = S.day + Math.round(ri(S, cfg.EVENT_MIN_DAYS, cfg.EVENT_MAX_DAYS) * diffK(S, 'evGap'));
+    const kind = rnd(S) < cfg.EVENT_POS_SHARE + diffK(S, 'posAdd') ? 'pos' : 'neg';
     let pool = BK.EVENTS.filter((e) => !e.crisis && e.kind === kind && eventEligible(S, e, t));
     if (!pool.length) pool = BK.EVENTS.filter((e) => !e.crisis && eventEligible(S, e, t));
     if (!pool.length) return;
@@ -3084,7 +3124,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fireCrisis(S) {
     const cfg = C();
-    S.ev.nextCrisis = S.day + 30 * ri(S, cfg.CRISIS_MIN_MONTHS, cfg.CRISIS_MAX_MONTHS);
+    S.ev.nextCrisis = S.day + Math.round(30 * diffK(S, 'crisisGap') * ri(S, cfg.CRISIS_MIN_MONTHS, cfg.CRISIS_MAX_MONTHS));
     S.ev.next = Math.max(S.ev.next, S.day + 20);
     if (!S.stores.some((s) => s.status !== 'opening')) return;
     const pool = BK.EVENTS.filter((e) => e.crisis && e.id !== S.ev.lastCrisis);
@@ -3131,6 +3171,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return open;
   }
   function costOf(S, c, tg) {
+    const k = diffK(S, 'cost');
+    return k === 1 ? costOf0(S, c, tg) : Math.round(costOf0(S, c, tg) * k);
+  }
+  function costOf0(S, c, tg) {
     if (!c) return 0;
     if (typeof c === 'number') return Math.round(c * S.macro.priceLevel);
     if (c.perStore) return Math.round(c.perStore * S.macro.priceLevel * Math.max(1, storesInScope(S, tg).length));
@@ -3159,7 +3203,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return out;
   }
   const pct = (m) => `${m >= 1 ? '+' : '−'}${Math.round(Math.abs(m - 1) * 100)}%`;
+  // сила негативных эффектов по уровню сложности: отклонение «в плохую сторону» × sev (хорошие эффекты не трогаем)
+  function diffEffects(S, effects) {
+    const k = diffK(S, 'sev');
+    if (k === 1 || !effects) return effects;
+    const lo = (m) => clamp(1 - (1 - m) * k, 0.05, 1), hi = (m) => 1 + (m - 1) * k;
+    return effects.map((f) => {
+      const g = Object.assign({}, f);
+      switch (f.t) {
+        case 'traffic': case 'competitor': case 'check': case 'conv': case 'capacity': if (f.m < 1) g.m = +lo(f.m).toFixed(3); break;
+        case 'foodcost': case 'delivery': case 'rent': case 'salary': if (f.m > 1) g.m = +hi(f.m).toFixed(3); break;
+        case 'close': g.d = Math.max(1, Math.round(f.d * k)); break;
+        case 'cash': for (const key of ['v', 'perStore', 'revPct']) if (f[key] != null && f[key] < 0) g[key] = f[key] * k; break;
+        case 'staffQuit': g.n = Math.max(1, Math.round((f.n || 1) * k)); break;
+        case 'tax': case 'keyRate': if (f.add > 0) g.add = f.add * k; break;
+        case 'loyalty': if (f.add < 0) g.add = Math.round(f.add * k); break;
+        default: break;
+      }
+      return g;
+    });
+  }
   function applyEffects(S, effects, tg) {
+    effects = diffEffects(S, effects);
     const out = [];
     const cfg = C();
     const addMod = (t, m, d, scopeOverride) => S.mods.push({ t, m, until: S.day + (d || 30), scope: scopeOverride || tg.scope, target: tg.target });
@@ -3401,14 +3466,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function loanLimit(S) {
     const h = S.history.slice(-3); const avg = h.length ? h.reduce((a, x) => a + x.rev, 0) / h.length : 0;
-    let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT);
+    let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT) * diffK(S, 'loanMult');
     if (S.ev && S.day < (S.ev.creditSqueezeUntil || 0)) lim *= C().CRISIS_LOAN_MULT != null ? C().CRISIS_LOAN_MULT : 1; // кризис: лимит урезан
     return lim;
   }
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd'); }
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
-    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
+    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${(loanRate(S) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
     return { ok: true, amount };
   }
   function repayLoan(S, amount) {
@@ -3432,7 +3498,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Engine = {
-    newGame, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
+    newGame, diffK, loanRate, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
     storeOpenCost, prodOpenCost, chooseProduction, rentStore, refreshOffers, repairCost, startRepair, train, trainAll, trainCost, hire, hireCost, hireDays,
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
     setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
@@ -3523,7 +3589,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (near) {
       toast(S, `«${R.name}» открылся рядом с точкой №${near.num}`, `${rs.address}: часть гостей уйдёт к соседу. Высокий рейтинг точки — лучшая защита.`, 'warn', { storeId: near.id });
       log(S, `«${R.name}» открыл пекарню на ${rs.address} — рядом с вашей точкой №${near.num} (${near.address}).`, 'warn');
-    } else log(S, `«${R.name}» открыл пекарню: ${rs.address} (${dn}). У сети ${R.stores.length} точ.`, 'info');
+    } else log(S, `«${R.name}» открыл пекарню: ${rs.address} (${dn}). Всего у сети: ${R.stores.length}.`, 'info');
   }
   function rivalMult(S, st) { // доля гостей, которая остаётся у точки игрока рядом с соперником
     const R = S.rival; if (!R || !R.enabled || !R.stores.length) return 1;
@@ -4140,7 +4206,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const nEmp = E_.allStaff(S) + E_.bakersTotal(S);
     bills += ((cfg.CULTURE[S.culture] || {}).upkeep || 0) * nEmp * pl + Math.max(0, S.stores.length - (cfg.HQ_FREE_STORES || 0)) * (cfg.HQ_PER_STORE || 0) * pl;
     bills += E_.hrCount(S) * (cfg.HR_SALARY || 0) * tx * pl + E_.trainersCount(S) * (cfg.TRAINER_SALARY || 0) * tx * pl;
-    bills += S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12;
+    bills += S.loan * E().loanRate(S) / 12;
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -4598,7 +4664,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec"><div class="kpis">
       <div class="kpi"><span class="k">Расчётный счёт</span><span class="v ${S.cash < 0 ? 'negc' : ''}">${fm(S.cash)}</span></div>
       <div class="kpi"><span class="k">Резервный фонд</span><span class="v">${fm(S.reserve)}</span><span class="d">доход ${pct(Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD), 1)} годовых</span></div>
-      <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(S.macro.keyRate + cfg.LOAN_SPREAD, 1)}</span></div>
+      <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(E().loanRate(S), 1)}</span></div>
       <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
     const lastM = S.history[S.history.length - 1];
@@ -4614,7 +4680,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">«+» — перевести со счёта в резерв, «−» — вернуть на счёт.</span></div>`;
     s += `<div class="sec"><h3>Кредит <small>лимит ${fm(lim)}</small></h3><div class="row">
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
-      <span class="hint">Лимит — средняя месячная выручка × ${cfg.LOAN_MAX_REV_MULT}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
+      <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
@@ -4725,6 +4791,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {
     st.notify = []; st.flags = st.flags || {};
+    if (!st.difficulty) st.difficulty = 'normal'; // сохранения до уровней сложности — «Нормальный»
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     return st;
@@ -4799,6 +4866,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- стартовый экран ---------------- */
+  // уровни сложности: числа — в CFG.DIFFICULTY, здесь только тексты для игрока
+  const DIFF_UI = {
+    easy: { cash: '20 млн ₽', win: '~11 лет', desc: 'Вдвое больше денег, гостей чуть больше, неприятности мягче и реже, команда терпеливее, кредит дешевле.' },
+    normal: { cash: '10 млн ₽', win: '~15 лет', desc: 'Баланс по задумке: 70% событий — неприятности, кризис раз в 2–3 года.' },
+    hard: { cash: '8 млн ₽', win: '19+ лет', desc: 'Меньше денег и гостей, аренда и кредит дороже, кризисы чаще и больнее, текучка жёстче. Победа не гарантирована.' },
+  };
+  const diffName = (d) => (C.DIFFICULTY && C.DIFFICULTY[d || 'normal'] ? C.DIFFICULTY[d || 'normal'].name : 'Нормальный');
+  function diffPicker() {
+    return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
+  }
   function startScreen() {
     const saved = loadSave();
     const el = $('#start');
@@ -4806,14 +4883,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.hidden = false;
     el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
       <h1>Хлебная<br>карта <em>Уфы</em></h1>
-      <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. 10 млн ₽ на старте, одно производство — и весь город на карте.</p>
+      <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. Стартовый капитал, одно производство — и весь город на карте.</p>
       <div class="rules">
-        <div><b>10 млн ₽</b>стартовый капитал</div>
+        <div class="r-diff"><b id="ruleCash">10 млн ₽</b>стартовый капитал</div>
         <div><b>5 млрд ₽</b>цель — оборот за 12 месяцев</div>
-        <div><b>~15 лет</b>на победу у сильного игрока</div>
+        <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${rivalOpt()}
       ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -4821,7 +4898,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
     </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
     $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
+    const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
+    $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -4830,8 +4909,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
-  function newGame(name) {
-    S = E.newGame({ company: name, rival: rivalPicked() });
+  function newGame(name, difficulty) {
+    S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
@@ -5227,7 +5306,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openWinModal() {
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b>, открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${H.nw(S.stores.length, 'точку', 'точки', 'точек')} и ${H.nw(S.productions.length, 'производство', 'производства', 'производств')}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
@@ -5266,6 +5345,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(`<div class="modal-h"><span class="eyebrow">Меню игры</span><h2>${H.esc(S.company)}</h2></div><div class="modal-b">
       <div class="row sp settings-top"><div class="field"><span class="flabel">Тема оформления</span>${themeSeg()}</div><button class="btn" data-act="help">Как играть</button></div>
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
+      <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>

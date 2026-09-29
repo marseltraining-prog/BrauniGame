@@ -179,6 +179,19 @@ BK.CFG = {
   CRISIS_MIN_MONTHS: 24, CRISIS_MAX_MONTHS: 36,
   CRISIS_FIRST_MONTHS: [34, 46], // первый кризис — не раньше конца 3-го года: сеть успевает встать на ноги
 
+  // --- уровни сложности (engine.js: diffK(S, key)); «Нормальный» — нейтральные значения, баланс не меняется ---
+  // cash — множитель стартового капитала; posAdd — добавка к доле позитивных событий EVENT_POS_SHARE; sev — сила негативных эффектов (отклонение от 1 × sev);
+  // cost — цена вариантов в событиях; evGap / crisisGap — множители интервалов между событиями и кризисами;
+  // patience — сколько дней недовольства сверх UNHAPPY_QUIT_DAYS терпит сотрудник; quit — множитель шанса уволиться;
+  // mood — прибавка к настроению; spreadAdd — добавка к надбавке банка LOAN_SPREAD; rent — множитель аренды новых помещений;
+  // demand — множитель спроса (гостей) на всех точках; offerGap — множитель интервала между новыми помещениями на рынке (темп роста);
+  // loanMult — множитель кредитного лимита.
+  DIFFICULTY: {
+    easy:   { name: 'Лёгкий',    cash: 2,   posAdd: 0.12, sev: 0.6, cost: 0.75, evGap: 1.15, crisisGap: 1.4,  patience: 20,  quit: 0.6, mood: 6,  spreadAdd: -0.02, rent: 0.95, demand: 1.15, offerGap: 0.75, loanMult: 1.5 },
+    normal: { name: 'Нормальный', cash: 1,  posAdd: 0,   sev: 1,   cost: 1,    evGap: 1,    crisisGap: 1,    patience: 0,   quit: 1,   mood: 0,  spreadAdd: 0,     rent: 1,    demand: 1,    offerGap: 1,    loanMult: 1 },
+    hard:   { name: 'Хардкор',   cash: 0.8, posAdd: -0.08, sev: 1.3, cost: 1.2,  evGap: 0.85, crisisGap: 0.75, patience: -10, quit: 1.4, mood: -3, spreadAdd: 0.02,  rent: 1.1,  demand: 0.9,  offerGap: 1.25, loanMult: 1 },
+  },
+
   // --- календарь праздников Уфы (engine.js: holidaysOfYear / holidayMult) ---
   // rev — множитель выручки всей сети (половина через поток гостей, половина через чек: √rev × √rev);
   // cat — надбавка к чеку по категории, взвешенная долей категории в меню (нет десертов в меню — нет и надбавки);

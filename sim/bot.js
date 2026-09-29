@@ -6,7 +6,8 @@
 //         не внедряет культуру, оценивает точки проще (без каннибализации, мягче порог окупаемости).
 //  bad  — слабый/жадный: без резерва, обучения, ремонтов и культуры, зарплату поднимает только до рынка раз в год,
 //         открывает самое «выручечное» предложение (в кредит), мощность докупает только при дефиците.
-// Запуск: node sim/bot.js <good|avg|bad> <сидов> <лет> [--summary] [--reserve=0.2] [--pay=0.12] [--culture=0] [--stop]
+// Запуск: node sim/bot.js <good|avg|bad> <сидов> <лет> [easy|normal|hard] [--summary] [--reserve=0.2] [--pay=0.12] [--culture=0] [--stop]
+//  уровень сложности — 4-й аргумент или BK_DIFF=easy|normal|hard (по умолчанию normal)
 const BK = require('./load');
 const E = BK.Engine, CFG = BK.CFG;
 
@@ -204,7 +205,7 @@ function play(opts) {
   if (opts.pay != null) P.payPremium = opts.pay;
   if (opts.culture != null) P.culture = !!opts.culture;
   if (opts.reserve != null) P.reserveFixed = opts.reserve;
-  const S = E.newGame({ seed: opts.seed || 1 });
+  const S = E.newGame({ seed: opts.seed || 1, difficulty: opts.difficulty });
   S._botRng = (opts.seed || 1) % 2147483647;
   const mem = { months: [], quitsYear: [], staffYear: [], crises: [], minLiq: Infinity };
   const pl = () => S.macro.priceLevel;
@@ -295,7 +296,7 @@ function settlementEstimate(S) { // сколько спишет ближайши
   }
   for (const p of S.productions) { x += E.prodRentMonth(p) + p.staff * S.pay.baker * (1 + CFG.PAYROLL_TAX) + (CFG.PROD_UTIL_BASE + CFG.PROD_UTIL_PER_M2 * p.area) * pl; nEmp += p.staff; }
   x += CFG.CULTURE[S.culture].upkeep * nEmp * pl + Math.max(0, S.stores.length - CFG.HQ_FREE_STORES) * CFG.HQ_PER_STORE * pl + S.month.rev * ((CFG.HQ_REV_SHARE || 0) + E.currentTaxRate(S) * 1.4);
-  x += S.loan * (S.macro.keyRate + CFG.LOAN_SPREAD) / 12 + (E.hrCount ? E.hrCount(S) * (CFG.HR_SALARY || 0) * 1.3 * pl : 0) + (E.trainersCount ? E.trainersCount(S) * (CFG.TRAINER_SALARY || 0) * 1.3 * pl : 0);
+  x += S.loan * E.loanRate(S) / 12 + (E.hrCount ? E.hrCount(S) * (CFG.HR_SALARY || 0) * 1.3 * pl : 0) + (E.trainersCount ? E.trainersCount(S) * (CFG.TRAINER_SALARY || 0) * 1.3 * pl : 0);
   return x;
 }
 function avgLvl(S) { let n = 0, s = 0; for (const st of S.stores) for (const e of st.staff) { n++; s += e.lvl; } return n ? s / n : 0; }
@@ -556,7 +557,8 @@ if (require.main === module) {
   const flags = {}, pos = [];
   for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }
   const level = pos[0] || 'good', seeds = +(pos[1] || 3), years = +(pos[2] || 20);
-  const opts = { level, years, stopOnWin: !!flags.stop };
+  const difficulty = pos[3] || process.env.BK_DIFF || 'normal';
+  const opts = { level, years, stopOnWin: !!flags.stop, difficulty };
   if (flags.reserve != null) opts.reserve = +flags.reserve;
   if (flags.pay != null) opts.pay = +flags.pay;
   if (flags.culture != null) opts.culture = +flags.culture;
@@ -566,7 +568,7 @@ if (require.main === module) {
     if (!flags.summary) { console.log(`\n=== ${level} seed ${s} ${r.lost ? 'LOST at ' + r.lostYear : ''}`); console.table(r.out); }
     const sm = summarize(r); sm.seed = s; sums.push(sm);
   }
-  console.log(`\n### ${level} ${JSON.stringify(flags)}`);
+  console.log(`\n### ${level} ${difficulty} ${JSON.stringify(flags)}`);
   console.table(sums);
   const wins = sums.map((x) => x.won).filter((x) => x != null).sort((a, b) => a - b);
   console.log(`wins ${wins.length}/${sums.length}, median win year ${wins.length ? wins[Math.floor(wins.length / 2)] : '-'}, lost ${sums.filter((x) => x.lost != null).length}`);

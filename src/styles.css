@@ -402,6 +402,24 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload summary { cursor: pointer; width: fit-content; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
 .start-map { width: 100%; height: auto; border-radius: 16px; }
+/* выбор уровня сложности */
+.diffpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.diffpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.diffopts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.diffopt { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); cursor: pointer; min-width: 0; }
+.diffopt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; } /* невидимая радиокнопка на всю карточку */
+.diffopt .dn { font-weight: 600; font-size: 14px; }
+.diffopt .dm { font-family: var(--f-mono); font-size: 11.5px; line-height: 1.35; color: var(--ink-3); }
+.diffopt:hover { border-color: var(--ink-3); }
+.diffopt:has(input:focus-visible) { outline: 2px solid var(--crust); outline-offset: 2px; }
+.diffopt:has(input:checked) { border: 2px solid var(--crust); padding: 8px 9px; background: var(--crust-soft); }
+.diffopt:has(input:checked) .dm { color: var(--ink-2); }
+.diffopt::after, .diffbadge::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--warn); }
+.diffopt::after { position: absolute; top: 10px; right: 10px; margin: 0; }
+.diffopt:has(input:checked)::after { top: 9px; right: 9px; }
+.diffopt.easy::after, .diffbadge.easy::before { background: var(--good); }
+.diffopt.hard::after, .diffbadge.hard::before { background: var(--bad); }
+.diffdesc { margin: 8px 0 4px; font-size: 13px; color: var(--ink-2); min-height: 3.2em; }
 /* переключатель темы на стартовом экране */
 .start-in { position: relative; }
 .start-top { position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
@@ -463,7 +481,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
-  .start-map { max-width: min(360px, 30vh); margin: 0 auto; order: -1; }
+  .start-map { max-width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start .rules .r-diff { display: none; } /* капитал и срок победы — уже в карточках сложности */
+  .diffopt { padding: 8px; } .diffopt:has(input:checked) { padding: 7px; } .diffopt .dn { font-size: 13.5px; } .diffopt .dm { font-size: 11px; } .diffopt::after { display: none; } .diffdesc { min-height: 0; margin-top: 6px; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
   .maplegend { display: none; }
   .setupbanner { display: none; }

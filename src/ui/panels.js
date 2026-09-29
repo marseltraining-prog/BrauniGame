@@ -300,7 +300,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const nEmp = E_.allStaff(S) + E_.bakersTotal(S);
     bills += ((cfg.CULTURE[S.culture] || {}).upkeep || 0) * nEmp * pl + Math.max(0, S.stores.length - (cfg.HQ_FREE_STORES || 0)) * (cfg.HQ_PER_STORE || 0) * pl;
     bills += E_.hrCount(S) * (cfg.HR_SALARY || 0) * tx * pl + E_.trainersCount(S) * (cfg.TRAINER_SALARY || 0) * tx * pl;
-    bills += S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12;
+    bills += S.loan * E().loanRate(S) / 12;
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -758,7 +758,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec"><div class="kpis">
       <div class="kpi"><span class="k">Расчётный счёт</span><span class="v ${S.cash < 0 ? 'negc' : ''}">${fm(S.cash)}</span></div>
       <div class="kpi"><span class="k">Резервный фонд</span><span class="v">${fm(S.reserve)}</span><span class="d">доход ${pct(Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD), 1)} годовых</span></div>
-      <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(S.macro.keyRate + cfg.LOAN_SPREAD, 1)}</span></div>
+      <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(E().loanRate(S), 1)}</span></div>
       <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
     const lastM = S.history[S.history.length - 1];
@@ -774,7 +774,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">«+» — перевести со счёта в резерв, «−» — вернуть на счёт.</span></div>`;
     s += `<div class="sec"><h3>Кредит <small>лимит ${fm(lim)}</small></h3><div class="row">
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
-      <span class="hint">Лимит — средняя месячная выручка × ${cfg.LOAN_MAX_REV_MULT}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
+      <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
