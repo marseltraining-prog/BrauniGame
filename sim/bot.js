@@ -282,6 +282,11 @@ function play(opts) {
       yQuits = 0; yStaffDays = 0; yDays = 0;
     }
     if (opts.onDay) opts.onDay(S, P, mem); // внешняя стратегия поверх бота (sim/corp.js — города России)
+    if (opts.corp && S.corp) { // корпоративный профиль (флаг --corp): директора и новые города — sim/corpbot.js
+      const CB = require('./corpbot');
+      if (t.d === 3) CB.corpMonth(S, P, mem, opts.corpOpt);
+      if (t.m === 0 && t.d === 2) CB.corpYear(S, mem);
+    }
     if (S.won && !mem.won) { mem.won = { year: +(S.day / 365).toFixed(1), stores: S.stores.length, rv: rivalN(S), rvL: rivalLoss(S) }; out.push({ WON_YEAR: mem.won.year, stores: S.stores.length }); if (opts.stopOnWin) break; }
   }
   return { S, out, mem, lost: S.lost, lostYear: S.lost ? +(S.day / 365).toFixed(1) : null, won: mem.won || null };
@@ -559,7 +564,7 @@ if (require.main === module) {
   for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }
   const level = pos[0] || 'good', seeds = +(pos[1] || 3), years = +(pos[2] || 20);
   const difficulty = pos[3] || process.env.BK_DIFF || 'normal';
-  const opts = { level, years, stopOnWin: !!flags.stop, difficulty };
+  const opts = { level, years, stopOnWin: !!flags.stop, difficulty, corp: !!flags.corp };
   if (flags.reserve != null) opts.reserve = +flags.reserve;
   if (flags.pay != null) opts.pay = +flags.pay;
   if (flags.culture != null) opts.culture = +flags.culture;
@@ -568,6 +573,7 @@ if (require.main === module) {
     const r = play(Object.assign({ seed: s * 7919 }, opts));
     if (!flags.summary) { console.log(`\n=== ${level} seed ${s} ${r.lost ? 'LOST at ' + r.lostYear : ''}`); console.table(r.out); }
     const sm = summarize(r); sm.seed = s; sums.push(sm);
+    if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
   }
   console.log(`\n### ${level} ${difficulty} ${JSON.stringify(flags)}`);
   console.table(sums);

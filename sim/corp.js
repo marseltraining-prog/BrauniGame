@@ -1,7 +1,8 @@
 // Прогон второго акта (этап Р1): бот good ведёт Уфу до выхода в Россию, затем вручную открывает 1–2 города.
 // Проверяет, что ничего не ломается и деньги сходятся: каждый месяц
 //   (счёт + резерв − кредит) − стартовое значение = Σ(выручка + прочие доходы + проценты резерва − все статьи расходов).
-// Запуск: node sim/corp.js [сидов=2] [лет=16] [города через запятую=kazan,samara] [--stay=24] [--quiet]
+// Запуск: node sim/corp.js [сидов=2] [лет=16] [города через запятую=kazan,samara] [--stay=24] [--quiet] [--dirs]
+//   --dirs — вместо ручного плана города открывает корпоративный профиль бота (директора, sim/corpbot.js)
 //   --stay — сколько месяцев вести каждый новый город вручную, потом — следующий; в конце — назад в Уфу.
 const BK = require('./load');
 const { play, estStore } = require('./bot');
@@ -50,7 +51,7 @@ function run(seed) {
         if (!ok) issues.push(`старт ${id}: не удалось открыть цех/точку`);
         visits.push({ id, day: S.day, cost: r.cost });
         phaseDay = S.day; step++;
-      } else if (lock && !/подождите/.test(lock)) { issues.push(`${id}: ${lock}`); step++; }
+      } else if (lock && !/за раз/.test(lock)) { issues.push(`${id}: ${lock}`); step++; }
     } else if (step >= plan.length && cr.active !== 'ufa' && S.day - phaseDay >= stayMonths * 30.4) {
       E.switchCity(S, 'ufa'); visits.push({ id: 'ufa', day: S.day }); phaseDay = S.day;
     }
@@ -64,7 +65,8 @@ function run(seed) {
       const lhs = W(S) - month0.W, rhs = month0.acc + net(S.month);
       if (Math.abs(lhs - rhs) > 1 + 1e-9 * Math.abs(W(S))) { issues.push(`день ${S.day}: деньги не сходятся на ${Math.round(lhs - rhs)} ₽`); month0.W += lhs - rhs; }
     }
-    onDay(S, P, mem);
+    if (flags.dirs) { if (S.corp && E.dateOf(S.day).d === 3) require('./corpbot').corpMonth(S, P, mem); } // --dirs: города открывает корпоративный профиль (директора)
+    else onDay(S, P, mem);
     // проверки состояния
     if (!Number.isFinite(S.cash) || !Number.isFinite(S.reserve)) issues.push(`день ${S.day}: NaN в деньгах`);
     if (S.corp && E.dateOf(S.day).d === 2 && E.dateOf(S.day).m === 0) {
