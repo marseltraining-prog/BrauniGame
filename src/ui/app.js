@@ -52,10 +52,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <button data-speed="10" aria-label="Скорость 10" title="10 дней в секунду">${ICON.p10}</button>
       </div></div>
     <div class="stats">
-      <div class="stat"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
-      <div class="stat"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
+      <div class="stat" title="Деньги на расчётном счёте: из них платите аренду, зарплаты и покупки"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
+      <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
       <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
-      <div class="stat goal"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
       <button class="iconbtn" data-act="help" title="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры">${ICON.gear}</button>
     </div>
@@ -291,9 +291,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repair: (d) => res(E.startRepair(S, d.arg), 'Ремонт начат'),
     train: (d) => res(E.train(S, d.arg, d.arg2)),
     trainAll: (d) => { const r = E.trainAll(S, d.arg); res(r.ok ? r : { ok: false, msg: E.ownerTrainLeft(S) === 0 ? `Лимит ручного обучения на эту неделю исчерпан — откройте отдел обучения во вкладке «Команда»` : 'Некого учить или не хватает денег' }, r.ok ? `Обучено: ${H.nw(r.n, 'сотрудник', 'сотрудника', 'сотрудников')}` : null); },
-    quickHire: (d) => { const r = E.hire(S, d.arg); res(r, r.ok ? `Нанят(а) ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
+    quickHire: (d) => { const r = E.hire(S, d.arg); res(r, r.ok ? `${BK.byGender(r.p.name, 'Нанят', 'Нанята')} ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
     pickCand: (d) => { ui.hireStore = d.arg; ui.tab = 'team'; refresh(); requestAnimationFrame(() => { const el = $('#hireStore'); if (el) el.scrollIntoView({ block: 'center' }); }); },
-    hireCand: (d) => { const r = E.hire(S, d.arg2, d.arg); res(r, r.ok ? `Нанят(а) ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
+    hireCand: (d) => { const r = E.hire(S, d.arg2, d.arg); res(r, r.ok ? `${BK.byGender(r.p.name, 'Нанят', 'Нанята')} ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
     askFire: (d) => { ui.confirmFire = d.arg; refresh(); },
     cancelFire: () => { ui.confirmFire = null; refresh(); },
     fire: (d) => { ui.confirmFire = null; res(E.fire(S, d.arg, d.arg2)); },
@@ -413,7 +413,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const p = E.byId(BK.PRODUCTS, it.id);
         html += `<label class="chefitem ${drop.has(it.id) ? 'off' : ''}"><input type="checkbox" data-drop="${it.id}" ${drop.has(it.id) ? 'checked' : ''}><span class="cn">${H.esc(p.name)}</span><span class="chip">${BK.CATEGORIES[p.cat].name}</span><span class="cm"><span>тренд ${Math.round(S.trends[p.cat])}</span><span>фудкост ${H.pct(p.fc / it.pm)}</span></span></label>`;
       }
-      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${after} позиций (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
+      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${H.nw(after, 'позиция', 'позиции', 'позиций')} (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
       openModal(html, { keepScroll: true });
       $('#modal').querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.pick; if (b.checked) { if (pick.size >= C.CHEF_PICK) { b.checked = false; return; } pick.add(id); } else pick.delete(id); draw(); }));
       $('#modal').querySelectorAll('[data-drop]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.drop; if (b.checked) { if (drop.size >= C.CHEF_REMOVE) { b.checked = false; return; } drop.add(id); } else drop.delete(id); draw(); }));
@@ -458,7 +458,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
   }
   function openTutorialModal() {
-    openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${C.OPEN_DAYS} дней</h2></div><div class="modal-b">
+    openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
       <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
         <li><b>Время</b> идёт само: пауза — пробел, скорость ×1 / ×3 / ×10 вверху.</li>
         <li><b>Смайлики над точками</b> — настроение команды. Кто недоволен больше месяца — уходит. Помогают зарплата, премии, культура и полный штат.</li>
@@ -470,11 +470,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function openHelp() {
     openModal(`<div class="modal-h"><span class="eyebrow">Как играть</span><h2>Правила «Хлебной карты»</h2></div><div class="modal-b">
-      <p style="margin:0"><b>Выручка точки</b> = трафик × конверсия × средний чек. Трафик зависит от места и соседства, конверсия — от меню, ремонта, сервиса и цен, чек — от платёжеспособности района и ваших цен.</p>
-      <p style="margin:0"><b>Персонал.</b> Уровни 1–5: выше уровень — больше гостей и чек, меньше текучесть, но и оклад выше. Один сотрудник обслуживает ограниченное число гостей: перегруз → усталость → недовольство → увольнения, и остальным становится ещё тяжелее. Найм стоит 2 зарплаты. После ${C.HR_REQUIRED_STORES} точек нужен HR-отдел, после ${C.TRAIN_REQUIRED_STORES} — отдел обучения.</p>
+      <p style="margin:0"><b>Выручка точки</b> = трафик × конверсия × средний чек. Трафик зависит от места и соседства, конверсия (доля прохожих, которые заходят и покупают) — от меню, ремонта, сервиса и цен, чек — от платёжеспособности района и ваших цен.</p>
+      <p style="margin:0"><b>Персонал.</b> Уровни 1–5: выше уровень — больше гостей и чек, меньше текучесть, но и оклад выше. Один сотрудник обслуживает ограниченное число гостей: перегруз → усталость → недовольство → увольнения, и остальным становится ещё тяжелее. Найм стоит ${String(C.HIRE_COST_SALARIES).replace('.', ',')} зарплаты. После ${C.HR_REQUIRED_STORES} точек нужен HR-отдел, после ${C.TRAIN_REQUIRED_STORES} — отдел обучения.</p>
       <p style="margin:0"><b>Производство</b> печёт на все точки. Ближе к центру — дороже аренда, дешевле доставка. Второй цех — от ${C.SECOND_PROD_STORES} точек, третий — от ${C.THIRD_PROD_STORES}.</p>
-      <p style="margin:0"><b>Меню.</b> Раз в год шеф предлагает 5 новинок, можно взять 2 и вывести 2. Цены меняйте в любой момент.</p>
+      <p style="margin:0"><b>Меню.</b> Раз в год шеф предлагает 5 новинок: можно добавить до ${C.CHEF_PICK} и вывести до ${C.CHEF_REMOVE}. Цены меняйте в любой момент. Следите за фудкостом — долей себестоимости продуктов в цене.</p>
       <p style="margin:0"><b>Деньги.</b> Зарплаты, аренду и налоги списывают 1-го числа. Резервный фонд приносит проценты и сам закрывает кассовый разрыв. Если ${H.nw(C.BANKRUPT_MONTHS, 'расчёт', 'расчёта', 'расчётов')} подряд счёт в минусе, а резерв пуст, — банкротство.</p>
+      <p style="margin:0"><b>Термины.</b> ФОТ — фонд оплаты труда: зарплаты плюс взносы. УСН — упрощённый налог с выручки; когда выручка за год превысит лимит, сеть перейдёт на ОСНО (НДС и налог на прибыль). Кассовый разрыв — на счёте не хватает денег на платежи.</p>
       <p style="margin:0"><b>События:</b> налоги, проверки, конкуренты, погода, кризис раз в 2–3 года. 70% из них — неприятные.</p>
       <p class="hint" style="margin:0">Клавиши: пробел — пауза, 1 / 2 / 3 — скорость.</p>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Понятно</button></div>`, { closable: true });
