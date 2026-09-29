@@ -449,7 +449,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .panel { border-left: 0; border-top: 1px solid var(--line); }
   .pbody { overflow: visible; }
   /* компактный липкий HUD в две строки (макет 4): [лого · дата · скорость · меню] / [счёт | оборот и цель] */
-  .hud { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand clock btns" "stats stats stats"; gap: 8px 8px; min-height: 0; padding: 8px 12px 10px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); position: sticky; top: 0; background: color-mix(in srgb, var(--surface) 95%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .hud { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand clock btns" "stats stats stats"; gap: 8px 8px; min-height: 0; padding: 8px 12px 10px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); position: sticky; top: 0; background: var(--surface); }
   .brand { grid-area: brand; }
   .brand-mark { width: 30px; height: 30px; }
   .brand-tx { display: none; }
@@ -548,7 +548,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .chart12 .ls { fill: var(--bad); opacity: .55; }
 .chart12 .ls.cur { opacity: .9; }
 .chart12 .zero { stroke: var(--ink-3); stroke-width: 1; opacity: .6; }
-.chart12 g:hover .rv:not(.cur) { opacity: .38; }
 .legend .lg-rv { background: var(--ink-3); opacity: .35; }
 .legend .lg-pf { background: var(--river); }
 .legend .lg-ls { background: var(--bad); opacity: .7; }
@@ -606,3 +605,5 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .rival-opt small { display: block; margin-top: 4px; font-size: 12px; }
 .maplegend .lg-rival { display: none; }
 .has-rival .maplegend .lg-rival { display: inline-flex; }
+/* нижние блоки «Сводки» вне экрана не раскладываются и не рисуются (на телефоне панель — часть длинной страницы) */
+.pbody > .sec.lazy { content-visibility: auto; contain-intrinsic-size: auto 320px; }

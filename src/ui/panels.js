@@ -118,7 +118,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return 'низкий настрой в команде';
   }
   const nums = (list, k = 3) => list.slice(0, k).map((x) => '№' + x.num).join(', ') + (list.length > k ? '…' : '');
+  // «Требует внимания» считается не чаще раза в игровой день или при изменении того, на что влияют действия игрока
+  let attMemo = null;
   function attention(S) {
+    let inc = 0; for (const st of S.stores) inc += st.staff.length * 7 + st.incoming.length + st.staffTarget * 3 + (st.status === 'open' ? 1 : 0);
+    const key = [S.day, S.stores.length, inc, Math.round(S.cash / 1e4), Math.round(S.reserve / 1e4), S.loan, !!S.chef.pending, S.office.hr, S.office.academy, S.pay.seller, S.prodOffers.length, S.productions.length, S.phase, S.cache ? S.cache.capUse : 0].join('|');
+    if (attMemo && attMemo.S === S && attMemo.key === key) return attMemo.r;
+    const r = attentionCalc(S);
+    attMemo = { S, key, r };
+    return r;
+  }
+  function attentionCalc(S) {
     const cfg = C(), E_ = E(), items = [];
     const counts = { dash: 0, team: 0, stores: 0, prod: 0, fin: 0, menu: 0, market: 0 };
     if (S.phase !== 'play') return { items, counts };
@@ -455,13 +465,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const shown = ui.attAll ? items : items.slice(0, MAX);
     s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
       ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
-    s += holidaysBlock(S);
+    s += holidaysBlock(S).replace('<div class="sec">', '<div class="sec lazy">');
     const nr = E_.networkRating(S), lp = last && last.pnl;
     s += `<div class="dkpis mini">
       <div class="dkpi"><div class="lab">Рейтинг сети на картах</div><div class="v">${nr != null ? `${rstars(nr)} ${r1(nr)}` : '—'}</div><div class="sub">среднее по точкам</div></div>
       <div class="dkpi click" data-act="tab" data-arg="prod"><div class="lab">Списано за месяц</div><div class="v">${lp && lp.waste != null ? fm(lp.waste) : '—'}</div><div class="sub">${lp && lp.waste != null && last.rev ? pctS(lp.waste / last.rev) + ' выручки · «Цех» →' : 'выпечка и списания — «Цех» →'}</div></div>
     </div>`;
-    s += `<div class="sec"><h3>Отчёт за прошлый месяц${last ? ` <small>${E_.MONTHS[last.m]} ${last.y}</small>` : ''}</h3>${pnlTable(last && last.pnl, true)}</div>`;
+    s += `<div class="sec lazy"><h3>Отчёт за прошлый месяц${last ? ` <small>${E_.MONTHS[last.m]} ${last.y}</small>` : ''}</h3>${pnlTable(last && last.pnl, true)}</div>`;
     return s;
   }
 

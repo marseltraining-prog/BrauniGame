@@ -239,13 +239,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- HUD ---------------- */
-  let hudCache = '';
+  let hudCache = '', hudParts = {};
   function renderHud() {
     if (!S) return;
     const key = [S.day, Math.round(S.cash / 1000), Math.round(S.reserve / 1000), S.stores.length, ui.speed, S.company, S.history.length, S.won].join('|');
     if (key === hudCache) return; hudCache = key;
     const g = H.goalInfo(S), hist = S.history, last = hist[hist.length - 1], prev = hist[hist.length - 2];
-    const set = (id, html) => { const el = document.getElementById(id); if (el.innerHTML !== html) el.innerHTML = html; };
+    const set = (id, html) => { if (hudParts[id] === html) return; hudParts[id] = html; document.getElementById(id).innerHTML = html; };
     $('#hud-name').textContent = S.company;
     const t = E.dateOf(S.day);
     set('hud-date', `<span class="long">${E.fmtDate(S.day)}</span><span class="short">${t.d} ${E.MONTHS_G[t.m].slice(0, 3)} ${t.y}</span>`);
