@@ -577,6 +577,19 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .att .it .btn { grid-column: 2; justify-self: start; }
 }
 
+@media (max-width: 374px) { .stat .v { font-size: 12px; letter-spacing: -.04em; } .stats { column-gap: 8px; } }
+/* сеть-соперник: приглушённые ромбы на карте, блок во вкладке «Рынок», переключатель на стартовом экране */
+.m-rival rect { fill: var(--rival, #9580a8); fill-opacity: .65; stroke: var(--paper, #fff); stroke-width: 1.4; stroke-opacity: .9; }
+.m-rival:hover rect { fill-opacity: .9; }
+.crowded .m-rival rect { fill-opacity: .4; }
+.rival-sum { display: flex; gap: 10px; align-items: flex-start; }
+.rv-mark { flex: none; width: 11px; height: 11px; margin: 5px 3px 0; transform: rotate(45deg); border-radius: 2px; background: var(--rival, #9580a8); opacity: .7; }
+.start .rival-opt { margin-top: 12px; max-width: 460px; font-size: 13px; color: var(--ink-2); }
+.start .rival-opt .row { gap: 10px; }
+.start .rival-opt small { display: block; margin-top: 4px; font-size: 12px; }
+.maplegend .lg-rival { display: none; }
+.has-rival .maplegend .lg-rival { display: inline-flex; }
+
 [hidden]{display:none!important}
 </style>
 <script>
@@ -736,6 +749,25 @@ BK.CFG = {
   EVE_CANNIBAL: [0, 0.06, 0.07, 0.075], // доля выручки, которую гости переносят на вечер ради скидки (теряем скидку с неё)
   DISC_CHANGE_DAYS: 90,         // менять скидку без штрафа — не чаще раза в 3 месяца
   DISC_PENALTY_DAYS: 30, DISC_PENALTY_RATING: 0.4, // иначе на месяц −0,4★ у всех точек (≈ −4% новых гостей)
+
+  // --- сеть-соперник «Хлебный двор» (engine.js: блок «сеть-соперник», S.rival) ---
+  RIVAL_ON: true,               // по умолчанию в новой игре (стартовый экран: вкл/выкл; боты: BK_RIVAL=0)
+  RIVAL_NAME: 'Хлебный двор',   // имя же — в текстах событий e141–e142 (events.js)
+  RIVAL_START: [1, 2],          // точек на старте
+  RIVAL_FIRST_DAY: 90,          // первое открытие — не раньше 3-го месяца
+  RIVAL_BASE: 1.5, RIVAL_PER_YEAR: 1.0, RIVAL_PER_PLAYER: 0.3, RIVAL_MAX: 40, // цель по числу точек: агрессия × (база + за год + за каждую точку игрока)
+  RIVAL_AGG: [0.8, 1.15],       // агрессия сети — случайна на партию (к 15-му году ~20–35 точек)
+  RIVAL_GAP_DAYS: [15, 40],     // раз в N дней соперник решает, открывать ли точку
+  RIVAL_GRAB_P: 0.2, RIVAL_NEAR_P: 0.3, // доля открытий: забрать лучшее помещение с рынка / встать рядом с сильной точкой игрока (остальное — случайный район)
+  RIVAL_GRAB_FROM_DAY: 365, RIVAL_GRAB_MIN_STORES: 2, RIVAL_NEAR_MIN_STORES: 3, // молодую сеть игрока соперник не душит: забирает помещения со 2-го года и от 2 точек, встаёт рядом — от 3 точек
+  RIVAL_RADIUS: 30,             // ~0,9 км: точка соперника ближе забирает часть гостей (свои — CANNIBAL_RADIUS 26)
+  RIVAL_F: 0.07,                // −7% гостей от одной точки соперника (качество 1,0, рейтинг 4,0★, вплотную; на краю радиуса — ≈ −4%)
+  RIVAL_RATING_K: 0.45,         // потеря × (1 + K·(4,0 − рейтинг)): 5★ → ×0,55, 3★ → ×1,45
+  RIVAL_Q: [0.8, 1.1],          // качество новой точки соперника (+0,01 за год игры, до +0,15)
+  RIVAL_DOM_R: 45, RIVAL_DOM_P: 0.015, RIVAL_DOM_MIN_RATING: 4.0, // закрытие: ваши точки с рейтингом ≥ 4★ в радиусе ~1,4 км давят на соседа (шанс в месяц растёт с их числом)
+  RIVAL_BAN_DAYS: 365, RIVAL_AGG_HIT: 0.01, RIVAL_AGG_BACK: 0.002, // после закрытия соперник год не лезет в этот район и чуть теряет агрессию (восстанавливается +0,002 в месяц)
+  RIVAL_POACH_P: 0.04, RIVAL_POACH_CD: 300, // переманивание сотрудников (событие e142): шанс в месяц и пауза, дн.
+  RIVAL_WAR_P: 0.025, RIVAL_WAR_CD: 1095, RIVAL_WAR_MIN: 6, // ценовая война в районе (событие e141): шанс в месяц, пауза, минимум точек соперника
 
   // --- события ---
   EVENT_MIN_DAYS: 18, EVENT_MAX_DAYS: 34,
@@ -980,7 +1012,8 @@ BK.EVENT_MONTHS = {
                                     особое помещение во вкладке «Рынок»: ориентир lm, формат size,
                                     аренда × rent, живёт days дней; при scope district — в этом районе
    Состав: 100 базовых (70 neg / 30 pos) + 28 для большой сети от 10–30 точек (e101–e128, 20 neg / 8 pos)
-   + 8 последствий цепочек (e129–e136, followUp) + 4 «звёздных» раз за игру (e137–e140, once) + 5 кризисов.
+   + 8 последствий цепочек (e129–e136, followUp) + 4 «звёздных» раз за игру (e137–e140, once)
+   + 2 от сети-соперника (e141–e142, followUp, ставит движок) + 5 кризисов.
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
 BK.EVENTS = [
@@ -2028,6 +2061,29 @@ BK.EVENTS = [
     scope:'global', weight:0.5, minStores:30, minYear:7, once:true,
     effects:[{t:'traffic', m:1.05, d:60}, {t:'loyalty', add:6}, {t:'trend', cat:'bread', add:6}, {t:'delivery', m:0.92, d:365}] },
 
+  /* ===================== СЕТЬ-СОПЕРНИК (2, followUp:true) =====================
+     Ставит в очередь S.ev.queue сам движок (rivalMonthly), только если соперник включён.
+     Имя сети — как CFG.RIVAL_NAME. */
+
+  { id:'e141', kind:'neg', followUp:true, title:'Ценовая война: «Хлебный двор»',
+    text:'Сеть «Хлебный двор» объявила в районе {district} «месяц честных цен»: хлеб и выпечка на 20% дешевле, чем у вас, листовки у каждого подъезда. Гости считают деньги и переходят через дорогу.',
+    scope:'district', weight:0,
+    effects:[{t:'competitor', m:0.95, d:30}],
+    choices:[
+      { label:'Снизить цены в ответ', desc:'Гостей удержим, но средний чек в районе −6% на 4 месяца.', cost:0, effects:[{t:'check', m:0.94, d:120}] },
+      { label:'Ставка на качество', desc:'Дегустации и горячая выпечка на виду: гостей района −4% на 4 месяца.', cost:{perStore:60000}, effects:[{t:'competitor', m:0.96, d:120}] },
+      { label:'Не реагировать', desc:'Пусть демпингуют — сами устанут. Гостей района −10% на 4 месяца.', cost:0, effects:[{t:'competitor', m:0.9, d:120}] }
+    ] },
+
+  { id:'e142', kind:'neg', followUp:true, title:'«Хлебный двор» переманивает людей',
+    text:'Управляющий соседней пекарни «Хлебного двора» предложил вашей команде на {store} зарплату на 15% выше. Двое уже сходили на собеседование.',
+    scope:'store', weight:0,
+    effects:[],
+    choices:[
+      { label:'Удержать: премия команде', desc:'Разовая премия всем на точке — останутся, а сеть заметит заботу: настроение +2.', cost:{perStore:120000}, effects:[{t:'loyalty', add:2}] },
+      { label:'Отпустить', desc:'Уйдут двое — придётся нанимать и учить замену.', cost:0, effects:[{t:'staffQuit', n:2}] }
+    ] },
+
   /* ===================== КРИЗИСЫ (5, запускаются движком раз в 2–3 года) ===================== */
 
   { id:'c01', kind:'neg', crisis:true, title:'Экономический кризис',
@@ -2175,6 +2231,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     genProdOffers(S, 3);
     genStoreOffers(S, true);
     refreshCandidates(S, true);
+    rivalInit(S, opts && opts.rival != null ? opts.rival : cfg.RIVAL_ON); // сеть-соперник (свой ГСЧ — основной поток не сдвигается)
     log(S, `Компания «${S.company}» зарегистрирована. На счёте ${BK.fmtMoney(S.cash)}.`, 'good');
     return S;
   }
@@ -2191,7 +2248,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (let k = 0; k < 30; k++) {
       const a = rnd(S) * Math.PI * 2, r = Math.sqrt(rnd(S)) * radius;
       const p = { x: d.x + Math.cos(a) * r, y: d.y + Math.sin(a) * r * 0.85 };
-      const busy = S.stores.concat(S.offers, S.productions, S.prodOffers).some((o) => dist(o, p) < 14);
+      const busy = S.stores.concat(S.offers, S.productions, S.prodOffers, (S.rival && S.rival.stores) || []).some((o) => dist(o, p) < 14);
       if (!busy) return p;
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
@@ -2497,7 +2554,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // раскрутка: новая точка первые месяцы собирает только часть потока, пока район к ней не привыкнет
     const ramp = st.openedDay != null && cfg.RAMP_DAYS ? Math.min(1, cfg.RAMP_START + (1 - cfg.RAMP_START) * (S.day - st.openedDay) / cfg.RAMP_DAYS) : 1;
     const traffic = st.traffic * sz.capture * dayF * season * cannibal * mkt * st.comp * ramp
-      * modMult(S, 'traffic', st) * modMult(S, 'competitor', st);
+      * modMult(S, 'traffic', st) * modMult(S, 'competitor', st) * rivalMult(S, st);
     // сервис
     let lvlSum = 0; for (const e of st.staff) lvlSum += e.lvl;
     const avgLvl = st.staff.length ? lvlSum / st.staff.length : 1;
@@ -2817,6 +2874,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     dailyStaff(S);
     dailyMisc(S, t);
     holidayNotice(S);
+    rivalDaily(S, t);
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (fireQueuedEvent(S)) { /* отложенное последствие прошлого решения */ }
@@ -3392,6 +3450,156 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   // рейтинг точки и списания (отдельно от основного списка, чтобы не править его)
   Object.assign(BK.Engine, { wasteState, wasteFactors, ratingParts, ratingTarget, storeRating, ratingMult, networkRating, setBake, setEveDiscount, discFreeDay, discPenalty });
+
+  /* ---------------- сеть-соперник «Хлебный двор» ----------------
+     S.rival: { enabled, name, rng, agg, stores: [{ id, x, y, district, address, q, day, how }], hist (число точек по месяцам, 13 шт.),
+                nextDay, ban: { район: до какого дня не лезет }, opened, closed, grabbed }
+     Свой ГСЧ (S.rival.rng): соперник не сдвигает основной поток случайностей. Числа — RIVAL_* в config.js.
+     Старые сохранения (без S.rival) получают enabled:false — соперника в начатой партии не было, её баланс не меняется. */
+  function rivalState(S) {
+    if (!S.rival) S.rival = { enabled: false, stores: [], hist: [], ban: {}, opened: 0, closed: 0, grabbed: 0 };
+    return S.rival;
+  }
+  function withRivalRng(S, fn) { const keep = S.rng; S.rng = S.rival.rng; try { fn(); } finally { S.rival.rng = S.rng; S.rng = keep; } }
+  function rivalInit(S, on) {
+    const cfg = C();
+    const R = S.rival = { enabled: !!on, name: cfg.RIVAL_NAME, rng: (S.seed ^ 0x2f6b1d) | 0, agg: 1, stores: [], hist: [], nextDay: cfg.RIVAL_FIRST_DAY, ban: {}, opened: 0, closed: 0, grabbed: 0 };
+    if (!R.enabled) return R;
+    withRivalRng(S, () => {
+      R.agg = R.agg0 = rr(S, cfg.RIVAL_AGG[0], cfg.RIVAL_AGG[1]);
+      const n = ri(S, cfg.RIVAL_START[0], cfg.RIVAL_START[1]);
+      for (let i = 0; i < n; i++) rivalPlace(S, 'random');
+    });
+    return R;
+  }
+  function offerPotential(S, o) { // грубая месячная отдача места: чеки × платёжеспособность − аренда (для выбора «лучшего» помещения)
+    const cfg = C(), sz = cfg.SIZES[o.size];
+    const checks = Math.min(sz.staffMax * cfg.CHECKS_PER_STAFF_BASE, o.traffic * sz.capture * o.comp * cfg.BASE_CONV);
+    return checks * o.solv * S.macro.priceLevel * 30.4 * 0.3 - o.area * o.rentM2;
+  }
+  function rivalPlace(S, how) { // how: 'grab' — забрать помещение с рынка, 'near' — рядом с сильной точкой игрока, 'random'
+    const cfg = C(), R = S.rival;
+    let p = null, d = null, address = null, grabbed = null;
+    const tooClose = (q) => R.stores.some((o) => dist(o, q) < 12) || S.stores.some((o) => dist(o, q) < 8);
+    if (how === 'grab') {
+      const pool = S.offers.filter((o) => !o.special);
+      if (!pool.length) return null;
+      grabbed = pool.reduce((b, o) => (offerPotential(S, o) > offerPotential(S, b) ? o : b));
+      p = { x: grabbed.x, y: grabbed.y }; d = byId(BK.DISTRICTS, grabbed.district); address = grabbed.address;
+    } else if (how === 'near') {
+      const open = S.stores.filter((s) => s.status === 'open' && s.last && !(R.ban[s.district] > S.day));
+      if (!open.length) return rivalPlace(S, 'random');
+      open.sort((a, b) => b.last.rev - a.last.rev);
+      const st = pick(S, open.slice(0, Math.max(1, Math.ceil(open.length / 3)))); // одна из сильнейших точек игрока
+      for (let k = 0; k < 12 && !p; k++) {
+        const a = rnd(S) * Math.PI * 2, r = rr(S, 0.35, 0.9) * cfg.RIVAL_RADIUS;
+        const q = { x: st.x + Math.cos(a) * r, y: st.y + Math.sin(a) * r * 0.85 };
+        if (!tooClose(q)) p = q;
+      }
+      if (!p) return null;
+      d = byId(BK.DISTRICTS, st.district);
+    } else {
+      const ds = BK.DISTRICTS.filter((x) => !(R.ban[x.id] > S.day));
+      d = wpick(S, ds.length ? ds : BK.DISTRICTS, (x) => districtWeight(S, x));
+      for (let k = 0; k < 6 && !p; k++) { const q = freeSpot(S, d, 42); if (!tooClose(q)) p = q; }
+      if (!p) return null;
+    }
+    if (!address) address = `${pick(S, d.streets)}, ${ri(S, 1, 120)}`;
+    const q = +clamp(rr(S, cfg.RIVAL_Q[0], cfg.RIVAL_Q[1]) + Math.min(0.15, 0.01 * S.day / 365), 0.6, 1.3).toFixed(2);
+    const rs = { id: nextId(S, 'r'), x: p.x, y: p.y, district: d.id, address, q, day: S.day, how };
+    R.stores.push(rs); R.opened++;
+    if (grabbed) { S.offers = S.offers.filter((o) => o !== grabbed); R.grabbed++; }
+    return rs;
+  }
+  function rivalAnnounce(S, rs) {
+    const R = S.rival, dn = (byId(BK.DISTRICTS, rs.district) || {}).name || '';
+    if (rs.how === 'grab') {
+      toast(S, `«${R.name}» занял помещение`, `${rs.address} (${dn}) — соперник успел раньше вас.`, 'warn');
+      log(S, `«${R.name}» занял помещение на ${rs.address} (${dn}) — теперь там его пекарня.`, 'warn');
+      return;
+    }
+    let near = null, bd = C().RIVAL_RADIUS;
+    for (const st of S.stores) { const x = dist(st, rs); if (x < bd) { bd = x; near = st; } }
+    if (near) {
+      toast(S, `«${R.name}» открылся рядом с точкой №${near.num}`, `${rs.address}: часть гостей уйдёт к соседу. Высокий рейтинг точки — лучшая защита.`, 'warn', { storeId: near.id });
+      log(S, `«${R.name}» открыл пекарню на ${rs.address} — рядом с вашей точкой №${near.num} (${near.address}).`, 'warn');
+    } else log(S, `«${R.name}» открыл пекарню: ${rs.address} (${dn}). У сети ${R.stores.length} точ.`, 'info');
+  }
+  function rivalMult(S, st) { // доля гостей, которая остаётся у точки игрока рядом с соперником
+    const R = S.rival; if (!R || !R.enabled || !R.stores.length) return 1;
+    const cfg = C(), rad = cfg.RIVAL_RADIUS; let m = 1, k = null;
+    for (const o of R.stores) {
+      const dd = dist(o, st); if (dd >= rad) continue;
+      if (k == null) k = clamp(1 + cfg.RIVAL_RATING_K * (cfg.RATING_START - storeRating(S, st)), 0.4, 1.6); // высокий рейтинг — теряем меньше
+      m *= 1 - cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad);
+    }
+    return m;
+  }
+  function rivalNear(S, obj) { // для карточек точки и помещения: сколько точек соперника рядом и какая доля гостей уходит
+    const R = S.rival; if (!R || !R.enabled) return { n: 0, loss: 0 };
+    let n = 0; for (const o of R.stores) if (dist(o, obj) < C().RIVAL_RADIUS) n++;
+    return { n, loss: n ? 1 - rivalMult(S, obj) : 0 };
+  }
+  function rivalDaily(S, t) {
+    const R = S.rival; if (!R || !R.enabled) return;
+    const cfg = C();
+    withRivalRng(S, () => {
+      if (S.day >= R.nextDay) {
+        const mine = S.stores.filter((s) => s.status !== 'opening').length;
+        const target = Math.min(cfg.RIVAL_MAX, R.agg * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
+        const gap = target - R.stores.length;
+        if (gap > 0 && rnd(S) < clamp(gap, 0.3, 1)) {
+          const r = rnd(S);
+          const canGrab = S.day >= cfg.RIVAL_GRAB_FROM_DAY && mine >= cfg.RIVAL_GRAB_MIN_STORES && S.offers.some((o) => !o.special);
+          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // молодую сеть игрока не душит
+          const rs = rivalPlace(S, how);
+          if (rs) rivalAnnounce(S, rs);
+        }
+        R.nextDay = S.day + ri(S, cfg.RIVAL_GAP_DAYS[0], cfg.RIVAL_GAP_DAYS[1]);
+      }
+      if (t.d === 1) rivalMonthly(S);
+    });
+  }
+  function rivalMonthly(S) {
+    const cfg = C(), R = S.rival;
+    // слабеет: где игрок сильно доминирует (несколько точек с рейтингом ≥ 4★ рядом), точка соперника закрывается
+    for (let i = R.stores.length - 1; i >= 0; i--) {
+      const o = R.stores[i]; if (S.day - o.day < 180) continue;
+      let strong = 0;
+      for (const st of S.stores) if (st.status !== 'opening' && dist(st, o) < cfg.RIVAL_DOM_R && storeRating(S, st) >= cfg.RIVAL_DOM_MIN_RATING) strong++;
+      const p = cfg.RIVAL_DOM_P * Math.max(0, strong - 1) * clamp(1.3 - o.q, 0.1, 0.6) / 0.4;
+      if (p > 0 && rnd(S) < p) {
+        R.stores.splice(i, 1); R.closed++;
+        R.ban[o.district] = S.day + cfg.RIVAL_BAN_DAYS; R.agg = Math.max(0.5, R.agg - cfg.RIVAL_AGG_HIT);
+        const dn = (byId(BK.DISTRICTS, o.district) || {}).name || '';
+        toast(S, `«${R.name}» закрыл точку`, `${o.address} (${dn}): не выдержал соседства с вашими пекарнями.`, 'good');
+        log(S, `«${R.name}» закрыл пекарню на ${o.address} (${dn}) — не выдержал конкуренции с вашей сетью.`, 'good');
+      }
+    }
+    R.hist.push(R.stores.length); if (R.hist.length > 13) R.hist.shift();
+    if (R.agg0) R.agg = Math.min(R.agg0, R.agg + cfg.RIVAL_AGG_BACK); // агрессия медленно восстанавливается
+    // переманивание сотрудников и ценовая война — события e141/e142 через очередь последствий
+    const queued = (id) => (S.ev.queue || []).some((x) => x.id === id);
+    const recent = (id, cd) => S.ev.last[id] != null && S.day - S.ev.last[id] < cd;
+    const exposed = S.stores.filter((st) => st.status === 'open' && st.staff.length >= 2 && R.stores.some((o) => dist(o, st) < cfg.RIVAL_RADIUS));
+    if (!exposed.length) return;
+    if (!S.ev.queue) S.ev.queue = [];
+    if (!queued('e142') && !recent('e142', cfg.RIVAL_POACH_CD) && rnd(S) < cfg.RIVAL_POACH_P) {
+      const st = pick(S, exposed);
+      S.ev.queue.push({ id: 'e142', day: S.day + ri(S, 1, 10), tg: { scope: 'store', target: st.id } });
+    }
+    if (R.stores.length >= cfg.RIVAL_WAR_MIN && !queued('e141') && !recent('e141', cfg.RIVAL_WAR_CD) && rnd(S) < cfg.RIVAL_WAR_P) {
+      const cnt = {}; for (const st of exposed) cnt[st.district] = (cnt[st.district] || 0) + 1;
+      const did = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0]; // район, где у вас больше всего точек рядом с соперником
+      S.ev.queue.push({ id: 'e141', day: S.day + ri(S, 1, 10), tg: { scope: 'district', target: did } });
+    }
+  }
+  function rivalSummary(S) { // для UI: null, если соперник выключен
+    const R = S.rival; if (!R || !R.enabled) return null;
+    const n = R.stores.length, y = R.hist.length ? R.hist[0] : n;
+    return { name: R.name || C().RIVAL_NAME, n, delta: n - y, months: R.hist.length, opened: R.opened, closed: R.closed, grabbed: R.grabbed, stores: R.stores };
+  }
+  Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
 })();
 
 /* ui/map.js */
@@ -3615,6 +3823,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       m += `</g>`;
     }
     if (m !== this.lastM) { this.gM.innerHTML = m; this.lastM = m; }
+    this.renderRivals(S, k);
+  };
+  // сеть-соперник: приглушённые ромбы отдельным слоем под маркерами игрока (слой создаётся при первой отрисовке)
+  Map.prototype.renderRivals = function (S, k) {
+    const R = BK.Engine.rivalSummary ? BK.Engine.rivalSummary(S) : null;
+    if (!this.gRv) { this.gRv = document.createElementNS(NS, 'g'); this.gRv.setAttribute('class', 'rivals'); this.gM.parentNode.insertBefore(this.gRv, this.gM); }
+    let h = '';
+    if (R) for (const o of R.stores) h += `<g class="m-rival" data-kind="rival" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-5.5" y="-5.5" width="11" height="11" rx="1.5" transform="rotate(45)"/></g>`;
+    if (h !== this.lastRv) { this.gRv.innerHTML = h; this.lastRv = h; (this.el.parentNode || this.el).classList.toggle('has-rival', !!h); }
   };
   BK.MapView = Map;
   BK.mapStatic = staticLayer;
@@ -4139,7 +4356,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const prod = E_.nearestProd(S, st);
     let s = `<button class="back" data-act="closeStoreView">← Все точки</button>`;
     s += `<div class="sec"><div class="card-h"><div><h2 style="font-family:var(--f-display);font-size:18px">№${st.num} · ${esc(st.address)}</h2><div class="card-s">${dname(st.district)} · ${fmtLong(st.size)}, ${st.area} м²</div></div></div>
-      <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}</div></div>`;
+      <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}${rivalChip(S, st)}</div></div>`;
     if (T && !T.closed) {
       s += `<div class="sec"><h3>Сегодня</h3><div class="kpis">
         <div class="kpi"><span class="k">Чеков</span><span class="v">${n0(T.checks)}</span><span class="d">трафик ${n0(T.traffic)} чел.</span></div>
@@ -4196,7 +4413,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sel = ui.sel && ui.sel.kind === 'offer' && ui.sel.id === o.id;
     return `<div class="card${sel ? ' sel' : ''}" data-offer="${o.id}">
       <div class="card-h"><div><div class="card-t">${esc(o.address)}</div><div class="card-s">${dname(o.district)} · ${fmtShort(o.size)}, ${o.area} м²</div></div><button class="btn sm" data-act="focusOffer" data-arg="${o.id}" title="Показать на карте">На карте</button></div>
-      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? `оплата за год, −${Math.round(cfg.YEARLY_RENT_DISCOUNT * 100)}%` : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}</div>
+      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? `оплата за год, −${Math.round(cfg.YEARLY_RENT_DISCOUNT * 100)}%` : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}${rivalChip(S, o)}</div>
       <div class="grid2">
         ${kv('Аренда', `${n0(o.rentM2)} ₽/м² · ${fm(o.area * o.rentM2)}`)}${kv('Трафик', n0(o.traffic) + ' чел./день')}
         ${kv('Платёжеспособность', n0(o.solv * S.macro.priceLevel) + ' ₽ за визит')}${kv('Конкуренция', o.comp > 0.95 ? 'низкая' : o.comp > 0.89 ? 'средняя' : 'высокая')}
@@ -4220,7 +4437,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div>`;
   }
   function market(S, ui) {
-    let s = '';
+    let s = rivalBlock(S);
     if (S.prodOffers.length) s += `<div class="sec"><h3>Помещения под производство</h3>${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     const want = E().offersWanted(S);
     s += `<div class="sec"><h3>Помещения для точек <small>${S.offers.length} из ${want}</small></h3>`;
@@ -4422,6 +4639,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s + `</div>`;
   }
 
+  /* ---------- сеть-соперник ---------- */
+  function rivalChip(S, o) { // «рядом конкурент: N точек» — в карточке точки и помещения
+    const r = E().rivalNear ? E().rivalNear(S, o) : null; if (!r || !r.n) return '';
+    const name = E().rivalSummary(S).name;
+    return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * C().KM_PER_UNIT).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
+  }
+  function rivalBlock(S) { // «Конкурент: Хлебный двор — N точек, растёт/слабеет» (вкладка «Рынок»; можно вставить и в «Сводку»)
+    const r = E().rivalSummary ? E().rivalSummary(S) : null; if (!r) return '';
+    const per = r.months >= 12 ? 'за год' : 'с начала игры';
+    const trend = r.delta > 0 ? `<span class="negc">растёт: +${r.delta} ${per}</span>` : r.delta < 0 ? `<span class="pos">слабеет: −${-r.delta} ${per}</span>` : `<span class="hint">без изменений ${per}</span>`;
+    const hit = S.stores.filter((st) => st.status !== 'opening' && E().rivalNear(S, st).n).length;
+    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(r.name)}»</small></h3>
+      <div class="rival-sum"><i class="rv-mark" aria-hidden="true"></i><div><b>${nw(r.n, 'точка', 'точки', 'точек')}</b> · ${trend}
+      <div class="hint">Рядом с соперником ${hit ? nw(hit, 'ваша точка', 'ваши точки', 'ваших точек') : 'ни одной вашей точки'}. Занял помещений с рынка: ${r.grabbed}, закрыл точек из-за вас: ${r.closed}. Высокий рейтинг точки снижает потери гостей, а где у вас несколько сильных точек, соперник уходит.</div></div></div></div>`;
+  }
+  BK.rivalBlock = rivalBlock;
+
   BK.Panels = { dash, stores, market, production, menu, team, finance, journal, offerCard, prodOfferCard };
   BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw, pctS, delta, spark, goalInfo, goalBar, moodCounts, MONL, MON3 };
   BK.UIH.rating = { ratingInfo, rstars, r1 };
@@ -4532,6 +4766,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--river)" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Свободное помещение</span>
         <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--ink)"/></svg>Производство</span>
         <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--crust)"/></svg>Офис</span>
+        <span class="lg-rival"><svg viewBox="0 0 14 14"><rect x="3" y="3" width="8" height="8" rx="1" transform="rotate(45 7 7)" fill="var(--rival, #9580a8)" fill-opacity=".6"/></svg>Конкурент</span>
         <span>${BK.faceIcon('happy')}${BK.faceIcon('mid')}${BK.faceIcon('sad')}Настроение команды<i class="crowd-note">(издалека — только недовольные)</i></span>
       </div>
       <div class="maptip" hidden></div>
@@ -4579,19 +4814,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
       <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      ${rivalOpt()}
       ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
     </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
+    $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
+  // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
+  const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
+  const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   function newGame(name) {
-    S = E.newGame({ company: name });
+    S = E.newGame({ company: name, rival: rivalPicked() });
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
@@ -4782,6 +5022,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'prod') { const p = E.byId(S.productions, id); return p ? `<b>${p.name}</b><br>${e(p.address)}<br>Загрузка ${H.pct(p.load || 0)}` : ''; }
     if (kind === 'prodOffer') { const o = E.byId(S.prodOffers, id); return o ? `<b>Под производство: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${H.fm(o.area * o.rentM2)}/мес` : ''; }
     if (kind === 'hq') return `<b>Офис компании</b><br>Найм, обучение, культура`;
+    if (kind === 'rival') { const R = E.rivalSummary && E.rivalSummary(S), o = R && R.stores.find((x) => x.id === id); return o ? `<b>«${e(R.name)}» — конкурент</b><br>${e(o.address)} · ${H.dname(o.district)}<br>Забирает часть гостей у ваших точек ближе ~0,9 км` : ''; }
     return '';
   }
 

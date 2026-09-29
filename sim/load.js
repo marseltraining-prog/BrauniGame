@@ -7,4 +7,5 @@ for (const f of ['config.js', 'data/world.js', 'data/events.js', 'engine.js']) {
 }
 module.exports = globalThis.BK;
 // переопределение констант для экспериментов: BK_CFG='{"INFLATION_BASE":0.05}' node sim/bot.js good 6 20
-if (process.env.BK_CFG) Object.assign(globalThis.BK.CFG, JSON.parse(process.env.BK_CFG));
+if (process.env.BK_RIVAL === '0') globalThis.BK.CFG.RIVAL_ON = false; // BK_RIVAL=0 — игра без сети-соперника
+if (process.env.BK_CFG)Object.assign(globalThis.BK.CFG, JSON.parse(process.env.BK_CFG));

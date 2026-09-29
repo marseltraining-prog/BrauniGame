@@ -218,6 +218,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       m += `</g>`;
     }
     if (m !== this.lastM) { this.gM.innerHTML = m; this.lastM = m; }
+    this.renderRivals(S, k);
+  };
+  // сеть-соперник: приглушённые ромбы отдельным слоем под маркерами игрока (слой создаётся при первой отрисовке)
+  Map.prototype.renderRivals = function (S, k) {
+    const R = BK.Engine.rivalSummary ? BK.Engine.rivalSummary(S) : null;
+    if (!this.gRv) { this.gRv = document.createElementNS(NS, 'g'); this.gRv.setAttribute('class', 'rivals'); this.gM.parentNode.insertBefore(this.gRv, this.gM); }
+    let h = '';
+    if (R) for (const o of R.stores) h += `<g class="m-rival" data-kind="rival" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-5.5" y="-5.5" width="11" height="11" rx="1.5" transform="rotate(45)"/></g>`;
+    if (h !== this.lastRv) { this.gRv.innerHTML = h; this.lastRv = h; (this.el.parentNode || this.el).classList.toggle('has-rival', !!h); }
   };
   BK.MapView = Map;
   BK.mapStatic = staticLayer;

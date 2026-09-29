@@ -92,6 +92,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     genProdOffers(S, 3);
     genStoreOffers(S, true);
     refreshCandidates(S, true);
+    rivalInit(S, opts && opts.rival != null ? opts.rival : cfg.RIVAL_ON); // сеть-соперник (свой ГСЧ — основной поток не сдвигается)
     log(S, `Компания «${S.company}» зарегистрирована. На счёте ${BK.fmtMoney(S.cash)}.`, 'good');
     return S;
   }
@@ -108,7 +109,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (let k = 0; k < 30; k++) {
       const a = rnd(S) * Math.PI * 2, r = Math.sqrt(rnd(S)) * radius;
       const p = { x: d.x + Math.cos(a) * r, y: d.y + Math.sin(a) * r * 0.85 };
-      const busy = S.stores.concat(S.offers, S.productions, S.prodOffers).some((o) => dist(o, p) < 14);
+      const busy = S.stores.concat(S.offers, S.productions, S.prodOffers, (S.rival && S.rival.stores) || []).some((o) => dist(o, p) < 14);
       if (!busy) return p;
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
@@ -414,7 +415,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // раскрутка: новая точка первые месяцы собирает только часть потока, пока район к ней не привыкнет
     const ramp = st.openedDay != null && cfg.RAMP_DAYS ? Math.min(1, cfg.RAMP_START + (1 - cfg.RAMP_START) * (S.day - st.openedDay) / cfg.RAMP_DAYS) : 1;
     const traffic = st.traffic * sz.capture * dayF * season * cannibal * mkt * st.comp * ramp
-      * modMult(S, 'traffic', st) * modMult(S, 'competitor', st);
+      * modMult(S, 'traffic', st) * modMult(S, 'competitor', st) * rivalMult(S, st);
     // сервис
     let lvlSum = 0; for (const e of st.staff) lvlSum += e.lvl;
     const avgLvl = st.staff.length ? lvlSum / st.staff.length : 1;
@@ -734,6 +735,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     dailyStaff(S);
     dailyMisc(S, t);
     holidayNotice(S);
+    rivalDaily(S, t);
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (fireQueuedEvent(S)) { /* отложенное последствие прошлого решения */ }
@@ -1309,4 +1311,154 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   // рейтинг точки и списания (отдельно от основного списка, чтобы не править его)
   Object.assign(BK.Engine, { wasteState, wasteFactors, ratingParts, ratingTarget, storeRating, ratingMult, networkRating, setBake, setEveDiscount, discFreeDay, discPenalty });
+
+  /* ---------------- сеть-соперник «Хлебный двор» ----------------
+     S.rival: { enabled, name, rng, agg, stores: [{ id, x, y, district, address, q, day, how }], hist (число точек по месяцам, 13 шт.),
+                nextDay, ban: { район: до какого дня не лезет }, opened, closed, grabbed }
+     Свой ГСЧ (S.rival.rng): соперник не сдвигает основной поток случайностей. Числа — RIVAL_* в config.js.
+     Старые сохранения (без S.rival) получают enabled:false — соперника в начатой партии не было, её баланс не меняется. */
+  function rivalState(S) {
+    if (!S.rival) S.rival = { enabled: false, stores: [], hist: [], ban: {}, opened: 0, closed: 0, grabbed: 0 };
+    return S.rival;
+  }
+  function withRivalRng(S, fn) { const keep = S.rng; S.rng = S.rival.rng; try { fn(); } finally { S.rival.rng = S.rng; S.rng = keep; } }
+  function rivalInit(S, on) {
+    const cfg = C();
+    const R = S.rival = { enabled: !!on, name: cfg.RIVAL_NAME, rng: (S.seed ^ 0x2f6b1d) | 0, agg: 1, stores: [], hist: [], nextDay: cfg.RIVAL_FIRST_DAY, ban: {}, opened: 0, closed: 0, grabbed: 0 };
+    if (!R.enabled) return R;
+    withRivalRng(S, () => {
+      R.agg = R.agg0 = rr(S, cfg.RIVAL_AGG[0], cfg.RIVAL_AGG[1]);
+      const n = ri(S, cfg.RIVAL_START[0], cfg.RIVAL_START[1]);
+      for (let i = 0; i < n; i++) rivalPlace(S, 'random');
+    });
+    return R;
+  }
+  function offerPotential(S, o) { // грубая месячная отдача места: чеки × платёжеспособность − аренда (для выбора «лучшего» помещения)
+    const cfg = C(), sz = cfg.SIZES[o.size];
+    const checks = Math.min(sz.staffMax * cfg.CHECKS_PER_STAFF_BASE, o.traffic * sz.capture * o.comp * cfg.BASE_CONV);
+    return checks * o.solv * S.macro.priceLevel * 30.4 * 0.3 - o.area * o.rentM2;
+  }
+  function rivalPlace(S, how) { // how: 'grab' — забрать помещение с рынка, 'near' — рядом с сильной точкой игрока, 'random'
+    const cfg = C(), R = S.rival;
+    let p = null, d = null, address = null, grabbed = null;
+    const tooClose = (q) => R.stores.some((o) => dist(o, q) < 12) || S.stores.some((o) => dist(o, q) < 8);
+    if (how === 'grab') {
+      const pool = S.offers.filter((o) => !o.special);
+      if (!pool.length) return null;
+      grabbed = pool.reduce((b, o) => (offerPotential(S, o) > offerPotential(S, b) ? o : b));
+      p = { x: grabbed.x, y: grabbed.y }; d = byId(BK.DISTRICTS, grabbed.district); address = grabbed.address;
+    } else if (how === 'near') {
+      const open = S.stores.filter((s) => s.status === 'open' && s.last && !(R.ban[s.district] > S.day));
+      if (!open.length) return rivalPlace(S, 'random');
+      open.sort((a, b) => b.last.rev - a.last.rev);
+      const st = pick(S, open.slice(0, Math.max(1, Math.ceil(open.length / 3)))); // одна из сильнейших точек игрока
+      for (let k = 0; k < 12 && !p; k++) {
+        const a = rnd(S) * Math.PI * 2, r = rr(S, 0.35, 0.9) * cfg.RIVAL_RADIUS;
+        const q = { x: st.x + Math.cos(a) * r, y: st.y + Math.sin(a) * r * 0.85 };
+        if (!tooClose(q)) p = q;
+      }
+      if (!p) return null;
+      d = byId(BK.DISTRICTS, st.district);
+    } else {
+      const ds = BK.DISTRICTS.filter((x) => !(R.ban[x.id] > S.day));
+      d = wpick(S, ds.length ? ds : BK.DISTRICTS, (x) => districtWeight(S, x));
+      for (let k = 0; k < 6 && !p; k++) { const q = freeSpot(S, d, 42); if (!tooClose(q)) p = q; }
+      if (!p) return null;
+    }
+    if (!address) address = `${pick(S, d.streets)}, ${ri(S, 1, 120)}`;
+    const q = +clamp(rr(S, cfg.RIVAL_Q[0], cfg.RIVAL_Q[1]) + Math.min(0.15, 0.01 * S.day / 365), 0.6, 1.3).toFixed(2);
+    const rs = { id: nextId(S, 'r'), x: p.x, y: p.y, district: d.id, address, q, day: S.day, how };
+    R.stores.push(rs); R.opened++;
+    if (grabbed) { S.offers = S.offers.filter((o) => o !== grabbed); R.grabbed++; }
+    return rs;
+  }
+  function rivalAnnounce(S, rs) {
+    const R = S.rival, dn = (byId(BK.DISTRICTS, rs.district) || {}).name || '';
+    if (rs.how === 'grab') {
+      toast(S, `«${R.name}» занял помещение`, `${rs.address} (${dn}) — соперник успел раньше вас.`, 'warn');
+      log(S, `«${R.name}» занял помещение на ${rs.address} (${dn}) — теперь там его пекарня.`, 'warn');
+      return;
+    }
+    let near = null, bd = C().RIVAL_RADIUS;
+    for (const st of S.stores) { const x = dist(st, rs); if (x < bd) { bd = x; near = st; } }
+    if (near) {
+      toast(S, `«${R.name}» открылся рядом с точкой №${near.num}`, `${rs.address}: часть гостей уйдёт к соседу. Высокий рейтинг точки — лучшая защита.`, 'warn', { storeId: near.id });
+      log(S, `«${R.name}» открыл пекарню на ${rs.address} — рядом с вашей точкой №${near.num} (${near.address}).`, 'warn');
+    } else log(S, `«${R.name}» открыл пекарню: ${rs.address} (${dn}). У сети ${R.stores.length} точ.`, 'info');
+  }
+  function rivalMult(S, st) { // доля гостей, которая остаётся у точки игрока рядом с соперником
+    const R = S.rival; if (!R || !R.enabled || !R.stores.length) return 1;
+    const cfg = C(), rad = cfg.RIVAL_RADIUS; let m = 1, k = null;
+    for (const o of R.stores) {
+      const dd = dist(o, st); if (dd >= rad) continue;
+      if (k == null) k = clamp(1 + cfg.RIVAL_RATING_K * (cfg.RATING_START - storeRating(S, st)), 0.4, 1.6); // высокий рейтинг — теряем меньше
+      m *= 1 - cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad);
+    }
+    return m;
+  }
+  function rivalNear(S, obj) { // для карточек точки и помещения: сколько точек соперника рядом и какая доля гостей уходит
+    const R = S.rival; if (!R || !R.enabled) return { n: 0, loss: 0 };
+    let n = 0; for (const o of R.stores) if (dist(o, obj) < C().RIVAL_RADIUS) n++;
+    return { n, loss: n ? 1 - rivalMult(S, obj) : 0 };
+  }
+  function rivalDaily(S, t) {
+    const R = S.rival; if (!R || !R.enabled) return;
+    const cfg = C();
+    withRivalRng(S, () => {
+      if (S.day >= R.nextDay) {
+        const mine = S.stores.filter((s) => s.status !== 'opening').length;
+        const target = Math.min(cfg.RIVAL_MAX, R.agg * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
+        const gap = target - R.stores.length;
+        if (gap > 0 && rnd(S) < clamp(gap, 0.3, 1)) {
+          const r = rnd(S);
+          const canGrab = S.day >= cfg.RIVAL_GRAB_FROM_DAY && mine >= cfg.RIVAL_GRAB_MIN_STORES && S.offers.some((o) => !o.special);
+          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // молодую сеть игрока не душит
+          const rs = rivalPlace(S, how);
+          if (rs) rivalAnnounce(S, rs);
+        }
+        R.nextDay = S.day + ri(S, cfg.RIVAL_GAP_DAYS[0], cfg.RIVAL_GAP_DAYS[1]);
+      }
+      if (t.d === 1) rivalMonthly(S);
+    });
+  }
+  function rivalMonthly(S) {
+    const cfg = C(), R = S.rival;
+    // слабеет: где игрок сильно доминирует (несколько точек с рейтингом ≥ 4★ рядом), точка соперника закрывается
+    for (let i = R.stores.length - 1; i >= 0; i--) {
+      const o = R.stores[i]; if (S.day - o.day < 180) continue;
+      let strong = 0;
+      for (const st of S.stores) if (st.status !== 'opening' && dist(st, o) < cfg.RIVAL_DOM_R && storeRating(S, st) >= cfg.RIVAL_DOM_MIN_RATING) strong++;
+      const p = cfg.RIVAL_DOM_P * Math.max(0, strong - 1) * clamp(1.3 - o.q, 0.1, 0.6) / 0.4;
+      if (p > 0 && rnd(S) < p) {
+        R.stores.splice(i, 1); R.closed++;
+        R.ban[o.district] = S.day + cfg.RIVAL_BAN_DAYS; R.agg = Math.max(0.5, R.agg - cfg.RIVAL_AGG_HIT);
+        const dn = (byId(BK.DISTRICTS, o.district) || {}).name || '';
+        toast(S, `«${R.name}» закрыл точку`, `${o.address} (${dn}): не выдержал соседства с вашими пекарнями.`, 'good');
+        log(S, `«${R.name}» закрыл пекарню на ${o.address} (${dn}) — не выдержал конкуренции с вашей сетью.`, 'good');
+      }
+    }
+    R.hist.push(R.stores.length); if (R.hist.length > 13) R.hist.shift();
+    if (R.agg0) R.agg = Math.min(R.agg0, R.agg + cfg.RIVAL_AGG_BACK); // агрессия медленно восстанавливается
+    // переманивание сотрудников и ценовая война — события e141/e142 через очередь последствий
+    const queued = (id) => (S.ev.queue || []).some((x) => x.id === id);
+    const recent = (id, cd) => S.ev.last[id] != null && S.day - S.ev.last[id] < cd;
+    const exposed = S.stores.filter((st) => st.status === 'open' && st.staff.length >= 2 && R.stores.some((o) => dist(o, st) < cfg.RIVAL_RADIUS));
+    if (!exposed.length) return;
+    if (!S.ev.queue) S.ev.queue = [];
+    if (!queued('e142') && !recent('e142', cfg.RIVAL_POACH_CD) && rnd(S) < cfg.RIVAL_POACH_P) {
+      const st = pick(S, exposed);
+      S.ev.queue.push({ id: 'e142', day: S.day + ri(S, 1, 10), tg: { scope: 'store', target: st.id } });
+    }
+    if (R.stores.length >= cfg.RIVAL_WAR_MIN && !queued('e141') && !recent('e141', cfg.RIVAL_WAR_CD) && rnd(S) < cfg.RIVAL_WAR_P) {
+      const cnt = {}; for (const st of exposed) cnt[st.district] = (cnt[st.district] || 0) + 1;
+      const did = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0]; // район, где у вас больше всего точек рядом с соперником
+      S.ev.queue.push({ id: 'e141', day: S.day + ri(S, 1, 10), tg: { scope: 'district', target: did } });
+    }
+  }
+  function rivalSummary(S) { // для UI: null, если соперник выключен
+    const R = S.rival; if (!R || !R.enabled) return null;
+    const n = R.stores.length, y = R.hist.length ? R.hist[0] : n;
+    return { name: R.name || C().RIVAL_NAME, n, delta: n - y, months: R.hist.length, opened: R.opened, closed: R.closed, grabbed: R.grabbed, stores: R.stores };
+  }
+  Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
 })();

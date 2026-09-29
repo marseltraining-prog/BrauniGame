@@ -102,6 +102,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--river)" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Свободное помещение</span>
         <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--ink)"/></svg>Производство</span>
         <span><svg viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" rx="2" fill="var(--crust)"/></svg>Офис</span>
+        <span class="lg-rival"><svg viewBox="0 0 14 14"><rect x="3" y="3" width="8" height="8" rx="1" transform="rotate(45 7 7)" fill="var(--rival, #9580a8)" fill-opacity=".6"/></svg>Конкурент</span>
         <span>${BK.faceIcon('happy')}${BK.faceIcon('mid')}${BK.faceIcon('sad')}Настроение команды<i class="crowd-note">(издалека — только недовольные)</i></span>
       </div>
       <div class="maptip" hidden></div>
@@ -149,19 +150,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
       <form id="startForm"><input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      ${rivalOpt()}
       ${saved ? `<div class="cont"><button class="btn dark" data-act="continue">Продолжить: ${qname(saved.company)}, ${E.fmtDate(saved.day)}${saved.lost ? ' (банкротство)' : ''}</button></div>` : ''}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
     </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
+    $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); newGame($('#companyName').value.trim() || 'Пекарня «Каравай»'); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
   }
+  // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
+  const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
+  const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   function newGame(name) {
-    S = E.newGame({ company: name });
+    S = E.newGame({ company: name, rival: rivalPicked() });
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = [];
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
@@ -352,6 +358,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'prod') { const p = E.byId(S.productions, id); return p ? `<b>${p.name}</b><br>${e(p.address)}<br>Загрузка ${H.pct(p.load || 0)}` : ''; }
     if (kind === 'prodOffer') { const o = E.byId(S.prodOffers, id); return o ? `<b>Под производство: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${H.fm(o.area * o.rentM2)}/мес` : ''; }
     if (kind === 'hq') return `<b>Офис компании</b><br>Найм, обучение, культура`;
+    if (kind === 'rival') { const R = E.rivalSummary && E.rivalSummary(S), o = R && R.stores.find((x) => x.id === id); return o ? `<b>«${e(R.name)}» — конкурент</b><br>${e(o.address)} · ${H.dname(o.district)}<br>Забирает часть гостей у ваших точек ближе ~0,9 км` : ''; }
     return '';
   }
 
