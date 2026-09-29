@@ -411,7 +411,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
   }
 
+  function unhappyReason(S, fatigue, under) {
+    if (fatigue > 45) return 'люди вымотаны: гостей больше, чем они успевают обслужить. Добавьте сотрудников или обучите команду';
+    if (S.pay.seller < S.market.seller) return 'зарплата ниже рынка';
+    if (under) return 'не хватает людей в смене — наймите замену';
+    if (S.loyaltyMod < -5) return 'зарплату выдали с задержкой — нужны премии или корпоративная культура';
+    return 'нужны премии, зарплата выше рынка или корпоративная культура';
+  }
+  let quitStores = []; // точки, откуда сегодня ушли люди (для уведомления)
+  const empWord = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'сотрудника' : n % 10 === 1 && n % 100 !== 11 ? 'сотрудник' : 'сотрудников');
   function dailyStaff(S) {
+    quitStores = [];
     const cfg = C();
     const cult = cfg.CULTURE[S.culture].mood;
     const payTerm = clamp((S.pay.seller / S.market.seller - 1) * (cfg.PAY_MOOD_K || 120), -40, 30);
@@ -429,6 +439,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const closed = !st.today || st.today.closed;
       const load = closed ? 0 : st.today.load;
       const fatT = clamp((load - cfg.FATIGUE_START) * cfg.FATIGUE_SLOPE, 0, 100);
+      const warnList = [];
+      const staffBefore = st.staff.length;
       for (let i = st.staff.length - 1; i >= 0; i--) {
         const e = st.staff[i];
         e.fatigue += (fatT - e.fatigue) * 0.1;
@@ -436,6 +448,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
         e.mood = clamp(e.mood + (target - e.mood) * 0.08, 0, 100);
         if (e.mood < cfg.MOOD_UNHAPPY) e.unhappy++; else e.unhappy = Math.max(0, e.unhappy - 2);
+        // личное предупреждение: сотрудник недоволен уже N дней — игрок узнаёт об этом заранее
+        if (e.unhappy === (cfg.UNHAPPY_WARN_AFTER || 5) && S.day - (e.warnDay || -999) > 30) { e.warnDay = S.day; warnList.push(e); }
         const QP = cfg.QUIT_P || [0.00018, 0.0007, 0.002]; // вероятность уйти за день: довольный / нейтральный / недовольный
         let p = e.mood >= cfg.MOOD_HAPPY ? QP[0] : e.mood >= cfg.MOOD_UNHAPPY ? QP[1] : QP[2];
         p *= 1 - 0.08 * (e.lvl - 1);
@@ -448,13 +462,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
+      if (st.staff.length < staffBefore) quitStores.push(st);
+      if (warnList.length) {
+        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) - e.unhappy)));
+        let ft = 0; for (const e of warnList) ft += e.fatigue; ft /= warnList.length;
+        const why = unhappyReason(S, ft, under);
+        const names = warnList.map((e) => e.name).join(', ');
+        const n = warnList.length;
+        st.warnDay = S.day; // общее предупреждение по точке — не раньше чем через месяц
+        toast(S, `Точка №${st.num}: ${n > 1 ? n + ' ' + empWord(n) + ' недовольны' : 'сотрудник недоволен'}`, `${names} — ${why}. Если ничего не изменить, ${n > 1 ? 'начнут увольняться' : 'уволится'} примерно через ${left} дн.`, 'warn', { storeId: st.id });
+        log(S, `Точка №${st.num} (${st.address}): ${names} ${n > 1 ? 'недовольны' : BK.byGender(names, 'недоволен', 'недовольна')} — ${why}. ${n > 1 ? 'Могут начать увольняться' : 'Может уволиться'} через ~${left} дн.`, 'warn');
+      }
       // предупреждение о недовольной команде
       if (st.staff.length) {
         let ms = 0, ft = 0; for (const e of st.staff) { ms += e.mood; ft += e.fatigue; }
         ms /= st.staff.length; ft /= st.staff.length;
         if (ms < cfg.MOOD_UNHAPPY + 3 && S.day - (st.warnDay || -999) > 30) {
           st.warnDay = S.day;
-          const why = ft > 45 ? 'люди вымотаны — гостей больше, чем они успевают обслужить. Добавьте сотрудников или обучите команду' : S.pay.seller < S.market.seller ? 'зарплата ниже рынка' : under ? 'не хватает людей в смене' : 'нужны премии или корпоративная культура';
+          const why = unhappyReason(S, ft, under);
           toast(S, `Точка №${st.num}: команда недовольна`, `${st.address}: ${why}. Через месяц недовольства люди начнут увольняться.`, 'bad', { storeId: st.id });
           log(S, `Точка №${st.num} (${st.address}): команда недовольна — ${why}.`, 'bad');
         }
@@ -542,7 +567,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
-    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
+    if (S.flags.quitsToday) {
+      const autohire = S.office.hr && S.office.autohireOn;
+      const parts = quitStores.map((st) => `№${st.num}: осталось ${st.staff.length} из ${st.staffTarget}`);
+      const hint = autohire ? 'HR-отдел уже ищет замену.' : 'Наймите замену во вкладке «Команда» — иначе оставшиеся начнут выгорать.';
+      toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', `${parts.length ? 'Точка ' + parts.join('; ') + '. ' : ''}${hint} Подробности — в журнале.`, 'bad', quitStores.length === 1 ? { storeId: quitStores[0].id } : undefined);
+      S.flags.quitsToday = 0;
+    }
+    quitStores = [];
     return true;
   }
 
@@ -672,7 +704,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     S.notify.push({ type: 'year', y: t.y - 1, rev: S.yearRev });
     S.yearRev = 0;
-    S.macro.inflation = clamp(cfg.INFLATION_BASE + gauss(S) * 0.015, 0.02, 0.15);
+    S.macro.inflation = clamp(cfg.INFLATION_BASE + gauss(S) * (cfg.INFLATION_SD != null ? cfg.INFLATION_SD : 0.015), 0.02, 0.15);
     S.macro.inflAdd = 0;
     // шеф-пекарь
     if (S.stores.length > 0) proposeChef(S);

@@ -457,6 +457,7 @@ BK.CFG = {
   LVL_CHECK: 0.015,             // +1,5% чека
   MAX_LVL: 5,
   UNHAPPY_QUIT_DAYS: 30,        // недоволен дольше месяца → увольняется
+  UNHAPPY_WARN_AFTER: 5,        // после 5 дней недовольства игрок получает личное предупреждение («может уволиться через N дн.»)
   MOOD_HAPPY: 65, MOOD_UNHAPPY: 40,
   MOOD_BASE: 50,                // базовое настроение при зарплате по рынку, без культуры и переработок
   PAY_MOOD_K: 120,              // +1% к рынку = +1,2 настроения
@@ -512,9 +513,9 @@ BK.CFG = {
   KEY_RATE: 0.14, KEY_RATE_MEAN: 0.11, KEY_RATE_REVERT: 0.003,
   RESERVE_SPREAD: 0.02,
   LOAN_SPREAD: 0.05, LOAN_MAX_REV_MULT: 4, LOAN_MIN: 6000000,
-  INFLATION_BASE: 0.06,
-  CRISIS_CREDIT_DAYS: 180, CRISIS_LOAN_MULT: 0.5, // в кризис банки полгода дают вдвое меньше
-  CASHGAP_LOYALTY: 10,          // отрицательный счёт в день расчёта = задержка зарплаты (−10 к настроению)
+  INFLATION_BASE: 0.0475, INFLATION_SD: 0.01, // инфляция ~4,75% ± 1% в год; цель 5 млрд номинальная, поэтому инфляция — главный регулятор темпа поздней игры
+  CRISIS_CREDIT_DAYS: 180, CRISIS_LOAN_MULT: 0.75, // в кризис банки полгода дают на четверть меньше
+  CASHGAP_LOYALTY: 6,           // отрицательный счёт в день расчёта = задержка зарплаты (−6 к настроению, затухает на 10% в месяц)
   MARKETING_EFF: 0.18,          // макс. прирост трафика от маркетинга
   MARKETING_HALF: 60000,        // ₽ на точку в месяц для половины эффекта
 
@@ -1906,7 +1907,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
   }
 
+  function unhappyReason(S, fatigue, under) {
+    if (fatigue > 45) return 'люди вымотаны: гостей больше, чем они успевают обслужить. Добавьте сотрудников или обучите команду';
+    if (S.pay.seller < S.market.seller) return 'зарплата ниже рынка';
+    if (under) return 'не хватает людей в смене — наймите замену';
+    if (S.loyaltyMod < -5) return 'зарплату выдали с задержкой — нужны премии или корпоративная культура';
+    return 'нужны премии, зарплата выше рынка или корпоративная культура';
+  }
+  let quitStores = []; // точки, откуда сегодня ушли люди (для уведомления)
+  const empWord = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'сотрудника' : n % 10 === 1 && n % 100 !== 11 ? 'сотрудник' : 'сотрудников');
   function dailyStaff(S) {
+    quitStores = [];
     const cfg = C();
     const cult = cfg.CULTURE[S.culture].mood;
     const payTerm = clamp((S.pay.seller / S.market.seller - 1) * (cfg.PAY_MOOD_K || 120), -40, 30);
@@ -1924,6 +1935,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const closed = !st.today || st.today.closed;
       const load = closed ? 0 : st.today.load;
       const fatT = clamp((load - cfg.FATIGUE_START) * cfg.FATIGUE_SLOPE, 0, 100);
+      const warnList = [];
+      const staffBefore = st.staff.length;
       for (let i = st.staff.length - 1; i >= 0; i--) {
         const e = st.staff[i];
         e.fatigue += (fatT - e.fatigue) * 0.1;
@@ -1931,6 +1944,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
         e.mood = clamp(e.mood + (target - e.mood) * 0.08, 0, 100);
         if (e.mood < cfg.MOOD_UNHAPPY) e.unhappy++; else e.unhappy = Math.max(0, e.unhappy - 2);
+        // личное предупреждение: сотрудник недоволен уже N дней — игрок узнаёт об этом заранее
+        if (e.unhappy === (cfg.UNHAPPY_WARN_AFTER || 5) && S.day - (e.warnDay || -999) > 30) { e.warnDay = S.day; warnList.push(e); }
         const QP = cfg.QUIT_P || [0.00018, 0.0007, 0.002]; // вероятность уйти за день: довольный / нейтральный / недовольный
         let p = e.mood >= cfg.MOOD_HAPPY ? QP[0] : e.mood >= cfg.MOOD_UNHAPPY ? QP[1] : QP[2];
         p *= 1 - 0.08 * (e.lvl - 1);
@@ -1943,13 +1958,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
+      if (st.staff.length < staffBefore) quitStores.push(st);
+      if (warnList.length) {
+        const left = Math.max(1, Math.min(...warnList.map((e) => cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) - e.unhappy)));
+        let ft = 0; for (const e of warnList) ft += e.fatigue; ft /= warnList.length;
+        const why = unhappyReason(S, ft, under);
+        const names = warnList.map((e) => e.name).join(', ');
+        const n = warnList.length;
+        st.warnDay = S.day; // общее предупреждение по точке — не раньше чем через месяц
+        toast(S, `Точка №${st.num}: ${n > 1 ? n + ' ' + empWord(n) + ' недовольны' : 'сотрудник недоволен'}`, `${names} — ${why}. Если ничего не изменить, ${n > 1 ? 'начнут увольняться' : 'уволится'} примерно через ${left} дн.`, 'warn', { storeId: st.id });
+        log(S, `Точка №${st.num} (${st.address}): ${names} ${n > 1 ? 'недовольны' : BK.byGender(names, 'недоволен', 'недовольна')} — ${why}. ${n > 1 ? 'Могут начать увольняться' : 'Может уволиться'} через ~${left} дн.`, 'warn');
+      }
       // предупреждение о недовольной команде
       if (st.staff.length) {
         let ms = 0, ft = 0; for (const e of st.staff) { ms += e.mood; ft += e.fatigue; }
         ms /= st.staff.length; ft /= st.staff.length;
         if (ms < cfg.MOOD_UNHAPPY + 3 && S.day - (st.warnDay || -999) > 30) {
           st.warnDay = S.day;
-          const why = ft > 45 ? 'люди вымотаны — гостей больше, чем они успевают обслужить. Добавьте сотрудников или обучите команду' : S.pay.seller < S.market.seller ? 'зарплата ниже рынка' : under ? 'не хватает людей в смене' : 'нужны премии или корпоративная культура';
+          const why = unhappyReason(S, ft, under);
           toast(S, `Точка №${st.num}: команда недовольна`, `${st.address}: ${why}. Через месяц недовольства люди начнут увольняться.`, 'bad', { storeId: st.id });
           log(S, `Точка №${st.num} (${st.address}): команда недовольна — ${why}.`, 'bad');
         }
@@ -2037,7 +2063,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
-    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
+    if (S.flags.quitsToday) {
+      const autohire = S.office.hr && S.office.autohireOn;
+      const parts = quitStores.map((st) => `№${st.num}: осталось ${st.staff.length} из ${st.staffTarget}`);
+      const hint = autohire ? 'HR-отдел уже ищет замену.' : 'Наймите замену во вкладке «Команда» — иначе оставшиеся начнут выгорать.';
+      toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', `${parts.length ? 'Точка ' + parts.join('; ') + '. ' : ''}${hint} Подробности — в журнале.`, 'bad', quitStores.length === 1 ? { storeId: quitStores[0].id } : undefined);
+      S.flags.quitsToday = 0;
+    }
+    quitStores = [];
     return true;
   }
 
@@ -2167,7 +2200,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     S.notify.push({ type: 'year', y: t.y - 1, rev: S.yearRev });
     S.yearRev = 0;
-    S.macro.inflation = clamp(cfg.INFLATION_BASE + gauss(S) * 0.015, 0.02, 0.15);
+    S.macro.inflation = clamp(cfg.INFLATION_BASE + gauss(S) * (cfg.INFLATION_SD != null ? cfg.INFLATION_SD : 0.015), 0.02, 0.15);
     S.macro.inflAdd = 0;
     // шеф-пекарь
     if (S.stores.length > 0) proposeChef(S);
@@ -3264,7 +3297,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">«+» — перевести со счёта в резерв, «−» — вернуть на счёт.</span></div>`;
     s += `<div class="sec"><h3>Кредит <small>лимит ${fm(lim)}</small></h3><div class="row">
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
-      <span class="hint">Лимит — средняя месячная выручка × ${cfg.LOAN_MAX_REV_MULT}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ' (в кризис банки дают вдвое меньше)' : ''}. Проценты списываются 1-го числа.</span></div>`;
+      <span class="hint">Лимит — средняя месячная выручка × ${cfg.LOAN_MAX_REV_MULT}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
