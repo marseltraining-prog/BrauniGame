@@ -442,8 +442,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) || rnd(S) < p) {
           st.staff.splice(i, 1);
           S.stats.quits++;
-          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? 'выгорел от переработок' : S.pay.seller < S.market.seller ? 'ушёл на зарплату выше' : 'был недоволен больше месяца') : 'нашёл другую работу';
-          log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) уволился: ${why}.`, 'bad');
+          const g = (m, f) => BK.byGender(e.name, m, f);
+          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
+          log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) ${g('уволился', 'уволилась')}: ${why}.`, 'bad');
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
@@ -541,7 +542,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
-    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились ${S.flags.quitsToday} сотрудника` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
+    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
     return true;
   }
 
@@ -618,7 +619,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         S.loyaltyMod = clamp(S.loyaltyMod - cfg.CASHGAP_LOYALTY, -30, 30);
         log(S, 'Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.', 'bad');
       }
-      if (S.negMonths >= cfg.BANKRUPT_MONTHS) { S.lost = true; S.phase = 'lost'; S.notify.push({ type: 'lost' }); log(S, 'Банкротство: три месяца подряд долги без резерва.', 'bad'); }
+      if (S.negMonths >= cfg.BANKRUPT_MONTHS) { S.lost = true; S.phase = 'lost'; S.notify.push({ type: 'lost' }); log(S, `Банкротство: счёт в минусе ${cfg.BANKRUPT_MONTHS}-й месяц подряд, а резерв пуст.`, 'bad'); }
       else toast(S, 'Кассовый разрыв!', `Счёт отрицательный ${S.negMonths}-й месяц подряд. На ${cfg.BANKRUPT_MONTHS}-й — банкротство. Возьмите кредит или сократите расходы.`, 'bad');
     } else S.negMonths = 0;
     // лояльность возвращается к нулю, ставка — к норме
@@ -661,12 +662,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (st.rentM2 > old * (1 + infl * 0.85) * 1.03) log(S, `Арендодатель пересмотрел ставку: ${st.address} — ${BK.fmtMoney(old)} → ${BK.fmtMoney(st.rentM2)} за м² (оборот точки вырос).`, 'warn');
     }
     for (const p of S.productions) p.rentM2 = Math.round(p.rentM2 * (1 + infl * 0.85));
-    log(S, `Новый ${t.y} год. Инфляция прошлого года ${(infl * 100).toFixed(1)}%: цены, аренда и рыночные зарплаты проиндексированы.`, 'info');
+    log(S, `Новый ${t.y} год. Инфляция прошлого года ${(infl * 100).toFixed(1).replace('.', ',')}%: цены, аренда и рыночные зарплаты проиндексированы.`, 'info');
     // налоговый режим
     const prevRegime = S.macro.regime;
     S.macro.regime = S.yearRev > cfg.USN_LIMIT ? 'osno' : 'usn';
     if (S.macro.regime !== prevRegime) {
-      if (S.macro.regime === 'osno') toast(S, 'Переход на ОСНО', `Выручка за год превысила ${BK.fmtMoney(cfg.USN_LIMIT)} — сеть теряет право на УСН. Теперь НДС и налог на прибыль.`, 'warn');
+      if (S.macro.regime === 'osno') toast(S, 'Переход на ОСНО', `Выручка за год превысила ${BK.fmtMoney(cfg.USN_LIMIT)} — сеть теряет право на УСН (упрощёнку, налог с выручки). Теперь общая система: НДС и налог на прибыль.`, 'warn');
       log(S, S.macro.regime === 'osno' ? 'Сеть переведена на общую систему налогообложения.' : 'Сеть вернулась на УСН.', 'info');
     }
     S.notify.push({ type: 'year', y: t.y - 1, rev: S.yearRev });
@@ -779,7 +780,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const cost = inst.choices[idx] ? inst.choices[idx].cost : 0;
       if (cost > 0) spend(S, cost, 'other');
       const txt = applyEffects(S, ch.effects || [], tg);
-      log(S, `${inst.title}: выбрано «${ch.label}»${cost ? ` (−${BK.fmtMoney(cost)})` : ''}. ${txt.join('; ')}`, inst.kind === 'pos' ? 'good' : 'warn');
+      log(S, `${inst.title}: выбрано «${ch.label}»${cost ? ` (−${BK.fmtMoney(cost)})` : ''}.${txt.length ? ' ' + txt.join('; ') : ''}`, inst.kind === 'pos' ? 'good' : 'warn');
     } else log(S, `${inst.title}. ${inst.text}`, inst.kind === 'pos' ? 'good' : 'bad');
     S.ev.pending = null;
   }
@@ -814,9 +815,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
           out.push(`аренда ${pct(f.m)} навсегда`); break;
         }
         case 'salary': S.market.seller *= f.m; S.market.baker *= f.m; out.push(`рыночные зарплаты ${pct(f.m)} — персонал ждёт повышения`); break;
-        case 'tax': if (f.d) S.mods.push({ t: 'tax', add: f.add, until: S.day + f.d, scope: 'global' }); else S.macro.taxAdd += f.add; out.push(`налог ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.${f.d ? ` на ${f.d} дн.` : ' навсегда'}`); break;
-        case 'keyRate': S.macro.keyRate = clamp(S.macro.keyRate + f.add, 0.05, 0.25); out.push(`ключевая ставка ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.`); break;
-        case 'inflation': S.macro.inflAdd += f.add; out.push(`инфляция ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.`); break;
+        case 'tax': if (f.d) S.mods.push({ t: 'tax', add: f.add, until: S.day + f.d, scope: 'global' }); else S.macro.taxAdd += f.add; out.push(`налог ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.${f.d ? ` на ${f.d} дн.` : ' навсегда'}`); break;
+        case 'keyRate': S.macro.keyRate = clamp(S.macro.keyRate + f.add, 0.05, 0.25); out.push(`ключевая ставка ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.`); break;
+        case 'inflation': S.macro.inflAdd += f.add; out.push(`инфляция ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.`); break;
         case 'cash': {
           let v = 0;
           if (f.v != null) v = f.v * S.macro.priceLevel;
@@ -833,17 +834,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
             const st = tg.scope === 'store' ? pool[0] : pick(S, pool);
             if (!st || !st.staff.length) break;
             const e = st.staff.splice(ri(S, 0, st.staff.length - 1), 1)[0]; done++; S.stats.quits++;
-            log(S, `${e.name} уволился (${st.address}).`, 'bad');
+            log(S, `${e.name} ${BK.byGender(e.name, 'уволился', 'уволилась')} (${st.address}).`, 'bad');
           }
-          if (done) out.push(`уволились ${done} сотрудн.`); break;
+          if (done) out.push(`уволилось сотрудников: ${done}`); break;
         }
         case 'staffTrain': {
           let n = f.n || 1; const all = []; for (const st of S.stores) for (const e of st.staff) if (e.lvl < cfg.MAX_LVL) all.push(e);
           let done = 0; while (n-- > 0 && all.length) { const e = all.splice(ri(S, 0, all.length - 1), 1)[0]; e.lvl++; e.lvlDay = S.day; done++; }
-          if (done) out.push(`${done} сотрудн. повысили уровень`); break;
+          if (done) out.push(`повысили уровень: ${done} чел.`); break;
         }
-        case 'trend': S.trends[f.cat] = clamp((S.trends[f.cat] || 50) + f.add, 5, 98); out.push(`тренд «${BK.CATEGORIES[f.cat] ? BK.CATEGORIES[f.cat].name : f.cat}» ${f.add > 0 ? '+' : ''}${f.add}`); break;
-        case 'loyalty': S.loyaltyMod = clamp(S.loyaltyMod + f.add, -30, 30); out.push(`настроение команды ${f.add > 0 ? '+' : ''}${f.add}`); break;
+        case 'trend': S.trends[f.cat] = clamp((S.trends[f.cat] || 50) + f.add, 5, 98); out.push(`тренд «${BK.CATEGORIES[f.cat] ? BK.CATEGORIES[f.cat].name : f.cat}» ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
+        case 'loyalty': S.loyaltyMod = clamp(S.loyaltyMod + f.add, -30, 30); out.push(`настроение команды ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
         default: break;
       }
     }
@@ -964,7 +965,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     st.staff = st.staff.filter((x) => x.id !== empId);
     if (st.staffTarget > st.staff.length + st.incoming.length) st.staffTarget = Math.max(C().SIZES[st.size].staffMin, st.staff.length + st.incoming.length);
     for (const o of st.staff) o.mood = clamp(o.mood - 3, 0, 100);
-    log(S, `${e.name} уволен(а) с выплатой компенсации.`, 'warn');
+    log(S, `${e.name} ${BK.byGender(e.name, 'уволен', 'уволена')} с выплатой компенсации.`, 'warn');
     return { ok: true };
   }
   function setStaffTarget(S, storeId, n) {
@@ -1024,18 +1025,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
-    if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт' };
-    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1)}% годовых.`, 'warn');
+    if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
+    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
     return { ok: true, amount };
   }
   function repayLoan(S, amount) {
-    amount = Math.min(amount, S.loan, Math.max(0, S.cash)); if (amount <= 0) return { ok: false, msg: 'Нечем гасить' };
+    amount = Math.min(amount, S.loan, Math.max(0, S.cash)); if (amount <= 0) return { ok: false, msg: 'Нечем гасить: на счёте нет свободных денег' };
     S.loan -= amount; S.cash -= amount; log(S, `Погашено ${BK.fmtMoney(amount)} кредита.`, 'good');
     return { ok: true };
   }
   function setPay(S, kind, value) { S.pay[kind] = Math.round(clamp(value, S.market[kind] * 0.6, S.market[kind] * 2)); }
   function buyCulture(S) {
-    const cfg = C(); const next = cfg.CULTURE[S.culture + 1]; if (!next) return { ok: false, msg: 'Максимум' };
+    const cfg = C(); const next = cfg.CULTURE[S.culture + 1]; if (!next) return { ok: false, msg: 'Культура уже на максимуме' };
     const c = Math.round(next.cost * S.macro.priceLevel); if (S.cash < c) return { ok: false, msg: 'Не хватает денег' };
     spend(S, c, 'capex'); S.culture++; log(S, `Корпоративная культура: «${next.name}».`, 'good');
     return { ok: true };
@@ -1059,9 +1060,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* форматирование денег (общая функция) */
   BK.fmtMoney = function (v) {
     const a = Math.abs(v), s = v < 0 ? '−' : '';
-    if (a >= 1e9) return s + (a / 1e9).toFixed(a >= 1e10 ? 1 : 2).replace('.', ',') + ' млрд ₽';
-    if (a >= 1e6) return s + (a / 1e6).toFixed(a >= 1e8 ? 0 : 1).replace('.', ',') + ' млн ₽';
-    if (a >= 1e4) return s + Math.round(a / 1e3) + ' тыс ₽';
-    return s + Math.round(a).toLocaleString('ru-RU') + ' ₽';
+    if (a >= 1e9) return s + (a / 1e9).toFixed(a >= 1e10 ? 1 : 2).replace('.', ',') + '\u00a0млрд\u00a0₽';
+    if (a >= 1e6) return s + (a / 1e6).toFixed(a >= 1e8 ? 0 : 1).replace('.', ',') + '\u00a0млн\u00a0₽';
+    if (a >= 1e4) return s + Math.round(a / 1e3) + '\u00a0тыс\u00a0₽';
+    return s + Math.round(a).toLocaleString('ru-RU') + '\u00a0₽';
   };
 })();
