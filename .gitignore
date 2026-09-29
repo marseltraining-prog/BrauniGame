@@ -1,0 +1,6 @@
+node_modules/
+qa/*.png
+qa/qa/
+qa/shots/
+dist/local.html
+dist/game.html
