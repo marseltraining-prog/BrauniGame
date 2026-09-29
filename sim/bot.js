@@ -73,7 +73,7 @@ function estStore(S, o, P) {
 }
 
 /* ---------- оценка эффектов события (для good) ---------- */
-function effectValue(S, effects, tg) {
+function effectValue(S, effects, tg, depth) {
   const R = Math.max(S.lastMonthRev, 1e6);
   const open = S.stores.filter((s) => s.status !== 'opening');
   const n = Math.max(1, open.length);
@@ -102,11 +102,25 @@ function effectValue(S, effects, tg) {
       case 'tax': v -= f.add * R * (f.d ? f.d / 30 : 36); break;
       case 'rent': v -= (f.m - 1) * (pnl.rent || R * 0.1) * share * 36; break;
       case 'keyRate': v -= f.add * S.loan; break;
+      case 'schedule': { // ожидаемая цена отложенного последствия (без дисконта, глубина цепочки ≤ 2)
+        const fe = E.byId(BK.EVENTS, f.id);
+        if (!fe || (depth || 0) >= 2) break;
+        let fv = effectValue(S, fe.effects, tg, (depth || 0) + 1);
+        if (fe.choices && fe.choices.length) fv += Math.max(...fe.choices.map((c) => effectValue(S, c.effects, tg, (depth || 0) + 1) - approxCost(S, c.cost, share, n)));
+        v += (f.p != null ? f.p : 1) * fv; break;
+      }
       case 'trend': { const inMenu = S.menu.some((m) => { const p = E.byId(BK.PRODUCTS, m.id); return p && p.cat === f.cat; }); if (inMenu) v += f.add * R * 0.012; break; }
       default: break;
     }
   }
   return v;
+}
+function approxCost(S, c, share, n) {
+  if (!c) return 0;
+  if (typeof c === 'number') return c * S.macro.priceLevel;
+  if (c.perStore) return c.perStore * S.macro.priceLevel * Math.max(1, Math.round(share * n));
+  if (c.revPct) return c.revPct * Math.max(S.lastMonthRev, 1e6);
+  return 0;
 }
 function chooseEvent(S, P) {
   const inst = S.ev.pending, ch = inst.choices;
@@ -117,7 +131,10 @@ function chooseEvent(S, P) {
   let best = 0, bv = -Infinity;
   ch.forEach((c, i) => {
     if (c.cost > S.cash + S.reserve) return;
-    const val = effectValue(S, def.choices[i].effects, inst.tg) - c.cost;
+    // повторяющееся последствие (выбор снова ставит это же событие в очередь, напр. дивиденды) — считаем ~6 повторов
+    const eff = def.choices[i].effects || [];
+    const self = eff.some((f) => f.t === 'schedule' && f.id === inst.id);
+    const val = self ? (effectValue(S, eff.filter((f) => !(f.t === 'schedule' && f.id === inst.id)), inst.tg) - c.cost) * 6 : effectValue(S, eff, inst.tg) - c.cost;
     if (val > bv) { bv = val; best = i; }
   });
   return best;
