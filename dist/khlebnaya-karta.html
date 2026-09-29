@@ -633,6 +633,9 @@ BK.EQUIPMENT = [
 BK.NAMES_M = ['Азат', 'Руслан', 'Тимур', 'Айдар', 'Ильдар', 'Артём', 'Денис', 'Максим', 'Салават', 'Ринат', 'Марат', 'Никита', 'Егор', 'Булат', 'Иван', 'Кирилл', 'Радик', 'Олег', 'Альберт', 'Данияр', 'Роберт', 'Игорь', 'Эмиль', 'Ильнур', 'Павел'];
 BK.NAMES_F = ['Айгуль', 'Лилия', 'Гульнара', 'Анна', 'Алина', 'Элина', 'Регина', 'Дарья', 'Зарина', 'Мария', 'Камила', 'Ольга', 'Диляра', 'Екатерина', 'Резеда', 'Юлия', 'Альфия', 'Ксения', 'Лейсан', 'Софья', 'Гузель', 'Виктория', 'Эльвира', 'Наталья', 'Айсылу'];
 BK.SURNAMES = ['Хабибуллин', 'Галиев', 'Иванов', 'Сафин', 'Ахмадуллин', 'Кузнецов', 'Исмагилов', 'Валеев', 'Смирнов', 'Шарипов', 'Юсупов', 'Попов', 'Гарипов', 'Мухаметов', 'Николаев', 'Зиннатуллин', 'Байбурин', 'Фёдоров', 'Каримов', 'Садыков', 'Латыпов', 'Морозов', 'Нуриев', 'Хасанов'];
+/* Пол сотрудника — по имени (женские имена — из NAMES_F). byGender('Камила Иванова', 'уволился', 'уволилась') → 'уволилась' */
+BK.isFemale = function (name) { return BK.NAMES_F.indexOf(String(name || '').split(' ')[0]) >= 0; };
+BK.byGender = function (name, m, f) { return BK.isFemale(name) ? f : m; };
 BK.STAFF_LVL_NAMES = ['', 'Стажёр', 'Продавец', 'Бариста-профи', 'Мастер сервиса', 'Наставник'];
 
 /* Привязка сезонных событий к месяцам (0 = январь) */
@@ -691,7 +694,7 @@ BK.EVENTS = [
 
   // --- Налоги и регуляторика ---
   { id:'e001', kind:'neg', title:'Курултай поднял ставку УСН',
-    text:'Курултай Башкортостана пересмотрел региональные ставки по упрощёнке. Бухгалтер вздыхает и перенастраивает отчёты: налог вырос насовсем.',
+    text:'Курултай Башкортостана пересмотрел региональные ставки по упрощёнке (УСН). Бухгалтер вздыхает и перенастраивает отчёты: налог вырос насовсем.',
     scope:'global', weight:0.4, minStores:1, minYear:2, once:true,
     effects:[{t:'tax', add:0.005}] },
 
@@ -715,7 +718,7 @@ BK.EVENTS = [
     effects:[],
     choices:[
       { label:'Закупить сканеры сразу', desc:'Штрафов не будет, приёмка пойдёт как надо.', cost:{perStore:25000}, effects:[] },
-      { label:'Тянуть до последнего', desc:'Штрафы за нарушения и неделя хаоса на приёмке.', cost:0, effects:[{t:'cash', perStore:-60000}, {t:'conv', m:0.95, d:10}] }
+      { label:'Тянуть до последнего', desc:'Штрафы за нарушения и полторы недели хаоса на приёмке.', cost:0, effects:[{t:'cash', perStore:-60000}, {t:'conv', m:0.95, d:10}] }
     ] },
 
   { id:'e005', kind:'neg', title:'Выездная налоговая проверка',
@@ -774,7 +777,7 @@ BK.EVENTS = [
       { label:'Не реагировать', desc:'Посмотрим, кто кого. Гости уйдут пробовать новинку.', cost:0, effects:[{t:'competitor', m:0.8, d:365}] }
     ] },
 
-  { id:'e011', kind:'neg', title:'Рядом открылась «Зерно и Пар»',
+  { id:'e011', kind:'neg', title:'Кофейня «Зерно и Пар» по соседству',
     text:'В соседнем доме с нашей точкой ({store}) открылась кофейня «Зерно и Пар»: круассаны, авторский раф и неоновая вывеска. Часть утренних гостей теперь пьёт кофе у них.',
     scope:'store', weight:1, minStores:2,
     effects:[{t:'competitor', m:0.88, d:270}] },
@@ -819,14 +822,14 @@ BK.EVENTS = [
     scope:'global', weight:0.8, minStores:5, minYear:1,
     effects:[],
     choices:[
-      { label:'Поднять зарплаты на 4%', desc:'ФОТ вырастет навсегда, зато команда останется.', cost:0, effects:[{t:'salary', m:1.04}, {t:'loyalty', add:5}] },
+      { label:'Поднять зарплаты на 4%', desc:'Фонд оплаты труда вырастет навсегда, зато команда останется.', cost:0, effects:[{t:'salary', m:1.04}, {t:'loyalty', add:5}] },
       { label:'Выдать разовые премии', desc:'Удержим почти всех — но только сейчас.', cost:{perStore:20000}, effects:[{t:'staffQuit', n:1}] },
       { label:'Пусть уходят', desc:'Незаменимых нет. Или всё-таки есть?', cost:0, effects:[{t:'staffQuit', n:4}, {t:'loyalty', add:-10}] }
     ] },
 
   // --- Оборудование и сбои ---
   { id:'e018', kind:'neg', title:'Встала ротационная печь',
-    text:'На производстве {prod} встала ротационная печь: сгорели ТЭН и контроллер. Смена печёт в полсилы.',
+    text:'На производстве ({prod}) встала ротационная печь: сгорели ТЭН и контроллер. Смена печёт в полсилы.',
     scope:'production', weight:1.5, minStores:1, cooldown:180,
     effects:[],
     choices:[
@@ -835,12 +838,12 @@ BK.EVENTS = [
     ] },
 
   { id:'e019', kind:'neg', title:'Заклинило тестомес',
-    text:'На производстве {prod} заклинило редуктор спирального тестомеса. Тесто замешивают мелкими партиями на запасной машине.',
+    text:'На производстве ({prod}) заклинило редуктор спирального тестомеса. Тесто замешивают мелкими партиями на запасной машине.',
     scope:'production', weight:1.5, minStores:1, cooldown:180,
     effects:[{t:'capacity', m:0.8, d:5}, {t:'cash', v:-70000}] },
 
   { id:'e020', kind:'neg', title:'Отказала холодильная камера',
-    text:'Ночью на производстве {prod} отказал компрессор холодильной камеры. Утром выяснилось, что масло, сливки и начинки придётся списать.',
+    text:'Ночью на производстве ({prod}) отказал компрессор холодильной камеры. Утром выяснилось, что масло, сливки и начинки придётся списать.',
     scope:'production', weight:1, minStores:1,
     effects:[{t:'cash', v:-150000}, {t:'capacity', m:0.9, d:3}] },
 
@@ -864,11 +867,11 @@ BK.EVENTS = [
     effects:[],
     choices:[
       { label:'Вызвать специалистов по ИБ', desc:'За сутки восстановят систему из резервных копий и закроют дыры.', cost:{perStore:20000}, effects:[{t:'conv', m:0.93, d:3}] },
-      { label:'Восстанавливать своими силами', desc:'Неделю кассы будут глючить, часть данных пропадёт.', cost:0, effects:[{t:'conv', m:0.85, d:10}, {t:'cash', revPct:-0.01}] }
+      { label:'Восстанавливать своими силами', desc:'Десять дней кассы будут глючить, часть данных пропадёт.', cost:0, effects:[{t:'conv', m:0.85, d:10}, {t:'cash', revPct:-0.01}] }
     ] },
 
   { id:'e024', kind:'neg', title:'Печи выработали ресурс',
-    text:'Технолог докладывает: печи на производстве {prod} отработали свой ресурс и греют неравномерно. Можно сделать капремонт сейчас или ждать, пока встанут сами.',
+    text:'Технолог докладывает: печи на производстве ({prod}) отработали свой ресурс и греют неравномерно. Можно сделать капремонт сейчас или ждать, пока встанут сами.',
     scope:'production', weight:0.6, minStores:3, minYear:3, cooldown:1095,
     effects:[],
     choices:[
@@ -911,7 +914,7 @@ BK.EVENTS = [
     ] },
 
   { id:'e030', kind:'neg', title:'Мельница сорвала поставку',
-    text:'Мельница, которая возит муку на производство {prod}, сорвала отгрузку: вагон застрял на сортировочной станции. Запаса хватит на два дня.',
+    text:'Мельница, которая возит муку на производство ({prod}), сорвала отгрузку: вагон застрял на сортировочной станции. Запаса хватит на два дня.',
     scope:'production', weight:1, minStores:1,
     effects:[],
     choices:[
@@ -925,7 +928,7 @@ BK.EVENTS = [
     effects:[{t:'foodcost', m:1.03, d:240}] },
 
   { id:'e032', kind:'neg', title:'Бракованная партия муки',
-    text:'На производство {prod} пришла мука с низкой клейковиной: хлеб расплывается, круассаны выходят плоскими.',
+    text:'На производство ({prod}) пришла мука с низкой клейковиной: хлеб расплывается, круассаны выходят плоскими.',
     scope:'production', weight:1, minStores:1,
     effects:[],
     choices:[
@@ -934,8 +937,8 @@ BK.EVENTS = [
     ] },
 
   // --- Погода ---
-  { id:'e033', kind:'neg', title:'Морозы −35',
-    text:'Над Уфой встал антициклон: −35 днём и под −40 ночью. Горожане перебежками добегают до остановок, а машины доставки не заводятся.',
+  { id:'e033', kind:'neg', title:'Морозы −35°',
+    text:'Над Уфой встал антициклон: −35° днём и под −40° ночью. Горожане перебежками добегают до остановок, а машины доставки не заводятся.',
     scope:'global', weight:1, minStores:1,
     effects:[{t:'traffic', m:0.8, d:7}, {t:'delivery', m:1.2, d:7}] },
 
@@ -944,8 +947,8 @@ BK.EVENTS = [
     scope:'global', weight:1, minStores:1,
     effects:[{t:'traffic', m:0.85, d:4}, {t:'delivery', m:1.3, d:5}] },
 
-  { id:'e035', kind:'neg', title:'Жара +38',
-    text:'Аномальная жара: +38 в тени. Горожане разъехались на Белую и прячутся в тени Лесопарка — горячая выпечка никому не нужна, спасает только холодный кофе.',
+  { id:'e035', kind:'neg', title:'Жара +38°',
+    text:'Аномальная жара: +38° в тени. Горожане разъехались на Белую и прячутся под деревьями Лесопарка — горячая выпечка никому не нужна, спасает только холодный кофе.',
     scope:'global', weight:1, minStores:1,
     effects:[{t:'traffic', m:0.88, d:12}, {t:'trend', cat:'drinks', add:5}] },
 
@@ -989,7 +992,7 @@ BK.EVENTS = [
     effects:[{t:'traffic', m:0.92, d:14}],
     choices:[
       { label:'Поставить водонагреватели', desc:'Санитарные нормы соблюдены, точки работают.', cost:{perStore:30000}, effects:[] },
-      { label:'Обойтись кипятильниками', desc:'Роспотребнадзор без горячей воды работать не разрешит.', cost:0, effects:[{t:'close', d:3}] }
+      { label:'Обойтись кипятильниками', desc:'Без горячей воды Роспотребнадзор работать не разрешит: точки района закроются на три дня.', cost:0, effects:[{t:'close', d:3}] }
     ] },
 
   { id:'e042', kind:'neg', title:'Мост через Белую на ремонте',
@@ -1012,7 +1015,7 @@ BK.EVENTS = [
     effects:[{t:'close', d:2}, {t:'cash', v:-90000}] },
 
   { id:'e045', kind:'neg', title:'Веерные отключения в цехе',
-    text:'Энергосети предупредили о ремонте линии: производство {prod} две недели будет сидеть без света по несколько часов в сутки.',
+    text:'Энергосети предупредили о ремонте линии: производство ({prod}) две недели будет сидеть без света по несколько часов в сутки.',
     scope:'production', weight:0.8, minStores:2,
     effects:[],
     choices:[
@@ -1032,7 +1035,7 @@ BK.EVENTS = [
     effects:[{t:'staffQuit', n:1}],
     choices:[
       { label:'Удержать кассиршу премией', desc:'Разовая премия и повышение до старшей смены.', cost:40000, effects:[] },
-      { label:'Отпустить обеих', desc:'Несколько недель точка работает с новичками.', cost:0, effects:[{t:'staffQuit', n:1}, {t:'conv', m:0.92, d:21}] }
+      { label:'Отпустить обеих', desc:'Три недели точка работает с новичками.', cost:0, effects:[{t:'staffQuit', n:1}, {t:'conv', m:0.92, d:21}] }
     ] },
 
   { id:'e048', kind:'neg', title:'Забастовка курьеров',
@@ -1049,7 +1052,7 @@ BK.EVENTS = [
     scope:'global', weight:0.6, minStores:2, minYear:1, cooldown:730,
     effects:[],
     choices:[
-      { label:'Поднять зарплаты на 5%', desc:'ФОТ вырастет навсегда, лояльность — тоже.', cost:0, effects:[{t:'salary', m:1.05}, {t:'loyalty', add:8}] },
+      { label:'Поднять зарплаты на 5%', desc:'Фонд оплаты труда вырастет навсегда, лояльность — тоже.', cost:0, effects:[{t:'salary', m:1.05}, {t:'loyalty', add:8}] },
       { label:'Оставить как есть', desc:'Кто-то уйдёт, остальные затаят обиду.', cost:0, effects:[{t:'staffQuit', n:3}, {t:'loyalty', add:-15}] }
     ] },
 
@@ -1112,7 +1115,7 @@ BK.EVENTS = [
     effects:[{t:'rent', m:1.05}] },
 
   // --- Репутация ---
-  { id:'e058', kind:'neg', title:'Отзыв завирусился',
+  { id:'e058', kind:'neg', title:'Ролик завирусился',
     text:'Гость пекарни по адресу {store} выложил видео с подгоревшим эчпочмаком и подписью «Уфа, это позор». Ролик набрал сотни тысяч просмотров.',
     scope:'store', weight:1.2, minStores:1,
     effects:[],
@@ -1141,7 +1144,7 @@ BK.EVENTS = [
     ] },
 
   { id:'e061', kind:'neg', title:'Возгорание на производстве',
-    text:'На производстве {prod} вспыхнул фритюр, и огонь перекинулся на вытяжку. Цех цел, но часть линии выпечки выведена из строя.',
+    text:'На производстве ({prod}) вспыхнул фритюр, и огонь перекинулся на вытяжку. Цех цел, но часть линии выпечки выведена из строя.',
     scope:'production', weight:0.25, minStores:3, minYear:1, cooldown:1095,
     effects:[{t:'cash', v:-300000}],
     choices:[
@@ -1262,7 +1265,7 @@ BK.EVENTS = [
     scope:'global', weight:0.6, minStores:2, minYear:1, cooldown:730,
     effects:[],
     choices:[
-      { label:'Оформить с консультантом', desc:'Консультант соберёт документы, субсидия придёт через месяц.', cost:100000, effects:[{t:'cash', v:700000}] },
+      { label:'Оформить с консультантом', desc:'Консультант соберёт документы, и субсидия придёт на счёт.', cost:100000, effects:[{t:'cash', v:700000}] },
       { label:'Не связываться с бумагами', desc:'Время дороже.', cost:0, effects:[] }
     ] },
 
@@ -1287,7 +1290,7 @@ BK.EVENTS = [
     ] },
 
   { id:'e084', kind:'pos', title:'Предложение о франшизе',
-    text:'Предприниматель из Стерлитамака хочет открыть пекарни под вашим брендом у себя в городе и предлагает паушальный взнос.',
+    text:'Предприниматель из Стерлитамака хочет открыть пекарни под вашим брендом у себя в городе и предлагает паушальный взнос — разовую плату за право работать под вашим брендом.',
     scope:'global', weight:0.5, minStores:10, minYear:3, once:true,
     effects:[],
     choices:[
@@ -1358,7 +1361,7 @@ BK.EVENTS = [
     effects:[{t:'traffic', m:1.1, d:240}] },
 
   { id:'e094', kind:'pos', title:'Соседняя пекарня закрылась',
-    text:'Пекарня по соседству с нашей точкой ({store}) закрылась — владелец не вытянул аренду. Её постоянные гости теперь ходят к вам.',
+    text:'Пекарня по соседству с нашей точкой ({store}) закрылась — владелец не вытянул аренду. Её постоянные гости теперь ходят к нам.',
     scope:'store', weight:0.7, minStores:2, minYear:1,
     effects:[{t:'traffic', m:1.15, d:120}] },
 
@@ -1435,7 +1438,7 @@ BK.EVENTS = [
     ] },
 
   { id:'c05', kind:'neg', crisis:true, title:'Ключевая ставка взлетела',
-    text:'Банк России экстренно поднял ключевую ставку на пять пунктов. Кредиты стали неподъёмными, а горожане несут деньги на вклады, а не в кофейни.',
+    text:'Банк России экстренно поднял ключевую ставку на пять пунктов. Кредиты стали неподъёмными, горожане несут деньги на вклады, а не в кофейни.',
     scope:'global', weight:1, minStores:1, minYear:1,
     effects:[{t:'keyRate', add:0.05}, {t:'traffic', m:0.9, d:120}, {t:'check', m:0.95, d:150}],
     choices:[
@@ -1889,8 +1892,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) || rnd(S) < p) {
           st.staff.splice(i, 1);
           S.stats.quits++;
-          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? 'выгорел от переработок' : S.pay.seller < S.market.seller ? 'ушёл на зарплату выше' : 'был недоволен больше месяца') : 'нашёл другую работу';
-          log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) уволился: ${why}.`, 'bad');
+          const g = (m, f) => BK.byGender(e.name, m, f);
+          const why = e.unhappy > cfg.UNHAPPY_QUIT_DAYS + (e.patience || 0) ? (e.fatigue > 50 ? g('выгорел', 'выгорела') + ' от переработок' : S.pay.seller < S.market.seller ? g('ушёл', 'ушла') + ' на зарплату выше' : g('был недоволен', 'была недовольна') + ' больше месяца') : g('нашёл', 'нашла') + ' другую работу';
+          log(S, `${e.name} (${BK.STAFF_LVL_NAMES[e.lvl]}, ${st.address}) ${g('уволился', 'уволилась')}: ${why}.`, 'bad');
           S.flags.quitsToday = (S.flags.quitsToday || 0) + 1;
         }
       }
@@ -1988,7 +1992,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (t.d === 1) monthly(S, t);
     if (S.day >= S.ev.nextCrisis) fireCrisis(S);
     else if (S.day >= S.ev.next) fireRandomEvent(S, t);
-    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились ${S.flags.quitsToday} сотрудника` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
+    if (S.flags.quitsToday) { if (S.flags.quitsToday >= 1) toast(S, S.flags.quitsToday > 1 ? `Уволились сотрудники: ${S.flags.quitsToday}` : 'Сотрудник уволился', 'Подробности — в журнале и в карточке точки.', 'bad'); S.flags.quitsToday = 0; }
     return true;
   }
 
@@ -2065,7 +2069,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         S.loyaltyMod = clamp(S.loyaltyMod - cfg.CASHGAP_LOYALTY, -30, 30);
         log(S, 'Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.', 'bad');
       }
-      if (S.negMonths >= cfg.BANKRUPT_MONTHS) { S.lost = true; S.phase = 'lost'; S.notify.push({ type: 'lost' }); log(S, 'Банкротство: три месяца подряд долги без резерва.', 'bad'); }
+      if (S.negMonths >= cfg.BANKRUPT_MONTHS) { S.lost = true; S.phase = 'lost'; S.notify.push({ type: 'lost' }); log(S, `Банкротство: счёт в минусе ${cfg.BANKRUPT_MONTHS}-й месяц подряд, а резерв пуст.`, 'bad'); }
       else toast(S, 'Кассовый разрыв!', `Счёт отрицательный ${S.negMonths}-й месяц подряд. На ${cfg.BANKRUPT_MONTHS}-й — банкротство. Возьмите кредит или сократите расходы.`, 'bad');
     } else S.negMonths = 0;
     // лояльность возвращается к нулю, ставка — к норме
@@ -2108,12 +2112,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (st.rentM2 > old * (1 + infl * 0.85) * 1.03) log(S, `Арендодатель пересмотрел ставку: ${st.address} — ${BK.fmtMoney(old)} → ${BK.fmtMoney(st.rentM2)} за м² (оборот точки вырос).`, 'warn');
     }
     for (const p of S.productions) p.rentM2 = Math.round(p.rentM2 * (1 + infl * 0.85));
-    log(S, `Новый ${t.y} год. Инфляция прошлого года ${(infl * 100).toFixed(1)}%: цены, аренда и рыночные зарплаты проиндексированы.`, 'info');
+    log(S, `Новый ${t.y} год. Инфляция прошлого года ${(infl * 100).toFixed(1).replace('.', ',')}%: цены, аренда и рыночные зарплаты проиндексированы.`, 'info');
     // налоговый режим
     const prevRegime = S.macro.regime;
     S.macro.regime = S.yearRev > cfg.USN_LIMIT ? 'osno' : 'usn';
     if (S.macro.regime !== prevRegime) {
-      if (S.macro.regime === 'osno') toast(S, 'Переход на ОСНО', `Выручка за год превысила ${BK.fmtMoney(cfg.USN_LIMIT)} — сеть теряет право на УСН. Теперь НДС и налог на прибыль.`, 'warn');
+      if (S.macro.regime === 'osno') toast(S, 'Переход на ОСНО', `Выручка за год превысила ${BK.fmtMoney(cfg.USN_LIMIT)} — сеть теряет право на УСН (упрощёнку, налог с выручки). Теперь общая система: НДС и налог на прибыль.`, 'warn');
       log(S, S.macro.regime === 'osno' ? 'Сеть переведена на общую систему налогообложения.' : 'Сеть вернулась на УСН.', 'info');
     }
     S.notify.push({ type: 'year', y: t.y - 1, rev: S.yearRev });
@@ -2226,7 +2230,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const cost = inst.choices[idx] ? inst.choices[idx].cost : 0;
       if (cost > 0) spend(S, cost, 'other');
       const txt = applyEffects(S, ch.effects || [], tg);
-      log(S, `${inst.title}: выбрано «${ch.label}»${cost ? ` (−${BK.fmtMoney(cost)})` : ''}. ${txt.join('; ')}`, inst.kind === 'pos' ? 'good' : 'warn');
+      log(S, `${inst.title}: выбрано «${ch.label}»${cost ? ` (−${BK.fmtMoney(cost)})` : ''}.${txt.length ? ' ' + txt.join('; ') : ''}`, inst.kind === 'pos' ? 'good' : 'warn');
     } else log(S, `${inst.title}. ${inst.text}`, inst.kind === 'pos' ? 'good' : 'bad');
     S.ev.pending = null;
   }
@@ -2261,9 +2265,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
           out.push(`аренда ${pct(f.m)} навсегда`); break;
         }
         case 'salary': S.market.seller *= f.m; S.market.baker *= f.m; out.push(`рыночные зарплаты ${pct(f.m)} — персонал ждёт повышения`); break;
-        case 'tax': if (f.d) S.mods.push({ t: 'tax', add: f.add, until: S.day + f.d, scope: 'global' }); else S.macro.taxAdd += f.add; out.push(`налог ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.${f.d ? ` на ${f.d} дн.` : ' навсегда'}`); break;
-        case 'keyRate': S.macro.keyRate = clamp(S.macro.keyRate + f.add, 0.05, 0.25); out.push(`ключевая ставка ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.`); break;
-        case 'inflation': S.macro.inflAdd += f.add; out.push(`инфляция ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1)} п.п.`); break;
+        case 'tax': if (f.d) S.mods.push({ t: 'tax', add: f.add, until: S.day + f.d, scope: 'global' }); else S.macro.taxAdd += f.add; out.push(`налог ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.${f.d ? ` на ${f.d} дн.` : ' навсегда'}`); break;
+        case 'keyRate': S.macro.keyRate = clamp(S.macro.keyRate + f.add, 0.05, 0.25); out.push(`ключевая ставка ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.`); break;
+        case 'inflation': S.macro.inflAdd += f.add; out.push(`инфляция ${f.add > 0 ? '+' : '−'}${(Math.abs(f.add) * 100).toFixed(1).replace('.', ',')} п.п.`); break;
         case 'cash': {
           let v = 0;
           if (f.v != null) v = f.v * S.macro.priceLevel;
@@ -2280,17 +2284,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
             const st = tg.scope === 'store' ? pool[0] : pick(S, pool);
             if (!st || !st.staff.length) break;
             const e = st.staff.splice(ri(S, 0, st.staff.length - 1), 1)[0]; done++; S.stats.quits++;
-            log(S, `${e.name} уволился (${st.address}).`, 'bad');
+            log(S, `${e.name} ${BK.byGender(e.name, 'уволился', 'уволилась')} (${st.address}).`, 'bad');
           }
-          if (done) out.push(`уволились ${done} сотрудн.`); break;
+          if (done) out.push(`уволилось сотрудников: ${done}`); break;
         }
         case 'staffTrain': {
           let n = f.n || 1; const all = []; for (const st of S.stores) for (const e of st.staff) if (e.lvl < cfg.MAX_LVL) all.push(e);
           let done = 0; while (n-- > 0 && all.length) { const e = all.splice(ri(S, 0, all.length - 1), 1)[0]; e.lvl++; e.lvlDay = S.day; done++; }
-          if (done) out.push(`${done} сотрудн. повысили уровень`); break;
+          if (done) out.push(`повысили уровень: ${done} чел.`); break;
         }
-        case 'trend': S.trends[f.cat] = clamp((S.trends[f.cat] || 50) + f.add, 5, 98); out.push(`тренд «${BK.CATEGORIES[f.cat] ? BK.CATEGORIES[f.cat].name : f.cat}» ${f.add > 0 ? '+' : ''}${f.add}`); break;
-        case 'loyalty': S.loyaltyMod = clamp(S.loyaltyMod + f.add, -30, 30); out.push(`настроение команды ${f.add > 0 ? '+' : ''}${f.add}`); break;
+        case 'trend': S.trends[f.cat] = clamp((S.trends[f.cat] || 50) + f.add, 5, 98); out.push(`тренд «${BK.CATEGORIES[f.cat] ? BK.CATEGORIES[f.cat].name : f.cat}» ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
+        case 'loyalty': S.loyaltyMod = clamp(S.loyaltyMod + f.add, -30, 30); out.push(`настроение команды ${f.add > 0 ? '+' : '−'}${Math.abs(f.add)}`); break;
         default: break;
       }
     }
@@ -2411,7 +2415,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     st.staff = st.staff.filter((x) => x.id !== empId);
     if (st.staffTarget > st.staff.length + st.incoming.length) st.staffTarget = Math.max(C().SIZES[st.size].staffMin, st.staff.length + st.incoming.length);
     for (const o of st.staff) o.mood = clamp(o.mood - 3, 0, 100);
-    log(S, `${e.name} уволен(а) с выплатой компенсации.`, 'warn');
+    log(S, `${e.name} ${BK.byGender(e.name, 'уволен', 'уволена')} с выплатой компенсации.`, 'warn');
     return { ok: true };
   }
   function setStaffTarget(S, storeId, n) {
@@ -2471,18 +2475,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
-    if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт' };
-    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1)}% годовых.`, 'warn');
+    if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
+    S.loan += amount; S.cash += amount; log(S, `Получен кредит ${BK.fmtMoney(amount)} под ${((S.macro.keyRate + C().LOAN_SPREAD) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
     return { ok: true, amount };
   }
   function repayLoan(S, amount) {
-    amount = Math.min(amount, S.loan, Math.max(0, S.cash)); if (amount <= 0) return { ok: false, msg: 'Нечем гасить' };
+    amount = Math.min(amount, S.loan, Math.max(0, S.cash)); if (amount <= 0) return { ok: false, msg: 'Нечем гасить: на счёте нет свободных денег' };
     S.loan -= amount; S.cash -= amount; log(S, `Погашено ${BK.fmtMoney(amount)} кредита.`, 'good');
     return { ok: true };
   }
   function setPay(S, kind, value) { S.pay[kind] = Math.round(clamp(value, S.market[kind] * 0.6, S.market[kind] * 2)); }
   function buyCulture(S) {
-    const cfg = C(); const next = cfg.CULTURE[S.culture + 1]; if (!next) return { ok: false, msg: 'Максимум' };
+    const cfg = C(); const next = cfg.CULTURE[S.culture + 1]; if (!next) return { ok: false, msg: 'Культура уже на максимуме' };
     const c = Math.round(next.cost * S.macro.priceLevel); if (S.cash < c) return { ok: false, msg: 'Не хватает денег' };
     spend(S, c, 'capex'); S.culture++; log(S, `Корпоративная культура: «${next.name}».`, 'good');
     return { ok: true };
@@ -2506,10 +2510,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* форматирование денег (общая функция) */
   BK.fmtMoney = function (v) {
     const a = Math.abs(v), s = v < 0 ? '−' : '';
-    if (a >= 1e9) return s + (a / 1e9).toFixed(a >= 1e10 ? 1 : 2).replace('.', ',') + ' млрд ₽';
-    if (a >= 1e6) return s + (a / 1e6).toFixed(a >= 1e8 ? 0 : 1).replace('.', ',') + ' млн ₽';
-    if (a >= 1e4) return s + Math.round(a / 1e3) + ' тыс ₽';
-    return s + Math.round(a).toLocaleString('ru-RU') + ' ₽';
+    if (a >= 1e9) return s + (a / 1e9).toFixed(a >= 1e10 ? 1 : 2).replace('.', ',') + '\u00a0млрд\u00a0₽';
+    if (a >= 1e6) return s + (a / 1e6).toFixed(a >= 1e8 ? 0 : 1).replace('.', ',') + '\u00a0млн\u00a0₽';
+    if (a >= 1e4) return s + Math.round(a / 1e3) + '\u00a0тыс\u00a0₽';
+    return s + Math.round(a).toLocaleString('ru-RU') + '\u00a0₽';
   };
 })();
 
@@ -2832,7 +2836,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // «круглые» деления оси: шаг 1/2/5 × 10^k
     const raw = (max - min) / 3, pow = Math.pow(10, Math.floor(Math.log10(raw || 1)));
     const step = [1, 2, 5, 10].map((k) => k * pow).find((v) => v >= raw) || raw;
-    for (let v = Math.ceil(min / step) * step; v <= max + 1e-6; v += step) { s += `<line class="grid" x1="${pl}" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${pl - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${Math.abs(v) < 1e-6 ? '0' : fm(v).replace(' ₽', '').replace(/,0(?= )/, '')}</text>`; }
+    for (let v = Math.ceil(min / step) * step; v <= max + 1e-6; v += step) { s += `<line class="grid" x1="${pl}" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${pl - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${Math.abs(v) < 1e-6 ? '0' : fm(v).replace(/\s₽/, '').replace(/,0(?=\s)/, '')}</text>`; }
     if (min < 0) s += `<line class="zero" x1="${pl}" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>`;
     h.forEach((x, i) => { const yy = y(Math.max(0, x.rev)); s += `<rect class="rev" x="${(pl + 2 + i * bw).toFixed(1)}" y="${yy.toFixed(1)}" width="${Math.max(1, bw - 3).toFixed(1)}" height="${Math.max(0, y(0) - yy).toFixed(1)}" rx="1.5" opacity=".85"><title>${E().MONTHS[x.m]} ${x.y}: ${fm(x.rev)}</title></rect>`; });
     const pts = h.map((x, i) => `${(pl + 2 + i * bw + bw / 2 - 1.5).toFixed(1)},${y(x.profit).toFixed(1)}`);
@@ -2852,7 +2856,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += row('Выручка', fm(p.rev));
     s += row('Себестоимость (фудкост)', '−' + fm(p.fc));
     s += row('Аренда', '−' + fm(p.rent));
-    s += row('ФОТ (зарплаты + взносы)', '−' + fm(p.payroll));
+    s += row('ФОТ (зарплаты и взносы)', '−' + fm(p.payroll));
     if (p.delivery != null) s += row('Доставка', '−' + fm(p.delivery));
     s += row('Коммунальные платежи', '−' + fm(p.util));
     if (full) {
@@ -2972,8 +2976,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     s += `<div class="sec"><h3>Помещение</h3><div class="grid2">
       ${kv('Аренда', fm(E_.storeRentMonth(st)) + '/мес')}${kv('Ставка', n0(st.rentM2) + ' ₽/м²')}
-      ${kv('Оплата', st.payMode === 'year' ? (st.rentPaidUntil > S.day ? 'оплачено до ' + E_.fmtDate(st.rentPaidUntil) : 'раз в год') : 'помесячно')}${kv('Трафик', n0(st.traffic) + ' чел/день')}
-      ${kv('Платёжеспособность', n0(st.solv * S.macro.priceLevel) + ' ₽')}${kv('Конкуренция', st.comp > 0.95 ? 'низкая' : st.comp > 0.89 ? 'средняя' : 'высокая')}
+      ${kv('Оплата', st.payMode === 'year' ? (st.rentPaidUntil > S.day ? 'оплачено до ' + E_.fmtDate(st.rentPaidUntil) : 'раз в год') : 'помесячно')}${kv('Трафик', n0(st.traffic) + ' чел./день')}
+      ${kv('Платёжеспособность', n0(st.solv * S.macro.priceLevel) + ' ₽ за визит')}${kv('Конкуренция', st.comp > 0.95 ? 'низкая' : st.comp > 0.89 ? 'средняя' : 'высокая')}
       ${kv('Доставка', fm(E_.deliveryCost(S, st)) + '/мес')}${kv('До цеха', prod ? km(prod, st) + ' км' : '—')}
     </div></div>`;
     s += `<div class="sec"><h3>Прошлый месяц</h3>${pnlTable(L, false, E_.currentTaxRate(S))}</div>`;
@@ -2994,14 +2998,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row">${vac ? `<span class="chip warn">вакансий ${vac}</span>` : ''}${st.incoming.length ? `<span class="chip">${st.incoming.length > 1 ? 'новички выйдут через' : 'новичок выйдет через'} ${st.incoming.map((x) => Math.max(0, x.day - S.day)).join(', ')} дн.</span>` : ''}</div></div>
       ${rec ? `<div class="hint">${rec.over ? `<span class="negc">Поток гостей требует ~${rec.need} чел. 1-го уровня, а максимум для этого формата — ${sz.staffMax}. Обучайте команду: опытные обслуживают больше гостей.</span>` : `Для нынешнего потока хватит ~${rec.need} чел. 1-го уровня.`}</div>` : ''}
       ${(() => { const hl = E_.ownerHireLeft(S), tl = E_.ownerTrainLeft(S); const parts = []; if (hl !== Infinity) parts.push(`нанять — ещё ${hl}`); if (tl !== Infinity) parts.push(`обучить — ещё ${tl}`); return parts.length ? `<div class="hint ${hl === 0 || tl === 0 ? 'warnc' : ''}">Без ${hl !== Infinity && tl !== Infinity ? 'HR и отдела обучения' : hl !== Infinity ? 'HR-отдела' : 'отдела обучения'} на этой неделе можно ${parts.join(', ')} (вкладка «Команда»).</div>` : ''; })()}
-      <div class="row">${btn('quickHire', 'Нанять', { cls: 'sm dark', arg: st.id, cost: E_.hireCost(S, 1), dis: st.staff.length + st.incoming.length >= sz.staffMax, title: 'Случайный кандидат 1–2 уровня. Стоимость найма — 2 зарплаты.' })}${btn('pickCand', 'Выбрать кандидата', { cls: 'sm', arg: st.id })}${trainAllCost ? btn('trainAll', 'Обучить всех', { cls: 'sm', arg: st.id, cost: trainAllCost, dis: !canPay(S, trainAllCost) }) : ''}</div>
+      <div class="row">${btn('quickHire', 'Нанять', { cls: 'sm dark', arg: st.id, cost: E_.hireCost(S, 1), dis: st.staff.length + st.incoming.length >= sz.staffMax, title: `Случайный кандидат 1–2 уровня. Найм стоит ${String(cfg.HIRE_COST_SALARIES).replace('.', ',')} зарплаты.` })}${btn('pickCand', 'Выбрать кандидата', { cls: 'sm', arg: st.id })}${trainAllCost ? btn('trainAll', 'Обучить всех', { cls: 'sm', arg: st.id, cost: trainAllCost, dis: !canPay(S, trainAllCost) }) : ''}</div>
       <div>`;
     if (!st.staff.length) s += `<div class="empty">${st.status === 'opening' ? 'Команда выйдет в день открытия.' : 'Никого нет — точка не работает.'}</div>`;
     for (const e of st.staff.slice().sort((a, b) => b.lvl - a.lvl)) {
       const mk = BK.moodKind(e.mood);
       const tc = e.lvl < 5 ? E_.trainCost(S, e.lvl + 1) : 0;
       const confirm = ui.confirmFire === e.id;
-      s += `<div class="emp">${BK.faceIcon(mk)}<div style="min-width:0"><div class="nm" title="${esc(e.name)}">${esc(e.name)}</div><div class="meta">${stars(e.lvl)}<span>${BK.STAFF_LVL_NAMES[e.lvl]}</span><span>${fm(E_.salaryOf(S, e.lvl))}</span><span title="Усталость">усталость <span class="fbar"><i style="width:${e.fatigue.toFixed(0)}%"></i></span></span>${e.unhappy > 0 && e.mood < cfg.MOOD_UNHAPPY ? `<span class="negc">недоволен ${e.unhappy} дн. из ${cfg.UNHAPPY_QUIT_DAYS}</span>` : ''}</div></div>
+      s += `<div class="emp">${BK.faceIcon(mk)}<div style="min-width:0"><div class="nm" title="${esc(e.name)}">${esc(e.name)}</div><div class="meta">${stars(e.lvl)}<span>${BK.STAFF_LVL_NAMES[e.lvl]}</span><span>${fm(E_.salaryOf(S, e.lvl))}</span><span title="Усталость">усталость <span class="fbar"><i style="width:${e.fatigue.toFixed(0)}%"></i></span></span>${e.unhappy > 0 && e.mood < cfg.MOOD_UNHAPPY ? `<span class="negc" title="Если недовольство продлится ${cfg.UNHAPPY_QUIT_DAYS} дн., сотрудник уволится">${BK.byGender(e.name, 'недоволен', 'недовольна')} ${e.unhappy} дн. из ${cfg.UNHAPPY_QUIT_DAYS}</span>` : ''}</div></div>
         <div class="acts">${confirm ? `${btn('fire', 'Уволить', { cls: 'sm danger', arg: st.id, arg2: e.id, title: 'Компенсация — месячный оклад' })}${btn('cancelFire', 'Отмена', { cls: 'sm' })}` : `${e.lvl < 5 ? btn('train', 'Учить', { cls: 'sm', arg: st.id, arg2: e.id, cost: tc, dis: !canPay(S, tc), title: `Поднять до уровня ${e.lvl + 1}: обслуживает больше гостей, чек выше, реже увольняется` }) : '<span class="chip crust">макс.</span>'}${btn('askFire', '✕', { cls: 'sm', arg: e.id, title: 'Уволить (компенсация — месячный оклад)' })}`}</div></div>`;
     }
     s += `</div></div>`;
@@ -3018,10 +3022,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sel = ui.sel && ui.sel.kind === 'offer' && ui.sel.id === o.id;
     return `<div class="card${sel ? ' sel' : ''}" data-offer="${o.id}">
       <div class="card-h"><div><div class="card-t">${esc(o.address)}</div><div class="card-s">${dname(o.district)} · ${fmtShort(o.size)}, ${o.area} м²</div></div><button class="btn sm" data-act="focusOffer" data-arg="${o.id}" title="Показать на карте">На карте</button></div>
-      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? 'оплата за год, −12%' : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}</div>
+      <div class="row">${o.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}<span class="chip ${o.payMode === 'year' ? 'crust' : ''}">${o.payMode === 'year' ? `оплата за год, −${Math.round(cfg.YEARLY_RENT_DISCOUNT * 100)}%` : 'оплата помесячно'}</span>${rec.over ? `<span class="chip bad" title="Поток больше, чем успеет обслужить максимальный штат">перегруз: нужно ${rec.need} чел., максимум ${cfg.SIZES[o.size].staffMax}</span>` : `<span class="chip">штат ${rec.target} чел.</span>`}</div>
       <div class="grid2">
-        ${kv('Аренда', `${n0(o.rentM2)} ₽/м² · ${fm(o.area * o.rentM2)}`)}${kv('Трафик', n0(o.traffic) + ' чел/день')}
-        ${kv('Платёжеспособность', n0(o.solv * S.macro.priceLevel) + ' ₽')}${kv('Конкуренция', o.comp > 0.95 ? 'низкая' : o.comp > 0.89 ? 'средняя' : 'высокая')}
+        ${kv('Аренда', `${n0(o.rentM2)} ₽/м² · ${fm(o.area * o.rentM2)}`)}${kv('Трафик', n0(o.traffic) + ' чел./день')}
+        ${kv('Платёжеспособность', n0(o.solv * S.macro.priceLevel) + ' ₽ за визит')}${kv('Конкуренция', o.comp > 0.95 ? 'низкая' : o.comp > 0.89 ? 'средняя' : 'высокая')}
         ${kv('Прогноз выручки', '≈ ' + fm(est.rev) + '/мес')}${kv('Прогноз прибыли', `<span class="${est.profit >= 0 ? 'pos' : 'negc'}">≈ ${fm(est.profit)}/мес</span>`)}
       </div>
       <div class="row sp"><span class="hint">Отделка ${fm(c.fit)}, оборудование ${fm(c.eq)}, найм ${fm(c.hire)}, ${o.payMode === 'year' ? 'аренда за год' : 'депозит'} ${fm(c.rent)}. ${S.cash >= c.total ? `После аренды на счёте останется <b class="${S.cash - c.total < 1.5e6 * S.macro.priceLevel ? 'warnc' : ''}">${fm(S.cash - c.total)}</b>.` : `<span class="negc">Не хватает ${fm(c.total - S.cash)}.</span>`} Предложение действует ещё ${nw(Math.max(0, o.expires - S.day), 'день', 'дня', 'дней')}.</span>
@@ -3060,7 +3064,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cap = S.cache ? S.cache.cap : 0, units = S.cache ? S.cache.units : 0;
     let s = `<div class="sec"><h3>Мощность сети</h3><div class="kpis">
       <div class="kpi wide"><span class="k">Спрос / мощность, изделий в день</span><span class="v">${n0(units)} / ${n0(cap)}</span>${meter(cap ? units / cap : 0)}</div>
-      <div class="kpi"><span class="k">Фудкост меню</span><span class="v">${pct(S.cache ? S.cache.fcPct : E_.menuStats(S).fcPct, 1)}</span></div>
+      <div class="kpi"><span class="k" title="Фудкост — доля себестоимости продуктов в цене. Чем ниже, тем больше остаётся с каждой продажи">Фудкост меню</span><span class="v">${pct(S.cache ? S.cache.fcPct : E_.menuStats(S).fcPct, 1)}</span></div>
       <div class="kpi"><span class="k">Пекарей</span><span class="v">${E_.bakersTotal(S)}</span><span class="d">зарплата ${fm(S.pay.baker)}</span></div>
     </div>`;
     const next = S.productions.length === 1 ? cfg.SECOND_PROD_STORES : S.productions.length === 2 ? cfg.THIRD_PROD_STORES : null;
@@ -3089,15 +3093,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ms = E_.menuStats(S);
     const pl = S.macro.priceLevel;
     let s = `<div class="sec"><div class="kpis">
-      <div class="kpi"><span class="k">Привлекательность меню</span><span class="v">${ms.appeal.toFixed(2).replace('.', ',')}</span><span class="d">${ms.n} позиций, ${ms.cats} категорий</span></div>
-      <div class="kpi"><span class="k">Фудкост</span><span class="v">${pct(S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct, 1)}</span><span class="d">с учётом оборудования</span></div>
+      <div class="kpi"><span class="k">Привлекательность меню</span><span class="v">${ms.appeal.toFixed(2).replace('.', ',')}</span><span class="d">${nw(ms.n, 'позиция', 'позиции', 'позиций')}, ${nw(ms.cats, 'категория', 'категории', 'категорий')}</span></div>
+      <div class="kpi"><span class="k" title="Фудкост — доля себестоимости продуктов в цене. Чем ниже, тем больше остаётся с каждой продажи">Фудкост</span><span class="v">${pct(S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct, 1)}</span><span class="d">с учётом оборудования</span></div>
       <div class="kpi"><span class="k">Средняя цена</span><span class="v">${n0(ms.avgPrice)} ₽</span><span class="d">индекс ${pct(ms.priceIdx)}</span></div>
       <div class="kpi"><span class="k">Корзина гостя</span><span class="v">${n0(ms.avgPrice * cfg.ITEMS_PER_CHECK)} ₽</span><span class="d">без допродаж</span></div>
     </div>
     <p class="hint" style="margin:0">Цена — одна на всю сеть. Если корзина дороже платёжеспособности района, гостей там заметно меньше. В богатых районах повышение цены поднимает чек, в бедных — отпугивает.</p>
     <div class="row">${btn('allPrices', 'Все цены −5%', { cls: 'sm', arg: '-0.05' })}${btn('allPrices', 'Все цены +5%', { cls: 'sm', arg: '0.05' })}${btn('allPrices', 'Сбросить к рекомендованным', { cls: 'sm', arg: 'reset' })}</div></div>`;
     const nextY = S.chef.pending ? null : E_.dateOf(S.day).y + 1;
-    s += `<div class="sec"><h3>Шеф-пекарь</h3>${S.chef.pending ? `<div class="alert warn" data-act="chef"><div><div class="a-t">Шеф подготовил 5 новинок</div><div>Выберите до 2 в меню и выведите до 2 старых позиций.</div></div></div>` : `<div class="hint">Новинки — раз в год. Следующие предложения: январь ${nextY}.</div>`}</div>`;
+    s += `<div class="sec"><h3>Шеф-пекарь</h3>${S.chef.pending ? `<div class="alert warn" data-act="chef"><div><div class="a-t">Шеф подготовил 5 новинок</div><div>Добавьте в меню до 2 новинок и выведите до 2 старых позиций.</div></div></div>` : `<div class="hint">Новинки — раз в год. Следующие предложения: январь ${nextY}.</div>`}</div>`;
     s += `<div class="sec"><h3>Меню <small>${S.menu.length} из ${cfg.MENU_MAX}</small></h3><div>`;
     for (const it of S.menu) {
       const p = E_.byId(BK.PRODUCTS, it.id);
@@ -3124,7 +3128,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Продавцов и бариста</span><span class="v">${total}</span><span class="d" style="display:flex;gap:6px;align-items:center">${BK.faceIcon('happy')}${happy} ${BK.faceIcon('mid')}${mid} ${BK.faceIcon('sad')}${sad}</span></div>
       <div class="kpi"><span class="k">Уволились всего</span><span class="v">${S.stats.quits}</span><span class="d">нанято: ${S.stats.hires}</span></div>
       <div class="kpi"><span class="k">Вакансии</span><span class="v ${vac ? 'warnc' : ''}">${vac}</span><span class="d">устали: ${tired}</span></div>
-      <div class="kpi"><span class="k">Найм одного</span><span class="v">${fm(E_.hireCost(S, 1))}</span><span class="d">2 зарплаты · ${E_.hireDays(S)} дн.</span></div>
+      <div class="kpi"><span class="k">Найм одного человека</span><span class="v">${fm(E_.hireCost(S, 1))}</span><span class="d">${String(cfg.HIRE_COST_SALARIES).replace('.', ',')} зарплаты · ${E_.hireDays(S)} дн.</span></div>
     </div>
     <p class="hint" style="margin:0">Настроение зависит от зарплаты относительно рынка, культуры, премий, усталости и нехватки коллег. Недоволен больше ${cfg.UNHAPPY_QUIT_DAYS} дней — увольняется. Обученные сотрудники держатся дольше, но ждут зарплату выше (+${Math.round(cfg.EXPECT_PER_LVL * 100)}% за уровень).</p></div>`;
     // зарплаты
@@ -3132,7 +3136,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const r = S.pay[kind] / S.market[kind];
       return `<div class="card"><div class="row sp"><div><div class="card-t">${label}</div><div class="card-s">рынок: ${fm(S.market[kind])} · вы платите ${pct(r)} рынка</div></div>
         <div class="stepper"><button data-act="pay" data-arg="${kind}" data-arg2="-0.02" aria-label="Снизить">−</button><span>${fm(S.pay[kind])}</span><button data-act="pay" data-arg="${kind}" data-arg2="0.02" aria-label="Повысить">+</button></div></div>
-        <div class="hint">${r >= 1.1 ? 'Выше рынка — люди держатся за место.' : r >= 0.99 ? 'На уровне рынка — нейтрально.' : 'Ниже рынка — растёт недовольство и текучка, но экономия на ФОТ.'}${kind === 'seller' ? ` ФОТ точек в месяц ≈ ${fm(S.stores.reduce((a, st) => a + st.staff.reduce((b, e) => b + E_.salaryOf(S, e.lvl), 0), 0) * (1 + cfg.PAYROLL_TAX))}.` : ''}</div></div>`;
+        <div class="hint">${r >= 1.1 ? 'Выше рынка — люди держатся за место.' : r >= 0.99 ? 'На уровне рынка — нейтрально.' : 'Ниже рынка — растёт недовольство и текучка, но экономия на ФОТ.'}${kind === 'seller' ? ` ФОТ точек (зарплаты и взносы) в месяц ≈ ${fm(S.stores.reduce((a, st) => a + st.staff.reduce((b, e) => b + E_.salaryOf(S, e.lvl), 0), 0) * (1 + cfg.PAYROLL_TAX))}.` : ''}</div></div>`;
     };
     s += `<div class="sec"><h3>Зарплаты <small>1-й уровень; выше уровень — выше оклад</small></h3>${payRow('seller', 'Продавцы и бариста')}${payRow('baker', 'Пекари на производстве')}
       <div class="hint">Премиальный фонд: ${pct(S.alloc.bonus)} прибыли (настройка — во вкладке «Финансы»). В прошлом месяце ≈ ${fm(S.lastBonusPerEmp)} на человека.</div></div>`;
@@ -3143,7 +3147,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.office.hr) {
       s += `<div class="row sp"><div><div class="card-t">HR-менеджеров: ${hrN}</div><div class="card-s">1 на каждые ${cfg.HR_STORES_PER} точек · ${fm(hrN * cfg.HR_SALARY * (1 + cfg.PAYROLL_TAX) * S.macro.priceLevel)}/мес</div></div>
         <div class="seg"><button data-act="autohire" data-arg="1" aria-pressed="${S.office.autohireOn}">Автонайм вкл</button><button data-act="autohire" data-arg="0" aria-pressed="${!S.office.autohireOn}">выкл</button></div></div>
-        <div class="hint">HR сам закрывает вакансии: человек выходит через 5 дней, чаще сразу на 2-м уровне. Цена найма та же — 2 зарплаты.</div>`;
+        <div class="hint">HR сам закрывает вакансии: человек выходит через 5 дней, чаще сразу на 2-м уровне. Цена найма та же — ${String(cfg.HIRE_COST_SALARIES).replace('.', ',')} зарплаты.</div>`;
     } else {
       const left = E_.ownerHireLeft(S);
       s += `<div class="card-t">Отдела пока нет — нанимаете сами</div><div class="card-s">${S.stores.length > cfg.HR_REQUIRED_STORES ? `<span class="negc">Сеть больше ${cfg.HR_REQUIRED_STORES} точек: вы успеваете нанять только ${cfg.OWNER_HIRES_PER_WEEK} чел. в неделю (осталось ${left}), поиск ${cfg.OWNER_HIRE_DAYS_BIG} дн.</span>` : `После ${cfg.HR_REQUIRED_STORES} точек без HR найм станет медленным.`}</div>
@@ -3156,13 +3160,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const trN = E_.trainersCount(S);
     s += `<div class="sec"><h3>Отдел обучения</h3><div class="card">`;
     if (S.office.academy) {
-      s += `<div class="row sp"><div><div class="card-t">Тренеров: ${trN}</div><div class="card-s">1 на ${cfg.TRAINER_STORES_PER} точек · ${fm(trN * cfg.TRAINER_SALARY * (1 + cfg.PAYROLL_TAX) * S.macro.priceLevel)}/мес · обучение −35%</div></div>
+      s += `<div class="row sp"><div><div class="card-t">Тренеров: ${trN}</div><div class="card-s">1 на ${cfg.TRAINER_STORES_PER} точек · ${fm(trN * cfg.TRAINER_SALARY * (1 + cfg.PAYROLL_TAX) * S.macro.priceLevel)}/мес · обучение на 35% дешевле</div></div>
         <div class="seg"><button data-act="autotrain" data-arg="1" aria-pressed="${S.office.autotrainOn}">Автообучение вкл</button><button data-act="autotrain" data-arg="0" aria-pressed="${!S.office.autotrainOn}">выкл</button></div></div>
         <div class="row sp"><span class="hint">Обучать всех до уровня</span><div class="stepper"><button data-act="trainTarget" data-arg="-1" aria-label="Ниже">−</button><span>${S.office.trainTarget} · ${BK.STAFF_LVL_NAMES[S.office.trainTarget]}</span><button data-act="trainTarget" data-arg="1" aria-label="Выше">+</button></div></div>
-        <div class="hint">Тренеры поднимают каждого сотрудника на один уровень не чаще раза в ${cfg.AUTOTRAIN_GAP_DAYS} дней, по ${cfg.AUTOTRAIN_PER_TRAINER_DAY} обучения в день на тренера. Помните: выше уровень — выше оклад.</div>`;
+        <div class="hint">Тренеры поднимают каждого сотрудника на один уровень не чаще раза в ${cfg.AUTOTRAIN_GAP_DAYS} дней, по ${nw(cfg.AUTOTRAIN_PER_TRAINER_DAY, 'обучению', 'обучения', 'обучений')} в день на тренера. Помните: выше уровень — выше оклад.</div>`;
     } else {
       const left = E_.ownerTrainLeft(S);
-      s += `<div class="card-t">Отдела пока нет — обучаете сами</div><div class="card-s">${S.stores.length > cfg.TRAIN_REQUIRED_STORES ? `<span class="negc">Сеть больше ${cfg.TRAIN_REQUIRED_STORES} точек: вручную не больше ${cfg.OWNER_TRAINS_PER_WEEK} обучений в неделю (осталось ${left}).</span>` : `После ${cfg.TRAIN_REQUIRED_STORES} точек без отдела обучение станет медленным.`}</div>
+      s += `<div class="card-t">Отдела пока нет — обучаете сами</div><div class="card-s">${S.stores.length > cfg.TRAIN_REQUIRED_STORES ? `<span class="negc">Сеть больше ${cfg.TRAIN_REQUIRED_STORES} точек: вручную не больше ${nw(cfg.OWNER_TRAINS_PER_WEEK, 'обучения', 'обучений', 'обучений')} в неделю (осталось ${left}).</span>` : `После ${cfg.TRAIN_REQUIRED_STORES} точек без отдела обучение станет медленным.`}</div>
         <div class="hint">${ac.desc}. Зарплата тренера ${fm(cfg.TRAINER_SALARY * S.macro.priceLevel)} + взносы.</div>
         <div>${btn('office', 'Открыть отдел обучения', { cls: 'primary', arg: 'academy', cost: Math.round(ac.cost * S.macro.priceLevel), dis: !canPay(S, ac.cost * S.macro.priceLevel) })}</div>`;
     }
@@ -3203,10 +3207,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Расчётный счёт</span><span class="v ${S.cash < 0 ? 'negc' : ''}">${fm(S.cash)}</span></div>
       <div class="kpi"><span class="k">Резервный фонд</span><span class="v">${fm(S.reserve)}</span><span class="d">доход ${pct(Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD), 1)} годовых</span></div>
       <div class="kpi"><span class="k">Кредит</span><span class="v ${S.loan ? 'warnc' : ''}">${fm(S.loan)}</span><span class="d">ставка ${pct(S.macro.keyRate + cfg.LOAN_SPREAD, 1)}</span></div>
-      <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
+      <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
-      ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв и приносит проценты.')}
+      ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
       ${sl('marketing', 'Маркетинг', `Больше гостей в следующем месяце (до +${Math.round(cfg.MARKETING_EFF * 100)}%).`)}
       <div class="kv"><span>Остаётся на развитие</span><span><b>${pct(rest)}</b></span></div></div>`;
@@ -3218,7 +3222,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">Лимит — средняя месячная выручка × ${cfg.LOAN_MAX_REV_MULT}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ' (в кризис банки дают вдвое меньше)' : ''}. Проценты списываются 1-го числа.</span></div>`;
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
-      ${kv('Уровень цен к 2027', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
+      ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
       ${kv('Выручка с начала года', fm(S.yearRev))}${kv('Выручка за всё время', fm(S.cumRevenue))}</div></div>`;
     // по годам
     const years = {};
@@ -3299,10 +3303,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <button data-speed="10" aria-label="Скорость 10" title="10 дней в секунду">${ICON.p10}</button>
       </div></div>
     <div class="stats">
-      <div class="stat"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
-      <div class="stat"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
+      <div class="stat" title="Деньги на расчётном счёте: из них платите аренду, зарплаты и покупки"><span class="k">Счёт</span><span class="v" id="hud-cash"></span></div>
+      <div class="stat" title="Резервный фонд: подушка безопасности, сам закрывает кассовый разрыв"><span class="k">Резерв</span><span class="v" id="hud-res"></span></div>
       <div class="stat"><span class="k">Точки</span><span class="v" id="hud-stores"></span></div>
-      <div class="stat goal"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
+      <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><span class="k" id="hud-goal-k">Оборот 12 мес / 5 млрд</span><span class="v" id="hud-goal"></span><div class="bar"><i id="hud-goalbar"></i></div></div>
       <button class="iconbtn" data-act="help" title="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры">${ICON.gear}</button>
     </div>
@@ -3538,9 +3542,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repair: (d) => res(E.startRepair(S, d.arg), 'Ремонт начат'),
     train: (d) => res(E.train(S, d.arg, d.arg2)),
     trainAll: (d) => { const r = E.trainAll(S, d.arg); res(r.ok ? r : { ok: false, msg: E.ownerTrainLeft(S) === 0 ? `Лимит ручного обучения на эту неделю исчерпан — откройте отдел обучения во вкладке «Команда»` : 'Некого учить или не хватает денег' }, r.ok ? `Обучено: ${H.nw(r.n, 'сотрудник', 'сотрудника', 'сотрудников')}` : null); },
-    quickHire: (d) => { const r = E.hire(S, d.arg); res(r, r.ok ? `Нанят(а) ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
+    quickHire: (d) => { const r = E.hire(S, d.arg); res(r, r.ok ? `${BK.byGender(r.p.name, 'Нанят', 'Нанята')} ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
     pickCand: (d) => { ui.hireStore = d.arg; ui.tab = 'team'; refresh(); requestAnimationFrame(() => { const el = $('#hireStore'); if (el) el.scrollIntoView({ block: 'center' }); }); },
-    hireCand: (d) => { const r = E.hire(S, d.arg2, d.arg); res(r, r.ok ? `Нанят(а) ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
+    hireCand: (d) => { const r = E.hire(S, d.arg2, d.arg); res(r, r.ok ? `${BK.byGender(r.p.name, 'Нанят', 'Нанята')} ${r.p.name}, выйдет через ${E.hireDays(S)} дн.` : null); },
     askFire: (d) => { ui.confirmFire = d.arg; refresh(); },
     cancelFire: () => { ui.confirmFire = null; refresh(); },
     fire: (d) => { ui.confirmFire = null; res(E.fire(S, d.arg, d.arg2)); },
@@ -3660,7 +3664,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const p = E.byId(BK.PRODUCTS, it.id);
         html += `<label class="chefitem ${drop.has(it.id) ? 'off' : ''}"><input type="checkbox" data-drop="${it.id}" ${drop.has(it.id) ? 'checked' : ''}><span class="cn">${H.esc(p.name)}</span><span class="chip">${BK.CATEGORIES[p.cat].name}</span><span class="cm"><span>тренд ${Math.round(S.trends[p.cat])}</span><span>фудкост ${H.pct(p.fc / it.pm)}</span></span></label>`;
       }
-      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${after} позиций (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
+      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${H.nw(after, 'позиция', 'позиции', 'позиций')} (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
       openModal(html, { keepScroll: true });
       $('#modal').querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.pick; if (b.checked) { if (pick.size >= C.CHEF_PICK) { b.checked = false; return; } pick.add(id); } else pick.delete(id); draw(); }));
       $('#modal').querySelectorAll('[data-drop]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.drop; if (b.checked) { if (drop.size >= C.CHEF_REMOVE) { b.checked = false; return; } drop.add(id); } else drop.delete(id); draw(); }));
@@ -3705,7 +3709,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#newAfter').addEventListener('click', () => { closeModal(); clearSave(); S = null; startScreen(); });
   }
   function openTutorialModal() {
-    openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${C.OPEN_DAYS} дней</h2></div><div class="modal-b">
+    openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
       <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
         <li><b>Время</b> идёт само: пауза — пробел, скорость ×1 / ×3 / ×10 вверху.</li>
         <li><b>Смайлики над точками</b> — настроение команды. Кто недоволен больше месяца — уходит. Помогают зарплата, премии, культура и полный штат.</li>
@@ -3717,11 +3721,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function openHelp() {
     openModal(`<div class="modal-h"><span class="eyebrow">Как играть</span><h2>Правила «Хлебной карты»</h2></div><div class="modal-b">
-      <p style="margin:0"><b>Выручка точки</b> = трафик × конверсия × средний чек. Трафик зависит от места и соседства, конверсия — от меню, ремонта, сервиса и цен, чек — от платёжеспособности района и ваших цен.</p>
-      <p style="margin:0"><b>Персонал.</b> Уровни 1–5: выше уровень — больше гостей и чек, меньше текучесть, но и оклад выше. Один сотрудник обслуживает ограниченное число гостей: перегруз → усталость → недовольство → увольнения, и остальным становится ещё тяжелее. Найм стоит 2 зарплаты. После ${C.HR_REQUIRED_STORES} точек нужен HR-отдел, после ${C.TRAIN_REQUIRED_STORES} — отдел обучения.</p>
+      <p style="margin:0"><b>Выручка точки</b> = трафик × конверсия × средний чек. Трафик зависит от места и соседства, конверсия (доля прохожих, которые заходят и покупают) — от меню, ремонта, сервиса и цен, чек — от платёжеспособности района и ваших цен.</p>
+      <p style="margin:0"><b>Персонал.</b> Уровни 1–5: выше уровень — больше гостей и чек, меньше текучесть, но и оклад выше. Один сотрудник обслуживает ограниченное число гостей: перегруз → усталость → недовольство → увольнения, и остальным становится ещё тяжелее. Найм стоит ${String(C.HIRE_COST_SALARIES).replace('.', ',')} зарплаты. После ${C.HR_REQUIRED_STORES} точек нужен HR-отдел, после ${C.TRAIN_REQUIRED_STORES} — отдел обучения.</p>
       <p style="margin:0"><b>Производство</b> печёт на все точки. Ближе к центру — дороже аренда, дешевле доставка. Второй цех — от ${C.SECOND_PROD_STORES} точек, третий — от ${C.THIRD_PROD_STORES}.</p>
-      <p style="margin:0"><b>Меню.</b> Раз в год шеф предлагает 5 новинок, можно взять 2 и вывести 2. Цены меняйте в любой момент.</p>
+      <p style="margin:0"><b>Меню.</b> Раз в год шеф предлагает 5 новинок: можно добавить до ${C.CHEF_PICK} и вывести до ${C.CHEF_REMOVE}. Цены меняйте в любой момент. Следите за фудкостом — долей себестоимости продуктов в цене.</p>
       <p style="margin:0"><b>Деньги.</b> Зарплаты, аренду и налоги списывают 1-го числа. Резервный фонд приносит проценты и сам закрывает кассовый разрыв. Если ${H.nw(C.BANKRUPT_MONTHS, 'расчёт', 'расчёта', 'расчётов')} подряд счёт в минусе, а резерв пуст, — банкротство.</p>
+      <p style="margin:0"><b>Термины.</b> ФОТ — фонд оплаты труда: зарплаты плюс взносы. УСН — упрощённый налог с выручки; когда выручка за год превысит лимит, сеть перейдёт на ОСНО (НДС и налог на прибыль). Кассовый разрыв — на счёте не хватает денег на платежи.</p>
       <p style="margin:0"><b>События:</b> налоги, проверки, конкуренты, погода, кризис раз в 2–3 года. 70% из них — неприятные.</p>
       <p class="hint" style="margin:0">Клавиши: пробел — пауза, 1 / 2 / 3 — скорость.</p>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Понятно</button></div>`, { closable: true });
