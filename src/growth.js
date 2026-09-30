@@ -5,7 +5,7 @@
      cater   — кейтеринг и корпоративные заказы: разовые большие заказы к датам (корпоративы, Сабантуй, 8 Марта).
                Выгодно, но заказ занимает цех: если фабрики нет или она занята, цеха не успевают печь для точек.
      flag    — флагман: одна большая пекарня-кафе в центре. Дорогая, прибыль скромная, зато узнаваемость:
-               гости всех точек +2,5 %, франчайзи сильнее, на полках дороже.
+               гости всех точек +2 %, франчайзи сильнее, на полках дороже.
      factory — своя фабрика: долгая стройка, мощность на полки/франчайзи/заказы и полуфабрикаты для своих цехов
                (фудкост сети ниже). Риски — поломки (обслуживание стоит денег) и цена муки (можно закупить впрок).
      retail  — полки в супермаркетах: контракты с сетями (объём, цена, отсрочка 30–60 дн. — деньги приходят позже),
@@ -412,12 +412,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const G = ensure(S), k = K();
     const D = S.day + 1, t = E().dateOf(D);
     const uOn = ufaOn(S);
-    if (uOn) { // цеха Уфы: мощность без нашей поправки (вчерашний день)
-      const cm = S.mods.find((q) => q.src === 'g-cap'), capM = cm && cm.until > S.day ? cm.m : 1;
-      const cache = S.cache || {};
-      if (cache.cap != null) { const cap = cache.cap / (capM || 1); G.ws = { cap, units: cache.units || 0, spare: Math.max(0, cap - (cache.units || 0)) * 0.95 }; }
-      const nr = E().networkRating(S); if (nr != null) G.nr = nr;
-    }
+    if (uOn) { const nr = E().networkRating(S); if (nr != null) G.nr = nr; }
     if (D % 7 === 0 || t.d === 1) checkUnlock(S, D);
     if (!anyUnlocked(S)) return;
     if (t.d === 1) monthEnd(S, t);
@@ -466,7 +461,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (uOn) {
       setMod(S, 'g-fc', 'foodcost', fcK);
       setMod(S, 'g-cap', 'capacity', P.capM);
-      if (S.cache && S.cache.dayRev && S.cache.fcPct) G.m.netCut += S.cache.dayRev * S.cache.fcPct * (1 - fcK) / Math.max(0.5, fcK);
+      G.fcK = fcK;
     }
     // узнаваемость: флагман + бренд на полках
     const shelf = Math.min(k.RET_SHELF_MAX, k.RET_SHELF_TRAFFIC * G.ret.list.length);
@@ -501,6 +496,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (unlocked(S, 'factory') && !G.fac && !G.facSites.length) genFacSites(S);
     if (unlocked(S, 'flag') && !G.flag && !G.flagSites.length) genFlagSites(S);
     G.fr.cand = G.fr.cand.filter((c) => c.until >= D);
+  }
+  // после дня движка: мощность и загрузка цехов Уфы, экономия на полуфабрикатах — в состояние (не из S.cache на следующий день:
+  // «Переиграть» и сохранения хранят состояние без S.cache, и расчёт после отката должен совпасть до поля)
+  function post(S) {
+    const G = S.growth; if (!G || !ufaOn(S) || !S.cache || S.cache.cap == null) return;
+    const cm = S.mods.find((q) => q.src === 'g-cap'), capM = cm && cm.until >= S.day ? cm.m : 1;
+    const cap = S.cache.cap / (capM || 1), units = S.cache.units || 0;
+    G.ws = { cap, units, spare: Math.max(0, cap - units) * 0.95 };
+    if (G.fcK != null && G.fcK < 1 && S.cache.dayRev && S.cache.fcPct) G.m.netCut += S.cache.dayRev * S.cache.fcPct * (1 - G.fcK) / Math.max(0.5, G.fcK);
   }
   // 1-го числа (до месячного расчёта движка): постоянные расходы направлений за закончившийся месяц, мука, контракты, франшиза
   function monthEnd(S, t) {
@@ -637,7 +641,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const origTick = Eng.tick;
     Eng.tick = function (S) {
       if (S && on() && S.phase === 'play' && !S.ev.pending && !S.chef.pending && !S.lost) { pre(S); prepEventText(S); }
-      return origTick.apply(this, arguments);
+      const r = origTick.apply(this, arguments);
+      if (r && on()) post(S);
+      return r;
     };
     const origRes = Eng.resolveEvent;
     Eng.resolveEvent = function (S, idx) {

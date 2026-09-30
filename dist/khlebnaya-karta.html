@@ -1080,6 +1080,89 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .mgr-hl { grid-template-columns: minmax(0, 1fr) auto; } .mgr-hl > .hint { grid-column: 1 / -1; }
 }
 
+/* Рост вглубь (src/ui/growth-ui.js) */
+.tabs.t9 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.gr-h { display: inline-flex; align-items: center; gap: 7px; } .gr-h svg { width: 16px; height: 16px; color: var(--crust-t); flex: none; }
+.gr-lead { margin: 0; }
+.gr-head .kpis { margin-top: 2px; }
+.gr-sec { scroll-margin-top: 8px; }
+.gr-card { display: flex; flex-direction: column; gap: 8px; padding: 11px 12px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: var(--r); background: var(--surface); }
+.gr-card + .gr-card { margin-top: 8px; }
+.gr-ct { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.gr-ct b { font-size: 14px; overflow-wrap: anywhere; }
+.gr-ct .hint { flex: 1 1 160px; min-width: 0; }
+.gr-left { margin-left: auto; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.gr-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+.gr-facts span { display: flex; flex-direction: column; gap: 1px; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+.gr-facts small { font-size: 11px; color: var(--ink-3); }
+.gr-facts b { font: 600 13px var(--f-mono); overflow-wrap: anywhere; }
+.gr-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.gr-fx { display: flex; flex-wrap: wrap; gap: 5px; }
+.gr-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.gr-cap { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.35; padding: 5px 8px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); }
+.gr-cap svg { width: 14px; height: 14px; flex: none; }
+.gr-cap.ok svg { color: var(--good-t); } .gr-cap.warn { background: var(--warn-soft); color: var(--warn-t); } .gr-cap.bad { background: var(--bad-soft); color: var(--bad-t); }
+.gr-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); padding: 2px 10px; background: var(--surface); }
+.gr-list > .hint { padding: 6px 0 2px; }
+.gr-li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; font-size: 13px; min-width: 0; }
+.gr-li + .gr-li { border-top: 1px solid var(--line); }
+.gr-li > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow-wrap: anywhere; }
+.gr-li small { font-size: 11.5px; color: var(--ink-3); }
+.gr-li > b { font: 600 13px var(--f-mono); white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; }
+.gr-li > b small { font: 400 11px var(--f-body); }
+.gr-ctl { display: flex; flex-direction: column; gap: 6px; }
+.gr-ctl .seg { align-self: flex-start; }
+.gr-seg4 { flex-wrap: wrap; }
+.gr-capbar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.gr-capbar i { display: block; height: 100%; }
+.c-ret { background: var(--crust); } .c-cat { background: var(--warn); } .c-fr { background: var(--river); } .c-semi { background: var(--good); }
+.gr-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-2); align-items: center; }
+.gr-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.gr-legend .hint { margin-left: auto; }
+.gr-strk { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .gr-strk i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .gr-strk i.on { background: var(--bad); }
+.gr-stars { display: inline-flex; gap: 2px; vertical-align: -1px; } .gr-stars i { width: 9px; height: 9px; border-radius: 2px; background: var(--line-2); transform: rotate(45deg) scale(.8); }
+.gr-stars i.on { background: var(--crust); } .gr-stars i.half { background: linear-gradient(90deg, var(--crust) 50%, var(--line-2) 50%); }
+.gr-next { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 10px 12px; }
+.gr-next .gr-h svg { color: var(--ink-3); }
+/* окно «Новая возможность» */
+.gr-mh { border-top: 4px solid var(--crust); border-radius: 14px 14px 0 0; }
+.gr-op { display: flex; flex-direction: column; gap: 6px; }
+.gr-op + .gr-op { border-top: 1px solid var(--line); padding-top: 10px; }
+.gr-op-h { display: flex; align-items: center; gap: 8px; }
+.gr-op-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.gr-op-ic svg { width: 20px; height: 20px; }
+.gr-op p { margin: 0; line-height: 1.45; }
+.gr-pm { display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.4; }
+.gr-pm > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+/* карта */
+.m-gfac, .m-gflag, .m-gfr, .m-gsite { cursor: pointer; }
+.m-gfac rect { fill: var(--crust); stroke: var(--surface); stroke-width: 2; }
+.m-gfac path { fill: var(--surface); }
+.m-gfac.build rect { fill: var(--surface); stroke: var(--crust); stroke-dasharray: 4 3; }
+.m-gfac.build path { fill: var(--crust); }
+.m-gfac.down rect { fill: var(--ink-3); }
+.m-gfac.sel rect, .m-gflag.sel circle:not(.ring) { stroke: var(--ink); stroke-width: 3; }
+.m-gflag circle { fill: var(--crust); stroke: var(--surface); stroke-width: 2; }
+.m-gflag .ring { fill: none; stroke: var(--crust); stroke-width: 1.5; stroke-dasharray: 3 3; opacity: .7; }
+.m-gflag path { fill: var(--surface); }
+.m-gflag.build circle:not(.ring) { fill: var(--surface); stroke: var(--crust); stroke-dasharray: 4 3; }
+.m-gflag.build path { fill: var(--crust); }
+.m-gfr circle { fill: var(--surface); stroke: var(--crust); stroke-width: 2; stroke-dasharray: 3 2; }
+.m-gfr text { font: 700 9px var(--f-body); fill: var(--crust-t); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.m-gfr.opening circle { opacity: .55; }
+.m-gfr.sel circle { stroke: var(--ink); stroke-dasharray: none; }
+.m-gsite rect, .m-gsite circle { fill: color-mix(in srgb, var(--crust) 10%, transparent); stroke: var(--crust); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.m-gsite path { fill: var(--crust); }
+.m-gsite.sel rect, .m-gsite.sel circle { stroke: var(--ink); }
+.far .m-gfr text { display: none; }
+@media (max-width: 560px) {
+  .gr-acts { flex: 1 1 100%; }
+  .gr-acts .btn { flex: 1 1 0; min-height: 40px; }
+  .gr-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gr-left { margin-left: 0; flex-basis: 100%; }
+  .gr-legend .hint { margin-left: 0; flex-basis: 100%; }
+}
+
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
 /* сгенерированные города у воды: море / залив */
 .m-sea { fill: color-mix(in srgb, var(--map-river) 15%, var(--map-land)); }
@@ -2023,7 +2106,7 @@ BK.CFG = {
   KEY_RATE: 0.14, KEY_RATE_MEAN: 0.11, KEY_RATE_REVERT: 0.003,
   RESERVE_SPREAD: 0.02,
   LOAN_SPREAD: 0.05, LOAN_MAX_REV_MULT: 4, LOAN_MIN: 6000000,
-  INFLATION_BASE: 0.045, INFLATION_SD: 0.01, // инфляция ~4,5% ± 1% в год; цель 5 млрд номинальная, поэтому инфляция — главный регулятор темпа поздней игры
+  INFLATION_BASE: 0.025, INFLATION_SD: 0.01, // инфляция ~2,5% ± 1% в год (было 4,5%: до «роста вглубь» цель 5 млрд дотягивала инфляция; теперь темп поздней игры — фабрика, полки, франшиза, флагман, кейтеринг)
   CRISIS_CREDIT_DAYS: 180, CRISIS_LOAN_MULT: 0.75, // в кризис банки полгода дают на четверть меньше
   CASHGAP_LOYALTY: 6,           // отрицательный счёт в день расчёта = задержка зарплаты (−6 к настроению, затухает на 10% в месяц)
   MARKETING_EFF: 0.18,          // макс. прирост трафика от маркетинга
@@ -2115,7 +2198,7 @@ BK.CFG = {
     ENTER_MKT: 10000000,        // стартовый маркетинг × индекс аренды города (× уровень цен)
     FAR_K: 1.2,                 // Новосибирск: вход дороже на 20%
     BIG_MIN_CITIES: 3,          // Москва и Петербург — когда в сети 3 города и открыт финансовый департамент (corphq.js, bigLock)
-    MAX_LAUNCHING: 1, LAUNCH_DAYS: 510, // штаб запускает один город за раз: следующий — через ~17 мес. после входа (с GR и юристами ×0,85 ≈ 14 мес.; Р3 — 510: good 10,6–11,9 г. после выхода, avg 25–28-й год; Р2 — 420 дн., было 2 города / полгода)
+    MAX_LAUNCHING: 1, LAUNCH_DAYS: 470, // (рост вглубь, инфляция 2,5%: было 510 — «Федеральная сеть» у good уходила за 12 лет после выхода) штаб запускает один город за раз: следующий — через ~15,5 мес. после входа (с GR и юристами ×0,85 ≈ 14 мес.; Р3 — 510: good 10,6–11,9 г. после выхода, avg 25–28-й год; Р2 — 420 дн., было 2 города / полгода)
     AW_START: 0.05, AW_NEAR: 0.10, AW_NEAR_KM: 500, AW_START_MAX: 0.30, AW_MKT: 0.15, // стартовая узнаваемость: 5% + 10% за наш город ближе 500 км (≤ 30%) + стартовый маркетинг
     AW_BASE: 0.15, AW_PER_STORE: 0.02, AW_MKT_MAX: 0.2, AW_SPEED: 0.08, // цель узнаваемости и скорость (в месяц)
     AW_DEMAND: 0.15,            // спрос новых гостей × (0,85 + 0,15 × узнаваемость); у Уфы узнаваемость 1 — множитель ровно 1
@@ -2432,6 +2515,101 @@ BK.CFG.PROLOGUE = {
   BOT_CARD_SEC: 5,                // чтение окна-решения с выбором
   BOT_INFO_SEC: 2,                // окно с одной кнопкой
   BOT_SET_SEC: 1.5,               // изменение настройки или покупка
+};
+
+/* Рост вглубь (vision-plan §5 п. 1, этап В1): середина первого акта — кейтеринг, флагман, фабрика, полки в супермаркетах, франшиза.
+   Логика — src/growth.js (BK.Growth), интерфейс — src/ui/growth-ui.js (BK.GrowthUI). Все суммы — в ценах 2027 (× уровень цен).
+   Каждое направление открывается по числу открытых точек в Уфе ИЛИ по обороту за 12 месяцев (что наступит раньше). */
+BK.CFG.GROWTH = {
+  ON: true,                        // боты: BK_CFG='{"GROWTH.ON":false}' — без роста вглубь
+  ORDER: ['cater', 'flag', 'factory', 'retail', 'fran'],
+  UNLOCK: {
+    cater:   { stores: 15, rev: 0.7e9 },   // кейтеринг и корпоративные заказы
+    flag:    { stores: 20, rev: 1.0e9 },   // флагман в центре
+    factory: { stores: 24, rev: 1.3e9 },   // своя фабрика
+    retail:  { stores: 26, rev: 1.5e9 },   // полки в супермаркетах
+    fran:    { stores: 30, rev: 1.8e9 },   // франшиза
+  },
+  // --- фабрика: крупное производство для полок, франчайзи, кейтеринга и полуфабрикатов сети ---
+  FAC_SITES: 3,                    // площадок на выбор (промзоны и окраины)
+  FAC_BUILD: 180e6,                // стройка и линии (× уровень цен × площадка 0,9–1,15)
+  FAC_DAYS: 240,                   // строится ~8 месяцев (аренда земли — с первого дня)
+  FAC_CAP: [18000, 34000, 56000],  // изделий в день по очередям
+  FAC_EXP: [0, 130e6, 180e6],      // вторая и третья очередь
+  FAC_EXP_DAYS: 120,
+  FAC_STAFF: [50, 85, 125],        // рабочих (по зарплате пекаря, с взносами)
+  FAC_RENT: 1.1e6,                 // аренда земли и цехов в месяц
+  FAC_UTIL: [1.6e6, 2.6e6, 3.9e6], // энергия и газ по очередям, в месяц
+  FAC_UNIT: 30,                    // себестоимость изделия на фабрике, ₽ (мука — FAC_FLOUR_SHARE, дорожает с индексом муки)
+  FAC_FLOUR_SHARE: 0.6,
+  FAC_NET_CUT: 0.14,               // полуфабрикаты для своих цехов: фудкост сети −14% × доля покрытия
+  FAC_MAINT: [0, 0.7e6, 1.8e6],    // обслуживание: нет / плановое / сервисный контракт, в месяц
+  FAC_BREAK_P: 0.004,              // шанс поломки в день (× обслуживание, × возраст)
+  FAC_BREAK_K: [1.8, 1, 0.4],
+  FAC_AGE_K: 0.08,                 // +8% к шансу поломки за год работы
+  FAC_DOWN0: 10,                   // простой, пока не решили, дн.
+  FLOUR_SD: 0.035, FLOUR_REVERT: 0.08, FLOUR_RANGE: [0.8, 1.5], // индекс цены муки: случайное блуждание раз в месяц
+  HEDGE_DAYS: 180, HEDGE_FEE: 0.04, // закупить муку на полгода по текущей цене: +4% к стоимости муки за полгода сразу
+  // --- полки в супермаркетах (свой бренд) ---
+  RET_CHAINS: [                    // вымышленные сети (не реальные бренды)
+    { id: 'korz', name: '«Корзинка»', size: [700, 1300], price: 1.0, pay: 30, fine: 0.5, note: 'магазины у дома' },
+    { id: 'lavka', name: '«Вкусная лавка»', size: [500, 900], price: 1.15, pay: 30, fine: 0.6, note: 'премиум, платят больше' },
+    { id: 'sem', name: '«Семейный»', size: [1500, 2600], price: 0.95, pay: 45, fine: 0.5, note: 'гипермаркеты' },
+    { id: 'ural', name: '«Уральский гастроном»', size: [1300, 2200], price: 1.0, pay: 45, fine: 0.7, note: 'строгие к срокам' },
+    { id: 'magnat', name: '«Магнат»', size: [3000, 5000], price: 0.86, pay: 60, fine: 0.8, note: 'большие объёмы, низкая цена, долгая отсрочка' },
+  ],
+  RET_PRICE: 52,                   // отпускная цена изделия сети, ₽ (× цена сети × бренд)
+  RET_WS_UNIT: 36,                 // себестоимость изделия из обычного цеха (если фабрики нет или не хватает)
+  RET_LOGI: 5,                     // логистика до магазинов, ₽ за изделие
+  RET_TERM: 365,                   // контракт на год
+  RET_OFFER_GAP: [50, 100],         // новое предложение раз в N дней
+  RET_OFFER_DAYS: 30,              // предложение ждёт ответа
+  RET_MAX_OFFERS: 1,
+  RET_MAX_ACTIVE: 3,               // одновременно — не больше 3 контрактов (отдел продаж в сети)
+  RET_FILL_OK: 0.9,                // поставили меньше 90% за месяц — «страйк»
+  RET_STRIKES: 3,                  // три страйка — сеть расторгает договор (и год не берёт)
+  RET_BAN_DAYS: 365,
+  RET_RATING_HIT: 0.1,             // расторжение — пятно на бренде: −0,1★ всем точкам
+  RET_SHELF_TRAFFIC: 0.004,        // бренд на полках: +0,4% гостей точкам за контракт (не больше 1,5%)
+  RET_SHELF_MAX: 0.015,
+  // --- франшиза ---
+  FR_FEE: 3.5e6,                   // паушальный взнос партнёра (нам)
+  FR_ROYALTY: 0.06,                // роялти с оборота франчайзи
+  FR_SALES: 3.0e6,                 // оборот франчайзи в месяц при качестве 1,0 и рейтинге сети 4★
+  FR_SUPPLY: 0.2,                  // доля оборота франчайзи — закупка изделий у нашей фабрики (если есть мощность)
+  FR_OPEN_DAYS: 120, FR_RAMP_DAYS: 150,
+  FR_POOL: 2, FR_POOL_DAYS: [60, 120], FR_CAND_DAYS: 40,
+  FR_MAX: 25,
+  FR_CTRL: [0, 50e3, 120e3, 250e3], // контроль качества на одного франчайзи в месяц: нет / выборочный / регулярный / тайный покупатель
+  FR_CTRL_Q: [0, 0.3, 0.55, 0.75],  // контроль поднимает качество: q + доля × (1 − q)
+  FR_CTRL_SEEN: [0.3, 0.2, 0.1, 0.05], // точность оценки кандидата: ошибка в звёздах (× 5)
+  FR_SCANDAL_P: 0.05,              // шанс скандала в месяц при качестве 0 (× (1 − q)²)
+  FR_EXIT: 0.5,                    // расторгнуть самим — компенсация партнёру: доля взноса
+  // --- флагман: одна большая пекарня-кафе в центре ---
+  FLAG_SITES: 2,
+  FLAG_BUILD: 80e6, FLAG_DAYS: 150,
+  FLAG_RENT: 3.4e6,                // аренда в месяц (× площадка)
+  FLAG_GUESTS: 550,                // гостей в день при рейтинге 4★
+  FLAG_CHECK: 700,                 // средний чек, ₽
+  FLAG_FC: 0.36,                   // себестоимость кафе выше
+  FLAG_STAFF: 30, FLAG_UTIL: 1.1e6,
+  FLAG_NET: 0.02,                  // узнаваемость: +2% гостей всем точкам сети
+  FLAG_FR_Q: 0.05,                 // и +0,05 к качеству франчайзи, +3% к цене на полках
+  FLAG_RET_PRICE: 0.03,
+  FLAG_TOUR: 0.7e6, FLAG_TOUR_K: 1.25, // программа для туристов (мастер-классы, экскурсии): в месяц; гостей ×1,25 в мае–сентябре
+  FLAG_SEASON: [0.85, 0.85, 0.9, 0.95, 1.05, 1.15, 1.25, 1.2, 1.0, 0.95, 0.95, 1.15],
+  // --- кейтеринг и корпоративные заказы ---
+  CAT_RATE: 1.0, CAT_RATE_PER_STORE: 0.04, // заказов в месяц: база + за каждую открытую точку
+  CAT_MONTH_K: [0.7, 0.8, 1.3, 1.0, 1.0, 1.6, 0.9, 0.8, 1.3, 1.0, 1.1, 2.2], // март — 8 Марта, июнь — Сабантуй, сентябрь — 1 сентября, декабрь — корпоративы
+  CAT_UNITS: [2000, 9000],         // изделий в заказе (× размер сети / 30)
+  CAT_DAYS: [1, 3],                // заказ выдаётся за 1–3 дня
+  CAT_LEAD: [8, 30],               // до выдачи
+  CAT_OFFER_DAYS: 7,               // заказ ждёт ответа
+  CAT_PRICE: 115,                  // цена изделия в заказе, ₽ (× 0,9–1,25 по клиенту)
+  CAT_UNIT: 44,                    // себестоимость изделия (из цеха; с фабрики — как у фабрики + упаковка)
+  CAT_PACK: 10,
+  CAT_FINE: 0.3,                   // сорвали больше 5% заказа — неустойка от стоимости недопоставки и −0,05★ сети
+  CAT_TEAM: 3e6, CAT_TEAM_MONTH: 0.45e6, CAT_TEAM_K: 1.3, // своя команда кейтеринга: заказов и объёма ×1,3
 };
 
 /* data/world.js */
@@ -10467,6 +10645,673 @@ var BK = globalThis.BK || (globalThis.BK = {});
     report, accept, reject, exec, stats, open, forStore, daily, score, _rnd: rnd };
 })();
 
+/* growth.js */
+/* =====================================================================
+   РОСТ ВГЛУБЬ (docs/vision-plan.md §5 п. 1, этап В1): середина первого акта.
+   После ~15–30 точек сеть в Уфе упирается в город — дальше растёт не вширь, а вглубь. Пять направлений,
+   каждое — своя маленькая дилемма, открываются по одному (по числу открытых точек ИЛИ по обороту за 12 мес.):
+     cater   — кейтеринг и корпоративные заказы: разовые большие заказы к датам (корпоративы, Сабантуй, 8 Марта).
+               Выгодно, но заказ занимает цех: если фабрики нет или она занята, цеха не успевают печь для точек.
+     flag    — флагман: одна большая пекарня-кафе в центре. Дорогая, прибыль скромная, зато узнаваемость:
+               гости всех точек +2 %, франчайзи сильнее, на полках дороже.
+     factory — своя фабрика: долгая стройка, мощность на полки/франчайзи/заказы и полуфабрикаты для своих цехов
+               (фудкост сети ниже). Риски — поломки (обслуживание стоит денег) и цена муки (можно закупить впрок).
+     retail  — полки в супермаркетах: контракты с сетями (объём, цена, отсрочка 30–60 дн. — деньги приходят позже),
+               за недопоставку — неустойка, три плохих месяца — расторжение и пятно на бренде.
+     fran    — франшиза: партнёры платят взнос и роялти, покупают изделия у фабрики, но их качество ниже —
+               скандалы бьют по рейтингу всей сети; контроль качества стоит денег.
+   Подключается обёрткой BK.Engine.tick (как managers.js): перед обычным днём движка считается день направлений
+   (выручка — в общий S.month.rev и оборот, расходы — по обычным статьям через spend), а 1-го числа — их постоянные
+   расходы за закончившийся месяц. Влияние на сеть — через S.mods с пометкой src (фудкост, мощность цехов, гости).
+   События направлений (g01–g03) добавляются в BK.EVENTS как followUp и ставятся в очередь S.ev.queue;
+   их особые последствия (choice.g) применяет обёртка BK.Engine.resolveEvent.
+   Второй акт: направления — активы Уфы и работают всегда; пока подробно открыт другой город, цеха Уфы для заказов
+   считаются по последней известной свободной мощности, а выручка идёт и в оборот Уфы (cities.ufa.mAcc → c1).
+   Состояние: S.growth (ensure() — значения по умолчанию, старые сохранения грузятся). Свой ГСЧ (S.growth.rng).
+   Числа — BK.CFG.GROWTH. Интерфейс — src/ui/growth-ui.js (BK.GrowthUI). Проверка — sim/bot.js, qa/growth.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG, K = () => BK.CFG.GROWTH;
+  const I = () => BK.Engine._int;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fm = (v) => BK.fmtMoney(v);
+  const KEYS = ['cater', 'flag', 'factory', 'retail', 'fran'];
+  const NAMES = { cater: 'Кейтеринг и корпоративные заказы', flag: 'Флагман в центре', factory: 'Своя фабрика', retail: 'Полки в супермаркетах', fran: 'Франшиза' };
+
+  /* ---------------- свой ГСЧ ---------------- */
+  function rnd(G) {
+    let t = (G.rng = (G.rng + 0x6D2B79F5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const rr = (G, a, b) => a + (b - a) * rnd(G);
+  const ri = (G, a, b) => Math.floor(rr(G, a, b + 1));
+  const pick = (G, a) => a[Math.floor(rnd(G) * a.length)];
+  const gauss = (G) => (rnd(G) + rnd(G) + rnd(G) - 1.5) * 1.414;
+  const nid = (G, p) => p + (++G.ids);
+
+  /* ---------------- состояние ---------------- */
+  function ensure(S) {
+    if (!S.growth || typeof S.growth !== 'object') S.growth = {};
+    const G = S.growth;
+    if (G.v == null) G.v = 1;
+    if (G.rng == null) G.rng = ((S.seed | 0) ^ 0x6b1f3a) | 0;
+    if (G.ids == null) G.ids = 0;
+    if (!G.un || typeof G.un !== 'object') G.un = {};      // направление → день, когда открылось
+    if (!Array.isArray(G.recv)) G.recv = [];               // дебиторка сетей: [{ d: день оплаты, v: ₽, c: сеть }]
+    if (!Array.isArray(G.hist)) G.hist = [];               // по месяцам: { y, m, rev: {…}, pr: {…} }
+    if (!G.m || typeof G.m !== 'object') G.m = blankM();
+    if (G.flour == null) G.flour = 1;                      // индекс цены муки
+    if (!G.ws) G.ws = { cap: 0, spare: 0, units: 0 };       // цеха Уфы: мощность и свободная мощность (последний известный день)
+    if (G.nr == null) G.nr = 4;                             // рейтинг сети Уфы (последний известный)
+    if (G.fac === undefined) G.fac = null;
+    if (!Array.isArray(G.facSites)) G.facSites = [];
+    if (G.flag === undefined) G.flag = null;
+    if (!Array.isArray(G.flagSites)) G.flagSites = [];
+    if (!G.ret || typeof G.ret !== 'object') G.ret = {};
+    const R = G.ret; if (!Array.isArray(R.list)) R.list = []; if (!Array.isArray(R.offers)) R.offers = []; if (R.next == null) R.next = 0; if (!R.ban) R.ban = {};
+    if (!G.fr || typeof G.fr !== 'object') G.fr = {};
+    const F = G.fr; if (!Array.isArray(F.list)) F.list = []; if (!Array.isArray(F.cand)) F.cand = []; if (F.next == null) F.next = 0; if (F.ctrl == null) F.ctrl = 1; if (F.scandals == null) F.scandals = 0;
+    if (!G.cat || typeof G.cat !== 'object') G.cat = {};
+    const T = G.cat; if (!Array.isArray(T.offers)) T.offers = []; if (!Array.isArray(T.acc)) T.acc = []; if (T.team == null) T.team = false; if (T.done == null) T.done = 0; if (T.failed == null) T.failed = 0;
+    return G;
+  }
+  function blankM() { return { rev: { cater: 0, flag: 0, retail: 0, fran: 0 }, cost: { cater: 0, flag: 0, retail: 0, fran: 0, factory: 0 }, fines: 0, netCut: 0, units: 0 }; }
+  const on = () => !!(K() && K().ON);
+  const ufaOn = (S) => !S.corp || !S.corp.active || S.corp.active === 'ufa';
+  function ufaStores(S) { // открытые точки Уфы (во втором акте — и когда Уфа упакована)
+    if (ufaOn(S)) { let n = 0; for (const st of S.stores) if (st.status !== 'opening') n++; return n; }
+    const c = S.corp.cities && S.corp.cities.ufa, pk = c && c.packed;
+    return pk && pk.stores ? pk.stores.filter((s) => s.status !== 'opening').length : 0;
+  }
+  const unlocked = (S, k) => !!(S && S.growth && S.growth.un && S.growth.un[k] != null);
+  const anyUnlocked = (S) => KEYS.some((k) => unlocked(S, k));
+  const pl = (S) => S.macro.priceLevel;
+  const bakerCost = (S) => S.pay.baker * (1 + C().PAYROLL_TAX);
+
+  /* ---------------- деньги ---------------- */
+  // выручка направления: в оборот сети и Уфы; cash — сразу на счёт (иначе — дебиторка у вызывающего)
+  function addRev(S, ch, v, cash) {
+    if (!(v > 0)) return;
+    const G = S.growth;
+    S.month.rev += v; S.cumRevenue += v; S.yearRev += v;
+    S.month.gRev = (S.month.gRev || 0) + v;
+    G.m.rev[ch] = (G.m.rev[ch] || 0) + v;
+    if (cash) S.cash += v;
+    const u = S.corp && S.corp.cities && S.corp.cities.ufa; if (u && u.mAcc) u.mAcc.rev += v; // оборот Уфы (цель первого акта, история города)
+  }
+  function cost(S, ch, v, bucket) {
+    if (!(v > 0)) return;
+    I().spend(S, v, bucket);
+    S.growth.m.cost[ch] = (S.growth.m.cost[ch] || 0) + v;
+    const u = S.corp && S.corp.cities && S.corp.cities.ufa; if (u && u.mAcc && bucket !== 'capex') u.mAcc.profit -= v;
+  }
+  function recvTotal(S) { let s = 0; for (const r of (S.growth ? S.growth.recv : [])) s += r.v; return s; }
+
+  /* ---------------- модификаторы сети (S.mods с пометкой src) ---------------- */
+  function setMod(S, src, t, m) {
+    let x = null; for (const q of S.mods) if (q.src === src) { x = q; break; }
+    if (Math.abs(m - 1) < 1e-4) { if (x) S.mods = S.mods.filter((q) => q !== x); return; }
+    if (!x) { x = { t, m, until: 0, src }; S.mods.push(x); }
+    x.t = t; x.m = +m.toFixed(4); x.until = S.day + 3;
+    if (S.corp) { x.scope = 'city'; x.target = 'ufa'; } else { x.scope = 'global'; x.target = null; } // во втором акте — только Уфа
+  }
+  function hitRating(S, d) { if (!ufaOn(S)) return; for (const st of S.stores) if (st.status !== 'opening') st.rating = clamp((st.rating != null ? st.rating : C().RATING_START) - d, 1, 5); }
+
+  /* ---------------- места на карте (Уфа) ---------------- */
+  function spot(S, G, d, r) {
+    const busy = (p) => S.stores.concat(S.offers, S.productions).some((o) => Math.hypot(o.x - p.x, o.y - p.y) < 14)
+      || G.facSites.concat(G.flagSites, G.fac ? [G.fac] : [], G.flag ? [G.flag] : [], G.fr.list, G.fr.cand).some((o) => o && Math.hypot(o.x - p.x, o.y - p.y) < 14);
+    for (let k = 0; k < 30; k++) {
+      const a = rnd(G) * Math.PI * 2, rad = Math.sqrt(rnd(G)) * r;
+      const p = { x: +(d.x + Math.cos(a) * rad).toFixed(1), y: +(d.y + Math.sin(a) * rad * 0.85).toFixed(1) };
+      if (p.x > 30 && p.x < 970 && p.y > 30 && p.y < 970 && !busy(p)) return p;
+    }
+    return { x: d.x, y: d.y };
+  }
+  const street = (G, d, n) => `${pick(G, d.streets)}, ${ri(G, 1, n || 90)}`;
+  const dist = (id) => BK.DISTRICTS.find((x) => x.id === id);
+
+  /* ---------------- открытие направлений ---------------- */
+  function checkUnlock(S, day) {
+    const G = S.growth, U = K().UNLOCK, n = ufaStores(S);
+    let rev = null; const got = [];
+    for (const k of KEYS) {
+      if (G.un[k] != null) continue;
+      const u = U[k]; if (!u) continue;
+      if (n < u.stores) { if (rev == null) rev = E().rolling12(S); if (rev < u.rev) continue; }
+      G.un[k] = day; got.push(k);
+    }
+    if (!got.length) return;
+    if (ufaOn(S)) for (const k of got) prepare(S, k);
+    I().log(S, `Новая возможность — ${got.map((k) => NAMES[k].toLowerCase()).join(', ')}. Подробности — во вкладке «Рост».`, 'good');
+    S.notify.push({ type: 'growth', keys: got });
+  }
+  function prepare(S, k) { // площадки и первые предложения — только когда Уфа на экране (карта и районы Уфы)
+    const G = S.growth;
+    if (k === 'factory' && !G.fac && !G.facSites.length) genFacSites(S);
+    if (k === 'flag' && !G.flag && !G.flagSites.length) genFlagSites(S);
+    if (k === 'retail' && !G.ret.offers.length) { genRetOffer(S); G.ret.next = S.day + ri(G, K().RET_OFFER_GAP[0], K().RET_OFFER_GAP[1]); }
+    if (k === 'fran' && !G.fr.cand.length) { genFrCand(S); G.fr.next = S.day + ri(G, K().FR_POOL_DAYS[0], K().FR_POOL_DAYS[1]); }
+    if (k === 'cater' && !G.cat.offers.length && !G.cat.acc.length) genOrder(S);
+  }
+
+  /* ================= ФАБРИКА ================= */
+  function genFacSites(S) {
+    const G = S.growth, k = K();
+    const pool = ['north', 'shaksha', 'inors', 'nizh', 'zaton', 'dema'].map(dist).filter(Boolean);
+    G.facSites = [];
+    for (let i = 0; i < k.FAC_SITES && pool.length; i++) {
+      const d = pool.splice(Math.floor(rnd(G) * pool.length), 1)[0], p = spot(S, G, d, 40);
+      const f = +rr(G, 0.9, 1.15).toFixed(2); // стройка дороже/дешевле: грунт, сети, подъезд
+      const lg = +(1.1 - 0.25 * (f - 0.9) / 0.25 + rr(G, -0.05, 0.05)).toFixed(2); // логистика до города
+      G.facSites.push({ id: nid(G, 'fs'), district: d.id, x: p.x, y: p.y, address: street(G, d), k: f, rentK: +rr(G, 0.85, 1.2).toFixed(2), logi: clamp(lg, 0.85, 1.2) });
+    }
+  }
+  function facBuildCost(S, site) { return Math.round(K().FAC_BUILD * site.k * pl(S)); }
+  function buildFactory(S, siteId) {
+    const G = ensure(S); if (!unlocked(S, 'factory')) return { ok: false, msg: 'Фабрика ещё не открыта' };
+    if (G.fac) return { ok: false, msg: 'Фабрика уже есть' };
+    const site = G.facSites.find((x) => x.id === siteId); if (!site) return { ok: false, msg: 'Площадка не найдена' };
+    const c = facBuildCost(S, site); if (S.cash < c) return { ok: false, msg: `Не хватает ${fm(c - S.cash)}` };
+    cost(S, 'factory', c, 'capex');
+    G.fac = Object.assign({}, site, { id: nid(G, 'fac'), status: 'build', day: S.day, readyDay: S.day + K().FAC_DAYS, lvl: 1, expDay: null, down: 0, maint: 1, semis: 1, breaks: 0, hedge: null, opened: null, capex: c });
+    G.facSites = [];
+    I().log(S, `Начата стройка фабрики: ${site.address} (${dist(site.district).name}). Запуск — ${E().fmtDate(G.fac.readyDay)}.`, 'good');
+    return { ok: true };
+  }
+  function facCap(S) { const f = S.growth && S.growth.fac; if (!f || f.status !== 'open') return 0; return K().FAC_CAP[f.lvl - 1] || 0; }
+  function facUp(S) { const f = S.growth.fac; return !!(f && f.status === 'open' && !(f.down > S.day)); }
+  function facExpCost(S) { const f = S.growth.fac; if (!f || f.lvl >= K().FAC_CAP.length) return 0; return Math.round(K().FAC_EXP[f.lvl] * pl(S)); }
+  function expandFactory(S) {
+    const G = ensure(S), f = G.fac; if (!f || f.status !== 'open') return { ok: false, msg: 'Фабрика ещё не работает' };
+    if (f.expDay) return { ok: false, msg: 'Расширение уже идёт' };
+    if (f.lvl >= K().FAC_CAP.length) return { ok: false, msg: 'Все очереди построены' };
+    const c = facExpCost(S); if (S.cash < c) return { ok: false, msg: `Не хватает ${fm(c - S.cash)}` };
+    cost(S, 'factory', c, 'capex'); f.expDay = S.day + K().FAC_EXP_DAYS; f.capex += c;
+    I().log(S, `Фабрика: начато строительство ${f.lvl + 1}-й очереди (+${K().FAC_CAP[f.lvl] - K().FAC_CAP[f.lvl - 1]} изд./день), готово ${E().fmtDate(f.expDay)}.`, 'good');
+    return { ok: true };
+  }
+  function setMaint(S, l) { const f = ensure(S).fac; if (!f) return { ok: false }; f.maint = clamp(Math.round(+l || 0), 0, 2); return { ok: true }; }
+  function setSemis(S, v) { const f = ensure(S).fac; if (!f) return { ok: false }; f.semis = clamp(Math.round((+v || 0) * 4) / 4, 0, 1); return { ok: true }; }
+  function flourK(S) { const G = S.growth, f = G.fac; return f && f.hedge && f.hedge.until > S.day ? f.hedge.k : G.flour; }
+  function facUnit(S) { const k = K(); return k.FAC_UNIT * pl(S) * (1 - k.FAC_FLOUR_SHARE + k.FAC_FLOUR_SHARE * flourK(S)); }
+  function hedgeCost(S) { // стоимость муки на полгода вперёд × комиссия (при текущей загрузке фабрики, но не меньше половины мощности)
+    const G = S.growth, f = G.fac, k = K(); if (!f || f.status !== 'open') return 0;
+    const units = Math.max(facCap(S) * 0.5, G.lastUnits || 0);
+    return Math.round(units * k.HEDGE_DAYS * k.FAC_UNIT * pl(S) * k.FAC_FLOUR_SHARE * G.flour * k.HEDGE_FEE);
+  }
+  function hedge(S) {
+    const G = ensure(S), f = G.fac; if (!f || f.status !== 'open') return { ok: false, msg: 'Фабрика ещё не работает' };
+    if (f.hedge && f.hedge.until > S.day) return { ok: false, msg: 'Мука уже закуплена впрок' };
+    const c = hedgeCost(S); if (S.cash < c) return { ok: false, msg: `Не хватает ${fm(c - S.cash)}` };
+    cost(S, 'factory', c, 'other'); f.hedge = { k: G.flour, until: S.day + K().HEDGE_DAYS, day: S.day };
+    I().log(S, `Фабрика: мука закуплена на полгода по индексу ${G.flour.toFixed(2).replace('.', ',')} (−${fm(c)}).`, 'good');
+    return { ok: true, cost: c };
+  }
+  function facMonthCost(S) { // постоянные расходы фабрики в месяц (для прогноза и 1-го числа)
+    const f = S.growth && S.growth.fac, k = K(); if (!f) return { rent: 0, pay: 0, util: 0, maint: 0, total: 0 };
+    const rent = k.FAC_RENT * f.rentK * pl(S);
+    if (f.status !== 'open') return { rent, pay: 0, util: 0, maint: 0, total: rent };
+    const pay = k.FAC_STAFF[f.lvl - 1] * bakerCost(S), util = k.FAC_UTIL[f.lvl - 1] * pl(S), maint = k.FAC_MAINT[f.maint] * pl(S);
+    return { rent, pay, util, maint, total: rent + pay + util + maint };
+  }
+  function facDaily(S, D) {
+    const G = S.growth, f = G.fac, k = K(); if (!f) return;
+    if (f.status === 'build' && D >= f.readyDay) {
+      f.status = 'open'; f.opened = D;
+      I().toast(S, 'Фабрика запущена', `${f.address}: ${k.FAC_CAP[0].toLocaleString('ru-RU')} изделий в день. Теперь можно брать контракты с сетями и снабжать цеха полуфабрикатами.`, 'good');
+      I().log(S, `Фабрика запущена: ${f.address}.`, 'good');
+    }
+    if (f.expDay && D >= f.expDay) { f.lvl++; f.expDay = null; I().toast(S, `Фабрика: ${f.lvl}-я очередь`, `Мощность — ${k.FAC_CAP[f.lvl - 1].toLocaleString('ru-RU')} изделий в день.`, 'good'); I().log(S, `Фабрика: запущена ${f.lvl}-я очередь.`, 'good'); }
+    if (f.status !== 'open' || f.down > D) return;
+    const age = (D - f.opened) / 365;
+    const p = k.FAC_BREAK_P * k.FAC_BREAK_K[f.maint] * (1 + k.FAC_AGE_K * age) * (f.revUntil > D ? 0.5 : 1);
+    if (rnd(G) < p) { // поломка: простой, пока игрок не решит (событие g03)
+      f.down = D + k.FAC_DOWN0; f.breaks++;
+      queueEvent(S, 'g03', 0);
+      I().log(S, `Фабрика остановилась: поломка линии (${f.address}).`, 'bad');
+    }
+  }
+
+  /* ================= ПОЛКИ В СУПЕРМАРКЕТАХ ================= */
+  function brandPrice(S) { const G = S.growth; return 1 + (G.flag && G.flag.status === 'open' ? K().FLAG_RET_PRICE : 0) + clamp((G.nr - 4) * 0.04, -0.06, 0.04); }
+  function genRetOffer(S, renew) {
+    const G = S.growth, k = K(), R = G.ret;
+    const busy = new Set(R.list.map((c) => c.chain).concat(R.offers.map((o) => o.chain)));
+    const free = k.RET_CHAINS.filter((c) => !busy.has(c.id) && !(R.ban[c.id] > S.day));
+    if (!renew && R.list.length >= k.RET_MAX_ACTIVE) return null;
+    const ch = renew || (free.length ? pick(G, free) : null); if (!ch) return null;
+    const grow = clamp(ufaStores(S) / 35, 0.7, 1.4);
+    let units = Math.round(rr(G, ch.size[0], ch.size[1]) * grow / 100) * 100;
+    let price = +(k.RET_PRICE * ch.price * brandPrice(S) * rr(G, 0.95, 1.05)).toFixed(2); // в ценах 2027, × уровень цен при поставке
+    const o = { id: nid(G, 'ro'), chain: ch.id, name: ch.name, note: ch.note, units, price, pay: ch.pay, fine: ch.fine, until: S.day + k.RET_OFFER_DAYS, term: k.RET_TERM };
+    R.offers.push(o);
+    return o;
+  }
+  function chainOf(id) { return K().RET_CHAINS.find((c) => c.id === id) || K().RET_CHAINS[0]; }
+  function acceptContract(S, offerId) {
+    const G = ensure(S), R = G.ret; const o = R.offers.find((x) => x.id === offerId); if (!o) return { ok: false, msg: 'Предложение уже неактуально' };
+    R.offers = R.offers.filter((x) => x !== o);
+    R.list.push({ id: nid(G, 'rc'), chain: o.chain, name: o.name, units: o.units, price: o.price, pay: o.pay, fine: o.fine, start: S.day, end: S.day + o.term, fillM: [0, 0], strikes: 0, lastFill: null, renewed: !!o.renew, total: 0 });
+    I().log(S, `Подписан контракт с сетью ${o.name}: ${o.units.toLocaleString('ru-RU')} изделий в день на год, оплата через ${o.pay} дн.`, 'good');
+    return { ok: true };
+  }
+  function declineOffer(S, offerId) { const R = ensure(S).ret; const n = R.offers.length; R.offers = R.offers.filter((x) => x.id !== offerId); return { ok: R.offers.length < n }; }
+  function retUnits(S) { let u = 0; for (const c of S.growth.ret.list) u += c.units; return u; }
+
+  /* ================= ФРАНШИЗА ================= */
+  const PARTNER_FORM = ['ИП', 'ООО «', 'ООО «'];
+  const PARTNER_WORD = ['Уфимский хлеб', 'Хлебный дом', 'Тёплая булочка', 'Мир выпечки', 'Сытый квартал', 'Добрый пекарь', 'Хлебница', 'Башкирская слобода', 'Пекарский двор', 'Утро'];
+  const PARTNER_BIO = [
+    ['три кофейни в спальных районах — знает, как считать деньги', 0.1], ['бывший управляющий ресторана, первый свой бизнес', 0.0],
+    ['семейная пара, продали квартиру под точку', -0.08], ['сеть автомоек, хочет «что-то с едой»', -0.12],
+    ['пекарь с 20-летним стажем, денег впритык', 0.06], ['инвестор из Москвы, в Уфе бывает раз в квартал', -0.15],
+    ['владелица двух магазинов у дома', 0.02], ['выпускник бизнес-школы, всё по таблицам', 0.04],
+  ];
+  function genFrCand(S) {
+    const G = S.growth, k = K(), F = G.fr;
+    F.cand = F.cand.filter((c) => c.until > S.day);
+    const own = {}; for (const st of S.stores) own[st.district] = (own[st.district] || 0) + 1;
+    for (const f of F.list) own[f.district] = (own[f.district] || 0) + 0.7;
+    const ctrlSeen = k.FR_CTRL_SEEN[F.ctrl] || 0.3;
+    while (F.cand.length < k.FR_POOL) {
+      // районы, где своих мест мало или аренда дорогая
+      const ds = BK.DISTRICTS.map((d) => ({ d, w: (1 / (1 + (own[d.id] || 0))) * (1 + (d.rent[0] > 1800 ? 0.6 : 0)) }));
+      let tot = 0; for (const x of ds) tot += x.w; let r = rnd(G) * tot, d = ds[0].d; for (const x of ds) { r -= x.w; if (r <= 0) { d = x.d; break; } }
+      const bio = pick(G, PARTNER_BIO);
+      const q = +clamp(rr(G, 0.35, 0.9) + bio[1], 0.2, 0.95).toFixed(2);
+      const seen = clamp(Math.round((q * 5 + gauss(G) * ctrlSeen * 5) * 2) / 2, 1, 5); // что видно: звёзды со случайной ошибкой (меньше при контроле)
+      const form = pick(G, PARTNER_FORM), nm = form === 'ИП' ? `ИП ${pick(G, BK.SURNAMES)}` : `${form}${pick(G, PARTNER_WORD)}»`;
+      const p = spot(S, G, d, 44);
+      const fee = Math.round(k.FR_FEE * rr(G, 0.85, 1.15) / 1e4) * 1e4;
+      F.cand.push({ id: nid(G, 'fc'), partner: nm, bio: bio[0], district: d.id, x: p.x, y: p.y, address: street(G, d, 120), q, seen, fee, until: S.day + k.FR_CAND_DAYS });
+    }
+  }
+  function frQ(S, f) { const k = K(), G = S.growth; return clamp(f.q + (k.FR_CTRL_Q[G.fr.ctrl] || 0) * (1 - f.q) + (G.flag && G.flag.status === 'open' ? k.FLAG_FR_Q : 0), 0, 1); }
+  function frSalesDay(S, f, t) { // оборот франчайзи за день (в текущих ценах)
+    const k = K(), G = S.growth;
+    if (f.status !== 'open') return 0;
+    const ramp = Math.min(1, C().RAMP_START + (1 - C().RAMP_START) * (S.day - f.openDay) / k.FR_RAMP_DAYS);
+    const rk = clamp(1 + 0.12 * (G.nr - 4), 0.7, 1.15);
+    const season = [0.92, 0.9, 0.95, 0.98, 1.0, 0.96, 0.93, 0.95, 1.03, 1.04, 1.05, 1.12][t.m];
+    return k.FR_SALES / 30.4 * pl(S) * (0.55 + 0.6 * frQ(S, f)) * rk * season * ramp * (f.hit > S.day ? 0.8 : 1);
+  }
+  function signFran(S, candId) {
+    const G = ensure(S), F = G.fr, k = K();
+    if (!unlocked(S, 'fran')) return { ok: false, msg: 'Франшиза ещё не открыта' };
+    if (F.list.length >= k.FR_MAX) return { ok: false, msg: `Больше ${k.FR_MAX} франчайзи сеть не потянет` };
+    const c = F.cand.find((x) => x.id === candId); if (!c) return { ok: false, msg: 'Партнёр уже передумал' };
+    F.cand = F.cand.filter((x) => x !== c);
+    const fee = Math.round(c.fee * pl(S));
+    addRev(S, 'fran', fee, true);
+    F.list.push({ id: nid(G, 'fr'), partner: c.partner, district: c.district, x: c.x, y: c.y, address: c.address, q: c.q, seen: c.seen, fee, day: S.day, openDay: S.day + k.FR_OPEN_DAYS, status: 'opening', sales: 0, inc: 0, scandals: 0, hit: 0 });
+    I().log(S, `Франшиза: договор с ${c.partner} (${dist(c.district).name}), паушальный взнос ${fm(fee)}. Открытие через ${Math.round(k.FR_OPEN_DAYS / 30)} мес.`, 'good');
+    return { ok: true, fee };
+  }
+  function closeFran(S, id, noComp) {
+    const G = ensure(S), F = G.fr; const f = F.list.find((x) => x.id === id); if (!f) return { ok: false };
+    const comp = noComp ? 0 : Math.round(f.fee * K().FR_EXIT);
+    if (comp && S.cash < comp) return { ok: false, msg: `Компенсация партнёру ${fm(comp)} — не хватает денег` };
+    if (comp) cost(S, 'fran', comp, 'other');
+    F.list = F.list.filter((x) => x !== f);
+    I().log(S, `Франшиза: договор с ${f.partner} расторгнут${comp ? ` (компенсация ${fm(comp)})` : ''}.`, 'warn');
+    return { ok: true, comp };
+  }
+  function setControl(S, l) { const F = ensure(S).fr; F.ctrl = clamp(Math.round(+l || 0), 0, 3); return { ok: true }; }
+
+  /* ================= ФЛАГМАН ================= */
+  function genFlagSites(S) {
+    const G = S.growth, k = K(); G.flagSites = [];
+    const ds = ['center', 'center', 'october', 'grove'].map(dist).filter(Boolean);
+    for (let i = 0; i < k.FLAG_SITES; i++) {
+      const d = i === 0 ? ds[0] : pick(G, ds.slice(1)), p = spot(S, G, d, 30);
+      const tk = +rr(G, 0.9, 1.2).toFixed(2); // туристический поток места
+      G.flagSites.push({ id: nid(G, 'gs'), district: d.id, x: p.x, y: p.y, address: street(G, d, 60), tk, rentK: +(tk * rr(G, 0.9, 1.05)).toFixed(2), area: ri(G, 380, 520) });
+    }
+  }
+  function flagBuildCost(S, s) { return Math.round(K().FLAG_BUILD * (0.85 + 0.15 * s.tk) * pl(S)); }
+  function buildFlag(S, siteId) {
+    const G = ensure(S); if (!unlocked(S, 'flag')) return { ok: false, msg: 'Флагман ещё не открыт' };
+    if (G.flag) return { ok: false, msg: 'Флагман уже есть' };
+    const s = G.flagSites.find((x) => x.id === siteId); if (!s) return { ok: false, msg: 'Помещение не найдено' };
+    const c = flagBuildCost(S, s); if (S.cash < c) return { ok: false, msg: `Не хватает ${fm(c - S.cash)}` };
+    cost(S, 'flag', c, 'capex');
+    G.flag = Object.assign({}, s, { id: nid(G, 'fl'), status: 'build', day: S.day, readyDay: S.day + K().FLAG_DAYS, tour: false, opened: null, capex: c });
+    G.flagSites = [];
+    I().log(S, `Флагман: начат ремонт помещения ${s.address} (${dist(s.district).name}), открытие ${E().fmtDate(G.flag.readyDay)}.`, 'good');
+    return { ok: true };
+  }
+  function setTour(S, v) { const f = ensure(S).flag; if (!f) return { ok: false }; f.tour = !!v; return { ok: true }; }
+  function flagRamp(S) { const f = S.growth.flag; if (!f || f.status !== 'open') return 0; return Math.min(1, C().RAMP_START + (1 - C().RAMP_START) * (S.day - f.opened) / C().RAMP_DAYS); }
+  function flagDay(S, t) { // гостей и выручка флагмана за день
+    const f = S.growth.flag, k = K(); if (!f || f.status !== 'open') return { guests: 0, rev: 0 };
+    const rt = clamp(S.growth.nr + 0.3, 1, 5), rk = clamp(1 + 0.15 * (rt - 4), 0.7, 1.2);
+    const tour = f.tour && t.m >= 4 && t.m <= 8 ? k.FLAG_TOUR_K : 1;
+    const guests = k.FLAG_GUESTS * f.tk * k.FLAG_SEASON[t.m] * rk * tour * flagRamp(S);
+    const pm = S.menu && S.menu.length ? S.menu.reduce((a, x) => a + x.pm, 0) / S.menu.length : 1;
+    return { guests, rev: guests * k.FLAG_CHECK * pl(S) * (1 + 0.5 * (pm - 1)) };
+  }
+  function flagMonthCost(S) {
+    const f = S.growth && S.growth.flag, k = K(); if (!f) return { total: 0 };
+    const rent = k.FLAG_RENT * f.rentK * pl(S);
+    if (f.status !== 'open') return { rent, total: rent };
+    const pay = k.FLAG_STAFF * E().salaryOf(S, 3) * (1 + C().PAYROLL_TAX), util = k.FLAG_UTIL * pl(S), tour = f.tour ? k.FLAG_TOUR * pl(S) : 0;
+    return { rent, pay, util, tour, total: rent + pay + util + tour };
+  }
+
+  /* ================= КЕЙТЕРИНГ ================= */
+  const CLIENTS = [
+    ['Бизнес-центр «Уфа-Сити»', 'корпоратив', 1.1], ['Завод «Башнефтемаш»', 'обеды для смены', 0.95], ['Университет', 'выпускной и конференция', 0.95],
+    ['Форум «Уфа-Экспо»', 'кофе-брейки форума', 1.2], ['Банк «Урал-Капитал»', 'новогодний корпоратив', 1.25], ['Свадебное агентство «Сорок сороков»', 'свадьба на 300 гостей', 1.15],
+    ['Администрация района', 'городской праздник', 0.9], ['IT-компания «Байт»', 'завтраки для офиса', 1.1], ['Фитнес-клуб «Батыр»', 'марафон', 1.0], ['Школа олимпийского резерва', 'сборы', 0.9],
+  ];
+  function catScale(S) { return clamp(ufaStores(S) / 30, 0.6, 1.6) * (S.growth.cat.team ? K().CAT_TEAM_K : 1); }
+  function genOrder(S) {
+    const G = S.growth, k = K(), t = E().dateOf(S.day);
+    let cl = pick(G, CLIENTS);
+    if (t.m === 10 || t.m === 11) cl = rnd(G) < 0.5 ? CLIENTS[4] : cl; // к Новому году — корпоративы
+    const units = Math.round(rr(G, k.CAT_UNITS[0], k.CAT_UNITS[1]) * catScale(S) / 100) * 100;
+    const days = ri(G, k.CAT_DAYS[0], k.CAT_DAYS[1]);
+    const start = S.day + ri(G, k.CAT_LEAD[0], k.CAT_LEAD[1]);
+    const price = +(k.CAT_PRICE * cl[2] * rr(G, 0.92, 1.08)).toFixed(1);
+    G.cat.offers.push({ id: nid(G, 'co'), client: cl[0], what: cl[1], units, days, start, price, until: Math.min(start - 2, S.day + k.CAT_OFFER_DAYS) });
+  }
+  function catPlanLoad(S, day) { // сколько изделий кейтеринга в этот день по принятым заказам
+    let u = 0; for (const o of S.growth.cat.acc) if (day >= o.start && day < o.start + o.days) u += o.units / o.days; return u;
+  }
+  function acceptOrder(S, id) {
+    const G = ensure(S), T = G.cat; const o = T.offers.find((x) => x.id === id); if (!o) return { ok: false, msg: 'Заказ уже ушёл к другим' };
+    T.offers = T.offers.filter((x) => x !== o);
+    T.acc.push(Object.assign({}, o, { got: 0, rev: 0 }));
+    I().log(S, `Кейтеринг: принят заказ — ${o.client}, ${o.what}: ${o.units.toLocaleString('ru-RU')} изделий к ${E().fmtDate(o.start)}.`, 'good');
+    return { ok: true };
+  }
+  function declineOrder(S, id) { const T = ensure(S).cat; const n = T.offers.length; T.offers = T.offers.filter((x) => x.id !== id); return { ok: T.offers.length < n }; }
+  function hireTeam(S) {
+    const T = ensure(S).cat; if (T.team) return { ok: false, msg: 'Команда уже есть' };
+    const c = Math.round(K().CAT_TEAM * pl(S)); if (S.cash < c) return { ok: false, msg: `Не хватает ${fm(c - S.cash)}` };
+    cost(S, 'cater', c, 'capex'); T.team = true; T.teamDay = S.day;
+    I().log(S, 'Кейтеринг: собрана своя команда (развоз, сервировка, менеджер заказов).', 'good');
+    return { ok: true };
+  }
+  function orderValue(S, o) { return o.units * o.price * pl(S); }
+
+  /* ================= ДЕНЬ ================= */
+  // Мощность: сначала обязательства (полки и заказы) — с фабрики, недостающее — из цехов (цеха печь для точек успевают меньше);
+  // потом закупки франчайзи (только с фабрики), остаток фабрики — полуфабрикаты для своих цехов (фудкост сети ниже).
+  function capPlan(S, day, extra) {
+    const G = S.growth, k = K();
+    const fcap = facUp(S) ? facCap(S) : 0;
+    const ret = retUnits(S), cat = catPlanLoad(S, day) + (extra || 0);
+    let frU = 0; if (G.fac && G.fac.status === 'open') for (const f of G.fr.list) if (f.status === 'open') frU += f.sales1 || 0;
+    const need1 = ret + cat;
+    const fromFac = Math.min(fcap, need1), fromWs = Math.min(need1 - fromFac, G.ws.cap * 0.9);
+    let left = fcap - fromFac;
+    const frGot = Math.min(left, frU); left -= frGot;
+    const net = G.fac ? G.ws.units * G.fac.semis : 0;
+    const semis = Math.min(left, net); left -= semis;
+    return { fcap, ret, cat, need1, fromFac, fromWs, fill: need1 > 0 ? (fromFac + fromWs) / need1 : 1, frU, frGot, semis, cover: G.ws.units > 0 ? semis / G.ws.units : 0, facFree: left,
+      wsSpare: G.ws.spare, wsOver: Math.max(0, fromWs - G.ws.spare), capM: G.ws.cap > 0 ? clamp(1 - fromWs / G.ws.cap, 0.1, 1) : 1 };
+  }
+  function pre(S) {
+    const G = ensure(S), k = K();
+    const D = S.day + 1, t = E().dateOf(D);
+    const uOn = ufaOn(S);
+    if (uOn) { const nr = E().networkRating(S); if (nr != null) G.nr = nr; }
+    if (D % 7 === 0 || t.d === 1) checkUnlock(S, D);
+    if (!anyUnlocked(S)) return;
+    if (t.d === 1) monthEnd(S, t);
+    // дебиторка: сети платят по сроку
+    if (G.recv.length) { let got = 0; G.recv = G.recv.filter((r) => { if (r.d <= D) { got += r.v; return false; } return true; }); if (got) S.cash += got; }
+    facDaily(S, D);
+    // франчайзи открываются
+    for (const f of G.fr.list) if (f.status === 'opening' && D >= f.openDay) { f.status = 'open'; I().toast(S, 'Франчайзи открылся', `${f.partner}: ${f.address}. Роялти ${Math.round(k.FR_ROYALTY * 100)}% с оборота.`, 'good'); }
+    if (G.flag && G.flag.status === 'build' && D >= G.flag.readyDay) { G.flag.status = 'open'; G.flag.opened = D; I().toast(S, 'Флагман открыт!', `${G.flag.address}: большая пекарня-кафе в центре. Узнаваемость сети растёт.`, 'good'); I().log(S, `Открыт флагман: ${G.flag.address}.`, 'good'); }
+    // объёмы франчайзи на сегодня
+    let frSales = 0; for (const f of G.fr.list) { const s = frSalesDay(S, f, t); f.sd = s; f.sales1 = s * k.FR_SUPPLY / (k.RET_PRICE * pl(S)); frSales += s; }
+    const P = capPlan(S, D);
+    G.lastPlan = { fill: P.fill, cover: P.cover, fcap: P.fcap, used: P.fromFac + P.frGot + P.semis, wsOver: P.wsOver };
+    G.lastUnits = P.fromFac + P.frGot + P.semis;
+    const fu = facUnit(S), wsu = k.RET_WS_UNIT * pl(S), share = P.need1 > 0 ? P.fromFac / P.need1 : 0; // доля обязательств с фабрики
+    const uCost = share * fu + (1 - share) * wsu;
+    // полки: поставка, выручка (деньги — через отсрочку), неустойка
+    for (const c of G.ret.list) {
+      const got = c.units * P.fill, v = got * c.price * pl(S);
+      addRev(S, 'retail', v, false);
+      G.recv.push({ d: D + c.pay, v, c: c.chain });
+      c.total += v; c.fillM[0] += got; c.fillM[1] += c.units;
+      cost(S, 'retail', got * (uCost + k.RET_LOGI * pl(S) * ((G.fac && G.fac.logi) || 1)), 'fc');
+      const miss = c.units - got; if (miss > 1) { const fine = miss * c.price * pl(S) * c.fine; cost(S, 'retail', fine, 'other'); G.m.fines += fine; }
+    }
+    // кейтеринг: выдача принятых заказов
+    for (const o of G.cat.acc) {
+      if (D < o.start || D >= o.start + o.days) continue;
+      const want = o.units / o.days, got = want * P.fill;
+      o.got += got; const v = got * o.price * pl(S); o.rev += v;
+      addRev(S, 'cater', v, true);
+      cost(S, 'cater', got * (uCost + k.CAT_PACK * pl(S)), 'fc');
+    }
+    // франчайзи: роялти каждый день, закупки у фабрики
+    if (frSales > 0) {
+      addRev(S, 'fran', frSales * k.FR_ROYALTY, true);
+      const got = P.frGot; if (got > 0) { const v = got * k.RET_PRICE * pl(S); addRev(S, 'fran', v, true); cost(S, 'fran', got * fu, 'fc'); }
+      for (const f of G.fr.list) if (f.sd) { f.sales += f.sd; f.inc += f.sd * k.FR_ROYALTY + (P.frU > 0 ? P.frGot * f.sales1 / P.frU : 0) * k.RET_PRICE * pl(S); }
+    }
+    // флагман
+    const fd = flagDay(S, t);
+    if (fd.rev > 0) { addRev(S, 'flag', fd.rev, true); cost(S, 'flag', fd.rev * k.FLAG_FC, 'fc'); G.flag.guests = fd.guests; }
+    // полуфабрикаты сети: фудкост своих цехов ниже; сэкономлено ≈ доля покрытия × срез × фудкост сети
+    G.m.units += P.fromFac + P.frGot + P.semis;
+    const fcK = 1 - k.FAC_NET_CUT * (G.fac && G.fac.status === 'open' ? P.cover : 0);
+    if (uOn) {
+      setMod(S, 'g-fc', 'foodcost', fcK);
+      setMod(S, 'g-cap', 'capacity', P.capM);
+      G.fcK = fcK;
+    }
+    // узнаваемость: флагман + бренд на полках
+    const shelf = Math.min(k.RET_SHELF_MAX, k.RET_SHELF_TRAFFIC * G.ret.list.length);
+    setMod(S, 'g-aw', 'traffic', 1 + k.FLAG_NET * flagRamp(S) + shelf);
+    // новые предложения
+    if (uOn) daily2(S, D, t);
+    // заказы и предложения, которые сгорели
+    const exp = G.cat.offers.filter((o) => o.until < D); if (exp.length) G.cat.offers = G.cat.offers.filter((o) => o.until >= D);
+    G.ret.offers = G.ret.offers.filter((o) => o.until >= D);
+    // закрыть выданные заказы
+    for (const o of G.cat.acc.slice()) if (D >= o.start + o.days - 1 && D >= o.start) {
+      G.cat.acc = G.cat.acc.filter((x) => x !== o);
+      const ratio = o.got / o.units;
+      if (ratio < 0.95) {
+        const fine = (o.units - o.got) * o.price * pl(S) * k.CAT_FINE; cost(S, 'cater', fine, 'other'); G.m.fines += fine; G.cat.failed++;
+        hitRating(S, 0.05);
+        I().toast(S, 'Заказ сорван', `${o.client}: выдали ${Math.round(ratio * 100)}% — не хватило мощности. Неустойка ${fm(fine)}, отзывы подпортили рейтинг.`, 'bad');
+      } else { G.cat.done++; I().log(S, `Кейтеринг: заказ выполнен — ${o.client}, выручка ${fm(o.rev)}.`, 'good'); }
+    }
+  }
+  function daily2(S, D, t) { // генерация предложений (карта Уфы — только когда Уфа на экране)
+    const G = S.growth, k = K();
+    if (unlocked(S, 'cater')) {
+      const rate = (k.CAT_RATE + k.CAT_RATE_PER_STORE * ufaStores(S)) * k.CAT_MONTH_K[t.m] * (G.cat.team ? k.CAT_TEAM_K : 1);
+      if (G.cat.offers.length < 4 && rnd(G) < rate / 30.4) genOrder(S);
+    }
+    if (unlocked(S, 'retail') && D >= G.ret.next) {
+      if (G.ret.offers.length < k.RET_MAX_OFFERS) { const o = genRetOffer(S); if (o) I().toast(S, `Сеть ${o.name} предлагает контракт`, `${o.units.toLocaleString('ru-RU')} изделий в день, оплата через ${o.pay} дн. — во вкладке «Рост».`, 'info'); }
+      G.ret.next = D + ri(G, k.RET_OFFER_GAP[0], k.RET_OFFER_GAP[1]);
+    }
+    if (unlocked(S, 'fran') && D >= G.fr.next) { genFrCand(S); G.fr.next = D + ri(G, k.FR_POOL_DAYS[0], k.FR_POOL_DAYS[1]); }
+    if (unlocked(S, 'factory') && !G.fac && !G.facSites.length) genFacSites(S);
+    if (unlocked(S, 'flag') && !G.flag && !G.flagSites.length) genFlagSites(S);
+    G.fr.cand = G.fr.cand.filter((c) => c.until >= D);
+  }
+  // после дня движка: мощность и загрузка цехов Уфы, экономия на полуфабрикатах — в состояние (не из S.cache на следующий день:
+  // «Переиграть» и сохранения хранят состояние без S.cache, и расчёт после отката должен совпасть до поля)
+  function post(S) {
+    const G = S.growth; if (!G || !ufaOn(S) || !S.cache || S.cache.cap == null) return;
+    const cm = S.mods.find((q) => q.src === 'g-cap'), capM = cm && cm.until >= S.day ? cm.m : 1;
+    const cap = S.cache.cap / (capM || 1), units = S.cache.units || 0;
+    G.ws = { cap, units, spare: Math.max(0, cap - units) * 0.95 };
+    if (G.fcK != null && G.fcK < 1 && S.cache.dayRev && S.cache.fcPct) G.m.netCut += S.cache.dayRev * S.cache.fcPct * (1 - G.fcK) / Math.max(0.5, G.fcK);
+  }
+  // 1-го числа (до месячного расчёта движка): постоянные расходы направлений за закончившийся месяц, мука, контракты, франшиза
+  function monthEnd(S, t) {
+    const G = S.growth, k = K();
+    const fc = facMonthCost(S);
+    if (G.fac) { cost(S, 'factory', fc.rent, 'rent'); cost(S, 'factory', fc.pay || 0, 'payroll'); cost(S, 'factory', fc.util || 0, 'util'); cost(S, 'factory', fc.maint || 0, 'upkeep'); }
+    const fl = flagMonthCost(S);
+    if (G.flag) { cost(S, 'flag', fl.rent, 'rent'); cost(S, 'flag', fl.pay || 0, 'payroll'); cost(S, 'flag', fl.util || 0, 'util'); cost(S, 'flag', fl.tour || 0, 'marketing'); }
+    if (G.cat.team) cost(S, 'cater', k.CAT_TEAM_MONTH * pl(S), 'payroll');
+    const nOpen = G.fr.list.filter((f) => f.status === 'open').length;
+    if (nOpen) cost(S, 'fran', k.FR_CTRL[G.fr.ctrl] * pl(S) * nOpen, 'upkeep');
+    // мука
+    G.flour = +clamp(G.flour + gauss(G) * k.FLOUR_SD + (1 - G.flour) * k.FLOUR_REVERT, k.FLOUR_RANGE[0], k.FLOUR_RANGE[1]).toFixed(3);
+    if (G.fac && G.fac.status === 'open' && G.flour > 1.2 && !(G.fac.hedge && G.fac.hedge.until > S.day) && !G.flourWarn) { G.flourWarn = 1; I().toast(S, 'Мука подорожала', `Индекс цены муки ${G.flour.toFixed(2).replace('.', ',')} — изделия фабрики дороже. Можно закупить муку впрок во вкладке «Рост».`, 'warn'); }
+    if (G.flour < 1.1) G.flourWarn = 0;
+    // контракты: итоги месяца, страйки, окончание и продление
+    for (const c of G.ret.list.slice()) {
+      const fill = c.fillM[1] > 0 ? c.fillM[0] / c.fillM[1] : 1; c.lastFill = fill; c.fillM = [0, 0];
+      if (fill < k.RET_FILL_OK) {
+        c.strikes++;
+        if (c.strikes >= k.RET_STRIKES) {
+          G.ret.list = G.ret.list.filter((x) => x !== c); G.ret.ban[c.chain] = S.day + k.RET_BAN_DAYS; hitRating(S, k.RET_RATING_HIT);
+          I().toast(S, `${c.name} расторгла контракт`, `Третий месяц недопоставок. Сеть год не будет с нами работать, покупатели запомнили пустые полки (−${String(k.RET_RATING_HIT).replace('.', ',')}★ точкам).`, 'bad');
+          I().log(S, `Контракт с ${c.name} расторгнут из-за недопоставок.`, 'bad');
+          continue;
+        }
+        I().toast(S, `${c.name}: недопоставка`, `Поставили ${Math.round(fill * 100)}% за месяц — предупреждение ${c.strikes} из ${k.RET_STRIKES}. Нужна мощность: фабрика или меньше обязательств.`, 'warn');
+      }
+      if (S.day >= c.end) {
+        G.ret.list = G.ret.list.filter((x) => x !== c);
+        I().log(S, `Контракт с ${c.name} завершён: выручка за год ${fm(c.total)}.`, 'info');
+        if (c.strikes === 0 && ufaOn(S)) { // хороший поставщик — сеть сама предлагает продлить и больше
+          const o = genRetOffer(S, chainOf(c.chain)); if (o) { o.units = Math.round(c.units * rr(G, 1.0, 1.15) / 100) * 100; o.price = +(c.price * rr(G, 1.0, 1.04)).toFixed(2); o.renew = true; I().toast(S, `${c.name} предлагает продлить`, `Контракт закончился без нареканий: сеть хочет ${o.units.toLocaleString('ru-RU')} изделий в день.`, 'good'); }
+        }
+      }
+    }
+    // франшиза: скандалы (событие g01), итоги
+    if (nOpen) {
+      for (const f of G.fr.list) {
+        if (f.status !== 'open') continue;
+        const q = frQ(S, f), p = k.FR_SCANDAL_P * Math.pow(1 - q, 2);
+        if (rnd(G) < p && !(S.ev.queue || []).some((x) => x.id === 'g01')) { G.evFr = f.id; queueEvent(S, 'g01', ri(G, 1, 6)); f.scandals++; G.fr.scandals++; break; }
+      }
+    }
+    for (const f of G.fr.list) { f.lastSales = f.sales - (f.sales0 || 0); f.lastInc = f.inc - (f.inc0 || 0); f.sales0 = f.sales; f.inc0 = f.inc; }
+    // закрыть месяц
+    const prev = E().dateOf(S.day);
+    const pr = {}; for (const ch of ['cater', 'flag', 'retail', 'fran']) pr[ch] = (G.m.rev[ch] || 0) - (G.m.cost[ch] || 0);
+    pr.factory = -(G.m.cost.factory || 0) + G.m.netCut;
+    G.last = { y: prev.y, m: prev.m, rev: Object.assign({}, G.m.rev), cost: Object.assign({}, G.m.cost), pr, fines: G.m.fines, netCut: G.m.netCut, units: G.m.units, recv: recvTotal(S) };
+    G.hist.push({ y: prev.y, m: prev.m, r: Math.round(sumRev(G.m.rev)), p: Math.round(pr.cater + pr.flag + pr.retail + pr.fran + pr.factory) });
+    if (G.hist.length > 36) G.hist.shift();
+    G.m = blankM();
+  }
+  const sumRev = (r) => (r.cater || 0) + (r.flag || 0) + (r.retail || 0) + (r.fran || 0);
+
+  /* ---------------- события направлений (followUp; ставятся в очередь) ---------------- */
+  const GEV = [
+    { id: 'g01', kind: 'neg', followUp: true, weight: 0, scope: 'global', title: 'Франчайзи опозорил бренд',
+      text: 'Видео с грязной кухни франчайзи под вашей вывеской разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.',
+      choices: [
+        { label: 'Расторгнуть договор', desc: 'Жёстко и быстро: бренд отмоется, но роялти этой точки пропадут (без компенсации — нарушил договор).', cost: 0, effects: [{ t: 'traffic', m: 0.98, d: 30 }], g: [{ t: 'frClose' }] },
+        { label: 'Штраф, аудит и обучение', desc: 'Проверяем кухню, учим команду партнёра: качество точки заметно вырастет.', cost: 1500000, effects: [{ t: 'traffic', m: 0.97, d: 45 }], g: [{ t: 'frFix', add: 0.2 }] },
+        { label: 'Промолчать', desc: 'Бесплатно, но гости запомнят: рейтинг сети просядет, а история может всплыть снова.', cost: 0, effects: [{ t: 'traffic', m: 0.94, d: 75 }, { t: 'schedule', id: 'g02', after: [60, 150], p: 0.5 }], g: [{ t: 'rating', d: 0.15 }, { t: 'frHit' }] },
+      ] },
+    { id: 'g02', kind: 'neg', followUp: true, weight: 0, scope: 'global', title: 'Скандал с франчайзи вернулся',
+      text: 'Журналисты нашли старую историю с франчайзи и сделали большой материал «Что скрывает сеть». Гостей стало заметно меньше.',
+      effects: [{ t: 'traffic', m: 0.93, d: 60 }] },
+    { id: 'g03', kind: 'neg', followUp: true, weight: 0, scope: 'global', title: 'Поломка на фабрике',
+      text: 'Встала главная тестомесильная линия. Пока фабрика стоит, полки и заказы снабжают обычные цеха — если успеют.',
+      choices: [
+        { label: 'Срочный ремонт с выездом сервиса', desc: 'Дорого, зато через 3 дня линия снова работает.', cost: 6000000, effects: [], g: [{ t: 'down', d: 3 }] },
+        { label: 'Своими силами', desc: 'Дёшево, но простоим ~10 дней: полки и франчайзи будут недополучать.', cost: 1500000, effects: [], g: [{ t: 'down', d: 10 }] },
+        { label: 'Остановить на полную ревизию', desc: '2 недели простоя, зато год поломок будет вдвое меньше.', cost: 4000000, effects: [], g: [{ t: 'down', d: 14 }, { t: 'revision' }] },
+      ] },
+  ];
+  function queueEvent(S, id, after) {
+    if (!S.ev.queue) S.ev.queue = [];
+    if (S.ev.queue.some((x) => x.id === id)) return;
+    S.ev.queue.push({ id, day: S.day + 1 + (after || 0), tg: { scope: 'global', target: null } });
+  }
+  function applyG(S, inst, idx) {
+    const def = GEV.find((e) => e.id === inst.id), G = ensure(S);
+    const ch = def && def.choices ? def.choices[idx] || def.choices[def.choices.length - 1] : null;
+    if (!ch || !ch.g) return;
+    const f = G.fr.list.find((x) => x.id === G.evFr);
+    for (const e of ch.g) {
+      if (e.t === 'frClose' && f) closeFran(S, f.id, true);
+      if (e.t === 'frFix' && f) { f.q = clamp(f.q + e.add, 0, 0.95); f.seen = clamp(Math.round(f.q * 10) / 2, 1, 5); }
+      if (e.t === 'frHit' && f) f.hit = S.day + 90;
+      if (e.t === 'rating') hitRating(S, e.d);
+      if (e.t === 'down' && G.fac) G.fac.down = S.day + e.d;
+      if (e.t === 'revision' && G.fac) G.fac.revUntil = S.day + 365;
+    }
+  }
+  function prepEventText(S) { // имя партнёра — в тексте события (текст фиксируется в момент показа)
+    const G = S.growth, q = S.ev.queue || []; if (!q.some((x) => x.id === 'g01')) return;
+    const f = G.fr.list.find((x) => x.id === G.evFr), def = GEV[0];
+    def.text = f ? `Видео с грязной кухни франчайзи ${f.partner} (${f.address}, ${(dist(f.district) || {}).name || 'Уфа'}) разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.` : def.text;
+  }
+  // бот: выбор в событиях направлений
+  function botChoice(S, inst, level) {
+    const G = S.growth;
+    if (inst.id === 'g01') return level === 'good' ? (S.cash > 3e6 * pl(S) ? 1 : 0) : level === 'avg' ? 2 : 2;
+    if (inst.id === 'g03') { const heavy = retUnits(S) > facCap(S) * 0.4 || (G.cat.acc.length > 0); return level === 'good' ? (heavy ? 0 : 1) : 1; }
+    return 0;
+  }
+
+  /* ---------------- сводка для интерфейса и ботов ---------------- */
+  function monthFee(S) { // постоянные расходы направлений 1-го числа (для «К 1-му числу не хватит»)
+    const G = S.growth; if (!G || !anyUnlocked(S)) return 0;
+    const k = K(); let x = facMonthCost(S).total + flagMonthCost(S).total + (G.cat.team ? k.CAT_TEAM_MONTH * pl(S) : 0);
+    x += k.FR_CTRL[G.fr.ctrl] * pl(S) * G.fr.list.filter((f) => f.status === 'open').length;
+    return x;
+  }
+  function summary(S) {
+    const G = ensure(S), L = G.last;
+    const n = KEYS.filter((k) => unlocked(S, k)).length;
+    const active = (G.cat.acc.length || G.cat.done ? 1 : 0) + (G.flag ? 1 : 0) + (G.fac ? 1 : 0) + (G.ret.list.length ? 1 : 0) + (G.fr.list.length ? 1 : 0);
+    return { unlocked: n, active, last: L || null, recv: recvTotal(S), fr: G.fr.list.length, frOpen: G.fr.list.filter((f) => f.status === 'open').length, contracts: G.ret.list.length,
+      rev: L ? sumRev(L.rev) : 0, profit: L ? L.pr.cater + L.pr.flag + L.pr.retail + L.pr.fran + L.pr.factory : 0 };
+  }
+  function nextUnlock(S) { // ближайшее закрытое направление и условие
+    const G = ensure(S), U = K().UNLOCK;
+    for (const k of KEYS) if (G.un[k] == null) return { key: k, name: NAMES[k], stores: U[k].stores, rev: U[k].rev, have: ufaStores(S), rolling: E().rolling12(S) };
+    return null;
+  }
+
+  /* ---------------- подключение к движку ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__growth) return;
+    Eng.__growth = true;
+    if (BK.EVENTS) for (const e of GEV) if (!BK.EVENTS.some((x) => x.id === e.id)) BK.EVENTS.push(e);
+    const origTick = Eng.tick;
+    Eng.tick = function (S) {
+      if (S && on() && S.phase === 'play' && !S.ev.pending && !S.chef.pending && !S.lost) { pre(S); prepEventText(S); }
+      const r = origTick.apply(this, arguments);
+      if (r && on()) post(S);
+      return r;
+    };
+    const origRes = Eng.resolveEvent;
+    Eng.resolveEvent = function (S, idx) {
+      const inst = S && S.ev && S.ev.pending, g = inst && /^g\d\d$/.test(inst.id) ? inst : null;
+      const r = origRes.apply(this, arguments);
+      if (g) applyG(S, g, idx);
+      return r;
+    };
+  }
+  wrap();
+
+  BK.Growth = { KEYS, NAMES, ensure, unlocked, anyUnlocked, ufaOn, ufaStores, summary, nextUnlock, monthFee, capPlan, recvTotal,
+    facBuildCost, buildFactory, expandFactory, facExpCost, setMaint, setSemis, hedge, hedgeCost, facCap, facUp, facUnit, facMonthCost, flourK,
+    acceptContract, declineOffer, retUnits, brandPrice, chainOf,
+    signFran, closeFran, setControl, frQ, frSalesDay,
+    flagBuildCost, buildFlag, setTour, flagDay, flagMonthCost, flagRamp,
+    acceptOrder, declineOrder, hireTeam, orderValue, catPlanLoad,
+    botChoice, GEV, _rnd: rnd, _pre: pre };
+})();
+
 /* rewind.js */
 /* «Переиграть» — вернуться на 1…N месяцев назад и сыграть иначе (docs/vision-plan.md §4 п. 6).
    Без DOM (работает и в Node — sim/rewind.js). Интерфейс — src/ui/rewind-ui.js.
@@ -11895,6 +12740,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const pre = [], offers = [], singles = [], clusters = []; let selM = null;
     const hq = BK.MAP.hq || { x: 402, y: 772 };
     pre.push(['hq', `<g class="m-hq" data-kind="hq" data-id="hq" transform="translate(${hq.x},${hq.y}) scale(${k})"><rect x="-9" y="-9" width="18" height="18" rx="3"/><path d="${OFFICE}" transform="scale(.8)"/></g>`]);
+    if (BK.GrowthUI) pre.push(...BK.GrowthUI.mapItems(S, k, isSel)); // рост вглубь: фабрика, флагман, франчайзи, площадки
     for (const o of S.prodOffers) pre.push(['po' + o.id, `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`]);
     for (const o of S.offers) {
       const pulse = S.phase === 'setup_store' || S.stores.length < 2 ? ' pulse' : '';
@@ -12020,6 +12866,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const n = S.stores.filter((st) => st.status !== 'opening' && E.nearestProd(S, st) === p).length;
         h += `<span class="lg-r"><svg viewBox="0 0 16 16" class="lg-sw" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5" fill="var(--prod-bg)"/></svg><span>${esc(p.name)}${p.status === 'open' ? ` · ${nw(n, 'точка', 'точки', 'точек')}` : ' · открывается'}</span><b>${Math.round((p.load || 0) * 100)} %</b></span>`;
       }
+      if (BK.GrowthUI) h += BK.GrowthUI.legend(S);
       h += `<span class="lg-h"><svg viewBox="0 0 26 10" class="lg-rt" aria-hidden="true"><path d="M1 5H25" stroke="var(--map-route)" stroke-width="1.8" stroke-dasharray="2 3.5" stroke-linecap="round"/></svg><span>Маршрут от ближайшего цеха,<br>справа — загрузка цеха</span></span>`;
     }
     const probs = {}; for (const i of infos) if (i.prob) probs[i.prob] = (probs[i.prob] || 0) + 1;
@@ -12262,6 +13109,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
     if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
+    if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -12379,6 +13227,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     bills += S.loan * E().loanRate(S) / 12;
     if (BK.Trainers) bills += BK.Trainers.monthFee(S); // личные тренеры — 1-го числа
     if (BK.Managers) bills += BK.Managers.monthFee(S); // оклады управляющих — 1-го числа
+    if (BK.Growth) bills += BK.Growth.monthFee(S); // рост вглубь: фабрика, флагман, команда кейтеринга, контроль франчайзи
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -12419,6 +13268,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td${cls === 'subr' ? ' class="sub"' : ''}>${k}</td><td>${v}</td></tr>`;
     let s = `<table class="tbl">`;
     s += row('Выручка', fm(p.rev));
+    if (p.gRev) s += row('в т. ч. фабрика, полки, франшиза, флагман, заказы', fm(p.gRev), 'subr');
     s += row('Себестоимость (фудкост)', '−' + fm(p.fc - (p.waste || 0)));
     if (p.waste != null) s += row('Списания', '−' + fm(p.waste));
     s += row('Аренда', '−' + fm(p.rent));
@@ -14284,6 +15134,322 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.ManagersUI = { inboxBlock, dashBlock, attItems, storeBlock, open, modalHtml, card, ICON };
 })();
 
+/* ui/growth-ui.js */
+/* Рост вглубь — интерфейс (логика — src/growth.js, BK.Growth).
+   Где видно: вкладка «Рост» (появляется с первым направлением), окно «Новая возможность» при открытии направления,
+   строки в «Требует внимания» (заказы, контракты, франчайзи, простой фабрики), объекты на карте (фабрика, флагман,
+   франчайзи, площадки под стройку), строка в легенде карты. В panels.js / app.js / map.js — только хуки (BK.GrowthUI.*). */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  if (typeof document === 'undefined') return;
+  const G_ = () => BK.Growth, APP = () => BK.App, H = () => BK.UIH, K = () => BK.CFG.GROWTH, E = () => BK.Engine;
+  const fm = (v) => BK.fmtMoney(v), esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const nw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
+  const n0 = (v) => Math.round(v).toLocaleString('ru-RU');
+  const pc = (v) => Math.round(v * 100) + ' %';
+  const dname = (id) => ((BK.DISTRICTS || []).find((d) => d.id === id) || {}).name || '';
+  const date = (d) => { const t = E().dateOf(d); return `${t.d} ${E().MONTHS_G[t.m]}`; };
+  const ICON = {
+    grow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 20v-6M12 20V9M17 20V5"/><path d="M14.5 5.5 17 3l2.5 2.5"/></svg>',
+    cater: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17h18"/><path d="M5 17a7 7 0 0 1 14 0"/><path d="M12 7V5M10 5h4"/><path d="M4 20h16"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/></svg>',
+    factory: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 20V11l5-3v3l5-3v3l5-3V4h3v16z"/><path d="M7 16h2M12 16h2"/></svg>',
+    retail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><path d="M6 5v14M18 5v14"/><path d="M8.5 9.5h3M12.5 16.5h3"/></svg>',
+    fran: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><path d="M2.5 20c.6-3.5 2.8-5.5 5.5-5.5s4.9 2 5.5 5.5M14.5 14.7c3-.6 5.8 1.2 6.5 5.3"/></svg>',
+  };
+  // коротко: что даёт и чем рискуем (окно «Новая возможность» и шапки разделов)
+  const WHY = {
+    cater: { lead: 'Бизнес-центры, заводы и праздники заказывают выпечку партиями — от пары до десятка тысяч изделий к дате.',
+      plus: 'Выручка без новых точек. Пики — декабрьские корпоративы, 8 Марта, Сабантуй, 1 сентября.', minus: 'Заказ занимает цех: без свободной мощности точки недополучат выпечку. Сорванный заказ — неустойка и плохие отзывы.' },
+    flag: { lead: 'Одна большая пекарня-кафе в центре: витрина бренда, туристы, мастер-классы.',
+      plus: 'Узнаваемость: гостей во всех точках больше, франчайзи сильнее, на полках платят дороже.', minus: 'Дорогой ремонт и аренда в центре, прибыль самого кафе скромная — окупается через сеть.' },
+    factory: { lead: 'Крупное производство за городом: мощность на полки, франшизу, заказы и полуфабрикаты для своих цехов.',
+      plus: 'Изделие дешевле, чем в цехе; полуфабрикаты снижают фудкост цехов сети.', minus: 'Стройка ~8 месяцев. Поломки (обслуживание стоит денег), цена муки гуляет — можно закупить впрок.' },
+    retail: { lead: 'Свой бренд на полках супермаркетов: контракт на год, тысячи изделий в день.',
+      plus: 'Большие объёмы без аренды и продавцов, бренд на виду — в точки заходят чаще.', minus: 'Сети платят через 30–60 дней — деньги приходят позже. Недопоставка — неустойка, три плохих месяца — расторжение и пятно на бренде.' },
+    fran: { lead: 'Партнёры открывают пекарни под вашей вывеской там, где своих мест нет или аренда дорогая.',
+      plus: 'Паушальный взнос сразу, 6 % роялти с оборота, закупки изделий у вашей фабрики — сеть растёт без ваших денег.', minus: 'Качество партнёров ниже: скандал у франчайзи бьёт по рейтингу всей сети. Контроль стоит денег.' },
+  };
+
+  /* ---------- значки последствий (как в окне события) ---------- */
+  function fxc(k, lab, v, tip) {
+    const IC = BK.FX_IC || {}, n = Math.min(3, Math.abs(v)), cls = !v ? 'zero' : v > 0 ? 'up' : 'dn';
+    return `<span class="fxc ${cls}" title="${esc(tip)}">${IC[k] || ''}${lab ? `<span class="fxn">${lab}</span>` : ''}<span class="ar">${v ? (v > 0 ? '▲' : '▼').repeat(n) : '·'}</span></span>`;
+  }
+  const risk = (tip) => `<span class="fxc risk" title="${esc(tip)}">${(BK.FX_IC || {}).risk || ''}<span class="fxn">Риск</span></span>`;
+  const lvl = (x, a, b) => (Math.abs(x) < 1e-9 ? 0 : Math.abs(x) < a ? 1 : Math.abs(x) < b ? 2 : 3) * Math.sign(x);
+  const revM = (S) => Math.max(S.lastMonthRev || 0, 1e6);
+
+  /* ---------- вкладка «Рост» ---------- */
+  function tabs(S, T) {
+    if (!S || !G_().anyUnlocked(S) || (S.corp && S.corp.active && S.corp.active !== 'ufa')) return T;
+    const i = T.findIndex((x) => x[0] === 'market');
+    return T.slice(0, i + 1).concat([['grow', 'Рост']], T.slice(i + 1));
+  }
+  function tabDot(S) { const n = attItems(S).filter((x) => x.lvl !== 'info' || x.dec).length; return n ? 'dot' : 0; }
+  function head(S) {
+    const GR = G_(), sm = GR.summary(S), L = sm.last;
+    const share = L && S.history.length ? sm.rev / Math.max(1, S.history[S.history.length - 1].rev) : 0;
+    return `<div class="sec gr-head"><h3><span class="gr-h">${ICON.grow}Рост вглубь</span><small>${sm.unlocked} из 5 направлений</small></h3>
+      <p class="hint" style="margin:0">Город не бесконечен: новые точки находятся всё реже. Дальше сеть растёт вглубь — производство, полки, франшиза, флагман и заказы. У каждого направления своя цена и свой риск.</p>
+      <div class="kpis"><div class="kpi"><span class="k">Выручка направлений${L ? ', ' + E().MONTHS[L.m] : ''}</span><span class="v">${L ? fm(sm.rev) : '—'}</span><span class="d">${L ? pc(share) + ' оборота сети' : 'итог — после 1-го числа'}</span></div>
+      <div class="kpi"><span class="k">Прибыль направлений</span><span class="v${L && sm.profit < 0 ? ' negc' : ''}">${L ? fm(sm.profit) : '—'}</span><span class="d">с экономией фудкоста сети</span></div>
+      <div class="kpi"><span class="k" title="Сети супермаркетов платят с отсрочкой — эти деньги уже заработаны, но ещё не на счёте">Ждём оплаты от сетей</span><span class="v">${fm(sm.recv)}</span><span class="d">отсрочка 30–60 дней</span></div>
+      <div class="kpi"><span class="k">Франчайзи · контракты</span><span class="v">${sm.fr} · ${sm.contracts}</span><span class="d">${sm.frOpen} работают</span></div></div></div>`;
+  }
+  function secHead(k, status, extra) {
+    return `<h3><span class="gr-h">${ICON[k]}${esc(G_().NAMES[k])}</span>${status || ''}</h3><p class="hint gr-lead">${esc(WHY[k].minus)}</p>${extra || ''}`;
+  }
+  function panel(S, ui) {
+    const GR = G_(); GR.ensure(S);
+    if (!GR.anyUnlocked(S)) return `<div class="empty">Рост вглубь откроется, когда сеть вырастет.</div>`;
+    let s = head(S);
+    for (const k of GR.KEYS) if (GR.unlocked(S, k)) s += ({ cater: catSec, flag: flagSec, factory: facSec, retail: retSec, fran: frSec })[k](S, ui);
+    const nx = GR.nextUnlock(S);
+    if (nx) s += `<div class="sec gr-next"><h3><span class="gr-h">${ICON[nx.key]}Дальше: ${esc(nx.name)}</span></h3><p class="hint" style="margin:0">${esc(WHY[nx.key].lead)} Откроется при <b>${nx.stores}</b> открытых точках (сейчас ${nx.have}) или обороте <b>${fm(nx.rev)}</b> за 12 мес. (сейчас ${fm(nx.rolling)}).</p></div>`;
+    return s;
+  }
+  // мощность на день выдачи/поставки: что скажет план
+  function capLine(S, P, what) {
+    if (P.fill < 0.999) return `<div class="gr-cap bad">${(BK.FX_IC || {}).risk || ''}Не хватит мощности: выдадим ~${pc(P.fill)} ${what} — неустойка.</div>`;
+    if (P.wsOver > 1) return `<div class="gr-cap warn">${(BK.FX_IC || {}).prod || ''}Фабрики не хватает, берём из цехов: точки недополучат ~${n0(P.wsOver)} изд./день.</div>`;
+    if (P.fromWs > 1) return `<div class="gr-cap ok">${(BK.FX_IC || {}).prod || ''}Из свободной мощности цехов (${n0(P.fromWs)} изд./день) — точкам хватит.</div>`;
+    return `<div class="gr-cap ok">${(BK.FX_IC || {}).prod || ''}С фабрики — мощности хватает.</div>`;
+  }
+
+  /* ---------- кейтеринг ---------- */
+  function catSec(S) {
+    const GR = G_(), g = S.growth, T = g.cat, k = K(), pl = S.macro.priceLevel, L = g.last;
+    const status = T.team ? '<span class="chip good">своя команда</span>' : '';
+    let s = `<div class="sec gr-sec" id="gr-cater">${secHead('cater', status)}`;
+    s += `<div class="row sp"><span class="hint">Выполнено заказов: <b>${T.done}</b>${T.failed ? ` · сорвано: <b class="negc">${T.failed}</b>` : ''}${L && L.rev.cater ? ` · выручка за ${E().MONTHS[L.m]}: <b>${fm(L.rev.cater)}</b>` : ''}</span>
+      ${T.team ? '' : H().btn('grTeam', 'Собрать команду', { cls: 'sm', cost: Math.round(k.CAT_TEAM * pl), dis: S.cash < k.CAT_TEAM * pl, title: `Развоз, сервировка, менеджер заказов: заказов и объёма ×${String(k.CAT_TEAM_K).replace('.', ',')}, ${fm(k.CAT_TEAM_MONTH * pl)} в месяц` })}</div>`;
+    if (!T.offers.length) s += `<div class="hint">Новых заказов пока нет — больше всего их в декабре, марте, июне и сентябре.</div>`;
+    for (const o of T.offers) {
+      const P = GR.capPlan(S, o.start, o.units / o.days), v = GR.orderValue(S, o), R = revM(S);
+      const fx = fxc('rub', '', lvl(v / R * 100, 1, 4), `Выручка заказа ${fm(v)}`) + fxc('prod', 'Цех', -Math.max(1, lvl(o.units / o.days / Math.max(1, P.fcap + g.ws.cap) * 100, 15, 40)), 'Нагрузка на производство в дни выдачи')
+        + fxc('guests', 'Гости', P.wsOver > 1 ? -lvl(P.wsOver / Math.max(1, g.ws.units) * 100, 5, 15) : 0, P.wsOver > 1 ? 'Точки недополучат выпечку' : 'Точкам хватит') + (P.fill < 0.999 ? risk('Можем сорвать заказ') : '');
+      s += `<article class="gr-card" data-gid="${o.id}"><div class="gr-ct"><b>${esc(o.client)}</b><span class="hint">${esc(o.what)}</span><span class="gr-left">ответить до ${date(o.until)}</span></div>
+        <div class="gr-facts"><span><small>Изделий</small><b>${n0(o.units)}</b></span><span><small>Выдача</small><b>${date(o.start)}${o.days > 1 ? `, ${o.days} дн.` : ''}</b></span><span><small>Оплата</small><b>${fm(v)}</b></span></div>
+        ${capLine(S, P, 'заказа')}<div class="gr-row"><span class="gr-fx">${fx}</span><span class="gr-acts"><button class="btn sm primary" data-act="grOrder" data-arg="${o.id}">Принять</button><button class="btn sm" data-act="grOrderNo" data-arg="${o.id}">Отказаться</button></span></div></article>`;
+    }
+    if (T.acc.length) s += `<div class="gr-list"><div class="hint">Принятые заказы</div>${T.acc.map((o) => `<div class="gr-li"><span>${esc(o.client)}<small>${n0(o.units)} изд. · ${date(o.start)}</small></span><b>${fm(GR.orderValue(S, o))}</b></div>`).join('')}</div>`;
+    return s + '</div>';
+  }
+
+  /* ---------- флагман ---------- */
+  function flagSec(S) {
+    const GR = G_(), g = S.growth, f = g.flag, k = K(), pl = S.macro.priceLevel;
+    let s = `<div class="sec gr-sec" id="gr-flag">`;
+    if (!f) {
+      s += secHead('flag', '');
+      for (const o of g.flagSites) {
+        const c = GR.flagBuildCost(S, o), rent = k.FLAG_RENT * o.rentK * pl, guests = k.FLAG_GUESTS * o.tk, rev = guests * k.FLAG_CHECK * pl * 30.4;
+        const fx = fxc('rub', '', -lvl(c / revM(S) * 100, 8, 25), `Ремонт и запуск ${fm(c)}, аренда ${fm(rent)} в месяц`) + fxc('guests', 'Гости', 1, `Гости всех точек +${String(k.FLAG_NET * 100).replace('.', ',')} %`) + fxc('check', 'Чек', 1, 'На полках и у франчайзи бренд сильнее');
+        s += `<article class="gr-card" data-gid="${o.id}"><div class="gr-ct"><b>${esc(o.address)}</b><span class="hint">${esc(dname(o.district))} · ${o.area} м² · туристический поток ×${String(o.tk).replace('.', ',')}</span></div>
+          <div class="gr-facts"><span><small>Ремонт и запуск</small><b>${fm(c)}</b></span><span><small>Аренда в месяц</small><b>${fm(rent)}</b></span><span><small>Гостей в день</small><b>≈${n0(guests)}</b></span><span><small>Выручка в месяц</small><b>≈${fm(rev)}</b></span></div>
+          <div class="gr-row"><span class="gr-fx">${fx}</span><span class="gr-acts"><button class="btn sm primary" data-act="grFlag" data-arg="${o.id}"${S.cash < c ? ' disabled title="Не хватает денег"' : ''}>Открыть флагман · ${fm(c)}</button></span></div></article>`;
+      }
+      return s + '</div>';
+    }
+    if (f.status === 'build') {
+      const p = (S.day - f.day) / Math.max(1, f.readyDay - f.day);
+      return s + secHead('flag', '<span class="chip">ремонт</span>') + `<div class="card"><div class="card-t">${esc(f.address)}</div><div class="card-s">${esc(dname(f.district))} · откроется ${E().fmtDate(f.readyDay)}</div>${H().meter(p, 'ok')}</div></div>`;
+    }
+    const L = g.last, mc = GR.flagMonthCost(S), day = GR.flagDay(S, E().dateOf(S.day));
+    s += secHead('flag', '<span class="chip good">работает</span>');
+    s += `<div class="kpis"><div class="kpi"><span class="k">${esc(f.address)}</span><span class="v">≈${n0(day.guests)} гостей</span><span class="d">в день сейчас</span></div>
+      <div class="kpi"><span class="k">Выручка · прибыль${L ? ', ' + E().MONTHS[L.m] : ''}</span><span class="v">${L ? fm(L.rev.flag) : '—'}</span><span class="d">${L ? `прибыль ${fm(L.pr.flag)}` : 'после 1-го числа'}</span></div>
+      <div class="kpi"><span class="k">Узнаваемость сети</span><span class="v">+${(k.FLAG_NET * GR.flagRamp(S) * 100).toFixed(1).replace('.', ',')} %</span><span class="d">гостей во всех точках</span></div>
+      <div class="kpi"><span class="k">Расходы в месяц</span><span class="v">${fm(mc.total)}</span><span class="d">аренда, команда, коммуналка</span></div></div>`;
+    s += `<div class="row sp"><span class="hint">Программа для туристов: мастер-классы и экскурсии, гостей ×${String(k.FLAG_TOUR_K).replace('.', ',')} в мае–сентябре, ${fm(k.FLAG_TOUR * pl)} в месяц.</span><div class="seg" role="group" aria-label="Программа для туристов"><button data-act="grTour" data-arg="0" aria-pressed="${!f.tour}">Выкл</button><button data-act="grTour" data-arg="1" aria-pressed="${!!f.tour}">Вкл</button></div></div>`;
+    return s + '</div>';
+  }
+
+  /* ---------- фабрика ---------- */
+  const MAINT = ['Нет', 'Плановое', 'Сервис'];
+  function facSec(S) {
+    const GR = G_(), g = S.growth, f = g.fac, k = K(), pl = S.macro.priceLevel;
+    let s = `<div class="sec gr-sec" id="gr-factory">`;
+    if (!f) {
+      s += secHead('factory', '');
+      for (const o of g.facSites) {
+        const c = GR.facBuildCost(S, o), rent = k.FAC_RENT * o.rentK * pl;
+        const fx = fxc('rub', '', -3, `Стройка ${fm(c)}, аренда земли ${fm(rent)} в месяц`) + fxc('prod', 'Цех', 3, `+${n0(k.FAC_CAP[0])} изделий в день`) + risk('Поломки и цена муки');
+        s += `<article class="gr-card" data-gid="${o.id}"><div class="gr-ct"><b>${esc(o.address)}</b><span class="hint">${esc(dname(o.district))} · логистика ×${String(o.logi).replace('.', ',')}</span></div>
+          <div class="gr-facts"><span><small>Стройка и линии</small><b>${fm(c)}</b></span><span><small>Аренда земли</small><b>${fm(rent)}/мес</b></span><span><small>Мощность</small><b>${n0(k.FAC_CAP[0])} изд./день</b></span><span><small>Срок</small><b>${Math.round(k.FAC_DAYS / 30)} мес.</b></span></div>
+          <div class="gr-row"><span class="gr-fx">${fx}</span><span class="gr-acts"><button class="btn sm primary" data-act="grFac" data-arg="${o.id}"${S.cash < c ? ' disabled title="Не хватает денег"' : ''}>Строить · ${fm(c)}</button></span></div></article>`;
+      }
+      return s + '</div>';
+    }
+    if (f.status === 'build') {
+      const p = (S.day - f.day) / Math.max(1, f.readyDay - f.day);
+      return s + secHead('factory', '<span class="chip">стройка</span>') + `<div class="card"><div class="card-t">${esc(f.address)}</div><div class="card-s">${esc(dname(f.district))} · запуск ${E().fmtDate(f.readyDay)} · аренда земли уже платится</div>${H().meter(p, 'ok')}</div></div>`;
+    }
+    const down = f.down > S.day, P = GR.capPlan(S, S.day + 1), cap = GR.facCap(S), L = g.last, mc = GR.facMonthCost(S);
+    s += secHead('factory', down ? `<span class="chip bad">простой до ${date(f.down)}</span>` : `<span class="chip good">${f.lvl}-я очередь</span>`);
+    const seg = (v, cls, lab) => (v > 0 && cap ? `<i class="${cls}" style="width:${(v / cap * 100).toFixed(1)}%" title="${lab}: ${n0(v)} изд./день"></i>` : '');
+    s += `<div class="gr-capbar" role="img" aria-label="Загрузка фабрики">${seg(Math.min(P.fromFac, P.ret), 'c-ret', 'Полки')}${seg(Math.max(0, P.fromFac - P.ret), 'c-cat', 'Заказы')}${seg(P.frGot, 'c-fr', 'Франчайзи')}${seg(P.semis, 'c-semi', 'Полуфабрикаты сети')}</div>
+      <div class="gr-legend"><span><i class="c-ret"></i>Полки</span><span><i class="c-cat"></i>Заказы</span><span><i class="c-fr"></i>Франчайзи</span><span><i class="c-semi"></i>Полуфабрикаты</span><span class="hint">${down ? 'стоит' : `свободно ${n0(Math.max(0, P.facFree))} из ${n0(cap)}`}</span></div>`;
+    const fk = GR.flourK(S), hedged = f.hedge && f.hedge.until > S.day;
+    s += `<div class="kpis"><div class="kpi"><span class="k">Изделие с фабрики</span><span class="v">${n0(GR.facUnit(S))} ₽</span><span class="d">в цехе — ${n0(k.RET_WS_UNIT * pl)} ₽</span></div>
+      <div class="kpi"><span class="k">Цена муки</span><span class="v${fk > 1.1 ? ' negc' : ''}">×${fk.toFixed(2).replace('.', ',')}</span><span class="d">${hedged ? `закуплена до ${date(f.hedge.until)}` : `рынок ×${g.flour.toFixed(2).replace('.', ',')}`}</span></div>
+      <div class="kpi"><span class="k">Фудкост сети</span><span class="v">−${(k.FAC_NET_CUT * P.cover * 100).toFixed(1).replace('.', ',')} %</span><span class="d">${L ? `сэкономлено ${fm(L.netCut)} за ${E().MONTHS[L.m]}` : 'полуфабрикаты для цехов'}</span></div>
+      <div class="kpi"><span class="k">Расходы в месяц</span><span class="v">${fm(mc.total)}</span><span class="d">поломок: ${f.breaks}</span></div></div>`;
+    s += `<div class="gr-ctl"><span class="hint">Обслуживание: чем лучше, тем реже поломки (${MAINT.map((m, i) => `${m.toLowerCase()} — ${i ? fm(k.FAC_MAINT[i] * pl) : '0 ₽'}`).join(', ')} в месяц)</span><div class="seg" role="group" aria-label="Обслуживание фабрики">${MAINT.map((m, i) => `<button data-act="grMaint" data-arg="${i}" aria-pressed="${f.maint === i}">${m}</button>`).join('')}</div></div>
+      <div class="gr-ctl"><span class="hint">Полуфабрикаты для своих цехов: доля сети (после полок, заказов и франчайзи)</span><div class="seg" role="group" aria-label="Полуфабрикаты для сети">${[0, 0.5, 1].map((v) => `<button data-act="grSemis" data-arg="${v}" aria-pressed="${Math.abs(f.semis - v) < 0.01}">${v * 100} %</button>`).join('')}</div></div>`;
+    const hc = GR.hedgeCost(S), ec = GR.facExpCost(S);
+    s += `<div class="row">${hedged ? '' : H().btn('grHedge', 'Закупить муку на полгода', { cls: 'sm', cost: hc, dis: S.cash < hc, title: 'Цена муки не изменится полгода; комиссия поставщику сразу' })}${f.lvl < k.FAC_CAP.length ? (f.expDay ? `<span class="chip">${f.lvl + 1}-я очередь — ${E().fmtDate(f.expDay)}</span>` : H().btn('grExpand', `${f.lvl + 1}-я очередь: +${n0(k.FAC_CAP[f.lvl] - k.FAC_CAP[f.lvl - 1])} изд./день`, { cls: 'sm', cost: ec, dis: S.cash < ec })) : ''}</div>`;
+    return s + '</div>';
+  }
+
+  /* ---------- полки ---------- */
+  function retSec(S) {
+    const GR = G_(), g = S.growth, R = g.ret, k = K(), pl = S.macro.priceLevel;
+    const strikes = (c) => `<span class="gr-strk" role="img" aria-label="Предупреждений ${c.strikes} из ${k.RET_STRIKES}">${Array.from({ length: k.RET_STRIKES }, (_, i) => `<i class="${i < c.strikes ? 'on' : ''}"></i>`).join('')}</span>`;
+    let s = `<div class="sec gr-sec" id="gr-retail">${secHead('retail', R.list.length ? `<span class="chip">${nw(R.list.length, 'контракт', 'контракта', 'контрактов')}</span>` : '')}`;
+    if (!g.fac || g.fac.status !== 'open') s += `<div class="hint warnc">Без фабрики поставки идут из свободной мощности цехов — дороже, и точкам может не хватить выпечки.</div>`;
+    for (const o of R.offers) {
+      // план, если взять контракт: ещё o.units к обязательствам
+      const extra = GR.capPlan(S, S.day + 1, o.units);
+      const price = o.price * pl, rev = o.units * price * 30.4;
+      const fx = fxc('rub', '', lvl(rev / revM(S) * 100, 2, 6), `Выручка ≈${fm(rev)} в месяц, деньги — через ${o.pay} дн.`) + fxc('prod', 'Цех', -Math.max(1, lvl(o.units / Math.max(1, extra.fcap + g.ws.cap) * 100, 15, 40)), 'Нагрузка на производство') + fxc('guests', 'Гости', extra.wsOver > 1 ? -lvl(extra.wsOver / Math.max(1, g.ws.units) * 100, 5, 15) : 1, extra.wsOver > 1 ? 'Точки недополучат выпечку' : 'Бренд на полках — гостей в точках чуть больше') + (extra.fill < 0.999 ? risk('Недопоставка — неустойка и страйки') : '');
+      s += `<article class="gr-card" data-gid="${o.id}"><div class="gr-ct"><b>Сеть ${esc(o.name)}${o.renew ? ' <span class="chip good">продление</span>' : ''}</b><span class="hint">${esc(o.note)}</span><span class="gr-left">ответить до ${date(o.until)}</span></div>
+        <div class="gr-facts"><span><small>Изделий в день</small><b>${n0(o.units)}</b></span><span><small>Цена изделия</small><b>${n0(price)} ₽</b></span><span><small>Выручка в месяц</small><b>≈${fm(rev)}</b></span><span><small>Оплата</small><b>через ${o.pay} дн.</b></span><span><small>Неустойка</small><b>${pc(o.fine)} недопоставки</b></span></div>
+        ${capLine(S, extra, 'объёма')}<div class="gr-row"><span class="gr-fx">${fx}</span><span class="gr-acts"><button class="btn sm primary" data-act="grRet" data-arg="${o.id}">Подписать на год</button><button class="btn sm" data-act="grRetNo" data-arg="${o.id}">Отказаться</button></span></div></article>`;
+    }
+    if (!R.offers.length && R.list.length < (k.RET_MAX_ACTIVE || 9)) s += `<div class="hint">Новых предложений пока нет — сети приходят раз в 2–3 месяца.</div>`;
+    if (R.list.length) s += `<div class="gr-list">${R.list.map((c) => `<div class="gr-li"><span>${esc(c.name)} ${strikes(c)}<small>${n0(c.units)} изд./день · до ${E().fmtDate(c.end)}${c.lastFill != null ? ` · поставлено ${pc(c.lastFill)}` : ''}</small></span><b>${fm(c.units * c.price * pl * 30.4)}<small>в месяц</small></b></div>`).join('')}</div>`;
+    s += `<div class="hint">Ждём оплаты: <b>${fm(GR.recvTotal(S))}</b> — эти деньги заработаны, но придут на счёт позже.</div>`;
+    return s + '</div>';
+  }
+
+  /* ---------- франшиза ---------- */
+  const CTRL = ['Нет', 'Выборочный', 'Регулярный', 'Тайный покупатель'];
+  const starsSeen = (v) => `<span class="gr-stars" role="img" aria-label="Опыт и репутация: ${String(v).replace('.', ',')} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${v >= i ? 'on' : v >= i - 0.5 ? 'half' : ''}"></i>`).join('')}</span>`;
+  function frSec(S, ui) {
+    const GR = G_(), g = S.growth, F = g.fr, k = K(), pl = S.macro.priceLevel;
+    let s = `<div class="sec gr-sec" id="gr-fran">${secHead('fran', F.list.length ? `<span class="chip">${nw(F.list.length, 'франчайзи', 'франчайзи', 'франчайзи')}</span>` : '')}`;
+    s += `<div class="gr-ctl"><span class="hint">Контроль качества партнёров (на каждого, в месяц): ${CTRL.map((c, i) => `${c.toLowerCase()} — ${i ? fm(k.FR_CTRL[i] * pl) : '0 ₽'}`).join(', ')}. Строже — реже скандалы и точнее видно кандидатов.</span><div class="seg gr-seg4" role="group" aria-label="Контроль качества">${CTRL.map((c, i) => `<button data-act="grCtrl" data-arg="${i}" aria-pressed="${F.ctrl === i}">${c}</button>`).join('')}</div></div>`;
+    for (const c of F.cand) {
+      const fee = c.fee * pl, sales = k.FR_SALES * pl * (0.55 + 0.6 * Math.min(1, c.seen / 5)), roy = sales * k.FR_ROYALTY;
+      const fx = fxc('rub', '', 2, `Взнос ${fm(fee)} сразу, роялти ≈${fm(roy)} в месяц`) + fxc('guests', 'Гости', 0, 'Своих гостей не забирает — район без ваших точек') + (c.seen < 3.5 ? risk('Слабый партнёр — выше риск скандала') : '');
+      s += `<article class="gr-card" data-gid="${c.id}"><div class="gr-ct"><b>${esc(c.partner)}</b><span class="hint">${esc(c.bio)}</span><span class="gr-left">ждёт до ${date(c.until)}</span></div>
+        <div class="gr-facts"><span><small>Район</small><b>${esc(dname(c.district))}</b></span><span><small>Опыт и репутация</small><b>${starsSeen(c.seen)}</b></span><span><small>Взнос нам</small><b>${fm(fee)}</b></span><span><small>Роялти</small><b>≈${fm(roy)}/мес</b></span></div>
+        <div class="gr-row"><span class="gr-fx">${fx}</span><span class="gr-acts"><button class="btn sm primary" data-act="grFran" data-arg="${c.id}"${F.list.length >= k.FR_MAX ? ' disabled' : ''}>Подписать договор</button></span></div></article>`;
+    }
+    if (!F.cand.length) s += `<div class="hint">Новые партнёры приходят раз в 2–4 месяца.</div>`;
+    if (F.list.length) {
+      s += `<div class="gr-list">${F.list.map((f) => {
+        const conf = ui.grFrClose === f.id, st = f.status === 'opening' ? `откроется ${date(f.openDay)}` : `оборот ${fm(f.lastSales || 0)}/мес · нам ${fm(f.lastInc || 0)}`;
+        const act = conf ? `<span class="row"><button class="btn sm danger" data-act="grFranClose" data-arg="${f.id}">Расторгнуть (${fm(f.fee * k.FR_EXIT)})</button><button class="btn sm" data-act="grFranCloseNo">Отмена</button></span>` : `<button class="linkbtn" data-act="grFranAsk" data-arg="${f.id}">Расторгнуть</button>`;
+        return `<div class="gr-li"><span>${esc(f.partner)} ${starsSeen(f.seen)}${f.scandals ? ` <span class="chip bad">скандалов: ${f.scandals}</span>` : ''}<small>${esc(dname(f.district))} · ${st}</small></span>${act}</div>`;
+      }).join('')}</div>`;
+    }
+    return s + '</div>';
+  }
+
+  /* ---------- «Требует внимания» ---------- */
+  function attItems(S) {
+    const out = [], GR = G_(); if (!S || S.phase !== 'play' || !S.growth || !GR.anyUnlocked(S)) return out;
+    const g = S.growth;
+    if (g.fac && g.fac.status === 'open' && g.fac.down > S.day) out.push({ lvl: 'bad', icHtml: ICON.factory, t: `Фабрика стоит до ${date(g.fac.down)}`, d: 'Полки и заказы снабжают цеха — точки могут недополучить выпечку.', b: { act: 'growTab', arg: 'gr-factory', label: 'Фабрика' } });
+    for (const c of g.ret.list) if (c.strikes > 0) out.push({ lvl: 'warn', icHtml: ICON.retail, t: `${esc(c.name)}: предупреждение ${c.strikes} из ${K().RET_STRIKES}`, d: `Поставили ${pc(c.lastFill || 0)} за месяц. Нужна мощность или меньше обязательств.`, b: { act: 'growTab', arg: 'gr-retail', label: 'Полки' } });
+    if (g.cat.offers.length) out.push({ lvl: 'info', dec: 1, icHtml: ICON.cater, t: `${nw(g.cat.offers.length, 'новый заказ', 'новых заказа', 'новых заказов')} на кейтеринг`, d: `Ответить до ${date(Math.min(...g.cat.offers.map((o) => o.until)))} — иначе уйдут к другим.`, b: { act: 'growTab', arg: 'gr-cater', label: 'Заказы' } });
+    if (g.ret.offers.length) out.push({ lvl: 'info', dec: 1, icHtml: ICON.retail, t: `Сеть ${esc(g.ret.offers[0].name)} предлагает контракт`, d: `${n0(g.ret.offers[0].units)} изделий в день на год, оплата через ${g.ret.offers[0].pay} дн.`, b: { act: 'growTab', arg: 'gr-retail', label: 'Условия' } });
+    if (g.fr.cand.length && g.fr.list.length < K().FR_MAX) out.push({ lvl: 'info', dec: 1, icHtml: ICON.fran, t: `${nw(g.fr.cand.length, 'партнёр хочет', 'партнёра хотят', 'партнёров хотят')} франшизу`, d: 'Взнос и роялти — но проверьте опыт и репутацию.', b: { act: 'growTab', arg: 'gr-fran', label: 'Кандидаты' } });
+    if (GR.unlocked(S, 'factory') && !g.fac && g.facSites.length) out.push({ lvl: 'info', icHtml: ICON.factory, t: 'Можно строить свою фабрику', d: 'Мощность на полки, франшизу и полуфабрикаты для цехов.', b: { act: 'growTab', arg: 'gr-factory', label: 'Площадки' } });
+    if (GR.unlocked(S, 'flag') && !g.flag && g.flagSites.length) out.push({ lvl: 'info', icHtml: ICON.flag, t: 'Можно открыть флагман в центре', d: 'Дорого, но узнаваемость поднимет гостей во всех точках.', b: { act: 'growTab', arg: 'gr-flag', label: 'Помещения' } });
+    return out;
+  }
+
+  /* ---------- окно «Новая возможность» ---------- */
+  function unlockModal(n) {
+    const S = APP().state; if (!S) return;
+    const keys = (n.keys || []).filter((k) => WHY[k]);
+    if (!keys.length) return;
+    const one = keys.length === 1;
+    let h = `<div class="modal-h gr-mh"><span class="eyebrow pos">Новая возможность</span><h2>${one ? esc(G_().NAMES[keys[0]]) : 'Сеть переросла город'}</h2></div><div class="modal-b gr-mb">`;
+    if (!one) h += `<p style="margin:0">Сеть выросла — открылось сразу несколько направлений роста вглубь.</p>`;
+    for (const k of keys) {
+      h += `<div class="gr-op"><div class="gr-op-h"><span class="gr-op-ic">${ICON[k]}</span>${one ? '' : `<b>${esc(G_().NAMES[k])}</b>`}</div><p>${esc(WHY[k].lead)}</p>
+        <div class="gr-pm"><div class="pl"><span class="fxc up">${(BK.FX_IC || {}).rub || ''}<span class="ar">▲</span></span><span>${esc(WHY[k].plus)}</span></div><div class="mi"><span class="fxc risk">${(BK.FX_IC || {}).risk || ''}<span class="fxn">Риск</span></span><span>${esc(WHY[k].minus)}</span></div></div></div>`;
+    }
+    const nx = G_().nextUnlock(S);
+    if (nx) h += `<p class="hint" style="margin:0">Следующее — ${esc(nx.name.toLowerCase())}: при ${nx.stores} точках или обороте ${fm(nx.rev)} за год.</p>`;
+    h += `</div><div class="modal-f"><button class="btn primary block" data-act="growTab" data-arg="gr-${keys[0]}">Открыть «Рост»</button><button class="btn block" data-act="closeModal">Позже</button></div>`;
+    APP().openModal(h, { closable: true });
+  }
+
+  /* ---------- карта ---------- */
+  const FAC_PATH = 'M-10,7 L-10,-1 L-5,-4.5 L-5,-1 L0,-4.5 L0,-1 L5,-4.5 L5,-9 L8,-9 L8,7 Z';
+  const STAR = 'M0,-7 L2,-2.3 L6.9,-2.2 L3.1,1 L4.3,5.7 L0,3 L-4.3,5.7 L-3.1,1 L-6.9,-2.2 L-2,-2.3 Z';
+  function mapItems(S, k, isSel) {
+    const out = []; if (!S.growth || !G_().anyUnlocked(S) || !G_().ufaOn(S)) return out;
+    const g = S.growth, sel = (id) => (isSel && (isSel('gfac', id) || isSel('gflag', id) || isSel('gfr', id) || isSel('gsite', id)) ? ' sel' : '');
+    for (const o of g.facSites) out.push(['gs' + o.id, `<g class="m-gsite fac${sel(o.id)}" data-kind="gsite" data-id="${o.id}" transform="translate(${o.x},${o.y}) scale(${k})"><rect x="-15" y="-12" width="30" height="24" rx="4"/><path d="${FAC_PATH}" transform="scale(.8)"/></g>`]);
+    for (const o of g.flagSites) out.push(['gs' + o.id, `<g class="m-gsite flag${sel(o.id)}" data-kind="gsite" data-id="${o.id}" transform="translate(${o.x},${o.y}) scale(${k})"><circle r="13"/><path d="${STAR}"/></g>`]);
+    for (const f of g.fr.list) out.push(['gf' + f.id, `<g class="m-gfr ${f.status}${sel(f.id)}" data-kind="gfr" data-id="${f.id}" transform="translate(${f.x},${f.y}) scale(${k})"><circle r="7.5"/><text>ф</text></g>`]);
+    if (g.fac) { const f = g.fac, dn = f.status === 'open' && f.down > S.day; out.push(['gfac', `<g class="m-gfac ${f.status}${dn ? ' down' : ''}${sel(f.id)}" data-kind="gfac" data-id="${f.id}" transform="translate(${f.x},${f.y}) scale(${k})"><rect x="-17" y="-14" width="34" height="28" rx="4"/><path d="${FAC_PATH}"/>${dn ? '<circle class="m-alert" cx="15" cy="-12" r="6"/><text class="m-alert-t" x="15" y="-12">!</text>' : ''}</g>`]); }
+    if (g.flag) { const f = g.flag; out.push(['gflag', `<g class="m-gflag ${f.status}${sel(f.id)}" data-kind="gflag" data-id="${f.id}" transform="translate(${f.x},${f.y}) scale(${k})"><circle class="ring" r="18"/><circle r="14"/><path d="${STAR}" transform="scale(1.25)"/></g>`]); }
+    return out;
+  }
+  function tip(S, kind, id) {
+    const g = S.growth; if (!g) return '';
+    if (kind === 'gfac' && g.fac) { const f = g.fac; return `<b>Своя фабрика</b><br>${esc(f.address)}<br>${f.status === 'build' ? `Стройка до ${E().fmtDate(f.readyDay)}` : f.down > S.day ? `Простой до ${date(f.down)}` : `${f.lvl}-я очередь · ${n0(G_().facCap(S))} изд./день`}`; }
+    if (kind === 'gflag' && g.flag) { const f = g.flag; return `<b>Флагман</b><br>${esc(f.address)}<br>${f.status === 'build' ? `Откроется ${E().fmtDate(f.readyDay)}` : `≈${n0(f.guests || 0)} гостей в день · узнаваемость сети`}`; }
+    if (kind === 'gfr') { const f = g.fr.list.find((x) => x.id === id); return f ? `<b>Франчайзи: ${esc(f.partner)}</b><br>${esc(f.address)} · ${esc(dname(f.district))}<br>${f.status === 'opening' ? `Откроется ${date(f.openDay)}` : `Оборот ${fm(f.lastSales || 0)}/мес, нам ${fm(f.lastInc || 0)}`}` : ''; }
+    if (kind === 'gsite') {
+      const a = g.facSites.find((x) => x.id === id), b = g.flagSites.find((x) => x.id === id);
+      if (a) return `<b>Площадка под фабрику</b><br>${esc(a.address)} · ${esc(dname(a.district))}<br>Стройка ${fm(G_().facBuildCost(S, a))}`;
+      if (b) return `<b>Помещение под флагман</b><br>${esc(b.address)} · ${esc(dname(b.district))}<br>Ремонт и запуск ${fm(G_().flagBuildCost(S, b))}`;
+    }
+    return '';
+  }
+  function legend(S) {
+    if (!S.growth || !G_().ufaOn(S)) return '';
+    const g = S.growth; let h = '';
+    if (g.fac) h += `<span class="lg-r"><svg viewBox="-17 -14 34 28" class="lg-sw" aria-hidden="true"><rect x="-15" y="-12" width="30" height="24" rx="4" fill="var(--crust)"/></svg><span>Фабрика${g.fac.status === 'build' ? ' · стройка' : ''}</span><b>${g.fac.status === 'open' ? g.fac.lvl + '-я' : '—'}</b></span>`;
+    if (g.flag) h += `<span class="lg-r"><svg viewBox="-16 -16 32 32" class="lg-sw" aria-hidden="true"><circle r="14" fill="var(--crust)"/></svg><span>Флагман</span><b>1</b></span>`;
+    if (g.fr.list.length) h += `<span class="lg-r"><svg viewBox="-9 -9 18 18" class="lg-sw" aria-hidden="true"><circle r="7" fill="var(--surface)" stroke="var(--crust)" stroke-width="2" stroke-dasharray="3 2"/></svg><span>Франчайзи</span><b>${g.fr.list.length}</b></span>`;
+    return h;
+  }
+
+  /* ---------- действия ---------- */
+  function go(sec) {
+    const A = APP(); A.closeModal(); A.ACT.tab({ arg: 'grow' });
+    if (sec) requestAnimationFrame(() => { const el = document.getElementById(sec); if (el) el.scrollIntoView({ block: 'start' }); });
+  }
+  function boot() {
+    const A = APP() && APP().ACT; if (!A) return;
+    const run = (fn, ok) => (d) => { const S = APP().state, r = fn(S, d); if (r && r.ok === false && r.msg) APP().toast('Не получилось', r.msg, 'warn'); else if (r && r.ok && ok) APP().toast(ok, '', 'good'); APP().save(); APP().refresh(); };
+    Object.assign(A, {
+      growTab: (d) => go(d && d.arg),
+      grOrder: run((S, d) => G_().acceptOrder(S, d.arg), 'Заказ принят'),
+      grOrderNo: run((S, d) => G_().declineOrder(S, d.arg)),
+      grTeam: run((S) => G_().hireTeam(S), 'Команда кейтеринга собрана'),
+      grFlag: run((S, d) => G_().buildFlag(S, d.arg), 'Флагман: начат ремонт'),
+      grTour: run((S, d) => G_().setTour(S, d.arg === '1')),
+      grFac: run((S, d) => G_().buildFactory(S, d.arg), 'Стройка фабрики началась'),
+      grMaint: run((S, d) => G_().setMaint(S, +d.arg)),
+      grSemis: run((S, d) => G_().setSemis(S, +d.arg)),
+      grHedge: run((S) => G_().hedge(S), 'Мука закуплена на полгода'),
+      grExpand: run((S) => G_().expandFactory(S), 'Расширение фабрики началось'),
+      grRet: run((S, d) => G_().acceptContract(S, d.arg), 'Контракт подписан'),
+      grRetNo: run((S, d) => G_().declineOffer(S, d.arg)),
+      grCtrl: run((S, d) => G_().setControl(S, +d.arg)),
+      grFran: run((S, d) => G_().signFran(S, d.arg), 'Договор франшизы подписан'),
+      grFranAsk: (d) => { APP().ui.grFrClose = d.arg; APP().refresh(); },
+      grFranCloseNo: () => { APP().ui.grFrClose = null; APP().refresh(); },
+      grFranClose: run((S, d) => { APP().ui.grFrClose = null; return G_().closeFran(S, d.arg); }, 'Договор расторгнут'),
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
+
+  BK.GrowthUI = { tabs, tabDot, panel, attItems, unlockModal, mapItems, tip, legend, ICON, WHY };
+})();
+
 /* ui/russia.js */
 /* Карта России (второй акт, этап Р1): статичный лист-чертёж 1600×900 в стиле карты Уфы, города кружками,
    переходы город ↔ Россия с анимацией «камера отъехала», панель «Россия» (сводка сети, карточка города, вход в город).
@@ -16035,6 +17201,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
+      else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
     }
   }
@@ -16096,13 +17263,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function tabDots() {
     if (!S) return {};
     const c = BK.attention(S).counts;
-    return { dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0, ruinbox: BK.Dir && BK.Corp.on(S) ? BK.Dir.inboxOpen(S) : 0 };
+    return { grow: BK.GrowthUI ? BK.GrowthUI.tabDot(S) : 0, dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0, ruinbox: BK.Dir && BK.Corp.on(S) ? BK.Dir.inboxOpen(S) : 0 };
   }
   function renderTabs() {
     const dots = tabDots();
     const mark = (k) => { const v = dots[k]; if (!v || ui.tab === k) return ''; return v === 'dot' ? '<span class="dot" aria-hidden="true"></span>' : `<em class="badge" aria-label="проблем: ${v}">${v}</em>`; };
-    const html = (ui.view === 'russia' ? RU_TABS : TABS).map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
-    if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; }
+    const list = ui.view === 'russia' ? RU_TABS : BK.GrowthUI ? BK.GrowthUI.tabs(S, TABS) : TABS; // «Рост» — с первым направлением роста вглубь
+    const html = list.map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
+    if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; $('#tabs').classList.toggle('t9', list.length > 8); }
   }
   function renderPanel() {
     if (!S) return;
@@ -16110,7 +17278,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     renderTabs();
     const body = $('#pbody');
     const scroll = body.scrollTop;
-    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
+    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab, grow: BK.GrowthUI ? BK.GrowthUI.panel : P.dash }[ui.tab] || P.dash;
     const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
     const finWide = ui.tab === 'fin'; // «Финансы» — широкая панель (водопад и таблица точек), чуть уже корпоративных таблиц
     if (main.classList.contains('ru-wide') !== wide || main.classList.contains('fin-wide') !== finWide) { main.classList.toggle('ru-wide', wide); main.classList.toggle('fin-wide', finWide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
@@ -16164,6 +17332,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (hit.kind === 'prod') ui.tab = 'prod';
     else if (hit.kind === 'prodOffer') ui.tab = setupNow() ? 'dash' : 'market';
     else if (hit.kind === 'hq') ui.tab = 'team';
+    else if (/^g(fac|flag|fr|site)$/.test(hit.kind)) ui.tab = 'grow'; // рост вглубь: фабрика, флагман, франчайзи, площадки
     refresh();
     requestAnimationFrame(() => {
       const card = hit.kind === 'offer' ? document.querySelector(`[data-offer="${hit.id}"]`) : document.querySelector('.card.sel');
@@ -16189,6 +17358,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'prod') { const p = E.byId(S.productions, id); return p ? `<b>${p.name}</b><br>${e(p.address)}<br>Загрузка ${H.pct(p.load || 0)}` : ''; }
     if (kind === 'prodOffer') { const o = E.byId(S.prodOffers, id); return o ? `<b>Под производство: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${H.fm(o.area * o.rentM2)}/мес` : ''; }
     if (kind === 'hq') return `<b>Офис компании</b><br>Найм, обучение, культура`;
+    if (BK.GrowthUI && /^g(fac|flag|fr|site)$/.test(kind)) return BK.GrowthUI.tip(S, kind, id);
     if (kind === 'rival') { const R = E.rivalSummary && E.rivalSummary(S), o = R && R.stores.find((x) => x.id === id); return o ? `<b>«${e(R.name)}» — конкурент</b><br>${e(o.address)} · ${H.dname(o.district)}<br>Забирает часть гостей у ваших точек ближе ~0,9 км` : ''; }
     return '';
   }

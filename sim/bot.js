@@ -654,12 +654,18 @@ if (require.main === module) {
   if (flags.reserve != null) opts.reserve = +flags.reserve;
   if (flags.pay != null) opts.pay = +flags.pay;
   if (flags.culture != null) opts.culture = +flags.culture;
-  const sums = [];
+  const sums = [], byY = {};
   for (let s = 1; s <= seeds; s++) {
     const r = play(Object.assign({ seed: s * 7919 }, opts));
+    for (const o of r.out) if (o.year != null && !(r.won && o.year > Math.ceil(r.won.year))) (byY[o.year] || (byY[o.year] = [])).push(o); // --byyear: медианы по годам (до года победы включительно)
     if (!flags.summary) { console.log(`\n=== ${level} seed ${s} ${r.lost ? 'LOST at ' + r.lostYear : ''}`); console.table(r.out); }
     const sm = summarize(r); sm.seed = s; sums.push(sm);
     if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
+  }
+  if (flags.byyear) { // медиана по сидам: точки, франчайзи, направлений в работе, выручка сети и направлений (млн за год), доля направлений, уровень цен
+    const md = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : null; };
+    console.log('\nПо годам (медиана по сидам, пока не победили):');
+    console.table(Object.keys(byY).map(Number).sort((a, b) => a - b).map((y) => { const L = byY[y]; return { год: y, сидов: L.length, точки: md(L.map((x) => x.stores)), франчайзи: md(L.map((x) => x.fr || 0)), направлений: md(L.map((x) => x.dir || 0)), 'выручка, млн': md(L.map((x) => x.rev)), 'из них рост, млн': md(L.map((x) => x.gRev || 0)), 'доля роста %': md(L.map((x) => x['g%'] || 0)), 'цены ×': md(L.map((x) => x.pl)) }; }));
   }
   console.log(`\n### ${level} ${difficulty} ${JSON.stringify(flags)}`);
   console.table(sums);
