@@ -22,7 +22,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const E = () => BK.Engine, C = () => BK.CFG;
   const KEY = 'bk-ufa-rewind', SEP = '\u0001'; // SEP не встречается в JSON.stringify (управляющие символы экранируются)
   const games = {}; // id игры → [{ day, info, json }] по возрастанию дня
-  const st = { id: null, storeOk: null, reloadEmpty: false, dirty: false, blocked: false };
+  const st = { id: null, storeOk: null, reloadEmpty: false, dirty: false, blocked: false, fresh: null, timer: null };
 
   const cfgOf = () => Object.assign({ easy: 6, normal: 3, hard: 0, STORE_MAX: 2400000 }, C().REWIND || {});
   function max(S) { const c = cfgOf(), d = (S && S.difficulty) || 'normal'; return c[d] != null ? c[d] : c.normal; }
@@ -46,8 +46,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (E().dateOf(S.day).d !== 1) return false;
     const q = games[st.id] || (games[st.id] = []);
     if (q.length && q[q.length - 1].day >= S.day) return false;
-    q.push(take(S));
+    const snap = take(S);
+    q.push(snap);
     while (q.length > n) q.shift();
+    st.fresh = { S, day: S.day, json: snap.json, t: Date.now() }; // та же строка пригодится автосохранению месяца в этом же кадре
     schedulePersist();
     return true;
   }
@@ -114,7 +116,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!ls()) { st.storeOk = false; return; }
     if (typeof window === 'undefined') persist(); else st.dirty = true;
   }
-  function flush() { if (st.dirty) persist(); }
+  // запись — отдельной задачей после автосохранения, чтобы кадр 1-го числа не стал «долгой задачей»
+  function flush() {
+    if (!st.dirty) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') { clearTimeout(st.timer); st.timer = null; persist(); return; } // вкладку закрывают — сразу
+    if (!st.timer) st.timer = setTimeout(() => { st.timer = null; persist(); }, 30);
+  }
+  // строка снимка, только что снятого с этого же состояния (в том же кадре), — автосохранению не нужно сериализовать заново
+  function freshJson(S) { const f = st.fresh; st.fresh = null; return f && f.S === S && f.day === S.day && Date.now() - f.t < 100 ? f.json : null; }
   function persist() {
     st.dirty = false;
     const L = ls(); if (!L || !st.id) { st.storeOk = false; return; }
@@ -145,5 +154,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { max: max(S), total: q.length, persisted: q.filter((x) => x.stored).length, storeOk: st.storeOk, reloadEmpty: st.reloadEmpty && !q.length, storage: !!ls(), chars: q.reduce((a, x) => a + x.json.length, 0) };
   }
 
-  BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freeStorage, forget, status, take, strip, _games: games };
+  BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freshJson, freeStorage, forget, status, take, strip, _games: games };
 })();

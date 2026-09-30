@@ -55,7 +55,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- сохранения ---------------- */
   function save() {
     if (!S) return;
-    const data = JSON.stringify(stripState(S));
+    const data = (BK.Rewind && BK.Rewind.freshJson(S)) || JSON.stringify(stripState(S)); // 1-го числа — строка снимка «Переиграть»
     try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
       // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются)
       if (BK.Rewind && BK.Rewind.freeStorage()) try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e2) { /* без сохранений */ }
