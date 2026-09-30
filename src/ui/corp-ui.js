@@ -443,6 +443,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
     s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(cr.active))}</small></span></label>`).join('');
     s += cr.dirCand.map((d) => `<label class="wopt"><input type="radio" name="who" value="c:${d.id}"><span><b>Нанять: ${esc(d.name)}</b><small>${GRN(d.grade)} · ${STN(d.style)} · найм ${fm(d.salary * K().DIR_HIRE_SALARIES)} — запустит город сам</small></span></label>`).join('');
+    return s + '</fieldset>' + supplyChoices(S, id);
+  }
+  // вход в город: формат снабжения (Р4, §7.1 п. 2, §7.2)
+  function supplyChoices(S, id) {
+    const h = BK.Corp.supplyHubs(S, id), k = K(), pl = S.macro.priceLevel, lk = S.corp.hqDelK || 1;
+    const per = (D, km) => fm((D[0] + D[1] * km) * pl * lk);
+    const opt = (v, title, sub, dis) => `<label class="wopt${dis ? ' dis' : ''}"><input type="radio" name="supply" value="${v}"${v === 'own' ? ' checked' : ''}${dis ? ' disabled' : ''}><span><b>${title}</b><small>${sub}</small></span></label>`;
+    let s = `<fieldset class="whopick"><legend>Откуда выпечка</legend>`;
+    s += opt('own', 'Свой цех', 'Как в начале игры: помещение под цех, пекари, оборудование. Дороже на старте, дешевле потом.');
+    const fr = h.fresh;
+    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
+      : opt('fresh', 'Свежая выпечка из другого города', `Нужен наш цех ближе ${h.freshKm} км${h.lvl < 1 ? ` (с логистикой 1-го уровня в штабе — ${k.FRESH_KM_L1} км)` : ''}.`, true);
+    const fz = h.frozen;
+    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
+      : opt('frozen', 'Фабрика заморозки', h.lvl < 2 ? 'Нужна логистика 2-го уровня в штабе.' : `Нет нашего цеха ближе ${k.FROZEN_KM} км.`, true);
     return s + '</fieldset>';
   }
   function fedModal(S, legend) {
@@ -466,5 +481,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
-  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, fedModal, mapBadge, initials, hqTab, motivation };
+  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation };
 })();

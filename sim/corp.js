@@ -4,6 +4,9 @@
 // Запуск: node sim/corp.js [сидов=2] [лет=16] [города через запятую=kazan,samara] [--stay=24] [--quiet] [--dirs]
 //   --dirs — вместо ручного плана города открывает корпоративный профиль бота (директора, sim/corpbot.js)
 //   --stay — сколько месяцев вести каждый новый город вручную, потом — следующий; в конце — назад в Уфу.
+//   --supply=fresh|frozen — входить без своего цеха: выпечка из цеха другого города / с фабрики заморозки (Р4, §7.2), если досягаемо;
+//   --log=1|2 — перед входом открыть логистику в штабе до этого уровня (2 — фабрика заморозки).
+//   Пример: node sim/corp.js 2 14 sterlitamak,chelny --supply=fresh --log=1 · node sim/corp.js 1 14 samara,moscow --supply=frozen --log=2
 const BK = require('./load');
 const { play, estStore } = require('./bot');
 const E = BK.Engine, CFG = BK.CFG;
@@ -19,7 +22,8 @@ const net = (m) => NET_IN.reduce((a, k) => a + (m[k] || 0), 0) - NET_OUT.reduce(
 const W = (S) => S.cash + S.reserve - S.loan;
 const f1 = (v) => Math.round(v / 1e6);
 
-function startCity(S, P) { // как старт в Уфе: дешёвый по полной стоимости цех + лучшая точка
+function startCity(S, P) { // как старт в Уфе: дешёвый по полной стоимости цех + лучшая точка (при поставках из другого города — только точка)
+  if (BK.Corp.remoteOf(S)) { const best = S.offers.map((o) => ({ o, e: estStore(S, o, P) })).sort((a, b) => a.e.payback - b.e.payback); return best.length ? E.rentStore(S, best[0].o.id).ok : false; }
   const wsum = BK.DISTRICTS.length, kmU = E.kmPerUnit();
   const cost = (o) => {
     let km = 0; for (const d of BK.DISTRICTS) km += E.dist(o, d) * kmU / wsum;
@@ -33,7 +37,7 @@ function startCity(S, P) { // как старт в Уфе: дешёвый по �
 }
 
 function run(seed) {
-  const issues = [], cityRows = [], visits = [];
+  const issues = [], cityRows = [], visits = [], supplied = [];
   let step = 0, phaseDay = null, unlockY = null;
   const onDay = (S, P) => {
     if (!S.corp) return;
@@ -45,7 +49,10 @@ function run(seed) {
     if (step < plan.length && (phaseDay == null || S.day - phaseDay >= stayMonths * 30.4)) {
       const id = plan[step], cost = E.enterCost(S, id), lock = E.enterLock(S, id);
       if (!lock && S.cash > cost + 60e6 * S.macro.priceLevel) {
-        const r = E.enterCity(S, id);
+        if (flags.log) while (BK.HQ.lvlOf(S, 'logistics') < +flags.log && E.hqOpen(S, 'logistics').ok);
+        const sup = flags.supply && BK.Corp.supplyHubs(S, id)[flags.supply] ? flags.supply : null;
+        const r = E.enterCity(S, id, sup ? { supply: sup } : undefined);
+        if (sup) supplied.push(`${id} ← ${S.corp.cities[id].supplyFrom} (${sup}, ${S.corp.cities[id].supplyKm} км)`);
         if (!r.ok) { issues.push(`вход в ${id}: ${r.msg}`); step++; return; }
         const ok = startCity(S, P);
         if (!ok) issues.push(`старт ${id}: не удалось открыть цех/точку`);
@@ -76,7 +83,7 @@ function run(seed) {
     }
   } });
   const S = r.S;
-  return { seed, S, r, issues, cityRows, visits, unlockY };
+  return { seed, S, r, issues, cityRows, visits, unlockY, supplied };
 }
 
 let bad = 0;
@@ -86,6 +93,7 @@ for (let s = 1; s <= seeds; s++) {
   const S = x.S;
   console.log(`\n=== seed ${s}: выход в Россию на ${x.unlockY ?? '—'}-м году · ${(Date.now() - t0) / 1000} с · ${S.lost ? 'БАНКРОТ на ' + (S.day / 365).toFixed(1) : 'жив'} · победа в Уфе ${x.r.won ? x.r.won.year : '—'}`);
   console.log('Вход в города:', x.visits.map((v) => `${v.id} (${(v.day / 365).toFixed(1)} г.${v.cost ? ', ' + f1(v.cost) + ' млн' : ''})`).join(' → ') || 'нет');
+  if (x.supplied.length) console.log('Снабжение из другого города:', x.supplied.join('; '), '· сейчас:', BK.Corp.supplyLinks(S).map((l) => `${l.to}←${l.from} ${l.mode}${l.ok ? '' : ' ПРЕРВАНО'}`).join(', ') || 'все города на своих цехах');
   if (!flags.quiet) console.table(x.cityRows);
   if (S.corp) {
     const sm = E.corpSummary(S);

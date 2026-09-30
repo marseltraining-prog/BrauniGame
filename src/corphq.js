@@ -131,7 +131,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const chron = (S, x) => { if (!S.chron) return; S.chron.push(Object.assign({ day: S.day }, x)); };
 
   /* ---------------- давление соперников в городах (§5.3 R_c, §12 п. 6) ---------------- */
-  function pressOf(c) { if (c.id === 'ufa') return 0; return clamp((K().PRESS_COMP[def(c.id).comp] || 0) + (c.rp || 0), 0, K().PRESS_MAX); }
+  function pressOf(c) { if (c.id === 'ufa') return 0; return clamp((K().PRESS_COMP[def(c.id).comp] || 0) + (c.rp || 0) * (def(c.id).fedK || 1), 0, K().PRESS_MAX); } // Новосибирск (fedK) — федеральные сети давят слабее
   // множитель выручки точки: давление «сейчас» против давления в снимке (снимок уже учитывает то, что было при упаковке)
   function rivalMult(S, c, s) {
     if (c.id === 'ufa') return 1;
@@ -169,7 +169,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const id in cr.cities) {
         const c = cr.cities[id];
         if (id === 'ufa' || c.rivalIn || S.day - c.enteredDay < k.RIVAL_FOLLOW_AFTER) continue;
-        const p = k.RIVAL_FOLLOW_P * (0.5 + (k.POACH_COMP[def(id).comp] || 1) / 2);
+        const p = k.RIVAL_FOLLOW_P * (0.5 + (k.POACH_COMP[def(id).comp] || 1) / 2) * (def(id).fedK || 1);
         if (I.rnd(S) < p) { rivalEnter(S, id); break; }
       }
     });

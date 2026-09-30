@@ -120,7 +120,9 @@ function corpMonth(S, P, mem, opt) {
       if (lv === 'bad' && S.cash < need) E.takeLoan(S, need - S.cash + 20e6 * pl); // рывок в кредит
       if (S.cash > need * (lv === 'bad' ? 1 : lv === 'avg' ? 1.8 : 1.3) + (lv === 'bad' ? 0 : buf)) {
         const d = hireFor(S, null, Object.assign({}, opt, { level: lv }), mem);
-        if (d) { const r = E.enterCity(S, id, { director: d.id }); if (r.ok) { st.entered.push({ id, y: +(S.day / 365).toFixed(1) }); st.lastEnter = S.day; } }
+        // Р4: good входит без своего цеха, если рядом наш цех (свежая выпечка) — цех директор построит, когда точек станет больше
+        const supply = lv === 'good' && BK.Corp.supplyHubs(S, id).fresh ? 'fresh' : null;
+        if (d) { const r = E.enterCity(S, id, { director: d.id, supply }); if (r.ok) { st.entered.push({ id, y: +(S.day / 365).toFixed(1), sup: supply }); st.lastEnter = S.day; } }
       }
     }
   }

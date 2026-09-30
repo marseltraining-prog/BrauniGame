@@ -699,10 +699,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       let dirId = null;
       if (who.startsWith('d:')) dirId = who.slice(2);
       else if (who.startsWith('c:')) { const h = E.dirHire(S, who.slice(2), null); if (!h.ok) { toast('Не получилось', h.msg, 'warn'); return; } dirId = h.d.id; }
-      const r = dirId ? E.enterCity(S, id, { director: dirId }) : E.enterCity(S, id); closeModal();
+      const sp = $('#modal input[name="supply"]:checked'), supply = sp && sp.value !== 'own' ? sp.value : null; // Р4: выпечка из другого города
+      const r = dirId || supply ? E.enterCity(S, id, { director: dirId, supply }) : E.enterCity(S, id); closeModal();
       if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; }
       if (dirId) { ui.ruSel = id; BK.Russia.select(id); BK.Russia.render(S, true); refresh(); toast(`${d.name}: запуск начался`, `Директор откроет цех и ${H.nw(r.opened || 0, 'точку', 'точки', 'точек')}. Отчёт — 1-го числа.`, 'good'); }
-      else { afterSwitch(); toast(`${d.name}: вход открыт`, 'Выберите помещение под цех.', 'good'); }
+      else { afterSwitch(); toast(`${d.name}: вход открыт`, supply ? 'Выпечку повезут из другого города — выберите первую точку.' : 'Выберите помещение под цех.', 'good'); }
       save();
     });
   }

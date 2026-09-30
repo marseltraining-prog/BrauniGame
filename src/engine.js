@@ -285,6 +285,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return best;
   }
   function deliveryCost(S, st) {
+    if (S.corp && BK.Corp && BK.Corp.remoteDel) { const r = BK.Corp.remoteDel(S, st); if (r != null) return r; } // второй акт: выпечка из цеха другого города (§7.2)
     const p = nearestProd(S, st); if (!p) return 0;
     const km = dist(p, st) * kmPerUnit();
     // объём: чем больше изделий в день возит точка, тем больше рейсов (√ — рейсы укрупняются)
@@ -292,6 +293,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * C().ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
     return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st) * (S.corp && S.corp.hqDelK ? S.corp.hqDelK : 1); // логистика штаба
   }
+  function prod2Stores() { return (BK.CITY && BK.CITY.prod2) || C().SECOND_PROD_STORES; } // второй цех: город-лента (Р4) — раньше
   function kmPerUnit() { return (BK.CITY && BK.CITY.kmPerUnit) || C().KM_PER_UNIT; } // масштаб активного города (Уфа — KM_PER_UNIT)
   function storeRentMonth(st) { return st.area * st.rentM2; }
   function rentReview(S, st, idx) { // новая ставка ₽/м²: индексация, а у успешной точки — не ниже доли оборота
@@ -356,13 +358,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return sh;
   }
   let holDay = null;
+  function cityCatK(day) { // прибавка к чеку по доле категории в меню: cat — круглый год, hot — июнь–август
+    const c = BK.CITY; if (!c || (!c.cat && !c.hot)) return null;
+    const m = dateOf(day).m, out = Object.assign({}, c.cat || {});
+    if (c.hot && m >= 5 && m <= 7) for (const k in c.hot) out[k] = (out[k] || 0) + c.hot[k];
+    return out;
+  }
   function holidayDay(S, day) { // общие множители сети на день: dem (поток), chk (чек), lm (по соседству)
     const cal = BK.CITY && BK.CITY.cal; // календарный профиль города: доля байрамов и сила Сабантуя (у Уфы нет — всё в полную силу)
     const key = S.seed + ':' + day + ':' + S.menu.map((m) => m.id).join() + (cal ? ':' + BK.CITY.id : '');
     if (holDay && holDay.key === key) return holDay;
     const H = C().HOLIDAYS || {}, act = holidaysAround(day).filter((h) => h.start <= day && day <= h.end);
     let rev = 1, catAdd = 0; const lm = {};
-    const sh = act.length ? menuCatShares(S) : {};
+    const ck = cal ? cityCatK(day) : null; // особенности города (Р4): любимые категории (Оренбург — национальная выпечка, жаркое лето — напитки)
+    const sh = act.length || ck ? menuCatShares(S) : {};
+    if (ck) for (const k in ck) catAdd += (sh[k] || 0) * ck[k];
     for (const h of act) {
       const c = H[h.id];
       const f = cal ? (h.id === 'uraza' || h.id === 'kurban' ? cal.muslim : h.id === 'sabantuy' ? cal.sab : 1) : 1;
@@ -424,7 +434,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let dayF = t.dow >= 5 ? fwd * wk : fwd;
     let season = SEASON[t.m];
     if (BK.CITY && BK.CITY.season) season *= BK.CITY.season[t.m]; // сезонный профиль города (у Уфы нет)
-    if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= 1.25;
+    if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= (BK.CITY && BK.CITY.park) || 1.25; // парки летом (Самара — набережная Волги, сильнее)
     let cannibal = 1, inDistrict = 0;
     for (const o of S.stores) {
       if (o === st || o.status === 'opening') continue;
@@ -459,7 +469,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     check *= rep.check * svcCheck * modMult(S, 'check', st);
     const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
     let demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
-    if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; } // узнаваемость бренда в новом городе (у Уфы — ровно 1)
+    if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; const g = BK.Corp.growthK ? BK.Corp.growthK(S) : 1; if (g !== 1) demand *= g; } // узнаваемость бренда в новом городе (у Уфы — ровно 1); рост населения города (Р4)
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -488,6 +498,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // мощность производства
     let cap = 0; for (const p of S.productions) cap += prodCapacity(S, p);
+    if (S.corp && BK.Corp && BK.Corp.remoteFill) { const rf = BK.Corp.remoteFill(S); if (rf) cap += totalUnits; } // второй акт: везут из цеха другого города — хватает на всё (false — поставки прерваны)
     const fill = totalUnits > 0 ? Math.min(1, cap / totalUnits) : 1;
     S.cache.capUse = cap > 0 ? totalUnits / cap : 0; S.cache.cap = cap; S.cache.units = totalUnits; S.cache.fill = fill;
     // фудкост — средневзвешенный по производствам
@@ -499,7 +510,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     fcMult *= modScope(S, 'foodcost', 'global', null);
     if (S.corp) fcMult *= modScope(S, 'foodcost', 'city', S.corp.active) * (S.corp.hqFcK || 1); // второй акт: события города и отдел закупок штаба
-    const fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
+    let fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
+    if (S.corp && BK.Corp && BK.Corp.remoteFc) { const fz = BK.Corp.remoteFc(S); if (fz) fcPct += fz; } // фабрика заморозки: фудкост +3 п. п.
     S.cache.fcPct = fcPct;
     const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
     S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
@@ -566,7 +578,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fresh: bakeLevel(S).fresh,
     };
   }
-  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s; }
+  function ratingTarget(S, st) {
+    const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k];
+    if (S.corp && BK.Corp && BK.Corp.ratingAdj) { const a = BK.Corp.ratingAdj(S); if (a) s -= a; } // второй акт: свежесть при поставках из другого города, особенности города
+    return s;
+  }
   function discPenalty(S) { const W = wasteState(S); return W.penUntil > S.day ? C().DISC_PENALTY_RATING : 0; }
   // рейтинг, который видят гости (с временным штрафом за частую смену скидки)
   function storeRating(S, st) { return clamp((st.rating != null ? st.rating : C().RATING_START) - (st.num != null ? discPenalty(S) : 0), 1, 5); }
@@ -740,7 +756,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // открыть доступ ко 2-му/3-му цеху
     const nOpen = S.stores.length;
-    const allowed = nOpen >= cfg.THIRD_PROD_STORES ? 3 : nOpen >= cfg.SECOND_PROD_STORES ? 2 : 1;
+    const allowed = nOpen >= cfg.THIRD_PROD_STORES ? 3 : nOpen >= prod2Stores() ? 2 : 1;
     if (allowed > S.productions.length && !S.prodOffers.length) {
       genProdOffers(S, 3);
       toast(S, 'Можно открыть ещё одно производство', `У сети ${nOpen} точек — появились помещения под новый цех.`, 'good');
@@ -1172,7 +1188,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function chooseProduction(S, offerId) {
     const o = byId(S.prodOffers, offerId); if (!o) return { ok: false, msg: 'Предложение не найдено' };
     const cfg = C();
-    const need = S.productions.length === 0 ? 1 : S.productions.length === 1 ? cfg.SECOND_PROD_STORES : cfg.THIRD_PROD_STORES;
+    const need = S.productions.length === 0 ? 1 : S.productions.length === 1 ? prod2Stores() : cfg.THIRD_PROD_STORES;
     if (S.productions.length && S.stores.length < need) return { ok: false, msg: `Нужно ${need} точек` };
     const c = prodOpenCost(S, o);
     if (S.cash < c.total) return { ok: false, msg: 'Не хватает денег' };

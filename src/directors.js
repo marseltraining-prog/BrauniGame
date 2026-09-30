@@ -268,7 +268,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rent = o.area * o.rentM2 * (o.payMode === 'year' ? 1 - cfg.YEARLY_RENT_DISCOUNT : 1);
     const pay = staff * CI().salaryCity(S, c, 1.4) * (1 + cfg.PAYROLL_TAX);
     const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * o.area) * pl;
-    const del = S.productions.length ? E.deliveryCost(S, tmp) : 40000 * pl;
+    const del = S.productions.length || BK.Corp.remoteOf(S) ? E.deliveryCost(S, tmp) : 40000 * pl; // выпечка из другого города — своя формула (§7.2)
     const hq = cfg.HQ_PER_STORE * pl + rev * (cfg.HQ_REV_SHARE || 0);
     const payB = BK.Corp.corpMarket(S).baker * (def(c.id).wage || 1) * (c.payKb || c.payK || 1);
     const bakers = checks * cfg.ITEMS_PER_CHECK / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX);
@@ -352,7 +352,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C(), K_ = K(), pk = c.packed; if (!pk) return;
     c.dev.mOpened = 0; c.dev.mClosed = 0;
     BK.Corp.withCity(S, c.id, () => {
-      if (!pk.productions.length) { buildProd(S, c, true); return; }
+      const rem = BK.Corp.remoteOf(S, c.id); // Р4: снабжение из другого города — свой цех, когда точек достаточно или поставки прервались
+      if (!pk.productions.length) {
+        if (!rem) { buildProd(S, c, true); return; }
+        const own = K_.SUPPLY_OWN_STORES[rem.supplyMode === 'frozen' ? 'frozen' : 'fresh'];
+        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().def(c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
+      }
       // закрытие: полгода подряд в убытке и старше года (§5.3 п. 6)
       for (const s of pk.stores.slice()) {
         if ((s.lossStreak || 0) < K_.DIR_LOSS_CLOSE || s.status === 'opening' || (s.openedDay != null && S.day - s.openedDay < 365)) continue;
@@ -360,7 +365,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       // второй и третий цех — по тем же порогам, что в Уфе
       const nOpen = pk.stores.length, np = pk.productions.length;
-      if ((np === 1 && nOpen >= cfg.SECOND_PROD_STORES) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) {
+      if ((np === 1 && nOpen >= BK.Corp.prod2Stores()) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) { // город-лента — второй цех раньше (Р4)
         const r = buildProd(S, c, false); if (r) c.budget.left = Math.max(0, c.budget.left - r.cost);
       }
       repairs(S, c, d);
@@ -428,8 +433,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const r = assign(S, dirId, id, true); if (!r.ok) return r;
     const d = dirById(S, dirId);
     let n = 0;
-    BK.Corp.withCity(S, id, () => { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: цех и ${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
+    const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
+    BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
+    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
     return { ok: true, opened: n };
   }
 

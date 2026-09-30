@@ -921,6 +921,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .ru-cont { stroke: var(--ink-3); stroke-width: 1.2px; stroke-dasharray: 6 5; opacity: .6; vector-effect: non-scaling-stroke; }
 .ru-cont-t { font-family: var(--f-mono); font-size: calc(10.5px * var(--rk)); stroke-width: calc(3px * var(--rk)); fill: var(--ink-3); text-anchor: middle; letter-spacing: .04em; }
 .ru-link { fill: none; stroke: var(--map-route); stroke-width: 1.4px; stroke-dasharray: 2 5; stroke-linecap: round; opacity: .75; vector-effect: non-scaling-stroke; }
+/* линии снабжения (Р4): свежая выпечка — корочкой, фабрика заморозки — бирюзой, прервано — красным */
+.ru-sup { fill: none; stroke: var(--crust); stroke-width: 2.2px; stroke-dasharray: 7 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ru-sup.frozen { stroke: var(--river); }
+.ru-sup.off { stroke: var(--bad); stroke-dasharray: 3 5; }
+.maplegend .lg-sw.lg-ln { width: 22px; height: 8px; }
 /* города: наш — залитый кружок корочкой с числом точек и кольцом прибыли; свободный — пунктирный круг */
 .ru-city { cursor: pointer; }
 .ru-city .hit { fill: transparent; }
@@ -1177,6 +1182,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .wopt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: 10px; cursor: pointer; }
 .wopt:has(input:checked) { border-color: var(--crust); background: var(--crust-soft); }
 .wopt input { margin-top: 3px; accent-color: var(--crust); }
+.wopt.dis { opacity: .55; cursor: default; }
 .wopt span { display: flex; flex-direction: column; gap: 2px; }
 .wopt b { font-size: 13.5px; font-weight: 600; } .wopt small { font-size: 12px; color: var(--ink-2); }
 @media (max-width: 820px) {
@@ -1507,6 +1513,14 @@ BK.CFG = {
     RIVAL_FOLLOW_P: 0.04, RIVAL_FOLLOW_AFTER: 180, RIVAL_PRESS0: 0.3, RIVAL_PRESS_GROW: 0.04, RIVAL_PRESS_CAP: 1.0, RIVAL_PRESS_DOM: -0.05,
     // --- корпоративные события e201–e218 (corpev.js) ---
     CEV_GAP: [45, 75], CEV_POS: 0.3,
+    // --- логистика между городами (Р4, §7.2; corp.js) ---
+    FRESH_KM: 150, FRESH_KM_L1: 300, // свежая выпечка из цеха другого нашего города: до 150 км, с логистикой 1-го уровня — до 300 км
+    DEL_FRESH: [40000, 250],     // поставка на точку в месяц: 40 тыс. + 250 ₽ × км (× уровень цен × логистика штаба) — вместо доставки по городу
+    FRESH_FAR_KM: 200, FRESH_FAR_RATING: 0.1, // дальше 200 км — свежесть −0,1★
+    FROZEN_KM: 1500, DEL_FROZEN: [60000, 120], FROZEN_FC: 0.03, FROZEN_RATING: 0.2, // фабрика заморозки (логистика 2-го уровня): до 1 500 км, фудкост +3 п. п., −0,2★
+    REMOTE_BAKE_K: [1, 0.7],     // пекари хаба под объём точки — в строке поставки (свежая / заморозка: фабрика на потоке дешевле)
+    SUPPLY_OWN_STORES: { fresh: 6, frozen: 4 }, // директор строит свой цех, когда в городе столько точек (раньше — если поставки прервались)
+    GROW_CAP: 1.35,              // рост населения города (Тюмень, Краснодар): поток гостей не больше ×1,35
   },
 
   // --- события ---
@@ -1722,69 +1736,81 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* inc — доход (× платёжеспособность), rent — аренда, wage — зарплаты, comp — конкуренция (low/mid/high/vhigh),
      km — от Уфы по дорогам, cap — ориентир ёмкости (точек), lat/lon — для карты России,
      shape: compact | river-strip | coast | bay | radial; water: none | one-river | confluence | coast | bay | strip,
-     muslim — доля эффекта байрамов (Уфа = 1), sab — сила Сабантуя, in — «в Казани», feat — особенность (текст; механика — этап Р4). */
+     muslim — доля эффекта байрамов (Уфа = 1), sab — сила Сабантуя, in — «в Казани», feat — особенность (текст для карточки).
+     Механика особенностей (этап Р4, docs/russia-design.md §16): season — сезонный профиль ×SEASON по месяцам; kmK — город вытянут (доставка
+     внутри города дальше); prod2 — второй цех раньше (точек); park — летний множитель парковых точек (обычно 1,25); cat / hot — прибавка к чеку
+     × доля категории в меню (круглый год / июнь–август); natReq — рейтинг −★ без национальной выпечки в меню; grow — рост населения в год
+     (поток гостей, не больше CORP.GROW_CAP); archK — поправки архетипов районов (трафик, платёжеспособность, вес в предложениях);
+     gate — «ворота»: вход в другой город дешевле (множитель); fedK — «Хлебный двор» приходит и давит слабее. */
   const CITIES = [
     { id: 'ufa', name: 'Уфа', in: 'в Уфе', pop: 1.16, inc: 1.00, rent: 1.00, wage: 1.00, comp: 'mid', km: 0, cap: 55, lat: 54.7, lon: 56.0, builtin: true,
       feat: 'Родной город: узнаваемость 100%' },
     { id: 'sterlitamak', name: 'Стерлитамак', in: 'в Стерлитамаке', pop: 0.28, inc: 0.85, rent: 0.60, wage: 0.85, comp: 'low', km: 130, cap: 14, lat: 53.6, lon: 55.9,
-      shape: 'compact', water: 'one-river', rivers: [['р. Белая', 15]], muslim: 1, sab: 1, aw0: 0.4, feat: 'Спутник Уфы: стартовая узнаваемость 40%',
+      shape: 'compact', water: 'one-river', rivers: [['р. Белая', 15]], muslim: 1, sab: 1, aw0: 0.4, feat: 'Спутник Уфы (130 км): можно возить выпечку из уфимского цеха без своего; стартовая узнаваемость 40%',
       districts: [['Центр', 'center'], ['Проспект Октября', 'biz'], ['Западный', 'sleep'], ['Северный', 'sleep'], ['Южный', 'far'], ['Промзона «Сода»', 'industrial']],
       streets: ['ул. Худайбердина', 'пр. Ленина', 'ул. Коммунистическая', 'ул. Артёма', 'пр. Октября'] },
     { id: 'chelny', name: 'Набережные Челны', short: 'Н. Челны', in: 'в Набережных Челнах', pop: 0.55, inc: 0.92, rent: 0.70, wage: 0.92, comp: 'mid', km: 290, cap: 25, lat: 55.7, lon: 52.4,
-      shape: 'compact', water: 'one-river', rivers: [['р. Кама', 18]], muslim: 1, sab: 1, feat: 'Татарский календарь',
+      shape: 'compact', water: 'one-river', rivers: [['р. Кама', 18]], muslim: 1, sab: 1, feat: 'Татарский календарь; выпечка из Уфы (290 км) — только с логистикой 1-го уровня',
       districts: [['Новый город', 'center'], ['Проспект Мира', 'biz'], ['ГЭС', 'sleep'], ['Комсомольский', 'sleep'], ['ЗЯБ', 'far'], ['Сидоровка', 'far'], ['Промзона КАМАЗа', 'industrial']],
       streets: ['пр. Мира', 'пр. Чулман', 'пр. Сююмбике', 'б-р Энтузиастов', 'пр. Вахитова'] },
     { id: 'orenburg', name: 'Оренбург', in: 'в Оренбурге', pop: 0.55, inc: 0.88, rent: 0.70, wage: 0.88, comp: 'low', km: 370, cap: 24, lat: 51.8, lon: 55.1,
-      shape: 'compact', water: 'one-river', rivers: [['р. Урал', 12]], muslim: 0.5, sab: 0, feat: 'Дешёвый и спокойный вход; жаркое лето',
+      shape: 'compact', water: 'one-river', rivers: [['р. Урал', 12]], muslim: 0.5, sab: 0, feat: 'Дешёвый и спокойный вход; рядом Казахстан — национальная выпечка в чеке +15%; жаркое лето — напитки +25%',
+      cat: { national: 0.15 }, hot: { drinks: 0.25 },
       districts: [['Центр', 'center'], ['Проспект Победы', 'biz'], ['Форштадт', 'sleep'], ['Степной', 'sleep'], ['Ростоши', 'far'], ['Карачи', 'far'], ['Промышленный', 'industrial']],
       streets: ['ул. Советская', 'пр. Победы', 'ул. Терешковой', 'ул. Чкалова', 'Шарлыкское шоссе'] },
     { id: 'chelyabinsk', name: 'Челябинск', in: 'в Челябинске', pop: 1.18, inc: 0.95, rent: 0.85, wage: 0.97, comp: 'mid', km: 410, cap: 50, lat: 55.2, lon: 61.4,
-      shape: 'compact', water: 'one-river', rivers: [['р. Миасс', 8]], muslim: 0.3, sab: 0, feat: 'Промышленный: у заводов и остановок чек ниже, трафик выше',
+      shape: 'compact', water: 'one-river', rivers: [['р. Миасс', 8]], muslim: 0.3, sab: 0, feat: 'Промышленный: у заводов и на окраинах поток выше, чек ниже; мест у заводов больше',
+      archK: { industrial: { traffic: 1.35, solv: 0.9, w: 1.8 }, far: { traffic: 1.12, solv: 0.94 } },
       districts: [['Центр', 'center'], ['Проспект Ленина', 'biz'], ['Северо-Запад', 'prestige'], ['Калининский', 'sleep'], ['Курчатовский', 'sleep'], ['Ленинский', 'sleep'], ['Тракторозаводский', 'far'], ['Советский', 'student'], ['Металлургический', 'industrial']],
       streets: ['пр. Ленина', 'ул. Кирова', 'пр. Победы', 'Свердловский пр.', 'Комсомольский пр.'] },
     { id: 'samara', name: 'Самара', in: 'в Самаре', pop: 1.16, inc: 1.00, rent: 0.95, wage: 1.00, comp: 'mid', km: 460, cap: 50, lat: 53.2, lon: 50.2,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 26]], muslim: 0.3, sab: 0, feat: 'Набережная Волги: летом парковые точки сильнее',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 26]], muslim: 0.3, sab: 0, feat: 'Набережная Волги: летом точки у парков +30% (в других городах +25%)', park: 1.3,
       districts: [['Самарский', 'center'], ['Ленинский', 'biz'], ['Октябрьский', 'prestige'], ['Советский', 'sleep'], ['Промышленный', 'sleep'], ['Кировский', 'far'], ['Железнодорожный', 'student'], ['Красноглинский', 'outskirts'], ['Безымянка', 'industrial']],
       streets: ['ул. Куйбышева', 'ул. Ленинградская', 'Московское шоссе', 'ул. Ново-Садовая', 'ул. Самарская'] },
     { id: 'perm', name: 'Пермь', in: 'в Перми', pop: 1.03, inc: 0.98, rent: 0.85, wage: 0.98, comp: 'mid', km: 480, cap: 45, lat: 58.0, lon: 56.2,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Кама', 22]], muslim: 0.15, sab: 0, feat: 'Город вытянут вдоль Камы — доставка дальше',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Кама', 22]], muslim: 0.15, sab: 0, feat: 'Город вытянут вдоль Камы: доставка по городу дальше (×1,35), второй цех — с 11 точек', kmK: 1.35, prod2: 11,
       districts: [['Ленинский', 'center'], ['Свердловский', 'biz'], ['Дзержинский', 'prestige'], ['Мотовилихинский', 'sleep'], ['Индустриальный', 'sleep'], ['Кировский', 'far'], ['Орджоникидзевский', 'far'], ['Гайва', 'outskirts'], ['Закамск', 'industrial']],
       streets: ['Комсомольский пр.', 'ул. Ленина', 'ул. Сибирская', 'ул. Петропавловская', 'ул. Героев Хасана'] },
     { id: 'kazan', name: 'Казань', in: 'в Казани', pop: 1.32, inc: 1.08, rent: 1.10, wage: 1.05, comp: 'high', km: 525, cap: 60, lat: 55.8, lon: 49.1,
-      shape: 'compact', water: 'confluence', rivers: [['р. Волга', 24], ['р. Казанка', 9], ['р. Волга', 24]], muslim: 1, sab: 1, feat: 'Туризм и вузы; татарский календарь; сильные местные пекарни',
+      shape: 'compact', water: 'confluence', rivers: [['р. Волга', 24], ['р. Казанка', 9], ['р. Волга', 24]], muslim: 1, sab: 1, feat: 'Туризм и вузы; татарский календарь; сильные местные пекарни — без национальной выпечки в меню рейтинг −0,3★', natReq: 0.3,
+      archK: { student: { w: 1.3 } },
       districts: [['Вахитовский', 'center'], ['Ново-Савиновский', 'biz'], ['Приволжский', 'prestige'], ['Советский', 'sleep'], ['Московский', 'sleep'], ['Азино', 'sleep'], ['Кировский', 'far'], ['Горки', 'student'], ['Дербышки', 'outskirts'], ['Авиастроительный', 'industrial']],
       streets: ['ул. Баумана', 'ул. Пушкина', 'пр. Победы', 'пр. Ямашева', 'ул. Кремлёвская'] },
     { id: 'ekb', name: 'Екатеринбург', in: 'в Екатеринбурге', pop: 1.54, inc: 1.15, rent: 1.20, wage: 1.10, comp: 'high', km: 525, cap: 70, lat: 56.8, lon: 60.6,
-      shape: 'compact', water: 'one-river', rivers: [['р. Исеть', 9]], muslim: 0.15, sab: 0.3, feat: 'Деловая столица Урала: много БЦ, сильные местные сети',
+      shape: 'compact', water: 'one-river', rivers: [['р. Исеть', 9]], muslim: 0.15, sab: 0.3, feat: 'Деловая столица Урала: больше мест у бизнес-центров, кофейная культура — напитки в чеке +12%; сильные местные сети',
+      archK: { biz: { w: 1.4 } }, cat: { drinks: 0.12 },
       districts: [['Центр', 'center'], ['Юго-Запад', 'biz'], ['ВИЗ', 'biz'], ['Академический', 'prestige'], ['Уралмаш', 'sleep'], ['Эльмаш', 'sleep'], ['Ботаника', 'sleep'], ['Пионерский', 'student'], ['Химмаш', 'industrial'], ['Вторчермет', 'industrial']],
       streets: ['пр. Ленина', 'ул. Малышева', 'ул. 8 Марта', 'ул. Вайнера', 'ул. Куйбышева'] },
     { id: 'tyumen', name: 'Тюмень', in: 'в Тюмени', pop: 0.85, inc: 1.20, rent: 1.05, wage: 1.12, comp: 'mid', km: 800, cap: 38, lat: 57.2, lon: 65.5,
-      shape: 'compact', water: 'one-river', rivers: [['р. Тура', 12]], muslim: 0.3, sab: 0, feat: 'Нефтяные доходы: высокий чек',
+      shape: 'compact', water: 'one-river', rivers: [['р. Тура', 12]], muslim: 0.3, sab: 0, feat: 'Нефтяные доходы: высокий чек; город растёт — гостей +1,5% в год', grow: 0.015,
       districts: [['Центр', 'center'], ['Калининский', 'biz'], ['Заречный', 'prestige'], ['Восточный', 'sleep'], ['Мыс', 'sleep'], ['Ленинский', 'student'], ['Тарманы', 'far'], ['Антипино', 'industrial']],
       streets: ['ул. Республики', 'ул. Мельникайте', 'ул. Широтная', 'ул. Ленина', 'Червишевский тракт'] },
     { id: 'nnov', name: 'Нижний Новгород', short: 'Н. Новгород', in: 'в Нижнем Новгороде', pop: 1.20, inc: 1.00, rent: 0.95, wage: 1.00, comp: 'mid', km: 930, cap: 50, lat: 56.3, lon: 44.0,
-      shape: 'compact', water: 'confluence', rivers: [['р. Ока', 18], ['р. Волга', 24], ['р. Волга', 24]], muslim: 0.15, sab: 0, feat: 'Слияние Оки и Волги — как Белая и Уфа',
+      shape: 'compact', water: 'confluence', rivers: [['р. Ока', 18], ['р. Волга', 24], ['р. Волга', 24]], muslim: 0.15, sab: 0, feat: 'Слияние Оки и Волги — как Белая и Уфа; ворота к Москве: с Нижним в сети вход в Москву на 15% дешевле', gate: { moscow: 0.85 },
       districts: [['Нижегородский', 'center'], ['Советский', 'biz'], ['Приокский', 'prestige'], ['Канавинский', 'sleep'], ['Ленинский', 'sleep'], ['Московский', 'sleep'], ['Сормовский', 'far'], ['Щербинки', 'student'], ['Автозаводский', 'industrial']],
       streets: ['ул. Большая Покровская', 'ул. Рождественская', 'ул. Белинского', 'пр. Гагарина', 'ул. Родионова'] },
     { id: 'volgograd', name: 'Волгоград', in: 'в Волгограде', pop: 1.02, inc: 0.85, rent: 0.75, wage: 0.88, comp: 'low', km: 1290, cap: 40, lat: 48.7, lon: 44.5,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 28]], muslim: 0.15, sab: 0, feat: 'Город-лента вдоль Волги; жаркое лето',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 28]], muslim: 0.15, sab: 0, feat: 'Город-лента ~70 км вдоль Волги: доставка по городу ×1,6, второй цех — с 10 точек; жаркое лето — напитки +20%',
+      kmK: 1.6, prod2: 10, hot: { drinks: 0.2 },
       districts: [['Центральный', 'center'], ['Ворошиловский', 'biz'], ['Дзержинский', 'prestige'], ['Краснооктябрьский', 'sleep'], ['Советский', 'sleep'], ['Спартановка', 'sleep'], ['Кировский', 'far'], ['Красноармейский', 'far'], ['Тракторозаводский', 'industrial']],
       streets: ['пр. Ленина', 'ул. Мира', 'ул. Рабоче-Крестьянская', 'ул. Землячки', 'Университетский пр.'] },
     { id: 'voronezh', name: 'Воронеж', in: 'в Воронеже', pop: 1.05, inc: 0.95, rent: 0.85, wage: 0.92, comp: 'mid', km: 1330, cap: 42, lat: 51.7, lon: 39.2,
-      shape: 'compact', water: 'one-river', rivers: [['р. Воронеж', 20]], muslim: 0.15, sab: 0, feat: 'Студенческий город',
+      shape: 'compact', water: 'one-river', rivers: [['р. Воронеж', 20]], muslim: 0.15, sab: 0, feat: 'Студенческий: больше мест у вузов, летом провал сильнее (июль–август −10%)',
+      archK: { student: { w: 1.6 } }, season: [1, 1, 1, 1, 1, 0.96, 0.88, 0.9, 1.03, 1, 1, 1],
       districts: [['Центральный', 'center'], ['Ленинский', 'biz'], ['Северный', 'prestige'], ['Коминтерновский', 'sleep'], ['Советский', 'sleep'], ['Левобережный', 'far'], ['Университетский', 'student'], ['Шилово', 'outskirts'], ['Железнодорожный', 'industrial']],
       streets: ['пр. Революции', 'ул. Плехановская', 'ул. Кольцовская', 'Московский пр.', 'ул. Фридриха Энгельса'] },
     { id: 'rostov', name: 'Ростов-на-Дону', short: 'Ростов', in: 'в Ростове-на-Дону', pop: 1.14, inc: 1.00, rent: 0.95, wage: 0.95, comp: 'high', km: 1750, cap: 48, lat: 47.2, lon: 39.7,
-      shape: 'compact', water: 'one-river', rivers: [['р. Дон', 18]], muslim: 0.15, sab: 0, feat: 'Южная кухня, много уличных пекарен',
+      shape: 'compact', water: 'one-river', rivers: [['р. Дон', 18]], muslim: 0.15, sab: 0, feat: 'Южная кухня, много уличных пекарен (высокая конкуренция); короткая зима — провал зимой мельче',
+      season: [1.05, 1.06, 1.03, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       districts: [['Кировский', 'center'], ['Ленинский', 'biz'], ['Октябрьский', 'prestige'], ['Западный', 'sleep'], ['Ворошиловский', 'sleep'], ['Пролетарский', 'sleep'], ['Первомайский', 'far'], ['Левенцовка', 'far'], ['Железнодорожный', 'industrial']],
       streets: ['ул. Большая Садовая', 'Будённовский пр.', 'ул. Пушкинская', 'Ворошиловский пр.', 'пр. Стачки'] },
     { id: 'krasnodar', name: 'Краснодар', in: 'в Краснодаре', pop: 1.10, inc: 1.02, rent: 1.00, wage: 0.95, comp: 'high', km: 2030, cap: 50, lat: 45.0, lon: 39.0,
-      shape: 'compact', water: 'one-river', rivers: [['р. Кубань', 16]], muslim: 0.15, sab: 0, feat: 'Самый быстрорастущий город',
+      shape: 'compact', water: 'one-river', rivers: [['р. Кубань', 16]], muslim: 0.15, sab: 0, feat: 'Самый быстрорастущий: новые микрорайоны — гостей +2% в год', grow: 0.02,
       districts: [['Центр', 'center'], ['Фестивальный', 'biz'], ['Юбилейный', 'prestige'], ['Западный', 'sleep'], ['Карасунский', 'sleep'], ['Прикубанский', 'sleep'], ['ЮМР', 'student'], ['Пашковский', 'far'], ['Гидрострой', 'industrial']],
       streets: ['ул. Красная', 'ул. Северная', 'ул. Ставропольская', 'ул. Кубанская Набережная', 'ул. Российская'] },
     { id: 'sochi', name: 'Сочи', in: 'в Сочи', pop: 0.45, inc: 1.25, rent: 1.50, wage: 1.10, comp: 'mid', km: 2300, cap: 20, lat: 43.6, lon: 39.7,
-      shape: 'coast', water: 'coast', rivers: [['р. Сочи', 7]], sea: 'Чёрное море', muslim: 0.15, sab: 0, feat: 'Курорт: лето сильнее, зима слабее; дорогая аренда',
-      season: [0.82, 0.8, 0.86, 0.95, 1.05, 1.25, 1.42, 1.42, 1.18, 0.98, 0.86, 0.9],
+      shape: 'coast', water: 'coast', rivers: [['р. Сочи', 7]], sea: 'Чёрное море', muslim: 0.15, sab: 0, feat: 'Курорт: лето ×1,5, зима ×0,8; дорогая аренда; город-лента вдоль моря — доставка ×1,3',
+      season: [0.8, 0.8, 0.86, 0.95, 1.05, 1.28, 1.5, 1.5, 1.2, 0.98, 0.86, 0.88], kmK: 1.3,
       districts: [['Центральный', 'center'], ['Адлер', 'biz'], ['Хоста', 'prestige'], ['Мацеста', 'sleep'], ['Дагомыс', 'far'], ['Лазаревское', 'outskirts'], ['Кудепста', 'industrial']],
       streets: ['Курортный пр.', 'ул. Навагинская', 'ул. Роз', 'ул. Виноградная', 'ул. Орджоникидзе'] },
     { id: 'moscow', name: 'Москва', in: 'в Москве', pop: 13.1, inc: 1.80, rent: 3.00, wage: 1.70, comp: 'vhigh', km: 1350, cap: 250, lat: 55.8, lon: 37.6,
@@ -1792,12 +1818,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       districts: [['Центр', 'center'], ['Москва-Сити', 'biz'], ['Павелецкая', 'biz'], ['Белорусская', 'biz'], ['Хамовники', 'prestige'], ['Юго-Запад', 'prestige'], ['Север', 'sleep'], ['Северо-Восток', 'sleep'], ['Восток', 'sleep'], ['Юг', 'far'], ['Новая Москва', 'outskirts'], ['Юго-Восток', 'industrial']],
       streets: ['ул. Тверская', 'ул. Арбат', 'ул. Мясницкая', 'пр. Мира', 'Ленинский пр.', 'Кутузовский пр.'] },
     { id: 'spb', name: 'Санкт-Петербург', short: 'Петербург', in: 'в Петербурге', pop: 5.6, inc: 1.40, rent: 1.90, wage: 1.40, comp: 'vhigh', km: 2050, cap: 150, lat: 59.9, lon: 30.3,
-      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных; белые ночи',
-      season: [1, 1, 1, 1, 1, 1.12, 1.12, 1, 1, 1, 1, 1],
+      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; белые ночи (июнь–июль +15%)',
+      season: [1, 1, 1, 1, 1, 1.15, 1.15, 1, 1, 1, 1, 1], cat: { sweet: 0.12 },
       districts: [['Центральный', 'center'], ['Адмиралтейский', 'biz'], ['Василеостровский', 'biz'], ['Петроградский', 'prestige'], ['Московский', 'sleep'], ['Приморский', 'sleep'], ['Невский', 'sleep'], ['Калининский', 'sleep'], ['Выборгский', 'student'], ['Красносельский', 'far'], ['Кировский', 'industrial']],
       streets: ['Невский пр.', 'ул. Рубинштейна', 'Большой пр. П. С.', 'Литейный пр.', 'Московский пр.', 'ул. Марата'] },
     { id: 'nsk', name: 'Новосибирск', in: 'в Новосибирске', pop: 1.63, inc: 1.05, rent: 0.95, wage: 1.05, comp: 'mid', km: 2100, cap: 60, lat: 55.0, lon: 82.9,
-      shape: 'compact', water: 'one-river', rivers: [['р. Обь', 26]], muslim: 0.15, sab: 0, far: true, feat: 'Самый дальний: вход дороже на 20%; суровая зима',
+      shape: 'compact', water: 'one-river', rivers: [['р. Обь', 26]], muslim: 0.15, sab: 0, far: true, feat: 'Самый дальний: вход дороже на 20%; суровая зима (январь–февраль −5%); федеральные сети слабы — «Хлебный двор» приходит реже и давит вдвое слабее', fedK: 0.5,
       season: [0.95, 0.95, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       districts: [['Центральный', 'center'], ['Железнодорожный', 'biz'], ['Заельцовский', 'prestige'], ['Октябрьский', 'sleep'], ['Дзержинский', 'sleep'], ['Калининский', 'sleep'], ['Ленинский', 'far'], ['Кировский', 'far'], ['Академгородок', 'student'], ['Первомайский', 'industrial']],
       streets: ['Красный пр.', 'ул. Ленина', 'ул. Кирова', 'ул. Фрунзе', 'ул. Большевистская'] },
@@ -1991,9 +2017,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const own = def.streets || [];
     const DISTRICTS = list.map((d) => {
       const a = ARCH[d.arch], sh = COMMON_STREETS.slice().sort(() => R() - 0.5);
+      const ak = Object.assign({ traffic: 1, solv: 1, w: 1 }, (def.archK || {})[d.arch]); // особенность города (Р4): промзоны Челябинска, вузы Воронежа… — без лишних вызовов ГСЧ
       const ownPick = own.slice().sort(() => R() - 0.5).slice(0, d.ring === 0 ? own.length : 3);
-      return { id: def.id + d.i, name: d.name, x: Math.round(d.x), y: Math.round(d.y), arch: d.arch, ring: d.ring, w: a.w,
-        rent: a.rent.map((v) => rnd10(v * def.rent, 10)), solv: a.solv.map((v) => rnd10(v * def.inc, 5)), traffic: a.traffic.map((v) => rnd10(v * dens, 50)), prodRent: a.prodRent.map((v) => rnd10(v * def.rent, 10)),
+      return { id: def.id + d.i, name: d.name, x: Math.round(d.x), y: Math.round(d.y), arch: d.arch, ring: d.ring, w: +(a.w * ak.w).toFixed(3),
+        rent: a.rent.map((v) => rnd10(v * def.rent, 10)), solv: a.solv.map((v) => rnd10(v * def.inc * ak.solv, 5)), traffic: a.traffic.map((v) => rnd10(v * dens * ak.traffic, 50)), prodRent: a.prodRent.map((v) => rnd10(v * def.rent, 10)),
         streets: ownPick.concat(sh.slice(0, 3)) };
     });
     const ids = (f) => DISTRICTS.filter(f).map((d) => d.id);
@@ -2011,7 +2038,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
   function cityInfo(def) { // описание для движка: масштаб, конкуренция, сезон, календарь
     if (def.builtin) return { id: def.id, name: def.name, in: def.in };
-    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 } };
+    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
+      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }; // особенности города (Р4)
   }
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;
@@ -4248,6 +4276,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return best;
   }
   function deliveryCost(S, st) {
+    if (S.corp && BK.Corp && BK.Corp.remoteDel) { const r = BK.Corp.remoteDel(S, st); if (r != null) return r; } // второй акт: выпечка из цеха другого города (§7.2)
     const p = nearestProd(S, st); if (!p) return 0;
     const km = dist(p, st) * kmPerUnit();
     // объём: чем больше изделий в день возит точка, тем больше рейсов (√ — рейсы укрупняются)
@@ -4255,6 +4284,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * C().ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
     return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st) * (S.corp && S.corp.hqDelK ? S.corp.hqDelK : 1); // логистика штаба
   }
+  function prod2Stores() { return (BK.CITY && BK.CITY.prod2) || C().SECOND_PROD_STORES; } // второй цех: город-лента (Р4) — раньше
   function kmPerUnit() { return (BK.CITY && BK.CITY.kmPerUnit) || C().KM_PER_UNIT; } // масштаб активного города (Уфа — KM_PER_UNIT)
   function storeRentMonth(st) { return st.area * st.rentM2; }
   function rentReview(S, st, idx) { // новая ставка ₽/м²: индексация, а у успешной точки — не ниже доли оборота
@@ -4319,13 +4349,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return sh;
   }
   let holDay = null;
+  function cityCatK(day) { // прибавка к чеку по доле категории в меню: cat — круглый год, hot — июнь–август
+    const c = BK.CITY; if (!c || (!c.cat && !c.hot)) return null;
+    const m = dateOf(day).m, out = Object.assign({}, c.cat || {});
+    if (c.hot && m >= 5 && m <= 7) for (const k in c.hot) out[k] = (out[k] || 0) + c.hot[k];
+    return out;
+  }
   function holidayDay(S, day) { // общие множители сети на день: dem (поток), chk (чек), lm (по соседству)
     const cal = BK.CITY && BK.CITY.cal; // календарный профиль города: доля байрамов и сила Сабантуя (у Уфы нет — всё в полную силу)
     const key = S.seed + ':' + day + ':' + S.menu.map((m) => m.id).join() + (cal ? ':' + BK.CITY.id : '');
     if (holDay && holDay.key === key) return holDay;
     const H = C().HOLIDAYS || {}, act = holidaysAround(day).filter((h) => h.start <= day && day <= h.end);
     let rev = 1, catAdd = 0; const lm = {};
-    const sh = act.length ? menuCatShares(S) : {};
+    const ck = cal ? cityCatK(day) : null; // особенности города (Р4): любимые категории (Оренбург — национальная выпечка, жаркое лето — напитки)
+    const sh = act.length || ck ? menuCatShares(S) : {};
+    if (ck) for (const k in ck) catAdd += (sh[k] || 0) * ck[k];
     for (const h of act) {
       const c = H[h.id];
       const f = cal ? (h.id === 'uraza' || h.id === 'kurban' ? cal.muslim : h.id === 'sabantuy' ? cal.sab : 1) : 1;
@@ -4387,7 +4425,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let dayF = t.dow >= 5 ? fwd * wk : fwd;
     let season = SEASON[t.m];
     if (BK.CITY && BK.CITY.season) season *= BK.CITY.season[t.m]; // сезонный профиль города (у Уфы нет)
-    if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= 1.25;
+    if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= (BK.CITY && BK.CITY.park) || 1.25; // парки летом (Самара — набережная Волги, сильнее)
     let cannibal = 1, inDistrict = 0;
     for (const o of S.stores) {
       if (o === st || o.status === 'opening') continue;
@@ -4422,7 +4460,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     check *= rep.check * svcCheck * modMult(S, 'check', st);
     const hol = holidayMult(S, st, t); check *= hol.chk; // календарь праздников
     let demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
-    if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; } // узнаваемость бренда в новом городе (у Уфы — ровно 1)
+    if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; const g = BK.Corp.growthK ? BK.Corp.growthK(S) : 1; if (g !== 1) demand *= g; } // узнаваемость бренда в новом городе (у Уфы — ровно 1); рост населения города (Р4)
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
     return { demand, thr, check, traffic, avgLvl };
   }
@@ -4451,6 +4489,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // мощность производства
     let cap = 0; for (const p of S.productions) cap += prodCapacity(S, p);
+    if (S.corp && BK.Corp && BK.Corp.remoteFill) { const rf = BK.Corp.remoteFill(S); if (rf) cap += totalUnits; } // второй акт: везут из цеха другого города — хватает на всё (false — поставки прерваны)
     const fill = totalUnits > 0 ? Math.min(1, cap / totalUnits) : 1;
     S.cache.capUse = cap > 0 ? totalUnits / cap : 0; S.cache.cap = cap; S.cache.units = totalUnits; S.cache.fill = fill;
     // фудкост — средневзвешенный по производствам
@@ -4462,7 +4501,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     fcMult *= modScope(S, 'foodcost', 'global', null);
     if (S.corp) fcMult *= modScope(S, 'foodcost', 'city', S.corp.active) * (S.corp.hqFcK || 1); // второй акт: события города и отдел закупок штаба
-    const fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
+    let fcPct = clamp(ms.fcPct * (cfg.FOODCOST_MULT || 1) * fcMult, 0.08, 0.8); // FOODCOST_MULT — списания, упаковка, потери
+    if (S.corp && BK.Corp && BK.Corp.remoteFc) { const fz = BK.Corp.remoteFc(S); if (fz) fcPct += fz; } // фабрика заморозки: фудкост +3 п. п.
     S.cache.fcPct = fcPct;
     const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
     S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
@@ -4529,7 +4569,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fresh: bakeLevel(S).fresh,
     };
   }
-  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s; }
+  function ratingTarget(S, st) {
+    const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k];
+    if (S.corp && BK.Corp && BK.Corp.ratingAdj) { const a = BK.Corp.ratingAdj(S); if (a) s -= a; } // второй акт: свежесть при поставках из другого города, особенности города
+    return s;
+  }
   function discPenalty(S) { const W = wasteState(S); return W.penUntil > S.day ? C().DISC_PENALTY_RATING : 0; }
   // рейтинг, который видят гости (с временным штрафом за частую смену скидки)
   function storeRating(S, st) { return clamp((st.rating != null ? st.rating : C().RATING_START) - (st.num != null ? discPenalty(S) : 0), 1, 5); }
@@ -4703,7 +4747,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // открыть доступ ко 2-му/3-му цеху
     const nOpen = S.stores.length;
-    const allowed = nOpen >= cfg.THIRD_PROD_STORES ? 3 : nOpen >= cfg.SECOND_PROD_STORES ? 2 : 1;
+    const allowed = nOpen >= cfg.THIRD_PROD_STORES ? 3 : nOpen >= prod2Stores() ? 2 : 1;
     if (allowed > S.productions.length && !S.prodOffers.length) {
       genProdOffers(S, 3);
       toast(S, 'Можно открыть ещё одно производство', `У сети ${nOpen} точек — появились помещения под новый цех.`, 'good');
@@ -5135,7 +5179,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function chooseProduction(S, offerId) {
     const o = byId(S.prodOffers, offerId); if (!o) return { ok: false, msg: 'Предложение не найдено' };
     const cfg = C();
-    const need = S.productions.length === 0 ? 1 : S.productions.length === 1 ? cfg.SECOND_PROD_STORES : cfg.THIRD_PROD_STORES;
+    const need = S.productions.length === 0 ? 1 : S.productions.length === 1 ? prod2Stores() : cfg.THIRD_PROD_STORES;
     if (S.productions.length && S.stores.length < need) return { ok: false, msg: `Нужно ${need} точек` };
     const c = prodOpenCost(S, o);
     if (S.cash < c.total) return { ok: false, msg: 'Не хватает денег' };
@@ -5576,9 +5620,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const pk = c.packed;
     S.stores = pk.stores; S.productions = pk.productions; S.offers = []; S.prodOffers = []; S.rival = pk.rival || { enabled: false, stores: [] };
     if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
-    const w0 = cr._with; cr._with = id;
+    const w0 = cr._with, a0 = cr._actProd; cr._with = id; if (w0 == null) cr._actProd = keep.productions; // цеха активного города — для снабжения из него (§7.2)
     try { return withRng(S, c, 'rng', fn); } finally {
-      if (w0 == null) delete cr._with; else cr._with = w0;
+      if (w0 == null) { delete cr._with; delete cr._actProd; } else { cr._with = w0; cr._actProd = a0; }
       S.stores = keep.stores; S.productions = keep.productions; S.offers = keep.offers; S.prodOffers = keep.prodOffers; S.rival = keep.rival;
       BK.DISTRICTS = keep.D; BK.MAP = keep.M; BK.CENTER_POINT = keep.P; BK.CITY = keep.CITY;
     }
@@ -5614,6 +5658,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       staff: { n, lv, mood: n ? md / n : 60 }, base: rev / pl / aw, chk0: (chk || cfg.RENT_REF_BASKET) / pl, dem7, thr0: thr,
       mn0: [+ms.appeal.toFixed(4), +(ms.avgPrice / pl).toFixed(2), +ms.priceIdx.toFixed(4)], lvl0: n ? ls / n : 1, mood0: n ? md / n : 60, moodOff: n ? clamp(md / n - tgt, -40, 10) : 0, r0: st.rating != null ? st.rating : cfg.RATING_START, rep0: st.repair || 0, n0: Math.max(1, n),
     });
+    if (BK.CITY && BK.CITY.grow) p.g0 = +growthK(S).toFixed(4); // рост города: спрос в снимке — при населении на момент упаковки
     return p;
   }
   function settleActive(S) { // постоянные расходы активного города за прошедшую часть месяца (иначе их никто не заплатит)
@@ -5645,7 +5690,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     settleActive(S);
     const ms = E.menuStats(S), wz = E.wasteFactors(S, ms), fill = S.cache && S.cache.fill != null ? S.cache.fill : 1;
     const aw = demandMult(S);
-    const fc = S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct * (C().FOODCOST_MULT || 1);
+    const fc = (S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct * (C().FOODCOST_MULT || 1)) - remoteFc(S) / (wz.revMult || 1); // заморозка — отдельно, в агрегате (§7.2)
     c.packed = {
       stores: S.stores.map((st) => packStore(S, st, ms, wz, fill, aw)),
       productions: S.productions.map((p) => { const q = Object.assign({}, p); delete q.mountFrom; delete q.mountK; return q; }),
@@ -5663,7 +5708,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function expandStore(S, p) {
     const cfg = C(), st = Object.assign({}, p), sd = p.staff;
-    for (const k of ['base', 'chk0', 'lvl0', 'mood0', 'r0', 'rep0', 'n0', 'mn0', 'dem7', 'thr0', 'moodOff', 'byDir']) delete st[k];
+    for (const k of ['base', 'chk0', 'lvl0', 'mood0', 'r0', 'rep0', 'n0', 'mn0', 'dem7', 'thr0', 'moodOff', 'byDir', 'g0']) delete st[k];
     const people = [];
     for (let l = 1; l <= 5; l++) for (let k = 0; k < (sd.lv[l - 1] || 0); k++) { // люди по распределению уровней: новые имена, настроение около среднего
       const e = I.makePerson(S, l); e.mood = clamp(sd.mood + I.rr(S, -6, 6), 0, 100); e.since = S.day - 90; e.lvlDay = S.day - 60; people.push(e);
@@ -5757,6 +5802,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const D = dm ? dm.D : K_.ABSENT_D, epsC = I.gauss(S) * K_.EPS_CITY * (dm ? dm.eps : 1);
       const QP = cfg.QUIT_P || [0.00018, 0.0009, 0.0025];
       const tax = E.currentTaxRate(S);
+      // Р4: снабжение из другого города (§7.2) и особенности города (рост, парки, рейтинг)
+      const sup = remoteFill(S), fzFc = remoteFc(S), rAdj = ratingAdj(S), gK = growthK(S), park = (BK.CITY && BK.CITY.park) || 1.25;
       let rev = 0, fc = 0, rent = 0, pay = 0, util = 0, del = 0, hire = 0, hq = 0, units = 0;
       const hireOk = (pk.office && pk.office.hr) || !!dm;
       let trainCost = 0;
@@ -5790,7 +5837,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (dm) { const tr = BK.Dir.train(S, sd, dm, frac); trainCost += tr.cost; out.trained += tr.n; } // директор учит команду до цели обучения города
         sd.n = n; lsum = 0; for (let l = 1; l <= 5; l++) lsum += l * (sd.lv[l - 1] || 0); avgL = n ? lsum / n : 1;
         // рейтинг: заочно сползает к 3,5★, при директоре тянется к цели из тех же составляющих, что у подробной точки
-        const rTarget = dm ? dm.rating(s, avgL, sd.mood, n) : K_.ABSENT_RATING;
+        const rTarget = (dm ? dm.rating(s, avgL, sd.mood, n) : K_.ABSENT_RATING) - rAdj;
         s.rating = (s.rating != null ? s.rating : cfg.RATING_START) + (rTarget - (s.rating != null ? s.rating : cfg.RATING_START)) * (1 - Math.exp(-days / cfg.RATING_DAYS));
         out.emp += n;
         // выручка
@@ -5800,20 +5847,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const Qc = (1 + cfg.LVL_CHECK * dl) * R1.check / R0.check;
         const G = n * (cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (avgL - 1)) / ((s.n0 || 1) * (cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (lvl0 - 1)));
         const ramp = s.openedDay != null && cfg.RAMP_DAYS ? Math.min(1, cfg.RAMP_START + (1 - cfg.RAMP_START) * (S.day - days / 2 - s.openedDay) / cfg.RAMP_DAYS) : 1;
-        const sum = m >= 5 && m <= 7 && (s.landmarks || []).some((id) => { const l = E.byId(BK.LANDMARKS, id); return l && l.summer; }) ? 1.25 : 1; // парки летом (как в storeDemand)
+        const sum = m >= 5 && m <= 7 && (s.landmarks || []).some((id) => { const l = E.byId(BK.LANDMARKS, id); return l && l.summer; }) ? park : 1; // парки летом (как в storeDemand; Самара — сильнее)
         const mn = s.mn0, prD = mn ? msN.appeal / mn[0] * Math.pow(msN.priceIdx / mn[2], -0.6) : 1, pr = mn ? Math.pow(apN / mn[1], 0.7) : 1;
         const Rc = BK.HQ ? BK.HQ.rivalMult(S, c, s) : 1; // давление «Хлебного двора» и местных сетей (§5.3 R_c)
-        const F = seas * sum * hol.dem * Qd * aw * D * Rc * Math.max(0.3, ramp) * gmD * prD * Math.max(0.5, 1 + epsC + I.gauss(S) * K_.EPS_STORE);
+        if (gK !== 1 && s.g0 == null) s.g0 = gK; // сохранение до Р4: рост считается с этого месяца
+        const grow = gK !== 1 ? gK / s.g0 : 1;
+        const F = seas * sum * hol.dem * Qd * aw * D * Rc * grow * Math.max(0.3, ramp) * gmD * prD * Math.max(0.5, 1 + epsC + I.gauss(S) * K_.EPS_STORE);
         let cpd = 0;
         if (s.dem7 && s.dem7.length) { for (const x of s.dem7) cpd += Math.min(x * F, (s.thr0 || 1e9) * G) / s.dem7.length; cpd *= (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1); }
         else cpd = s.base / (s.chk0 || 200) * F * Math.min(1, G);
-        let closed = s.status === 'repair' || n === 0 ? 0 : 1;
+        let closed = s.status === 'repair' || n === 0 || sup === false ? 0 : 1; // снабжение прервано — выпечки нет
         if (s.lostDays && closed) { closed = clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = 0; } // ремонт директора: точка закрыта несколько дней
         let r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr;
         if (dm && dm.theft) { const lost = r * dm.theft; r -= lost; dm.d.stolen = (dm.d.stolen || 0) + lost; cr.stat.stolen += lost; } // «Нечист на руку»: касса честно показывает меньше
         // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню и ценами сети (для «На точку к прогнозу»)
-        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * Math.max(0.3, ramp) * gmD * prD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
-        const f1 = r * pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1);
+        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * grow * Math.max(0.3, ramp) * gmD * prD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
+        const f1 = r * (pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1) + fzFc); // заморозка: фудкост +3 п. п.
         const rn = s.payMode === 'month' ? E.storeRentMonth(s) * frac * (dm ? dm.rentK : 1) : 0;
         if (s.payMode === 'year' && S.day >= (s.rentPaidUntil || 0)) { const y = E.storeRentMonth(s) * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT); rent += y; s.rentPaidUntil = S.day + 365; }
         let py = 0; for (let l = 1; l <= 5; l++) py += (sd.lv[l - 1] || 0) * salaryCity(S, c, l); py *= (1 + cfg.PAYROLL_TAX) * frac * (dm ? dm.payK : 1);
@@ -5863,6 +5912,124 @@ var BK = globalThis.BK || (globalThis.BK = {});
     c.mAcc.fc = (c.mAcc.fc || 0) + r.fc; c.mAcc.quits = (c.mAcc.quits || 0) + r.quits;
   }
 
+  /* ---------------- логистика между городами (Р4, §7.2) ----------------
+     Город без своего цеха снабжается из цеха другого нашего города: свежая выпечка — до 150 км (300 км с логистикой 1-го
+     уровня в штабе), фабрика заморозки (логистика 2-го уровня) — до 1 500 км. Поля города (всё с безопасными значениями
+     по умолчанию: поля нет — свой цех, как в Р1–Р3): supplyFrom — город-хаб, supplyMode 'fresh' | 'frozen', supplyKm,
+     supplyOk (false — хаб потерял цех или штаб закрыл логистику: выпечки нет). Как только в городе заработал свой цех,
+     поставки прекращаются сами. Мощность хаба не расходуется: пекари хаба оплачиваются в строке поставки. */
+  function prodsOf(S, id) {
+    const cr = S.corp, c = cr.cities[id]; if (!c) return [];
+    if (id === cr.active) return cr._with != null && cr._with !== id ? cr._actProd || [] : S.productions;
+    return c.packed ? c.packed.productions : [];
+  }
+  const ownOpen = (S, id) => prodsOf(S, id).some((p) => p.status === 'open');
+  const logLvl = (S) => (BK.HQ ? BK.HQ.lvlOf(S, 'logistics') : 0);
+  // откуда можно снабжать город id: ближайший наш город со своим работающим цехом (для свежей выпечки и для заморозки)
+  function supplyHubs(S, id) {
+    const cr = S.corp, k = K(), lvl = logLvl(S), fr = lvl >= 1 ? k.FRESH_KM_L1 : k.FRESH_KM;
+    let fresh = null, frozen = null;
+    for (const o in cr.cities) {
+      if (o === id || !ownOpen(S, o)) continue;
+      const km = BK.roadKm(o, id);
+      if (km <= fr && (!fresh || km < fresh.km)) fresh = { from: o, km };
+      if (lvl >= 2 && km <= k.FROZEN_KM && (!frozen || km < frozen.km)) frozen = { from: o, km };
+    }
+    return { fresh, frozen, lvl, freshKm: fr, frozenKm: k.FROZEN_KM };
+  }
+  // город снабжается извне прямо сейчас (нет своего работающего цеха): город или null
+  function remoteOf(S, id) {
+    const cr = S.corp; if (!cr) return null;
+    id = id || cr._with || cr.active;
+    const c = cr.cities[id]; if (!c || !c.supplyFrom) return null;
+    return ownOpen(S, id) ? null : c;
+  }
+  // поставка на точку в месяц: транспорт (§7.2: 40 тыс. + 250 ₽ × км, заморозка — 60 тыс. + 120 ₽ × км) + пекари хаба под её объём
+  function remoteDel(S, st) {
+    const c = remoteOf(S); if (!c) return null;
+    const k = K(), cfg = C(), fz = c.supplyMode === 'frozen', D = fz ? k.DEL_FROZEN : k.DEL_FRESH;
+    const km = c.supplyKm != null ? c.supplyKm : BK.roadKm(c.supplyFrom, c.id);
+    const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * ((def(c.supplyFrom) || {}).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
+    const units = (st.cpd != null ? st.cpd : 150) * cfg.ITEMS_PER_CHECK;
+    const bake = units / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX) * k.REMOTE_BAKE_K[fz ? 1 : 0];
+    return (D[0] + D[1] * km) * S.macro.priceLevel * (S.corp.hqDelK || 1) + bake;
+  }
+  // мощность: null — свой цех; true — везут (хватает на всё); false — снабжение прервано
+  function remoteFill(S) { const c = remoteOf(S); return c ? c.supplyOk !== false : null; }
+  function remoteFc(S) { const c = remoteOf(S); return c && c.supplyMode === 'frozen' ? K().FROZEN_FC : 0; }
+  // поправка рейтинга города (★): свежесть при дальних поставках и заморозке; особенности города (Казань — национальная выпечка)
+  function ratingAdj(S, id) {
+    const cr = S.corp; if (!cr) return 0;
+    id = id || cr._with || cr.active;
+    let a = 0; const c = remoteOf(S, id), k = K();
+    if (c) a += c.supplyMode === 'frozen' ? k.FROZEN_RATING : (c.supplyKm || 0) > k.FRESH_FAR_KM ? k.FRESH_FAR_RATING : 0;
+    const d = def(id);
+    if (d && d.natReq && !S.menu.some((m) => { const p = E.byId(BK.PRODUCTS, m.id); return p && p.cat === 'national'; })) a += d.natReq;
+    return a;
+  }
+  function supplyName(S, c) {
+    if (!c || !c.supplyFrom) return 'свой цех';
+    return (c.supplyMode === 'frozen' ? 'фабрика заморозки ' : 'цех ') + ((def(c.supplyFrom) || {}).in || cityName(c.supplyFrom));
+  }
+  // назначить снабжение (вход в город или смена): mode 'fresh' | 'frozen'
+  function setSupply(S, id, mode) {
+    const c = S.corp.cities[id]; if (!c) return { ok: false, msg: 'Город не найден' };
+    if (mode !== 'fresh' && mode !== 'frozen') return { ok: false, msg: 'Неизвестный формат снабжения' };
+    const h = supplyHubs(S, id)[mode];
+    if (!h) return { ok: false, msg: mode === 'fresh' ? `Нет нашего цеха ближе ${supplyHubs(S, id).freshKm} км` : 'Нужна логистика 2-го уровня (фабрика заморозки) и наш цех ближе 1 500 км' };
+    c.supplyFrom = h.from; c.supplyMode = mode; c.supplyKm = h.km; c.supplyOk = true;
+    return { ok: true, from: h.from, km: h.km };
+  }
+  // раз в месяц и при смене уровня логистики: поставки ещё возможны? хаб потерял цех — ищем другой, иначе выпечки нет
+  function supplyCheck(S, quiet) {
+    const cr = S.corp;
+    for (const id in cr.cities) {
+      const c = cr.cities[id]; if (!c.supplyFrom) continue;
+      if (ownOpen(S, id)) { // свой цех заработал — поставки больше не нужны
+        if (!quiet) I.log(S, `${cityName(id)}: свой цех заработал — поставки (${supplyName(S, c)}) прекращены.`, 'good');
+        delete c.supplyFrom; delete c.supplyMode; delete c.supplyKm; delete c.supplyOk; continue;
+      }
+      const h = supplyHubs(S, id), cur = h[c.supplyMode || 'fresh'], alt = c.supplyMode === 'frozen' ? h.fresh : h.frozen;
+      const pick = cur && cur.from === c.supplyFrom ? cur : cur || alt;
+      const was = c.supplyOk !== false;
+      if (pick) {
+        if (pick.from !== c.supplyFrom || pick !== cur) {
+          c.supplyMode = pick === cur ? c.supplyMode || 'fresh' : c.supplyMode === 'frozen' ? 'fresh' : 'frozen';
+          c.supplyFrom = pick.from;
+          if (!quiet) I.log(S, `${cityName(id)}: снабжение переключено — ${supplyName(S, c)} (${pick.km} км).`, 'warn');
+        }
+        c.supplyKm = pick.km; c.supplyOk = true;
+      } else {
+        c.supplyOk = false;
+        if (was && !quiet) {
+          I.log(S, `${cityName(id)}: снабжение прервано — нет нашего цеха в досягаемости. Точки стоят без выпечки: откройте свой цех или верните логистику в штабе.`, 'bad');
+          if (BK.Dir && BK.Dir.pushInbox) BK.Dir.pushInbox(S, { kind: 'note', tone: 'bad', city: id, dname: '', title: `${cityName(id)}: нет выпечки`, text: 'Поставки из другого города прервались (хаб без цеха или штаб закрыл логистику). Пока нет своего цеха, точки не продают. Откройте цех в городе или верните отдел логистики.' });
+        }
+      }
+    }
+  }
+  // линии снабжения для карты России: [{ from, to, mode, ok }]
+  function supplyLinks(S) {
+    const out = []; if (!on(S)) return out;
+    for (const id in S.corp.cities) { const c = remoteOf(S, id); if (c) out.push({ from: c.supplyFrom, to: id, mode: c.supplyMode || 'fresh', ok: c.supplyOk !== false, km: c.supplyKm }); }
+    return out;
+  }
+
+  /* ---------------- особенности городов (Р4, §2.3; числа — cities.js) ---------------- */
+  // рост населения (Тюмень, Краснодар): поток гостей × (1 + g)^лет после выхода в Россию, не больше GROW_CAP
+  function growthK(S) {
+    const g = BK.CITY && BK.CITY.grow; if (!g || !S.corp || S.corp.unlockedDay == null) return 1;
+    return Math.min(K().GROW_CAP, Math.pow(1 + g, Math.max(0, S.day - S.corp.unlockedDay) / 365));
+  }
+  // порог второго цеха в городе (город-лента — раньше)
+  function prod2Stores() { return (BK.CITY && BK.CITY.prod2) || C().SECOND_PROD_STORES; }
+  // вход в Москву дешевле, если в сети есть «ворота» (Нижний Новгород)
+  function gateK(S, id) {
+    let k = 1; if (!on(S)) return k;
+    for (const o in S.corp.cities) { const g = (def(o) || {}).gate; if (g && g[id]) k = Math.min(k, g[id]); }
+    return k;
+  }
+
   /* ---------------- 1-е число: вызывается в начале monthly() ---------------- */
   function monthly(S, t) {
     const cfg = C(), cr = S.corp, L = cr.lastMonthly != null ? cr.lastMonthly : S.day - daysInMonthOf(S.day - 1), dim = Math.max(1, S.day - L);
@@ -5877,6 +6044,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       c.mAcc.fc = (c.mAcc.fc || 0) + r.fc; c.mAcc.quits = (c.mAcc.quits || 0) + r.quits;
       out.emp += r.emp; out.stores += r.stores;
     }
+    supplyCheck(S); // Р4: снабжение из других городов ещё возможно?
     // директора (directors.js): оклады, развитие городов (открытия и закрытия), лояльность
     if (BK.Dir) BK.Dir.monthly(S, t);
     // активный город смонтирован посреди месяца — его постоянные расходы только за свою часть
@@ -5934,7 +6102,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function enterCost(S, id) {
     const d = def(id); if (!d) return 0;
     const pk = on(S) && S.corp.perks && S.corp.perks[id], free = pk && pk.regFree && pk.until >= S.day; // приглашение губернатора (e207): регистрация бесплатно
-    return Math.round(((free ? 0 : K().ENTER_FEE) + K().ENTER_MKT * d.rent) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) / 1e5) * 1e5;
+    return Math.round(((free ? 0 : K().ENTER_FEE) + K().ENTER_MKT * d.rent) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) * gateK(S, id) / 1e5) * 1e5; // Нижний Новгород — «ворота» к Москве
   }
   function awStart(S, id) {
     const d = def(id);
@@ -5957,8 +6125,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return null;
   }
-  function enterCity(S, id, opts) { // opts.director — id директора: город запускает он, игрок остаётся, где был (directors.js)
+  function enterCity(S, id, opts) { // opts.director — id директора: город запускает он, игрок остаётся, где был (directors.js); opts.supply — 'fresh' | 'frozen' (Р4, §7.2): без своего цеха
     const lock = enterLock(S, id); if (lock) return { ok: false, msg: lock };
+    const sm = opts && (opts.supply === 'fresh' || opts.supply === 'frozen') ? opts.supply : null;
+    if (sm && !supplyHubs(S, id)[sm]) return { ok: false, msg: sm === 'fresh' ? 'Нет нашего цеха в досягаемости свежей выпечки' : 'Фабрика заморозки не дотягивается до города' };
     const cost = enterCost(S, id);
     if (S.cash < cost) return { ok: false, msg: `Не хватает ${BK.fmtMoney(cost - S.cash)}` };
     const cr = S.corp;
@@ -5969,21 +6139,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     void cur;
+    let supTxt = '';
+    if (sm) { const r = setSupply(S, id, sm); supTxt = ` Выпечку повезут: ${supplyName(S, cr.cities[id])} (${r.km} км).`; }
     if (BK.HQ) BK.HQ.onEnter(S, id); // давление местных сетей и «Хлебного двора», льгота губернатора
     if (dirId) {
-      I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.`, 'good');
+      I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.${supTxt}`, 'good');
       const r = BK.Dir.launch(S, id, dirId);
-      return Object.assign({ ok: true, cost }, r);
+      return Object.assign({ ok: true, cost, supply: sm }, r);
     }
-    I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Выберите помещение под цех.`, 'good');
+    I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. ${sm ? 'Выберите первую точку.' + supTxt : 'Выберите помещение под цех.'}`, 'good');
     switchCity(S, id);
     const pc = cr.cities[id].perk; if (pc && pc.prodRent) for (const o of S.prodOffers) o.rentM2 = Math.round(o.rentM2 * pc.prodRent); // цех в индустриальном парке за полцены
-    return { ok: true, cost };
+    return { ok: true, cost, supply: sm };
   }
   // шаг запуска нового города: 'prod' — нужен цех, 'store' — первая точка, null — город работает
   function citySetup(S) {
     if (!on(S) || !S.corp.active || S.corp.active === 'ufa' || S.phase !== 'play') return null;
-    if (!S.productions.length) return 'prod';
+    if (!S.productions.length && !remoteOf(S, S.corp.active)) return 'prod'; // снабжение из другого города — сразу точки
     if (!S.stores.length) return 'store';
     return null;
   }
@@ -6008,8 +6180,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function rollingAll(S) { let s = 0; for (const x of S.history.slice(-12)) s += x.rev; return s; }
 
-  BK.Corp = { _int: { packStore, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth };
-  Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on });
+  BK.Corp = { _int: { packStore, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
+    supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
+  Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();
 
 /* directors.js */
@@ -6283,7 +6456,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rent = o.area * o.rentM2 * (o.payMode === 'year' ? 1 - cfg.YEARLY_RENT_DISCOUNT : 1);
     const pay = staff * CI().salaryCity(S, c, 1.4) * (1 + cfg.PAYROLL_TAX);
     const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * o.area) * pl;
-    const del = S.productions.length ? E.deliveryCost(S, tmp) : 40000 * pl;
+    const del = S.productions.length || BK.Corp.remoteOf(S) ? E.deliveryCost(S, tmp) : 40000 * pl; // выпечка из другого города — своя формула (§7.2)
     const hq = cfg.HQ_PER_STORE * pl + rev * (cfg.HQ_REV_SHARE || 0);
     const payB = BK.Corp.corpMarket(S).baker * (def(c.id).wage || 1) * (c.payKb || c.payK || 1);
     const bakers = checks * cfg.ITEMS_PER_CHECK / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX);
@@ -6367,7 +6540,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C(), K_ = K(), pk = c.packed; if (!pk) return;
     c.dev.mOpened = 0; c.dev.mClosed = 0;
     BK.Corp.withCity(S, c.id, () => {
-      if (!pk.productions.length) { buildProd(S, c, true); return; }
+      const rem = BK.Corp.remoteOf(S, c.id); // Р4: снабжение из другого города — свой цех, когда точек достаточно или поставки прервались
+      if (!pk.productions.length) {
+        if (!rem) { buildProd(S, c, true); return; }
+        const own = K_.SUPPLY_OWN_STORES[rem.supplyMode === 'frozen' ? 'frozen' : 'fresh'];
+        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().def(c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
+      }
       // закрытие: полгода подряд в убытке и старше года (§5.3 п. 6)
       for (const s of pk.stores.slice()) {
         if ((s.lossStreak || 0) < K_.DIR_LOSS_CLOSE || s.status === 'opening' || (s.openedDay != null && S.day - s.openedDay < 365)) continue;
@@ -6375,7 +6553,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       // второй и третий цех — по тем же порогам, что в Уфе
       const nOpen = pk.stores.length, np = pk.productions.length;
-      if ((np === 1 && nOpen >= cfg.SECOND_PROD_STORES) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) {
+      if ((np === 1 && nOpen >= BK.Corp.prod2Stores()) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) { // город-лента — второй цех раньше (Р4)
         const r = buildProd(S, c, false); if (r) c.budget.left = Math.max(0, c.budget.left - r.cost);
       }
       repairs(S, c, d);
@@ -6443,8 +6621,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const r = assign(S, dirId, id, true); if (!r.ok) return r;
     const d = dirById(S, dirId);
     let n = 0;
-    BK.Corp.withCity(S, id, () => { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: цех и ${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
+    const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
+    BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
+    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
     return { ok: true, opened: n };
   }
 
@@ -6812,7 +6991,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const chron = (S, x) => { if (!S.chron) return; S.chron.push(Object.assign({ day: S.day }, x)); };
 
   /* ---------------- давление соперников в городах (§5.3 R_c, §12 п. 6) ---------------- */
-  function pressOf(c) { if (c.id === 'ufa') return 0; return clamp((K().PRESS_COMP[def(c.id).comp] || 0) + (c.rp || 0), 0, K().PRESS_MAX); }
+  function pressOf(c) { if (c.id === 'ufa') return 0; return clamp((K().PRESS_COMP[def(c.id).comp] || 0) + (c.rp || 0) * (def(c.id).fedK || 1), 0, K().PRESS_MAX); } // Новосибирск (fedK) — федеральные сети давят слабее
   // множитель выручки точки: давление «сейчас» против давления в снимке (снимок уже учитывает то, что было при упаковке)
   function rivalMult(S, c, s) {
     if (c.id === 'ufa') return 1;
@@ -6850,7 +7029,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const id in cr.cities) {
         const c = cr.cities[id];
         if (id === 'ufa' || c.rivalIn || S.day - c.enteredDay < k.RIVAL_FOLLOW_AFTER) continue;
-        const p = k.RIVAL_FOLLOW_P * (0.5 + (k.POACH_COMP[def(id).comp] || 1) / 2);
+        const p = k.RIVAL_FOLLOW_P * (0.5 + (k.POACH_COMP[def(id).comp] || 1) / 2) * (def(id).fedK || 1);
         if (I.rnd(S) < p) { rivalEnter(S, id); break; }
       }
     });
@@ -9068,7 +9247,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<p class="hint" style="margin:0">Время не стоит: пока вы выбираете, остальные города работают на автопилоте.</p>`;
       s += `</div><div class="sec">${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     } else {
-      s += `<p style="margin:0">Цех арендован. Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
+      const rc = BK.Corp && BK.Corp.remoteOf && BK.Corp.remoteOf(S); // Р4: снабжение из другого города
+      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
       s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
     }
     return s;
@@ -10230,7 +10410,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.S = S;
     const k = upp(), sm = BK.Corp.summary(S); if (!sm) return;
     const own = {}; for (const c of sm.cities) own[c.id] = c;
-    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join()].join('|');
+    const sup = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : [], supTo = {}; for (const l of sup) supTo[l.to] = l; // линии снабжения (Р4, §7.2)
+    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join(), sup.map((l) => l.from + l.to + l.mode + l.ok).join()].join('|');
     if (key === view.lastKey && !force) return;
     view.lastKey = key;
     const narrow = view.px.w < 700;
@@ -10240,7 +10421,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ufa = P(BK.CITY_BY_ID.ufa.lon, BK.CITY_BY_ID.ufa.lat);
     for (const d of BK.CITIES) {
       const p = P(d.lon, d.lat), c = own[d.id], r = rad(d) * k, sel = view.sel === d.id;
-      if (c && d.id !== 'ufa') links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
+      if (c && d.id !== 'ufa' && !supTo[d.id]) links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
+      if (supTo[d.id]) { const l = supTo[d.id], f = BK.CITY_BY_ID[l.from], q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
       let g = `<g class="ru-city${c ? ' own' : ''}${c && c.active ? ' act' : ''}${sel ? ' sel' : ''}" data-city="${d.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">`;
       g += `<circle class="hit" r="${(Math.max(r, 12 * k) + 4 * k).toFixed(1)}"/>`;
       if (c) {
@@ -10283,13 +10465,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="lg-r">${sw('lg-own t-good')}<span>Маржа 15 % и выше</span><b>${tone.good}</b></span>
       <span class="lg-r">${sw('lg-own t-warn')}<span>От 0 до 15 %</span><b>${tone.warn}</b></span>
       <span class="lg-r">${sw('lg-own t-bad')}<span>Убыток</span><b>${tone.bad}</b></span>
-      <span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>`;
+      <span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>${supLegend(S)}`;
     const lgEl = view.el.querySelector('.ru-legend'); if (lgEl.innerHTML !== lg) lgEl.innerHTML = lg;
     const cart = view.el.querySelector('.ru-cart');
     if (!cart.firstChild) cart.innerHTML = `<div class="ct-in"><div class="ct-c ct-full"><small>Генплан сети</small><div class="ct-t">Россия · лист 2</div></div><div class="ct-c"><small>Масштаб</small><div class="ct-v">1 : 20 000 000</div></div><div class="ct-c"><small>Дата</small><div class="ct-v ct-d"></div></div><div class="ct-c ct-full ct-last"><small>Городов · точек</small><div class="ct-v ct-n"></div></div></div>`;
     const d = E().dateOf(S.day), dv = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`, nv = `${sm.cities.length} · ${sm.stores}`;
     const cd = cart.querySelector('.ct-d'), cn = cart.querySelector('.ct-n');
     if (cd.textContent !== dv) cd.textContent = dv; if (cn.textContent !== nv) cn.textContent = nv;
+  }
+  function supLegend(S) { // линии снабжения — только когда они есть
+    const ls = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : []; if (!ls.length) return '';
+    const ln = (cls) => `<svg viewBox="0 0 22 8" class="lg-sw lg-ln" aria-hidden="true"><path class="ru-sup ${cls}" d="M1,4L21,4"/></svg>`;
+    let s = '';
+    if (ls.some((l) => l.mode !== 'frozen')) s += `<span class="lg-r">${ln('fresh')}<span>Свежая выпечка из цеха</span><b>${ls.filter((l) => l.mode !== 'frozen').length}</b></span>`;
+    if (ls.some((l) => l.mode === 'frozen')) s += `<span class="lg-r">${ln('frozen')}<span>Фабрика заморозки</span><b>${ls.filter((l) => l.mode === 'frozen').length}</b></span>`;
+    return s;
   }
   // экранная точка города внутри .mapwrap (для анимации)
   function cityScreen(id) {
@@ -10355,6 +10545,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="kpi"><span class="k">Точки · цеха</span><span class="v">${c.open}${c.soon ? ` <small class="pos">+${c.soon}</small>` : ''} · ${c.prods}</span><span class="d">команда ${c.staff}</span></div>
         <div class="kpi"><span class="k">Рейтинг на картах</span><span class="v">${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : '—'}</span><span class="d">${c.active ? 'как в городе' : hasDir(S, id) ? 'ведёт директор' : 'сползает к 3,5★ без вас'}</span></div></div>`;
       if (id !== 'ufa') s += awBar(c.aw);
+      const rc = BK.Corp.remoteOf && BK.Corp.remoteOf(S, id); // Р4: снабжение из другого города
+      if (rc) s += `<p class="hint ${rc.supplyOk === false ? 'negc' : ''}" style="margin:0">Выпечка: ${esc(BK.Corp.supplyName(S, rc))}, ${rc.supplyKm} км${rc.supplyOk === false ? ' — <b>поставки прерваны</b>: точки без выпечки, нужен свой цех' : '. Свой цех в городе выгоднее, когда точек станет больше.'}</p>`;
       if (BK.CorpUI) s += BK.CorpUI.cityBlocks(S, id);
       if (c.active) s += `<div class="row sp"><span class="hint">Этот город считается подробно: вы нанимаете, учите и открываете точки сами.</span><button class="btn primary" data-act="ruBack">К карте города</button></div>`;
       else s += `<div class="row sp"><span class="hint">${hasDir(S, id) ? 'Зайдите, чтобы вести город самому: директор станет заместителем (дольше 2 месяцев — лояльность падает).' : 'Без директора город только живёт. Зайдите, чтобы вести его самому.'}</span><button class="btn primary" data-act="ruGo" data-arg="${id}">Зайти в город</button></div>`;
@@ -10872,6 +11064,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
     s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(cr.active))}</small></span></label>`).join('');
     s += cr.dirCand.map((d) => `<label class="wopt"><input type="radio" name="who" value="c:${d.id}"><span><b>Нанять: ${esc(d.name)}</b><small>${GRN(d.grade)} · ${STN(d.style)} · найм ${fm(d.salary * K().DIR_HIRE_SALARIES)} — запустит город сам</small></span></label>`).join('');
+    return s + '</fieldset>' + supplyChoices(S, id);
+  }
+  // вход в город: формат снабжения (Р4, §7.1 п. 2, §7.2)
+  function supplyChoices(S, id) {
+    const h = BK.Corp.supplyHubs(S, id), k = K(), pl = S.macro.priceLevel, lk = S.corp.hqDelK || 1;
+    const per = (D, km) => fm((D[0] + D[1] * km) * pl * lk);
+    const opt = (v, title, sub, dis) => `<label class="wopt${dis ? ' dis' : ''}"><input type="radio" name="supply" value="${v}"${v === 'own' ? ' checked' : ''}${dis ? ' disabled' : ''}><span><b>${title}</b><small>${sub}</small></span></label>`;
+    let s = `<fieldset class="whopick"><legend>Откуда выпечка</legend>`;
+    s += opt('own', 'Свой цех', 'Как в начале игры: помещение под цех, пекари, оборудование. Дороже на старте, дешевле потом.');
+    const fr = h.fresh;
+    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
+      : opt('fresh', 'Свежая выпечка из другого города', `Нужен наш цех ближе ${h.freshKm} км${h.lvl < 1 ? ` (с логистикой 1-го уровня в штабе — ${k.FRESH_KM_L1} км)` : ''}.`, true);
+    const fz = h.frozen;
+    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
+      : opt('frozen', 'Фабрика заморозки', h.lvl < 2 ? 'Нужна логистика 2-го уровня в штабе.' : `Нет нашего цеха ближе ${k.FROZEN_KM} км.`, true);
     return s + '</fieldset>';
   }
   function fedModal(S, legend) {
@@ -10895,7 +11102,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
-  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, fedModal, mapBadge, initials, hqTab, motivation };
+  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation };
 })();
 
 /* ui/app.js */
@@ -11600,10 +11807,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       let dirId = null;
       if (who.startsWith('d:')) dirId = who.slice(2);
       else if (who.startsWith('c:')) { const h = E.dirHire(S, who.slice(2), null); if (!h.ok) { toast('Не получилось', h.msg, 'warn'); return; } dirId = h.d.id; }
-      const r = dirId ? E.enterCity(S, id, { director: dirId }) : E.enterCity(S, id); closeModal();
+      const sp = $('#modal input[name="supply"]:checked'), supply = sp && sp.value !== 'own' ? sp.value : null; // Р4: выпечка из другого города
+      const r = dirId || supply ? E.enterCity(S, id, { director: dirId, supply }) : E.enterCity(S, id); closeModal();
       if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; }
       if (dirId) { ui.ruSel = id; BK.Russia.select(id); BK.Russia.render(S, true); refresh(); toast(`${d.name}: запуск начался`, `Директор откроет цех и ${H.nw(r.opened || 0, 'точку', 'точки', 'точек')}. Отчёт — 1-го числа.`, 'good'); }
-      else { afterSwitch(); toast(`${d.name}: вход открыт`, 'Выберите помещение под цех.', 'good'); }
+      else { afterSwitch(); toast(`${d.name}: вход открыт`, supply ? 'Выпечку повезут из другого города — выберите первую точку.' : 'Выберите помещение под цех.', 'good'); }
       save();
     });
   }

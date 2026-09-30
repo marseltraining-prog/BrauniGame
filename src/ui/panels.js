@@ -516,7 +516,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<p class="hint" style="margin:0">Время не стоит: пока вы выбираете, остальные города работают на автопилоте.</p>`;
       s += `</div><div class="sec">${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     } else {
-      s += `<p style="margin:0">Цех арендован. Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
+      const rc = BK.Corp && BK.Corp.remoteOf && BK.Corp.remoteOf(S); // Р4: снабжение из другого города
+      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
       s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
     }
     return s;
