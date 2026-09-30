@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Стадия 0 — мини-игра «Смена»</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: var(--paper); }
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .gh { display: grid; grid-template-columns: 330px 1fr auto; align-items: center; gap: 18px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .gh .who b { font-family: var(--f-display); font-size: 13px; font-weight: 600; display: block; }
+  .gh .who small { font-size: 11.5px; color: var(--ink-3); }
+  .stats { display: flex; gap: 8px; justify-content: center; align-items: center; }
+  .st { display: flex; flex-direction: column; align-items: center; min-width: 92px; padding: 5px 12px; border-radius: 10px; background: var(--surface-2); }
+  .st .caps { font-size: 8.5px; }
+  .st b { font-family: var(--f-mono); font-size: 17px; font-weight: 700; line-height: 1.2; }
+  .st.tip { background: var(--good-soft); } .st.tip b { color: var(--good-t); }
+  .st.err b { color: var(--bad-t); }
+  .timer { display: flex; align-items: center; gap: 10px; padding: 0 16px 0 6px; }
+  .timer .t { font-family: var(--f-mono); font-size: 24px; font-weight: 700; }
+  .timer small { display: block; font-size: 10.5px; color: var(--warn-t); font-weight: 600; font-family: var(--f-display); letter-spacing: .12em; text-transform: uppercase; }
+  .main { display: grid; grid-template-columns: 1016px 1fr; gap: 0; min-height: 0; }
+  .stage { position: relative; display: flex; flex-direction: column; border-right: 1px solid var(--line); min-width: 0; }
+  .scene { position: relative; height: 656px; overflow: hidden; }
+  .scene svg { display: block; }
+  .stations { flex: 1; display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; padding: 14px 16px; background: var(--surface); border-top: 1.5px solid var(--ink); }
+  .stn { border: 1.5px solid var(--line-2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--surface); position: relative; box-shadow: 0 3px 0 var(--line); }
+  .stn svg.pic { width: 54px; height: 54px; }
+  .stn b { font-size: 12.5px; font-weight: 600; }
+  .stn kbd { position: absolute; top: 6px; left: 7px; font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 4px; }
+  .stn.hot { border-color: var(--crust); box-shadow: 0 3px 0 var(--crust-2), 0 0 0 4px color-mix(in srgb, var(--crust) 16%, transparent); transform: translateY(-2px); }
+  .stn.done { opacity: .5; }
+  .stn.done::after { content: '✓'; position: absolute; top: 5px; right: 8px; color: var(--good-t); font-weight: 700; }
+  aside { background: var(--surface-2); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .card { padding: 14px 16px; box-shadow: var(--shadow); }
+  .ord .hd { display: flex; gap: 10px; align-items: center; }
+  .ord .hd b { font-size: 14px; display: block; }
+  .ord .hd small { font-size: 11.5px; color: var(--ink-3); }
+  .ord .q { font-size: 13px; font-style: italic; color: var(--ink-2); margin: 10px 0; background: var(--surface-2); border-radius: 4px 12px 12px 12px; padding: 8px 12px; }
+  .it { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+  .it svg.pic { width: 28px; height: 28px; }
+  .steps { display: flex; gap: 4px; margin-top: 3px; }
+  .steps span { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: var(--good-soft); color: var(--good-t); font-weight: 600; }
+  .steps span.now { background: var(--crust-soft); color: var(--crust-t); outline: 1.5px solid var(--crust); }
+  .steps span.todo { background: var(--surface-2); color: var(--ink-3); }
+  .ok { color: var(--good-t); font-weight: 700; font-size: 15px; }
+  .pat { height: 6px; border-radius: 3px; background: var(--surface-3); position: relative; margin-top: 6px; }
+  .pat i { position: absolute; inset: 0 auto 0 0; width: 64%; border-radius: 3px; background: linear-gradient(90deg, var(--good), var(--warn)); }
+  .upsell { border: 2px solid var(--crust); background: linear-gradient(180deg, var(--crust-soft), var(--surface) 70%); }
+  .upsell h3 { font-family: var(--f-display); font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .upsell p { font-size: 12.5px; color: var(--ink-2); margin: 6px 0 10px; }
+  .ub { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; }
+  .ub .btn { height: 38px; font-size: 13.5px; font-weight: 600; }
+  .combo { display: flex; align-items: center; gap: 12px; }
+  .combo .x { font-family: var(--f-display); font-size: 26px; font-weight: 700; color: var(--crust-t); }
+  .combo .dots { display: flex; gap: 4px; margin-top: 4px; }
+  .combo .dots i { width: 22px; height: 6px; border-radius: 3px; background: var(--crust); }
+  .combo .dots i.o { background: var(--surface-3); }
+  .boss { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: 12.5px; }
+  .stars { color: var(--crust); display: inline-flex; gap: 2px; }
+  .stars svg { width: 14px; height: 14px; }
+  .stars .o { color: var(--line-2); }
+  .hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 12px; color: var(--ink-3); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="gh">
+    <div class="who" style="display:flex;gap:10px;align-items:center"><span id="pp"></span><div><b>Смена в «Калаче»</b><small>понедельник, 5 октября · утро</small></div></div>
+    <div class="stats">
+      <div class="timer"><svg width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="none" stroke="var(--surface-3)" stroke-width="5"/><circle cx="23" cy="23" r="19" fill="none" stroke="var(--warn)" stroke-width="5" stroke-linecap="round" stroke-dasharray="48 120" transform="rotate(-90 23 23)"/></svg><div><small>час пик</small><span class="t">0:48</span></div></div>
+      <div class="st"><span class="caps">Гостей</span><b>14</b></div>
+      <div class="st err"><span class="caps">Ошибки</span><b>1</b></div>
+      <div class="st"><span class="caps">Допродажи</span><b>3</b></div>
+      <div class="st tip"><span class="caps">Чаевые</span><b>640 ₽</b></div>
+    </div>
+    <div style="display:flex;gap:6px"><span class="icbtn" id="pz"></span><span class="icbtn" id="th"></span></div>
+  </header>
+  <div class="main">
+    <div class="stage">
+      <div class="scene"><svg id="scene" width="1016" height="656" viewBox="0 0 960 620"></svg></div>
+      <div class="stations" id="stations"></div>
+    </div>
+    <aside>
+      <div class="card ord" id="ord"></div>
+      <div class="card upsell" id="up"></div>
+      <div class="card"><div class="combo"><span class="x">×4</span><div><b style="font-size:13px">Серия без ошибок</b><div class="dots"><i></i><i></i><i></i><i></i><i class="o"></i></div><small class="muted" style="font-size:11.5px">ещё 1 — чаевые ×1,5 до конца пика</small></div></div></div>
+      <div class="card boss" id="boss"></div>
+      <div class="card" id="peak"></div>
+    </aside>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('pp').innerHTML = ART.portrait('hero', 38);
+  $('pz').innerHTML = IC.pause; $('th').innerHTML = IC.theme;
+  const INK = ART.INK;
+  let s = ART.shopScene({ sign: 'КАЛАЧ', sub: 'ПЕКАРНЯ · КОФЕ · С 1994', rival: false, winLabel: '', dimLine: 'стойка «Калача» · 6,0 м · утро, 7:42', lowShelf: false, hero: 'happy', price: '275 ₽',
+    menu: [['Американо', '150'], ['Капучино 0,3', '170'], ['Круассан', '120'], ['Эчпочмак', '85'], ['Булочка с корицей', '95']] });
+  // заказы-пузыри над гостями
+  const bubble = (x, y, items, pat, first) => {
+    const w = items.length * 34 + 16, col = pat > .6 ? 'var(--good)' : pat > .3 ? 'var(--warn)' : 'var(--bad)';
+    return `<g transform="translate(${x - w / 2},${y})"><rect width="${w}" height="44" rx="12" fill="var(--surface)" stroke="${first ? 'var(--crust)' : INK}" stroke-width="${first ? 2.4 : 1.5}"/>
+      <path d="M${w / 2 - 7},44 l7,10 l7,-10" fill="var(--surface)" stroke="${first ? 'var(--crust)' : INK}" stroke-width="${first ? 2.4 : 1.5}" stroke-linejoin="round"/><path d="M${w / 2 - 6},43 h12" stroke="var(--surface)" stroke-width="3"/>
+      ${items.map((k, i) => ART.pastry(k, 25 + i * 34, 22, .95)).join('')}
+      <rect x="6" y="-9" width="${w - 12}" height="5" rx="2.5" fill="var(--surface-3)"/><rect x="6" y="-9" width="${(w - 12) * pat}" height="5" rx="2.5" fill="${col}"/></g>`;
+  };
+  s += bubble(300, 404, ['cup', 'echpochmak'], .64, true);
+  s += bubble(232, 330, ['mug', 'bun'], .8);
+  s += bubble(166, 404, ['tea', 'croissant', 'croissant'], .9);
+  s += bubble(102, 330, ['cup'], .28);
+  s += bubble(40, 404, ['mug', 'balesh'], .95);
+  // подпись первого гостя
+  s += `<g transform="translate(300,606)"><rect x="-74" y="-11" width="148" height="20" rx="10" fill="var(--ink)"/><text y="3.5" text-anchor="middle" font-family="var(--f-body)" font-size="11" font-weight="600" fill="#fbf4e8">Семён Аркадьевич · 7:02</text></g>`;
+  // всплывающие чаевые и отклик
+  const pop = (x, y, t, c, sz, op) => `<text x="${x}" y="${y}" font-family="var(--f-display)" font-weight="700" font-size="${sz}" fill="${c}" stroke="var(--surface)" stroke-width="5" paint-order="stroke" opacity="${op || 1}" text-anchor="middle">${t}</text>`;
+  s += `<g>${[[-26, -20], [22, -26], [30, 12], [-30, 16], [0, -34]].map(([dx, dy]) => `<circle cx="${392 + dx}" cy="${336 + dy}" r="3" fill="var(--crust-2)"/>`).join('')}</g>`;
+  s += pop(420, 342, '+50 ₽ чаевые', 'var(--good-t)', 21);
+  s += pop(472, 272, '+1 допродажа!', 'var(--crust-t)', 15, .8);
+  s += pop(430, 250, '+120 ₽', 'var(--good-t)', 12, .35);
+  // монетки
+  s += [[372, 356], [388, 350], [380, 342]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="8" ry="3.4" fill="#e2b24a" stroke="${INK}" stroke-width="1"/>`).join('');
+  $('scene').innerHTML = s;
+
+  const ic = (k) => `<svg class="pic" viewBox="-16 -16 32 32">${ART.pastry(k, 0, 0, 1.05)}</svg>`;
+  const glyph = (d, c) => `<svg class="pic" viewBox="0 0 40 40">${d.replace(/C/g, c)}</svg>`;
+  const ST = [
+    ['1', 'Эспрессо', glyph('<rect x="10" y="12" width="20" height="18" rx="3" fill="#6b4a2e" stroke="#2a2320" stroke-width="1.5"/><path d="M30 16h4a3 3 0 0 1 0 8h-4" fill="none" stroke="#2a2320" stroke-width="1.5"/>', ''), 'done'],
+    ['2', 'Молоко', glyph('<path d="M14 8h12v6l3 5v15H11V19l3-5z" fill="#fff" stroke="#2a2320" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 24h18" stroke="#3b8796" stroke-width="3"/>', ''), 'done'],
+    ['3', 'Пенка', glyph('<ellipse cx="20" cy="24" rx="12" ry="7" fill="#f4efe6" stroke="#2a2320" stroke-width="1.5"/><circle cx="15" cy="18" r="4" fill="#fff" stroke="#2a2320" stroke-width="1.2"/><circle cx="22" cy="16" r="5" fill="#fff" stroke="#2a2320" stroke-width="1.2"/><circle cx="27" cy="20" r="3.4" fill="#fff" stroke="#2a2320" stroke-width="1.2"/>', ''), 'hot'],
+    ['4', 'Сироп', glyph('<path d="M16 6h8v6l4 4v18H12V16l4-4z" fill="#e59a3e" stroke="#2a2320" stroke-width="1.5" stroke-linejoin="round"/><rect x="14" y="20" width="12" height="7" fill="#fff" opacity=".7"/>', ''), ''],
+    ['Q', 'Круассан', ic('croissant'), ''],
+    ['W', 'Эчпочмак', ic('echpochmak'), 'done'],
+    ['E', 'Булочка', ic('bun'), ''],
+    ['R', 'Чай', ic('tea'), ''],
+  ];
+  $('stations').innerHTML = ST.map(([k, n, g, c]) => `<div class="stn ${c}"><kbd>${k}</kbd>${g}<b>${n}</b></div>`).join('');
+
+  $('ord').innerHTML = `<div class="hd">${ART.portrait('semyon', 44)}<div><b>Заказ №15 · Семён Аркадьевич</b><small>постоянный гость · любит правду</small></div></div>
+    <div class="q">«Капучино и правду. Эчпочмак сегодняшний?»</div>
+    <div class="it"><svg class="pic" viewBox="-16 -16 32 32">${ART.pastry('cup', 0, 0, 1.1)}</svg><div><b>Капучино 0,3</b><div class="steps"><span>эспрессо</span><span>молоко</span><span class="now">пенка</span></div></div><span class="num" style="font-weight:600">170 ₽</span></div>
+    <div class="it"><svg class="pic" viewBox="-16 -16 32 32">${ART.pastry('echpochmak', 0, 0, 1.1)}</svg><div><b>Эчпочмак</b> <span class="ok">✓</span></div><span class="num" style="font-weight:600">85 ₽</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-top:6px"><span>терпение гостя</span><span>ещё ≈ 9 с</span></div><div class="pat"><i></i></div>`;
+  $('up').innerHTML = `<h3>${ART.pastry ? `<svg width="34" height="34" viewBox="-16 -16 32 32">${ART.pastry('croissant', 0, 0, 1.15)}</svg>` : ''}Предложить круассан?</h3>
+    <p>Семён берёт сладкое по понедельникам. Угадаешь — чаевые больше, промахнёшься — он поворчит.</p>
+    <div class="ub"><span class="btn primary">Предложить · +120 ₽</span><span class="btn">Не сейчас</span></div>
+    <div style="margin-top:9px">${ART.fx([['rub', 1, 'Чаевые'], ['boss', 1], ['time', -1, 'Время']])}</div>`;
+  const G = [3, 5, 9, 14, 17, 15, 11, 6, 4];
+  $('peak').innerHTML = `<div class="sec-h" style="margin-bottom:8px"><h3>Гости по времени</h3><span class="muted">7:00–8:30</span></div>
+    <svg width="100%" height="64" viewBox="0 0 330 64" preserveAspectRatio="none">${G.map((v, i) => `<rect x="${i * 37 + 2}" y="${60 - v * 3.2}" width="30" height="${v * 3.2}" rx="3" fill="${i === 4 ? 'var(--crust)' : 'var(--surface-3)'}"/>`).join('')}<path d="M0 60.5H330" stroke="var(--line-2)"/></svg>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:8px"><span class="muted">Итог смены (прогноз)</span><span class="num" style="font-weight:600">1 250 ₽ + чаевые ≈ 900 ₽</span></div>`;
+  const stars = (n) => `<span class="stars">${[1, 2, 3, 4, 5].map((i) => i <= n ? IC.starFill : `<span class="o">${IC.starFill}</span>`).join('')}</span>`;
+  $('boss').innerHTML = `${ART.portrait('rashid', 44)}<div><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">Оценка Рашида</b>${stars(4)}</div><div style="font-style:italic;color:var(--ink-2);margin-top:3px">«Быстро. Теперь бы ещё и правильно»</div></div>`;
+</script>
+</body>
+</html>

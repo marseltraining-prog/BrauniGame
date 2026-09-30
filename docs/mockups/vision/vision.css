@@ -1,0 +1,102 @@
+@import url('../common.css');
+
+/* Дополнительные токены макетов «видения»: соперник, тёплый пролог, холдинг */
+:root {
+  --rival: #9580a8; --rival-soft: #e7dfee; --rival-t: #6b5585;
+  --warm: #f6e7d0; --warm-2: #f1dcbc;
+  --gold: #b58a2a; --gold-soft: #f3e6c4;
+  --skin: #edc6a1; --skin-2: #d9a47c;
+}
+:root[data-theme="dark"] {
+  --rival: #a893c0; --rival-soft: #2c2538; --rival-t: #c3b0da;
+  --warm: #2a2118; --warm-2: #33281c;
+  --gold: #d9b25a; --gold-soft: #3a311b;
+}
+
+/* HUD этапа: универсальный */
+.hud .who { display: flex; align-items: center; gap: 10px; }
+.hud .who .pt { flex: none; }
+.hud .who b { font-family: var(--f-display); font-weight: 600; font-size: 13px; display: block; white-space: nowrap; }
+.hud .who small { font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.stage-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border-radius: 13px; background: var(--crust-soft); color: var(--crust-t); font-family: var(--f-display); font-size: 9.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+.stage-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--crust); }
+
+/* Шкалы состояния */
+.meter { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 4px 10px; }
+.meter .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; }
+.meter .ic svg { width: 14px; height: 14px; }
+.meter .lb { font-size: 12.5px; font-weight: 500; }
+.meter .vv { font-family: var(--f-mono); font-size: 12px; font-weight: 600; }
+.meter .tr { grid-column: 2 / -1; height: 7px; border-radius: 4px; background: var(--surface-3); position: relative; overflow: hidden; }
+.meter .tr i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.meter .tr .ghost { background: repeating-linear-gradient(135deg, transparent 0 3px, rgba(0,0,0,.12) 3px 5px); }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 14px; height: 6px; border-radius: 3px; background: var(--surface-3); }
+.pips i.on { background: var(--crust); }
+
+/* Значки последствий (как в окне события) */
+.fx { display: flex; gap: 5px; flex-wrap: wrap; }
+.fxc { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px 0 6px; border-radius: 6px; font-size: 11px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.fxc svg { width: 12px; height: 12px; }
+.fxc .ar { font-size: 8.5px; letter-spacing: -1px; }
+.fxc.up { background: var(--good-soft); color: var(--good-t); }
+.fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+.fxc.zero { background: transparent; color: var(--ink-3); border: 1px dashed var(--line-2); opacity: .7; }
+.fxc.who { background: var(--river-soft); color: var(--river-t); }
+
+/* Мысли гостей */
+.thought { position: absolute; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 14px; padding: 5px 10px 5px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 3px 0 rgba(24,34,58,.12); color: var(--ink); }
+.thought svg { width: 14px; height: 14px; }
+.thought::before, .thought::after { content: ''; position: absolute; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 50%; }
+.thought::before { width: 9px; height: 9px; left: 14px; bottom: -11px; }
+.thought::after { width: 5px; height: 5px; left: 9px; bottom: -18px; }
+.thought.r::before { left: auto; right: 14px; } .thought.r::after { left: auto; right: 9px; }
+.thought.good { color: var(--good-t); } .thought.bad { color: var(--bad-t); } .thought.warn { color: var(--warn-t); }
+
+/* Всплывающие цифры */
+.pop { position: absolute; font-family: var(--f-display); font-weight: 700; font-size: 15px; color: var(--good-t); white-space: nowrap; paint-order: stroke; -webkit-text-stroke: 4px var(--surface); text-shadow: 0 2px 0 rgba(0,0,0,.06); }
+.pop span { -webkit-text-stroke: 0; }
+.pop.fade { opacity: .45; font-size: 12px; }
+
+/* Штамп */
+.stampx { color: var(--crust-t); border: 2.5px solid currentColor; padding: 3px; border-radius: 4px; display: inline-block; }
+.stampx .in { border: 1px solid currentColor; padding: 6px 14px 5px; text-align: center; border-radius: 2px; }
+.stampx b { display: block; font-family: var(--f-display); font-size: 18px; font-weight: 700; letter-spacing: .2em; margin-right: -.2em; }
+.stampx small { display: block; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; margin-top: 1px; }
+
+/* Реплика героя */
+.say { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.say .nm { font-family: var(--f-display); font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--crust-t); margin-bottom: 3px; }
+.say .nm em { font-family: var(--f-body); font-style: italic; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 11.5px; margin-left: 4px; }
+.say .tx { font-size: 14.5px; line-height: 1.5; }
+.say .bub { background: var(--surface-2); border-radius: 4px 14px 14px 14px; padding: 9px 14px 10px; }
+
+/* Кнопки выбора сцены */
+.opt { display: grid; grid-template-columns: 28px 1fr auto; gap: 2px 12px; padding: 10px 14px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.opt .L { grid-row: span 2; width: 26px; height: 26px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--f-display); font-size: 11px; font-weight: 600; color: var(--ink-2); margin-top: 1px; }
+.opt .t { font-size: 14px; font-weight: 600; }
+.opt .d { font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+.opt .cost { font-family: var(--f-mono); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+.opt .cost small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.opt .fx { grid-column: 2 / -1; margin-top: 7px; }
+.opt.sel { border-color: var(--crust); box-shadow: 0 0 0 1px var(--crust), 0 0 0 5px color-mix(in srgb, var(--crust) 16%, transparent); }
+.opt.sel .L { background: var(--crust); color: var(--on-primary); }
+.opt.off { background: transparent; border-style: dashed; }
+.opt.off .t, .opt.off .d, .opt.off .cost { color: var(--ink-3); }
+.opt.off .fx { opacity: .45; }
+.why { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn-t); margin-top: 5px; }
+.why svg { width: 13px; height: 13px; }
+
+.kick { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--crust-t); }
+.kick svg { width: 14px; height: 14px; }
+h2.ttl { font-family: var(--f-display); font-size: 20px; font-weight: 600; line-height: 1.25; letter-spacing: -.005em; }
+
+/* Рамка-штамп «генплан» */
+.plate { position: absolute; background: var(--surface); border: 1.5px solid var(--ink); box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--ink); font-size: 10px; }
+.plate .r { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ink); }
+.plate .r > div { padding: 5px 10px 6px; }
+.plate .r > div + div { border-left: 1px solid var(--ink); }
+.plate .h { padding: 6px 10px 7px; }
+.plate .caps { font-size: 8.5px; color: var(--ink-2); letter-spacing: .12em; }
+.plate b { font-family: var(--f-display); font-size: 14px; font-weight: 700; letter-spacing: .08em; display: block; margin-top: 1px; }
+.plate .mono { font-size: 11px; display: block; margin-top: 1px; }
