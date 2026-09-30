@@ -674,7 +674,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // меню стойки: чем выше должность и навык кофе, тем больше позиций
   const ITEMS = [
-    { id: 'esp', name: 'Эспрессо', icon: '☕', cat: 'coffee' },
+    { id: 'esp', name: 'Американо', icon: '☕', cat: 'coffee' },
     { id: 'cap', name: 'Капучино', icon: '🥛', cat: 'coffee' },
     { id: 'lat', name: 'Латте', icon: '🍶', cat: 'coffee' },
     { id: 'tea', name: 'Чай', icon: '🍵', cat: 'coffee' },

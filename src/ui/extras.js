@@ -31,7 +31,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!st || !Array.isArray(st.stores) || st.day == null) return { broken: true };
     let rev12 = 0; for (const h of (st.history || []).slice(-12)) rev12 += h.rev || 0;
     let ach = 0; if (st.achievements && A()) for (const a of A().LIST) if (st.achievements[a.id] != null) ach++;
-    return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024) };
+    const pr = st.prologue && ['run', 'won', 'life'].includes(st.prologue.status) ? st.prologue : null; // игра ещё в прологе «Бариста»
+    return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024),
+      pro: pr ? { m: pr.m | 0, sav: Math.round((pr.cash || 0) + (pr.box || 0) + (pr.dep || 0) + (pr.depInt || 0)), age: (BK.CFG.PROLOGUE ? BK.CFG.PROLOGUE.AGE0 : 21) + Math.floor((pr.m | 0) / 12), st: pr.status } : null };
   }
   // куда пойдёт новая игра: активный слот, если он пуст или там банкротство, иначе первый свободный
   function target() {
@@ -63,7 +65,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.won) chips.push('<span class="chip good">победа</span>');
     if (s.lost) chips.push('<span class="chip bad">банкротство</span>');
     if (s.difficulty) chips.push(`<span class="chip crust">${esc(DIFF[s.difficulty] || s.difficulty)}</span>`);
-    const meta = [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    const meta = s.pro ? ['пролог «Бариста»', `${s.pro.age} ${plural(s.pro.age, 'год', 'года', 'лет')}`, `накоплено ${fm(s.pro.sav)}`] : [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    if (s.pro) chips.push(`<span class="chip river">${s.pro.st === 'won' ? 'своя точка!' : s.pro.st === 'life' ? 'жизнь в найме' : 'бариста'}</span>`);
     if (s.ach) meta.push(`🏆 ${s.ach}`);
     let btns;
     if (ask === 'del') btns = confirmDel(n, qn(s.company));
@@ -89,7 +92,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (k === 'del') { remove(n); ui.ask = null; APP().toast('Игра удалена', `Слот ${n} свободен.`, 'good'); }
       else if (k === 'new') {
         ui.ask = null; setActive(n);
-        const inp = $('#companyName'); APP().newGame((inp && inp.value.trim()) || 'Пекарня «Каравай»');
+        const inp = $('#companyName'), nm = (inp && inp.value.trim()) || 'Пекарня «Каравай»'; if (APP().startNew) APP().startNew(nm); else APP().newGame(nm);
         return;
       }
       const box = $('#slots', el); if (box) box.outerHTML = startHtml();

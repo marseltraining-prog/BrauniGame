@@ -47,7 +47,8 @@ async function layoutCheck(p, label, opts = {}) {
     const toasts = document.getElementById('toasts'); if (toasts) toasts.style.display = 'none';
     const modalOpen = document.querySelector('#modal .modal');
     const startOpen = document.querySelector('#start:not([hidden]) .start-in');
-    const roots = modalOpen ? [modalOpen] : startOpen ? [startOpen] : [...document.querySelectorAll('#pbody, .hud, .mapwrap')];
+    // o.root — свой корень проверки (например, слой пролога «Бариста»: самое верхнее окно в нём)
+    const roots = o.root ? [...document.querySelectorAll(o.root)].slice(-1) : modalOpen ? [modalOpen] : startOpen ? [startOpen] : [...document.querySelectorAll('#pbody, .hud, .mapwrap')];
     const seen = new Set(), seenC = new Set();
     const parseColor = (c) => {
       if (!c) return null;
@@ -121,7 +122,7 @@ async function layoutCheck(p, label, opts = {}) {
     }
     if (toasts) toasts.style.display = '';
     return out;
-  }, { mobile: !!opts.mobile });
+  }, { mobile: !!opts.mobile, root: opts.root || null });
   const uniq = [...new Set(res)];
   return uniq.map((x) => `[${label}] ${x}`);
 }

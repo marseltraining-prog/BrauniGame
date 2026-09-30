@@ -157,7 +157,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -169,7 +169,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
+    if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -178,8 +179,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
-  function newGame(name, difficulty) {
-    S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
+  // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
+  function startNew(name, difficulty) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty); else newGame(name, difficulty); }
+  function newGame(name, difficulty, opts) {
+    if (BK.PrologueUI) BK.PrologueUI.close();
+    S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     hideStart(); closeModal(); map.reset(); renderAll(); save();
@@ -188,6 +192,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
+    if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
   }
 
   /* ---------------- цикл ---------------- */
@@ -196,6 +201,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     requestAnimationFrame(frame);
     if (!S) return;
     const dt = Math.min(250, t - (lastT || t)); lastT = t;
+    if (BK.PrologueUI && BK.PrologueUI.active()) return; // идёт пролог — у него свой цикл (src/ui/prologue.js)
     const running = S.phase === 'play' && ui.speed > 0 && !ui.modal && !S.ev.pending && !S.chef.pending && !S.lost;
     if (running) {
       acc += dt;
@@ -848,7 +854,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
 
-  function toStart() { save(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
+  function toStart() { save(); if (BK.PrologueUI) BK.PrologueUI.close(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
@@ -862,7 +868,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart, openRussia, cityView, refresh };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, startNew, continueGame, toStart, openRussia, cityView, refresh };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();
