@@ -33,7 +33,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let ach = 0; if (st.achievements && A()) for (const a of A().LIST) if (st.achievements[a.id] != null) ach++;
     const pr = st.prologue && ['run', 'won', 'life'].includes(st.prologue.status) ? st.prologue : null; // игра ещё в прологе «Бариста»
     return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024),
-      pro: pr ? { m: pr.m | 0, sav: Math.round((pr.cash || 0) + (pr.box || 0) + (pr.dep || 0) + (pr.depInt || 0)), age: (BK.CFG.PROLOGUE ? BK.CFG.PROLOGUE.AGE0 : 21) + Math.floor((pr.m | 0) / 12), st: pr.status } : null };
+      pro: pr ? { m: pr.m | 0, sav: Math.round((pr.cash || 0) + (pr.box || 0) + (pr.dep || 0) + (pr.depInt || 0)), age: (BK.CFG.PROLOGUE ? BK.CFG.PROLOGUE.AGE0 : 21) + Math.floor((pr.m | 0) / 12), st: pr.status } : null,
+      s1: st.stage1 && ['pick', 'run', 'ready', 'failed'].includes(st.stage1.status) ? { st: st.stage1.status, ms: Object.keys(st.stage1.ms || {}).length } : null }; // игра в стадии 1 «Своя кофейня»
   }
   // куда пойдёт новая игра: активный слот, если он пуст или там банкротство, иначе первый свободный
   function target() {
@@ -66,6 +67,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.lost) chips.push('<span class="chip bad">банкротство</span>');
     if (s.difficulty) chips.push(`<span class="chip crust">${esc(DIFF[s.difficulty] || s.difficulty)}</span>`);
     const meta = s.pro ? ['пролог «Бариста»', `${s.pro.age} ${plural(s.pro.age, 'год', 'года', 'лет')}`, `накоплено ${fm(s.pro.sav)}`] : [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    if (s.s1 && !s.pro) { meta[1] = 'своя кофейня'; meta[2] = `вех главы ${s.s1.ms} из 7`; chips.push(`<span class="chip river">${s.s1.st === 'failed' ? 'кофейня закрылась' : s.s1.st === 'pick' ? 'выбор места' : 'глава 1'}</span>`); }
     if (s.pro) chips.push(`<span class="chip river">${s.pro.st === 'won' ? 'своя точка!' : s.pro.st === 'life' ? 'жизнь в найме' : 'бариста'}</span>`);
     if (s.ach) meta.push(`🏆 ${s.ach}`);
     let btns;

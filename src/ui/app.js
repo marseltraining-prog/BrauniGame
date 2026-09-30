@@ -188,6 +188,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function startNew(name, difficulty) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty); else newGame(name, difficulty); }
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
+    if (BK.Stage1UI) BK.Stage1UI.close();
     S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
@@ -199,6 +200,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
+    if (BK.Stage1UI && !(BK.PrologueUI && BK.PrologueUI.active())) BK.Stage1UI.resume(); // посреди стадии 1 «Своя кофейня» — открыть кофейню
   }
 
   /* ---------------- цикл ---------------- */
@@ -208,6 +210,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S) return;
     const dt = Math.min(250, t - (lastT || t)); lastT = t;
     if (BK.PrologueUI && BK.PrologueUI.active()) return; // идёт пролог — у него свой цикл (src/ui/prologue.js)
+    if (BK.Stage1UI && BK.Stage1UI.active()) return; // стадия 1 «Своя кофейня» — свой цикл (src/ui/stage1.js)
     const running = S.phase === 'play' && ui.speed > 0 && !ui.modal && !S.ev.pending && !S.chef.pending && !S.lost;
     if (running) {
       acc += dt;
@@ -866,7 +869,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
 
-  function toStart() { save(); if (BK.PrologueUI) BK.PrologueUI.close(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
+  function toStart() { save(); if (BK.PrologueUI) BK.PrologueUI.close(); if (BK.Stage1UI) BK.Stage1UI.close(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
