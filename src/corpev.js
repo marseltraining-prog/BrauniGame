@@ -59,6 +59,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n.dirTrait && !dirsOnCity(S).some((d) => d.traits.indexOf(n.dirTrait) >= 0 && d.months >= (n.dirMonths || 0))) return false;
     if (n.supply === 'intercity' && !(HQ().lvlOf(S, 'logistics') > 0 && supplied(S).length)) return false;
     if (e.target === 'newCity' && !newCities(S).length) return false;
+    if (e.id === 'e208' && !newCities(S).some((id) => !E.enterLock(S, id))) return false; // покупка сети — тоже запуск города: только когда штаб свободен
     if (e.target === 'director' && !dirsOnCity(S).length) return false;
     if (e.target === 'twoDirectors' && dirsOnCity(S).length < 2) return false;
     if (e.id === 'e216' && cr.equitySold >= 0.4) return false;
@@ -101,7 +102,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (BK.roadKm(ds[i].city, ds[j].city) <= K().REGION_KM) pairs.push([ds[i], ds[j]]);
       const pr = pairs.length ? I.pick(S, pairs) : [ds[0], ds[1]];
       ctx.dir = pr[0].id; ctx.city = pr[0].city; ctx.dir2 = pr[1].id; ctx.city2 = pr[1].city;
-    } else if (e.target === 'newCity') { const ids = newCities(S); if (!ids.length) return null; ctx.city = I.pick(S, ids); }
+    } else if (e.target === 'newCity') { let ids = newCities(S); if (e.id === 'e208') ids = ids.filter((id) => !E.enterLock(S, id)); if (!ids.length) return null; ctx.city = I.pick(S, ids); }
     if (ctx.city) ctx.district = districtOf(S, ctx.city);
     if (e.id === 'e202' && !ctx.offerPct) { ctx.offerPct = I.ri(S, K().POACH_OFFER[0], K().POACH_OFFER[1]); ctx.poacher = `«${C().RIVAL_NAME}»`; }
     if (e.id === 'e208') { ctx.n = I.ri(S, 6, 12); ctx.price = chainPrice(S, ctx.city, ctx.n); }
@@ -328,7 +329,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function shuffle(S, a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = I.ri(S, 0, i); const t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
   function buyChain(S, ctx, f) {
-    const cr = S.corp, id = ctx.city; if (!id || cr.cities[id]) return 'сделка не состоялась';
+    const cr = S.corp, id = ctx.city; if (!id || cr.cities[id] || E.enterLock(S, id)) return 'сделка не состоялась: штаб занят запуском другого города';
     const seed = I.ri(S, 1, 2e9);
     cr.cities[id] = { id, name: cname(id), enteredDay: S.day, status: 'run', bought: true, seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: BK.Corp.awStart(S, id) - K().AW_MKT + 0.1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
@@ -347,7 +348,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ch = inst.choices || [], ok = (i) => ch[i] && !ch[i].dis && (!ch[i].cost || ch[i].cost <= S.cash + S.reserve);
     const valid = ch.map((c, i) => i).filter(ok);
     if (!valid.length) return 0;
-    if (level === 'bad') { const f = valid.find((i) => !ch[i].cost); return f != null ? f : valid[0]; }
+    if (level === 'bad') { const f = valid.slice().reverse().find((i) => !ch[i].cost); return f != null ? f : valid[0]; } // «без контроля»: последний бесплатный вариант — обычно «ничего не делать»
     if (level === 'avg') return rng(S, () => I.pick(S, valid));
     let i = GOOD[inst.id];
     if (inst.id === 'e202') { const d = D().dirById(S, inst.ctx.dir); i = d && d.grade >= 3 ? (HQ().unvested(d) > 0 ? 0 : 1) : d && d.loyalty >= 70 ? 2 : 0; }

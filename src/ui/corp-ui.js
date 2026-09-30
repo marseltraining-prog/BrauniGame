@@ -35,9 +35,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const skillMini = (d) => `<span class="dmini" title="${D().SK.map((k) => SKN[k] + ' ' + Math.round(d.skills[k])).join(' · ')}">${D().SK.map((k) => `<i style="height:${Math.max(8, Math.round(d.skills[k]))}%"></i>`).join('')}</span>`;
   function traitChips(S, d, cand) {
     let s = d.traits.map((t) => `<span class="chip" title="${esc(TR(t).desc)}">${esc(g(d, TR(t).name, TR(t).name.replace(/ый$|ий$/, 'ая')))}</span>`).join('');
-    if (S.difficulty === 'easy' && d.hidden.length) s += d.hidden.map((t) => `<span class="chip bad" title="${esc(TR(t).desc)} (на «Лёгком» скрытые черты видны при найме; механика — позже)">скрыто: ${esc(TR(t).name.toLowerCase())}</span>`).join('');
-    else if (S.difficulty !== 'easy') s += `<span class="chip dashed" title="Скрытые черты раскрывают проверка службы безопасности, аудит или личный визит (появятся позже)">? скрытая черта не проверена</span>`;
-    else s += `<span class="chip good" title="На «Лёгком» скрытые черты видны при найме">скрытых черт нет</span>`;
+    const kn = (d.known || []).filter((t) => TR(t).hidden !== false);
+    s += kn.map((t) => `<span class="chip bad" title="${esc(TR(t).desc)}">${esc(TR(t).name)}${t === 'theft' && d.caught ? ' · пойман' + g(d, '', 'а') : ''}</span>`).join('');
+    if (S.difficulty === 'easy') { if (!kn.length) s += `<span class="chip good" title="На «Лёгком» скрытые черты видны при найме">скрытых черт нет</span>`; }
+    else if (d.checked && !kn.length) s += `<span class="chip good" title="Проверка не нашла нарушений (но и не гарантирует их отсутствие)">проверен${g(d, '', 'а')}: нарушений нет</span>`;
+    else if (!kn.length) s += `<span class="chip dashed" title="Скрытые черты раскрывают служба безопасности, финансовый департамент, аудит, личный визит в город или проверка при найме">? скрытая черта не проверена</span>`;
     return `<div class="row ru-chips">${s}</div>`;
   }
   const styleChip = (d, c) => { const m = c ? D().match(d, c) : 0; return `<span class="chip ${m > 0 ? 'good' : m < 0 ? 'bad' : ''}" title="${esc(((BK.DIRECTOR_STYLES || {})[d.style] || {}).desc || '')}">Стиль: ${STN(d.style)}${c ? (m > 0 ? ' · совпадает с приоритетом, +5 %' : m < 0 ? ' · против приоритета, −5 %' : '') : ''}</span>`; };
@@ -82,16 +84,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const it of cr.inbox) {
       const n = (it.reqs || []).filter((r) => r.st === 'open').length;
       if (n) { const r0 = it.reqs.find((r) => r.st === 'open'); out.push({ w: 7, ico: initials(it.dname), t: `${cname(it.city)}: ${reqTitle(S, it, r0)}`, s: `ответ до ${dateTxt(it.due)} — иначе отказ (−1 лояльности)`, act: 'ruRep', arg: it.id, b: 'Ответить' }); }
+      if (it.kind === 'caught' && !it.done) out.push({ w: 10, ico: '!', cls: 'bad', t: it.title, s: 'решите судьбу директора', act: 'ruRep', arg: it.id, b: 'Решить', prim: true });
       if (it.kind === 'award' && !it.done) out.push({ w: 8, ico: '★', cls: 'crust', t: it.title, s: 'выберите лучшего из номинантов', act: 'ruRep', arg: it.id, b: 'Выбрать', prim: true });
     }
     for (const d of cr.directors) {
       if (d.loyalty < 40) out.push({ w: 6, ico: initials(d.name), cls: 'warn', t: `${d.city ? cname(d.city) + ': ' : ''}лояльность падает`, s: `${d.name} · ${Math.round(d.loyalty)}${d.loyD < 0 ? ' ▼' : ''} · оклад ${pc1(d.salary / D().marketPay(S, d, d.city) - 1)} к рынку`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
       if (!d.city) out.push({ w: 5, ico: initials(d.name), t: `${d.name} в резерве`, s: 'получает половину оклада', act: 'ruDir', arg: d.id, b: 'Назначить' });
+      else if ((d.poachP || 0) > 0.015 && d.loyalty >= 40) out.push({ w: 5, ico: initials(d.name), cls: 'warn', t: `${cname(d.city)}: директора могут переманить`, s: `${d.name} · ${n1(d.poachP * 100)} % в месяц — оклад, опционы, лояльность`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
+      if (d.leaveDay != null && d.city) out.push({ w: 8, ico: initials(d.name), cls: 'bad', t: `${cname(d.city)}: ${d.name} передаёт дела`, s: `уходит ${dateTxt(d.leaveDay)} — найдите замену`, act: 'ruHireFor', arg: d.city, b: 'Замена' });
     }
     for (const id in cr.cities) {
       if (id === cr.active) continue;
       const dv = D().cityDev(S, id); const st = BK.Corp.cityStats(S, id);
-      if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
+      else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
       else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
     }
     return out.sort((a, b) => b.w - a.w);
@@ -118,12 +124,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${skillRows(d)}<div class="row ru-chips">${styleChip(d, c)}</div>${traitChips(S, d)}
         <div class="drow"><span>Лояльность</span>${loyBar(d, true)}</div>
         <div class="drow"><span>Оклад</span><b class="num">${fm(d.salary)}/мес</b></div><div class="hint">Рынок ${fm(D().marketPay(S, d, id))} · ${pc1(d.salary / D().marketPay(S, d, id) - 1)} к рынку</div>
-        <div class="row dbtns"><button class="btn sm primary" data-act="ruDir" data-arg="${d.id}">Мотивация</button><button class="btn sm" data-act="ruHireFor" data-arg="${id}">Сменить</button></div></div>`;
+        ${d.study ? `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>` : ''}${d.absentUntil > S.day ? `<p class="hint warnc" style="margin:0">В отпуске до ${dateTxt(d.absentUntil)}: город «без директора».</p>` : ''}${id !== d.city ? `<p class="hint" style="margin:0">Региональный директор: основной город — ${esc(cname(d.city))}, здесь навыки ×0,75.</p>` : ''}
+        <div class="row dbtns"><button class="btn sm primary" data-act="ruDir" data-arg="${d.id}">Мотивация</button><button class="btn sm" data-act="ruHireFor" data-arg="${id}">Сменить</button>${H().btn('ruAudit', 'Аудит', { cls: 'sm', arg: id, cost: BK.HQ.auditCost(S, id), dis: S.cash < BK.HQ.auditCost(S, id), title: 'Внешний аудит: раскроет воровство с шансом 70 %, приукрашивание — 80 %. Честный директор обидится (−3, второй аудит за год — ещё −5).' })}</div></div>`;
     } else {
       const res = cr.directors.filter((x) => !x.city);
       s += `<div class="dcard none"><div class="dh"><span class="dav bad">!</span><div><b>Нет директора</b><span>Город только живёт: новых точек нет, найм из вашего лимита, рейтинг сползает к 3,5★, выручка × 0,95.</span></div></div>
         <div class="row dbtns"><button class="btn sm primary" data-act="ruHireFor" data-arg="${id}">${res.length ? 'Назначить директора' : 'Нанять директора'}</button></div></div>`;
     }
+    // конкуренты: местные сети и федеральный «Хлебный двор»
+    if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(C().RIVAL_NAME)}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
     // план / факт
     if (d && c.plan) {
       const st = BK.Corp.cityStats(S, id), pf = D().planFact(S, c);
@@ -188,17 +197,103 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="drow"><span>Оклад</span><b class="num">${fm(d.salary)}/мес</b></div>
       <p class="hint" style="margin:0">Рынок ${fm(mk)} · ${pc1(d.salary / mk - 1)} к рынку · в год со взносами ${fm(d.salary * 12 * (1 + C().PAYROLL_TAX))}. Каждые +10 % к рынку — +1 лояльности в месяц; урезать оклад — −3 сразу.</p>
       <div class="row dbtns"><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="0.9">−10 %</button><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="1.05">+5 %</button><button class="btn sm primary" data-act="dirPay" data-arg="${d.id}" data-arg2="1.1">+10 %</button></div>
+      ${motivation(S, d)}
       <div class="field"><label for="as-${d.id}">Город</label><select id="as-${d.id}" class="input" data-inp="dirAssign" data-arg="${d.id}">${opts.map((o) => `<option value="${o[0]}"${(d.city || '') === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>
       ${d.hist.length ? `<div class="dhist">${d.hist.slice(-4).map((x) => `<span>${x.y} · ${esc(cshort(x.city))}</span><b class="num">${fm(x.rev)}</b><b class="num ${x.pf >= 1 ? 'pos' : x.pf < 0.9 ? 'negc' : ''}">${Math.round(x.pf * 100)} % плана</b>`).join('')}</div>` : ''}
       <div class="row sp"><span class="hint">Уволить — ${K().DIR_FIRE_SALARIES} оклада выходного пособия${d.city ? ', город останется без директора' : ''}.</span>${BK.App && BK.App.ui.confirmDirFire === d.id ? `<button class="btn sm danger" data-act="dirFire" data-arg="${d.id}">Точно уволить · ${fm(fire)}</button>` : `<button class="btn sm danger" data-act="askDirFire" data-arg="${d.id}">Уволить</button>`}</div></div>`;
   }
   const txtG = (s, f) => String(s).replace(/\{g2?:([^|}]*)\|([^}]*)\}/g, (_, m, w) => (f ? w : m));
   function candCard(S, d) {
-    const cost = Math.round(d.salary * K().DIR_HIRE_SALARIES);
-    return `<div class="card dcand"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${GRN(d.grade)} · грейд ${d.grade} · потенциал ${d.months >= 6 ? '★'.repeat(d.pot) : '?'}</span></div>${d.src === 'own' ? '<span class="chip crust">свои люди</span>' : ''}</div>
+    const cost = BK.HQ.hireCost(S, d), canCheck = (BK.HQ.lvlOf(S, 'hr') || BK.HQ.lvlOf(S, 'security')) && !d.checked && S.difficulty !== 'easy', ck = Math.round(d.salary * K().CHECK_FEE);
+    return `<div class="card dcand"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${GRN(d.grade)} · грейд ${d.grade} · потенциал ${d.months >= 6 ? '★'.repeat(d.pot) : '?'}</span></div>${d.src === 'own' ? '<span class="chip crust">свои люди</span>' : d.src === 'hunter' ? '<span class="chip">хедхантер</span>' : ''}</div>
       ${d.bio ? `<p class="hint" style="margin:0">${esc(txtG(d.bio, d.f))}</p>` : ''}${skillRows(d, true)}<div class="row ru-chips">${styleChip(d)}</div>${traitChips(S, d, true)}
-      <div class="row sp"><span>Просит <b class="num">${fm(d.salary)}/мес</b> · лояльность ${Math.round(d.loyalty)}</span>${H().btn('hireDir', 'Нанять', { cls: 'primary', arg: d.id, cost, dis: S.cash < cost })}</div></div>`;
+      <div class="row sp"><span>Просит <b class="num">${fm(d.salary)}/мес</b> · лояльность ${Math.round(d.loyalty)}</span><span class="row dbtns">${canCheck ? H().btn('candCheck', 'Проверить', { cls: 'sm', arg: d.id, cost: ck, dis: S.cash < ck, title: 'Проверка службой безопасности / HR: раскрывает скрытую черту с шансом 50 %' }) : ''}${H().btn('hireDir', 'Нанять', { cls: 'primary', arg: d.id, cost, dis: S.cash < cost })}</span></div></div>`;
   }
+
+  /* ---------------- Р3: мотивация в карточке директора (KPI, опционы, совет, регион, учёба) ---------------- */
+  const KPN = (k) => ((BK.CORP_KPI || {})[k] || {}).name || k;
+  const pctF = (v) => n1(v * 100) + ' %';
+  function motivation(S, d) {
+    const h = H(), HQ = BK.HQ, k = K(), cr = S.corp;
+    let s = `<div class="rsub"><span class="caps">Мотивация</span><small>${d.city ? `переманят: ${pctF(d.poachP || HQ.poachP(S, d))} в месяц` : 'в резерве'}</small></div>`;
+    // KPI-премия
+    const est = d.city ? HQ.kpiEstimate(S, d) : { pay: 0 };
+    s += `<div class="mot"><div class="mh"><b>Премия за KPI</b><span class="bv">${`<button class="btn sm stp" data-act="dirBonus" data-arg="${d.id}" data-arg2="-0.1"${d.kpi.bonus <= 0 ? ' disabled' : ''} aria-label="Меньше">−</button>`}<b class="num">${Math.round(d.kpi.bonus * 100)} % оклада</b>${`<button class="btn sm stp" data-act="dirBonus" data-arg="${d.id}" data-arg2="0.1"${d.kpi.bonus >= 1 ? ' disabled' : ''} aria-label="Больше">+</button>`}</span></div>
+      <div class="row ru-chips fchips">${HQ.KPI_KEYS.map((key) => `<button class="fchip" data-act="dirKpi" data-arg="${d.id}" data-arg2="${key}" aria-pressed="${d.kpi.keys.indexOf(key) >= 0}" title="${esc(((BK.CORP_KPI || {})[key] || {}).desc || '')}">${esc(KPN(key))}</button>`).join('')}</div>
+      <p class="hint" style="margin:0">${d.kpi.keys.length && d.kpi.bonus ? `Раз в квартал ≈ ${fm(est.pay || 0)} при нынешних цифрах${d.kpiLast ? ` · прошлая выплата ${fm(d.kpiLast.pay)}` : ''}. ${d.kpi.keys.length === 1 ? 'Один KPI — перекос: ' + esc(((BK.CORP_KPI || {})[d.kpi.keys[0]] || {}).desc || '') : 'Набор KPI — без перекоса, директор работает ровнее.'}` : 'Выберите 1–3 KPI и размер премии (0–100 % годового оклада). Директор оптимизирует то, что меряют.'}</p></div>`;
+    // опционы и доля
+    const unv = HQ.unvested(d), o = d.opt || {}, corpOpt = Math.round(0.003 * k.OPT_YEARS * Math.max(0, HQ.profit12(S)));
+    s += `<div class="mot"><div class="mh"><b>Доля прибыли города</b><span class="bv"><button class="btn sm stp" data-act="dirShare" data-arg="${d.id}" data-arg2="-0.005"${!(o.city > 0) ? ' disabled' : ''} aria-label="Меньше">−</button><b class="num">${n1((o.city || 0) * 100)} %</b><button class="btn sm stp" data-act="dirShare" data-arg="${d.id}" data-arg2="0.005"${(o.city || 0) >= 0.05 ? ' disabled' : ''} aria-label="Больше">+</button></span></div>
+      <div class="mh"><b>Опцион корпорации</b>${unv > 0 ? `<span class="num">${n1(o.corp * 100)} % · ≈ ${fm(o.value)}</span>` : h.btn('dirOption', 'Дать 0,3 %', { cls: 'sm', arg: d.id, title: `Стоимость ≈ ${fm(corpOpt)} (доля × 3 годовые прибыли), выплата третями за 3 года. Пока не созрел: лояльность +1/мес, переманить сложнее, у нечестного директора — меньше соблазна.` })}</div>
+      ${unv > 0 ? `<div class="vest">${[0, 1, 2].map((i) => `<i class="${i < o.vested ? 'on' : ''}"></i>`).join('')}</div><p class="hint" style="margin:0">Созрело ${o.vested}/3 · следующая треть — ${dateTxt(o.grant + 365 * (o.vested + 1))}</p>` : ''}</div>`;
+    // признание, регион
+    const nb = cr.directors.filter((x) => x.board).length;
+    s += `<div class="row dbtns">${d.board ? h.btn('dirBoard', 'Вывести из совета', { cls: 'sm', arg: d.id, arg2: '0', title: 'Лояльность −5' }) : h.btn('dirBoard', `В совет директоров · ${nb}/${k.BOARD_MAX}`, { cls: 'sm', arg: d.id, arg2: '1', dis: nb >= k.BOARD_MAX, title: `+${k.BOARD_LOY} лояльности сразу и +${String(k.BOARD_LOY_M).replace('.', ',')} в месяц` })}`;
+    if (d.grade >= k.REGION_GRADE && d.city && !d.regional) s += h.btn('dirPromote', 'Сделать региональным', { cls: 'sm', arg: d.id, title: 'Кластер до 3 соседних городов (ближе 600 км): на основном навыки полностью, на остальных — ×0,75. Оклад +40 %.' });
+    s += `</div>`;
+    if (d.regional) {
+      const rc = HQ.regionCands(S, d);
+      s += `<p class="hint" style="margin:0">Региональный директор: ${[d.city].concat(d.region).map((id) => esc(cname(id))).join(', ')}.</p>${rc.length && d.region.length < k.REGION_MAX - 1 ? `<div class="row dbtns">${rc.slice(0, 3).map((id) => h.btn('dirRegion', '+ ' + esc(cname(id)), { cls: 'sm', arg: d.id, arg2: id })).join('')}</div>` : ''}`;
+    }
+    // учёба
+    const lv = HQ.lvlOf(S, 'uni');
+    if (d.study) s += `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>`;
+    else if (lv) {
+      const ev = !!(BK.App && BK.App.ui.uniEvening);
+      s += `<div class="rsub"><span class="caps">Учиться</span><span class="seg sm" role="group"><button type="button" data-act="uniEvening" data-arg="0" aria-pressed="${!ev}">днём</button><button type="button" data-act="uniEvening" data-arg="1" aria-pressed="${ev}">вечером</button></span></div><div class="row dbtns">${Object.keys(BK.CORP_UNI.programs).map((pr) => { const lock = HQ.progLock(S, d, pr), c = HQ.progCost(S, pr); if (d.progs.indexOf(pr) >= 0) return ''; return h.btn('uniEnroll', esc(BK.CORP_UNI.programs[pr].name), { cls: 'sm', arg: d.id, arg2: pr + (ev ? ':e' : ''), cost: c, dis: !!lock || S.cash < c, title: lock || BK.CORP_UNI.programs[pr].desc }); }).join('')}</div>${d.progs.length ? `<p class="hint" style="margin:0">Окончено: ${d.progs.map((pr) => esc(BK.CORP_UNI.programs[pr].name)).join(', ')}.</p>` : ''}`;
+    } else s += `<p class="hint" style="margin:0">Учить директоров можно в корпоративном университете — вкладка «Штаб».</p>`;
+    return s;
+  }
+
+  /* ---------------- Р3: вкладка «Штаб» — отделы, университет, контроль ---------------- */
+  function hqEffect(S, key) {
+    const HQ = BK.HQ, k = K(), lv = HQ.lvlOf(S, key);
+    switch (key) {
+      case 'finance': return 'Отчёты без шума ±5 %, «приукрашивание» ловится 15 %/мес, кредит −0,5 п. п., резерв +0,5 п. п.';
+      case 'hr': return `5 кандидатов вместо 3 (2 от хедхантера), погрешность ±${k.HR_SKILL_ERR}, проверка при найме, переманивают на 25 % реже`;
+      case 'uni': return lv ? `${BK.CORP_UNI.levels[lv].name}: мест ${HQ.students(S).length}/${HQ.seats(S)}${lv >= 2 ? ', программы −30 %, свой кандидат раз в год' : ''}` : 'Программы для директоров, обучение персонала быстрее и дешевле';
+      case 'purchasing': { let n = 0; for (const id in S.corp.cities) n += BK.Corp.cityStats(S, id).stores; return `Фудкост −${n1(Math.min(k.PURCH_MAX, k.PURCH_PER100 * n / 100) * 100)} % при ${n} точках (−1 % за 100, до −4 %), мука дорожает вдвое мягче`; }
+      case 'logistics': return lv ? `Доставка на точки −${Math.round((1 - k.LOG_DEL[lv]) * 100)} %${lv >= 2 ? ', фабрика заморозки: метели не страшны' : ''}` : 'Доставка дешевле; ур. 2 — фабрика заморозки';
+      case 'brand': return `Узнаваемость растёт ×1,5, новые города стартуют с +10 %${lv ? '' : ''}`;
+      case 'security': return `Проверка директоров ${Math.round(k.SEC_THEFT_P * 100)} %/мес, аудит вдвое дешевле, рейдеры не страшны${lv ? ` · поймано: ${S.corp.stat.caught}` : ''}`;
+      case 'legal': return `Следующий город на ${Math.round((1 - k.LEGAL_LAUNCH_K) * 100)} % раньше, штрафы −30 %, защита от рейдеров`;
+      default: return '';
+    }
+  }
+  function hqTab(S) {
+    if (!on(S)) return '';
+    const HQ = BK.HQ, h = H(), cr = S.corp;
+    const n = HQ.KEYS.filter((k) => HQ.lvlOf(S, k)).length, tot = HQ.hqTotal(S), last = S.history[S.history.length - 1], rev = last ? last.rev : 0;
+    const os = HQ.optShare(S);
+    let s = `<div class="sec"><h3>Штаб <small>отделов ${n} из 8 · ${fm(tot)}/мес${rev ? ' — ' + n1(tot / rev * 100) + ' % оборота' : ''}</small></h3>
+      <div class="optline ${os.share > K().OPT_WARN ? 'bad' : ''}"><i></i>Опционы, доли и премии директоров: <b class="num">${n1(os.share * 100)} %</b> прибыли · порог ${Math.round(K().OPT_WARN * 100)} %${os.share > K().OPT_WARN ? ' — отдаёте слишком много' : ''}</div>
+      <div class="hqgrid">`;
+    for (const key of HQ.KEYS) {
+      const lv = HQ.lvlOf(S, key), max = HQ.MAXLV[key] || 1, D0 = BK.CORP_HQ[key], nx = lv < max ? HQ.openCost(S, key, lv + 1) : 0;
+      const hot = key === 'finance' && !lv;
+      const st = lv ? (max > 1 ? `<span class="chip good">ур. ${lv}</span>` : '<span class="chip good">работает</span>') : '<span class="chip">не открыт</span>';
+      const foot = lv ? `<span class="num">${fm(HQ.monthCost(S, key))}/мес${cr.hqSince[key] != null ? ` · с ${E().MONTHS_G[E().dateOf(cr.hqSince[key]).m].slice(0, 3)}. ${E().dateOf(cr.hqSince[key]).y}` : ''}</span>` : `<span>Открыть <b class="num">${fm(nx)}</b> · ${fm(HQ.monthCostAt(S, key, 1))}/мес</span>`;
+      const b = lv < max ? h.btn('hqOpen', lv ? 'Улучшить' : 'Открыть', { cls: `sm${hot ? ' primary' : ''}`, arg: key, cost: lv ? nx : null, dis: S.cash < nx }) : key === 'brand' ? h.btn('hqCampaign', 'Реклама', { cls: 'sm', cost: Math.round(K().HQ.brand.campaign * S.macro.priceLevel / 1e5) * 1e5, dis: cr.campaignDay != null && S.day - cr.campaignDay < K().BRAND_CAMPAIGN_DAYS, title: '«Федеральная реклама»: узнаваемость +15 % во всех городах, раз в год' }) : '';
+      s += `<div class="card hqc${lv ? ' on' : ''}${hot ? ' hot' : ''}">${hot ? '<span class="ribbon">Откроет Москву и Петербург</span>' : ''}<div class="hqh"><b>${esc(D0.name)}</b>${st}</div><p>${esc(hqEffect(S, key))}</p><small class="hint">${esc(D0.when)}</small><div class="hqf">${foot}${b}</div></div>`;
+    }
+    s += `</div></div>`;
+    // университет
+    const lv = HQ.lvlOf(S, 'uni'), P = BK.CORP_UNI.programs;
+    s += `<div class="sec"><h3>Корпоративный университет <small>${lv ? `${esc(BK.CORP_UNI.levels[lv].name)} · мест ${HQ.students(S).length}/${HQ.seats(S)}${lv >= 2 ? ' · цены −30 %' : ''}` : 'не открыт'}</small></h3>`;
+    const studs = HQ.students(S);
+    if (studs.length) s += studs.map((d) => { const p = P[d.study.prog], tot2 = d.study.until - d.study.from, done = clampN((S.day - d.study.from) / Math.max(1, tot2)); return `<div class="stud">${av(d.name)}<div><b>${esc(d.name)}</b>${d.city ? ' · ' + esc(cname(d.city)) : ''}<span>${esc(p.name)}${d.study.evening ? ' · вечер' : ''} · до ${dateTxt(d.study.until)}</span><span class="pfb good"><i style="width:${Math.round(done * 100)}%"></i></span></div><b class="num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : d.study.prog === 'mba' ? 'грейд +1' : '+0,1★'}</b></div>`; }).join('');
+    else if (lv) s += `<div class="empty">Никто не учится. Записать директора — кнопки «Учиться» в его карточке (вкладка «Директора»).</div>`;
+    s += `<div class="uniwrap"><table class="cmp uni"><thead><tr><th>Программа</th><th class="r">Срок</th><th class="r">Цена</th><th class="r">Эффект</th></tr></thead><tbody>${Object.keys(P).map((k2) => { const p = P[k2]; return `<tr class="${(p.minLevel || 1) > Math.max(1, lv) ? 'lock' : ''}"><td>${esc(p.name)}${p.minLevel ? ` (ур. ${p.minLevel})` : ''}</td><td class="r num">${p.months} мес.</td><td class="r num">${fm(HQ.progCost(S, k2) || Math.round(K().UNI_PROG[k2] * S.macro.priceLevel))}</td><td class="r num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : k2 === 'mba' ? 'грейд +1' : 'рейтинг +0,1★'}</td></tr>`; }).join('')}</tbody></table></div>
+      <p class="hint" style="margin:0">${esc(BK.CORP_UNI.eveningNote)} Пока директор учится днём, выручка его города −3 %. MBA поднимает и рыночную цену выпускника на 20 % — удерживайте окладом или опционом.</p></div>`;
+    // контроль
+    const st = cr.stat, aud = cr.inbox.filter((it) => it.kind === 'caught' || (it.kind === 'note' && /^Аудит/.test(it.title || ''))).slice(0, 6);
+    s += `<div class="sec"><h3>Контроль <small>аудиты ${st.audits} · поймано ${st.caught} · ушли ${st.left}${st.poached ? ` (переманили ${st.poached})` : ''}</small></h3>
+      <p class="hint" style="margin:0">Воровство видно не в отчёте, а в «Сравнении»: выручка на точку ниже прогноза месяцами, а у соседей нет. Ловят служба безопасности (10 %/мес), аудит (70 %), личный визит в город (35 %) и анонимные письма.</p>
+      ${aud.length ? aud.map((it) => `<div class="stud"><span class="dav ${it.kind === 'caught' ? 'bad' : 'good'}">${it.kind === 'caught' ? '!' : '✓'}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.kind === 'caught' && !it.done ? ' · нужен ответ' : ''}</span></div>${it.kind === 'caught' && !it.done ? `<button class="btn sm primary" data-act="ruRep" data-arg="${it.id}">Решить</button>` : ''}</div>`).join('') : (st.audits || st.caught ? '<div class="empty">Свежих результатов нет — старые проверки в журнале.</div>' : '<div class="empty">Проверок ещё не было. Аудит города — кнопка «Аудит» в карточке города.</div>')}
+      ${cr.equitySold ? `<p class="hint" style="margin:0">Фонду принадлежит ${n1(cr.equitySold * 100)} % корпорации: каждый январь он забирает свою долю прибыли (выплачено ${fm(st.fund)}).</p>` : ''}${cr.creditK ? `<p class="hint" style="margin:0">Кредитная линия банка: лимит ×${n1(cr.creditK)}${cr.cov ? `, ковенанта «маржа сети > ${Math.round(cr.cov.margin * 100)} %»${cr.cov.until > S.day ? ' — нарушена, ставка +3 п. п.' : ''}` : ''}.</p>` : ''}</div>`;
+    return s;
+  }
+  const clampN = (v) => Math.max(0, Math.min(1, v));
 
   /* ---------------- вкладка «Отчёты» ---------------- */
   function reqTitle(S, it, r) {
@@ -223,6 +318,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function kpi(lab, v, sub, tone) { return `<div class="rk"><span class="rl"><i class="t-${tone || 'none'}"></i>${lab}</span><b>${v}</b><small>${sub || ''}</small></div>`; }
   function reportCard(S, it, full) {
     const h = H();
+    if (it.kind === 'caught') {
+      const L = { sue: ['Уволить и подать в суд', 'вернём ~30 % украденного через год; скандал — узнаваемость −5 %'], quiet: ['Уволить тихо', 'без выходного пособия и без шума'], forgive: ['Простить, оклад −30 %', 'воровать перестанет, но с шансом 40 % через год снова'], warn: ['Предупредить', 'отчёты станут честными, лояльность −5'], fire: ['Уволить', 'без выходного пособия'] };
+      return `<div class="card rep caught ${it.tone || ''}${!it.done ? ' need' : ''}" id="rep-${it.id}"><div class="rh"><span class="dav ${it.tone || 'bad'}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.city ? ' · ' + esc(cname(it.city)) : ''}</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div><p style="margin:0">${esc(it.text)}</p>
+        ${!it.done ? `<div class="row rqb">${(it.choices || []).map((c, i) => `<button class="btn${i ? '' : ' primary'}" data-act="caughtDecide" data-arg="${it.id}" data-arg2="${c}" title="${esc(L[c][1])}">${esc(L[c][0])}</button>`).join('')}</div><p class="hint" style="margin:0">Нет ответа до ${dateTxt(it.due)} — ${it.trait === 'theft' ? 'уволим тихо' : 'предупредим'}.</p>` : `<span class="rst ${it.done === 'forgive' || it.done === 'warn' ? 'yes' : 'no'}">решение: ${esc((L[it.done] || ['—'])[0].toLowerCase())}</span>`}</div>`;
+    }
+    if (it.kind === 'kpi') return `<div class="card rep note ${it.tone || ''}"><div class="rh">${av(it.dname)}<div><b>${esc(it.title)}</b><span>${esc(it.dname)}${it.city ? ' · ' + esc(cname(it.city)) : ''} · ${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0" class="num">${esc(it.text)}</p></div>`;
     if (it.kind === 'note') return `<div class="card rep note ${it.tone || ''}"><div class="rh"><span class="dav ${it.tone || ''}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0">${esc(it.text)}</p></div>`;
     if (it.kind === 'award') {
       return `<div class="card rep award${!it.done ? ' need' : ''}"><div class="rh"><span class="dav crust">★</span><div><b>${esc(it.title)}</b><span>Номинанты — лучшие по выполнению плана</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div>
@@ -245,7 +346,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${kpi('Текучка', n1(turn * 100) + ' %/мес', `ушли ${it.quits} чел.`, turn < 0.02 ? 'good' : turn < 0.04 ? 'warn' : 'bad')}
       ${kpi('Бюджет', fm(it.left), 'остаток из ' + fm(it.capex), it.left > 0 ? 'good' : 'warn')}
       ${kpi('Персонал', it.staff + ' чел.', it.missing ? 'нехватка ' + it.missing : 'штат полный', it.missing ? 'warn' : 'good')}</div>
-      <blockquote class="rq-q">«${esc(it.phrase)}»<small>${it.dev != null ? `Выручка на точку к прогнозу: ${pc1(it.dev)}` : 'Прогноз — со второго месяца'} · отчёт директора без проверки (финансовый департамент — позже)</small></blockquote>`;
+      <blockquote class="rq-q">«${esc(it.phrase)}»<small>${it.dev != null ? `Выручка на точку к прогнозу: ${pc1(it.dev)}` : 'Прогноз — со второго месяца'} · ${it.fin ? 'цифры сверены финансовым департаментом' : 'отчёт директора без проверки: точность ±5 %'}</small></blockquote>`;
     s += (it.reqs || []).map((r, i) => reqBlock(S, it, r, i)).join('');
     const d = D().dirById(S, it.dir), canPraise = d && !it.praised && S.day - d.praiseDay >= 90;
     s += `<div class="rfoot"><span class="hint">${open ? `Нет ответа до ${dateTxt(it.due)} — отказ по умолчанию (−1 лояльности).` : 'Все вопросы решены.'}</span>${d ? `<button class="btn sm" data-act="repPraise" data-arg="${it.id}"${canPraise ? '' : ' disabled'} title="${canPraise ? 'Благодарность в ответ на отчёт: +2 лояльности, не чаще раза в квартал' : 'Отмечать можно не чаще раза в квартал'}">★ Отметить · +${K().LOY_PRAISE}</button>` : ''}</div></div>`;
@@ -256,7 +357,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cr = S.corp, n = D().inboxOpen(S);
     const f = ui.repFilter || 'all';
     let list = cr.inbox;
-    if (f === 'need') list = list.filter((it) => (it.reqs || []).some((r) => r.st === 'open') || (it.kind === 'award' && !it.done));
+    if (f === 'need') list = list.filter((it) => (it.reqs || []).some((r) => r.st === 'open') || ((it.kind === 'award' || it.kind === 'caught') && !it.done));
     else if (f !== 'all') list = list.filter((it) => it.city === f);
     const cities = [...new Set(cr.inbox.map((it) => it.city).filter(Boolean))];
     let s = `<div class="sec"><h3>Отчёты директоров ${n ? `<em class="badge">${n}</em>` : ''}<small>раз в месяц, 1-го числа</small></h3>
@@ -264,7 +365,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!list.length) s += `<div class="empty">${cr.inbox.length ? 'Здесь пусто.' : 'Отчёты придут 1-го числа от директоров городов. Наймите директора во вкладке «Директора» и назначьте его в город.'}</div>`;
     const shown = new Set();
     s += list.slice(0, 40).map((it) => {
-      const need = (it.reqs || []).some((r) => r.st === 'open') || (it.kind === 'award' && !it.done);
+      const need = (it.reqs || []).some((r) => r.st === 'open') || ((it.kind === 'award' || it.kind === 'caught') && !it.done);
       const first = it.kind === 'report' && !shown.has(it.city); if (it.kind === 'report') shown.add(it.city);
       return reportCard(S, it, it.kind !== 'report' || need || first || ui.repOpen === it.id);
     }).join('');
@@ -325,15 +426,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cities = Object.keys(cr.cities).filter((id) => !cr.cities[id].directorId);
     if (o.candId) {
       const d = cr.dirCand.find((x) => x.id === o.candId); if (!d) return null;
-      const cost = Math.round(d.salary * K().DIR_HIRE_SALARIES);
+      const cost = BK.HQ.hireCost(S, d);
       const opts = cities.map((id) => `<button class="choice" data-hire="${id}"><b>${esc(cname(id))}</b><span class="cd">${id === cr.active ? 'вы здесь — будет заместителем, пока вы управляете сами' : `${h.nw(BK.Corp.cityStats(S, id).open, 'точка', 'точки', 'точек')} без директора`}</span><span class="cc">${fm(cost)}</span></button>`).join('')
         + `<button class="choice" data-hire=""><b>В резерв</b><span class="cd">Половина оклада; можно поставить на новый город при входе</span><span class="cc">${fm(cost)}</span></button>`;
-      return `<div class="modal-h"><span class="eyebrow">Найм директора</span><h2>${esc(d.name)} — куда?</h2></div><div class="modal-b"><p style="margin:0">${GRN(d.grade)}, стиль «${STN(d.style)}», оклад ${fm(d.salary)}/мес. Найм — ${K().DIR_HIRE_SALARIES} оклада.</p></div><div class="modal-f">${opts}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
+      return `<div class="modal-h"><span class="eyebrow">Найм директора</span><h2>${esc(d.name)} — куда?</h2></div><div class="modal-b"><p style="margin:0">${GRN(d.grade)}, стиль «${STN(d.style)}», оклад ${fm(d.salary)}/мес. Найм — ${d.src === 'hunter' ? 'хедхантеру 25 % годового оклада' : K().DIR_HIRE_SALARIES + ' оклада'}.</p></div><div class="modal-f">${opts}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
     }
     const id = o.cityId, res = cr.directors.filter((x) => !x.city);
     const cur = D().dirOf(S, cr.cities[id]);
     let opts = res.map((d) => `<button class="choice" data-assign="${d.id}"><b>${esc(d.name)} · из резерва</b><span class="cd">${GRN(d.grade)} · ${STN(d.style)} · лояльность ${Math.round(d.loyalty)}</span><span class="cc">бесплатно</span></button>`).join('');
-    opts += cr.dirCand.map((d) => { const cost = Math.round(d.salary * K().DIR_HIRE_SALARIES); return `<button class="choice" data-cand="${d.id}"${S.cash < cost ? ' disabled' : ''}><b>${esc(d.name)} · ${GRN(d.grade)}${d.src === 'own' ? ' · свои люди' : ''}</b><span class="cd">${STN(d.style)} · ${D().SK.map((k) => SKN[k] + ' ≈' + d.seen[k]).join(', ')} · ${fm(d.salary)}/мес</span><span class="cc">${fm(cost)}</span></button>`; }).join('');
+    opts += cr.dirCand.map((d) => { const cost = BK.HQ.hireCost(S, d); return `<button class="choice" data-cand="${d.id}"${S.cash < cost ? ' disabled' : ''}><b>${esc(d.name)} · ${GRN(d.grade)}${d.src === 'own' ? ' · свои люди' : ''}</b><span class="cd">${STN(d.style)} · ${D().SK.map((k) => SKN[k] + ' ≈' + d.seen[k]).join(', ')} · ${fm(d.salary)}/мес</span><span class="cc">${fm(cost)}</span></button>`; }).join('');
     return `<div class="modal-h"><span class="eyebrow">Директор города</span><h2>${cur ? 'Сменить директора' : 'Директор'} ${esc(cin(id))}</h2></div><div class="modal-b"><p style="margin:0">${cur ? `${esc(cur.name)} уйдёт в резерв (половина оклада). ` : ''}Новый директор месяц адаптируется (выручка −3 %). Приоритет города по умолчанию — по его стилю.</p></div><div class="modal-f">${opts || '<div class="empty">Нет кандидатов — обновите список во вкладке «Директора».</div>'}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
   }
   // вход в город: кто запускает
@@ -365,5 +466,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
-  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, fedModal, mapBadge, initials };
+  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, fedModal, mapBadge, initials, hqTab, motivation };
 })();

@@ -459,7 +459,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Москва и Петербург — после 3 городов И финансового департамента (§12 п. 8)
     if (d.big) { const bl = BK.HQ ? BK.HQ.bigLock(S) : ownCount(S) < K().BIG_MIN_CITIES ? `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города` : null; if (bl) return bl; }
     const LD = BK.HQ ? BK.HQ.launchDays(S) : K().LAUNCH_DAYS; // GR и юристы — запуск следующего города раньше
-    const launching = Object.values(S.corp.cities).filter((c) => c.id !== 'ufa' && !c.bought && S.day - c.enteredDay < LD);
+    const launching = Object.values(S.corp.cities).filter((c) => c.id !== 'ufa' && S.day - c.enteredDay < LD);
     if (launching.length >= K().MAX_LAUNCHING) {
       const left = Math.min(...launching.map((c) => c.enteredDay + LD - S.day)), m = Math.max(1, Math.ceil(left / 30.4));
       return `Штаб запускает ${K().MAX_LAUNCHING > 1 ? 'не больше ' + K().MAX_LAUNCHING + ' городов' : 'один город'} за раз — следующий можно открыть через ${m} мес.`;

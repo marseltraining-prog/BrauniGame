@@ -14,9 +14,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ['dash', 'Сводка'], ['stores', 'Точки'], ['market', 'Рынок'], ['prod', 'Цех'],
     ['menu', 'Меню'], ['team', 'Команда'], ['fin', 'Финансы'], ['log', 'Журнал'],
   ];
-  const RU_TABS = [['ru', 'Корпорация'], ['rucities', 'Города'], ['rudirs', 'Директора'], ['ruinbox', 'Отчёты'], ['rucmp', 'Сравнение'], ['fin', 'Финансы'], ['log', 'Журнал']]; // вид «карта России»
+  const RU_TABS = [['ru', 'Корпорация'], ['rucities', 'Города'], ['rudirs', 'Директора'], ['ruhq', 'Штаб'], ['ruinbox', 'Отчёты'], ['rucmp', 'Сравнение'], ['fin', 'Финансы'], ['log', 'Журнал']]; // вид «карта России»
   const isRuTab = (t) => /^ru/.test(t || '');
-  const RU_WIDE = { rudirs: 1, ruinbox: 1, rucmp: 1 }; // широкая панель на ПК (таблицы и отчёты)
+  const RU_WIDE = { rudirs: 1, ruinbox: 1, rucmp: 1, ruhq: 1 }; // широкая панель на ПК (таблицы и отчёты)
   const ICON = {
     pause: '<svg viewBox="0 0 16 14"><rect x="3" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
     p1: '<svg viewBox="0 0 16 14"><path d="M4 1 L13 7 L4 13 Z" fill="currentColor"/></svg>',
@@ -312,7 +312,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     renderTabs();
     const body = $('#pbody');
     const scroll = body.scrollTop;
-    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
+    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
     const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
     if (main.classList.contains('ru-wide') !== wide) { main.classList.toggle('ru-wide', wide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
     let html;
@@ -482,6 +482,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (a === 'close1' || a === 'close0') E.citySetBudget(S, d.arg, { close: a === 'close1' });
       refresh();
     },
+    // корпорация (этап Р3): штаб, университет, мотивация, аудит
+    hqOpen: (d) => { const r = E.hqOpen(S, d.arg); res(r, r.ok ? `${(BK.CORP_HQ[d.arg] || {}).name}: ${BK.HQ.lvlOf(S, d.arg) > 1 ? 'уровень ' + BK.HQ.lvlOf(S, d.arg) : 'открыт'}` : null); if (BK.Russia.isOpen()) BK.Russia.render(S, true); },
+    hqCampaign: () => res(E.hqCampaign(S), '«Федеральная реклама» запущена'),
+    uniEvening: (d) => { ui.uniEvening = d.arg === '1'; refresh(); },
+    uniEnroll: (d) => { const [pr, ev] = String(d.arg2).split(':'); const r = E.uniEnroll(S, d.arg, pr, ev === 'e'); res(r, r.ok ? 'Директор записан на программу' : null); },
+    dirKpi: (d) => res(E.dirKpi(S, d.arg, { toggle: d.arg2 })),
+    dirBonus: (d) => { const x = BK.Dir.dirById(S, d.arg); if (x) res(E.dirKpi(S, d.arg, { bonus: x.kpi.bonus + (+d.arg2) })); },
+    dirShare: (d) => { const x = BK.Dir.dirById(S, d.arg); if (x) res(E.dirCityShare(S, d.arg, ((x.opt && x.opt.city) || 0) + (+d.arg2))); },
+    dirOption: (d) => { const r = E.dirOption(S, d.arg, 0.003); res(r, r.ok ? `Опцион выдан: ≈ ${H.fm(r.value)} за 3 года` : null); },
+    dirBoard: (d) => res(E.dirBoard(S, d.arg, d.arg2 === '1')),
+    dirPromote: (d) => res(E.dirPromote(S, d.arg), 'Региональный директор'),
+    dirRegion: (d) => { const r = E.dirRegion(S, d.arg, d.arg2); res(r, r.ok ? 'Город добавлен в кластер' : null); BK.Russia.render(S, true); },
+    ruAudit: (d) => { const r = E.cityAudit(S, d.arg); res(r, r.ok ? (r.found.length ? 'Аудит нашёл нарушения — решение во «Отчётах»' : 'Аудит: касса и отчёты сходятся') : null); if (r.ok && r.found.length) { ui.tab = 'ruinbox'; ui.repFilter = 'need'; refresh(); } },
+    caughtDecide: (d) => res(E.caughtDecide(S, d.arg, d.arg2), 'Решение принято'),
+    candCheck: (d) => { const r = E.candCheck(S, d.arg); res(r, r.ok ? (r.found.length ? `Проверка: ${r.found.map((t) => (BK.DIRECTOR_TRAITS[t] || {}).name).join(', ')}` : 'Проверка: нарушений не найдено') : null); },
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {
@@ -557,18 +572,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   function openEventModal() {
     const ev = S.ev.pending;
-    const eyebrow = ev.crisis ? '<span class="eyebrow crisis">Экономический кризис</span>' : `<span class="eyebrow ${ev.kind}">${ev.kind === 'pos' ? 'Хорошие новости' : 'Событие'} · ${E.fmtDate(ev.day)}</span>`;
+    const eyebrow = ev.crisis ? '<span class="eyebrow crisis">Экономический кризис</span>' : `<span class="eyebrow ${ev.kind}">${ev.corp ? 'Корпорация' : ev.kind === 'pos' ? 'Хорошие новости' : 'Событие'}${ev.corp && ev.kind === 'pos' ? ' · хорошие новости' : ''} · ${E.fmtDate(ev.day)}</span>`;
     let html = `<div class="modal-h">${eyebrow}<h2>${H.esc(ev.title)}</h2></div><div class="modal-b"><p style="margin:0">${H.esc(ev.text)}</p>`;
     if (ev.effectsText && ev.effectsText.length) html += `<div class="effects">${ev.effectsText.map((t) => `<span class="chip ${ev.kind === 'pos' ? 'good' : 'bad'}">${H.esc(t)}</span>`).join('')}</div>`;
     html += `</div><div class="modal-f">`;
     if (ev.choices) {
       // бесплатный вариант доступен всегда (даже при минусе на счёте), иначе игрок застревает в окне;
       // если по деньгам не проходит ничего — открыт самый дешёвый вариант (уйдёт в минус, как и прочие платежи)
-      const afford = (c) => !c.cost || c.cost <= S.cash + S.reserve;
-      const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (c.cost < ev.choices[b].cost ? i : b), 0);
+      const afford = (c) => !c.dis && (!c.cost || c.cost <= S.cash + S.reserve); // c.dis — корпоративный выбор без нужного отдела штаба / грейда
+      const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (!c.dis && (ev.choices[b].dis || c.cost < ev.choices[b].cost) ? i : b), 0);
       ev.choices.forEach((c, i) => {
         const can = afford(c) || i === cheapest;
-        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}</span></button>`;
+        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}${c.dis ? ` <em class="negc">${H.esc(c.dis)}.</em>` : ''}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}</span></button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
     html += `</div>`;
