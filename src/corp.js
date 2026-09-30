@@ -105,8 +105,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     st.status = 'open'; st.staff = staff; st.openedDay = null;
     let rev = 0, chk = 0, thr = 0; const dem7 = [];
     try {
+      let dW = null, dE = null; // будни и выходные считаются одинаково внутри группы — два расчёта вместо семи (производительность)
       if (staff.length) for (let dow = 0; dow < 7; dow++) {
-        const d = E.storeDemand(S, st, { dow, m: 4 }, ms);
+        const d = dow >= 5 ? dE || (dE = E.storeDemand(S, st, { dow, m: 4 }, ms)) : dW || (dW = E.storeDemand(S, st, { dow, m: 4 }, ms));
         const checks = I.bakeChecks(Math.min(d.demand, d.thr) * fill, d, wz);
         rev += checks * d.check * wz.revMult / 7; chk += d.check * wz.revMult / 7; thr = d.thr;
         dem7.push(+(d.demand / aw).toFixed(1));
@@ -124,8 +125,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
       mn0: [+ms.appeal.toFixed(4), +(ms.avgPrice / pl).toFixed(2), +ms.priceIdx.toFixed(4)], lvl0: n ? ls / n : 1, mood0: n ? md / n : 60, moodOff: n ? clamp(md / n - tgt, -40, 10) : 0, r0: st.rating != null ? st.rating : cfg.RATING_START, rep0: st.repair || 0, n0: Math.max(1, n),
     });
     if (BK.CITY && BK.CITY.grow) p.g0 = +growthK(S).toFixed(4); // рост города: спрос в снимке — при населении на момент упаковки
+    // компактное сохранение (Р4, §8.2 п. 6): лишние знаки после запятой не нужны
+    p.x = +(+p.x).toFixed(1); p.y = +(+p.y).toFixed(1); if (p.capex != null) p.capex = Math.round(p.capex); p.base = Math.round(p.base); p.chk0 = +p.chk0.toFixed(2);
+    p.lvl0 = +p.lvl0.toFixed(3); p.mood0 = +p.mood0.toFixed(2); p.moodOff = +p.moodOff.toFixed(2); p.r0 = +p.r0.toFixed(4); p.staff.mood = +p.staff.mood.toFixed(2);
+    if (p.rating != null) p.rating = +p.rating.toFixed(4); if (p.cpd != null) p.cpd = +p.cpd.toFixed(1);
+    if (p.last) { const l = p.last = Object.assign({}, p.last); for (const k in l) if (typeof l[k] === 'number' && k !== 'frac') l[k] = Math.round(l[k]); }
+    packZeros(p);
     return p;
   }
+  // нулевые служебные поля упакованной точки не храним (expandStore вернёт их при распаковке)
+  function packZeros(p) { for (const k of ['repairUntil', 'closedUntil', 'lossStreak', 'lostDays']) if (p[k] === 0) delete p[k]; if (p.rentPaidUntil === 0 && p.payMode !== 'year') delete p.rentPaidUntil; if (p.moodOff === 0) delete p.moodOff; }
   function settleActive(S) { // постоянные расходы активного города за прошедшую часть месяца (иначе их никто не заплатит)
     const cfg = C(), cr = S.corp, L = cr.lastMonthly, dim = daysInMonthOf(L), pl = S.macro.priceLevel;
     const part = (o) => clamp((S.day - Math.max(L, o.mountFrom != null ? o.mountFrom : L)) / dim, 0, 1);
@@ -180,6 +189,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     st.m = { rev: 0, checks: 0, fc: 0, rent: 0, lost: 0 };
     st.today = null;
+    for (const k of ['repairUntil', 'closedUntil', 'rentPaidUntil']) if (st[k] == null) st[k] = 0; // компактное сохранение — нули не хранятся
     if (st.status === 'opening' && S.day < st.openDay) { st.staff = []; st.incoming = people.map((e) => ({ p: e, day: st.openDay })); }
     else { if (st.status === 'opening') { st.status = 'open'; st.openedDay = st.openDay; } st.staff = people; st.incoming = []; }
     if (st.status === 'repair' && S.day >= st.repairUntil) { st.status = 'open'; st.repair += 1; }
@@ -241,10 +251,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function moodF(m) { const k = C().MOOD_CONV || 0; return 1 + k * (m - 60) / 40; }
   // средний множитель праздников города за период [d0, d1) (сезон и праздники города, §5.3)
+  let holMemo = { key: '', map: {} }; // Р4: у многих городов одинаковый календарь — считаем один раз на профиль (производительность на 19 городах)
   function holidayAvg(S, d0, d1) {
     if (!C().HOLIDAYS || d1 <= d0) return { dem: 1, chk: 1 };
+    const ci = BK.CITY || {}, cal = ci.cal, mk = S.seed + ':' + S.menu.map((m) => m.id + '/' + m.pm).join();
+    if (holMemo.key !== mk) holMemo = { key: mk, map: {} };
+    const pk = d0 + ':' + d1 + ':' + (cal ? cal.muslim + '/' + cal.sab + '/' + JSON.stringify(ci.cat || 0) + JSON.stringify(ci.hot || 0) : 'ufa');
+    const hit = holMemo.map[pk]; if (hit) return hit;
     let a = 0, b = 0; for (let d = d0 + 1; d <= d1; d++) { const h = I.holidayDay(S, d); a += h.dem; b += h.chk; }
-    return { dem: a / (d1 - d0), chk: b / (d1 - d0) };
+    return (holMemo.map[pk] = { dem: a / (d1 - d0), chk: b / (d1 - d0) });
   }
   // один агрегированный расчёт города за долю периода frac (0…1); деньги — в общий S.month по обычным статьям
   function cityMonth(S, c, frac, hireBudget) {
@@ -269,6 +284,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const tax = E.currentTaxRate(S);
       // Р4: снабжение из другого города (§7.2) и особенности города (рост, парки, рейтинг)
       const sup = remoteFill(S), fzFc = remoteFc(S), rAdj = ratingAdj(S), gK = growthK(S), park = (BK.CITY && BK.CITY.park) || 1.25;
+      const lk = dm && dm.leak ? dm.leak : 0, lkR = K_.LEAK_REV * lk, lkF = K_.LEAK_FC * lk, lkP = K_.LEAK_PAY * lk, lkA = (K_.LEAK_RENT || 0) * lk; // денежный риск (Р4): утечка слабого директора
       let rev = 0, fc = 0, rent = 0, pay = 0, util = 0, del = 0, hire = 0, hq = 0, units = 0;
       const hireOk = (pk.office && pk.office.hr) || !!dm;
       let trainCost = 0;
@@ -323,14 +339,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
         else cpd = s.base / (s.chk0 || 200) * F * Math.min(1, G);
         let closed = s.status === 'repair' || n === 0 || sup === false ? 0 : 1; // снабжение прервано — выпечки нет
         if (s.lostDays && closed) { closed = clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = 0; } // ремонт директора: точка закрыта несколько дней
-        let r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr;
+        let r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr * (1 - lkR); // Р4: утечка слабого директора — выручка отстаёт
         if (dm && dm.theft) { const lost = r * dm.theft; r -= lost; dm.d.stolen = (dm.d.stolen || 0) + lost; cr.stat.stolen += lost; } // «Нечист на руку»: касса честно показывает меньше
         // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню и ценами сети (для «На точку к прогнозу»)
         if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * grow * Math.max(0.3, ramp) * gmD * prD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
-        const f1 = r * (pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1) + fzFc); // заморозка: фудкост +3 п. п.
-        const rn = s.payMode === 'month' ? E.storeRentMonth(s) * frac * (dm ? dm.rentK : 1) : 0;
+        const f1 = r * (pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1) * (1 + lkF) + fzFc); // заморозка: фудкост +3 п. п.; утечка — перерасход
+        const rn = s.payMode === 'month' ? E.storeRentMonth(s) * frac * (dm ? dm.rentK : 1) * (1 + lkA) : 0;
         if (s.payMode === 'year' && S.day >= (s.rentPaidUntil || 0)) { const y = E.storeRentMonth(s) * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT); rent += y; s.rentPaidUntil = S.day + 365; }
-        let py = 0; for (let l = 1; l <= 5; l++) py += (sd.lv[l - 1] || 0) * salaryCity(S, c, l); py *= (1 + cfg.PAYROLL_TAX) * frac * (dm ? dm.payK : 1);
+        let py = 0; for (let l = 1; l <= 5; l++) py += (sd.lv[l - 1] || 0) * salaryCity(S, c, l); py *= (1 + cfg.PAYROLL_TAX) * frac * (dm ? dm.payK : 1) * (1 + lkP); // утечка — лишний ФОТ
         const ut = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * s.area) * pl * frac;
         s.cpd = closed * cpd;
         const dv = E.deliveryCost(S, s) * frac;
@@ -338,7 +354,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         units += s.cpd * cfg.ITEMS_PER_CHECK;
         rev += r; fc += f1; rent += rn; pay += py; util += ut; del += dv; hq += h1;
         // отчёт точки (для карточки города и «Требует внимания»)
-        s.last = { rev: r, profit: r - f1 - rn - py - ut - dv - r * tax, checks: s.cpd * days, frac }; // как у подробной точки: без управляющей компании
+        s.last = { rev: Math.round(r), profit: Math.round(r - f1 - rn - py - ut - dv - r * tax), checks: Math.round(s.cpd * days), frac: +frac.toFixed(4) }; // как у подробной точки: без управляющей компании
+        s.cpd = +s.cpd.toFixed(1); s.rating = +s.rating.toFixed(4); sd.mood = +sd.mood.toFixed(2); if (s.capex != null) s.capex = Math.round(s.capex); packZeros(s); // компактное сохранение (19 городов < 1 МБ)
         if (frac >= 0.5) { s.hist = (s.hist || []).concat([Math.round(r / frac)]).slice(-12); s.lossStreak = s.last.profit < 0 ? (s.lossStreak || 0) + 1 : 0; }
       }
       // цеха города: аренда, пекари под объём, коммуналка
@@ -549,8 +566,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       c.mAcc = { rev: 0, profit: 0, agg: 0, fc: 0, quits: 0 };
     }
     cr.aggRevP = 0; cr.lastMonthly = S.day; cr.q0 = S.stats.quits;
+    // компактное сохранение (Р4): записи истории сети старше 2 лет — в целых рублях (только когда в сети больше одного города: первый акт не меняется)
+    if (Object.keys(cr.cities).length > 1) { for (let i = cr.hpk || 0; i < S.history.length - 24; i++) roundHist(S.history[i]); cr.hpk = Math.max(cr.hpk || 0, S.history.length - 24); }
     cr.market0 = corpMarket(S);
     if (BK.Dir) BK.Dir.afterMonth(S, h); // отчёты директоров во входящих, цель «Федеральная сеть»
+  }
+  function roundHist(x) {
+    if (!x) return;
+    for (const k in x) if (typeof x[k] === 'number' && !Number.isInteger(x[k])) x[k] = Math.round(x[k]);
+    if (x.pnl) for (const k in x.pnl) if (typeof x.pnl[k] === 'number' && !Number.isInteger(x.pnl[k])) x.pnl[k] = Math.round(x.pnl[k]);
   }
   function yearly(S, infl, rentReview) { // индексация аренды в упакованных городах (как у Уфы)
     const cr = S.corp;

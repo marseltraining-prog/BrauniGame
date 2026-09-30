@@ -144,7 +144,9 @@ function corpYear(S, mem) {
   st.rows.push({ year: +(S.day / 365).toFixed(1), cities: sm.cities.length, 'гор10+': f.cities, stores: sm.stores, dirs: cr.directors.length,
     'rev12 млрд': +(f.rev / 1e9).toFixed(1), 'prof12 млрд': +(prof / 1e9).toFixed(2), cash: Math.round(S.cash / 1e6), loan: Math.round(S.loan / 1e6),
     loy: cr.directors.length ? Math.round(cr.directors.reduce((a, d) => a + d.loyalty, 0) / cr.directors.length) : null, hq: cr.hq ? Object.values(cr.hq).reduce((a, x) => a + x, 0) : 0,
-    ev: cr.ev ? cr.ev.seen || 0 : 0, 'укр млн': Math.round((s.stolen || 0) / 1e6), пойм: s.caught || 0, ушли: s.left || 0, перем: s.poached || 0, pl: +S.macro.priceLevel.toFixed(2) });
+    ev: cr.ev ? cr.ev.seen || 0 : 0, 'укр млн': Math.round((s.stolen || 0) / 1e6), пойм: s.caught || 0, ушли: s.left || 0, перем: s.poached || 0, pl: +S.macro.priceLevel.toFixed(2),
+    'утечка %': (() => { const cs = Object.values(cr.cities).filter((c) => c.id !== 'ufa'); return cs.length ? +(cs.reduce((a, c) => a + (c.leak || 0), 0) / cs.length * 100).toFixed(1) : 0; })(), // Р4: денежный риск
+    'убыт.гор': sm.cities.filter((c) => c.id !== 'ufa' && c.prof12 < 0).length });
   if (cr.fed.goalDay != null && st.fedYear == null) st.fedYear = +(cr.fed.goalDay / 365).toFixed(1);
   if (cr.fed.legendDay != null && st.legendYear == null) st.legendYear = +(cr.fed.legendDay / 365).toFixed(1);
 }
