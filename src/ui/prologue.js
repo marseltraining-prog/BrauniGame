@@ -366,11 +366,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
       h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
         <div class="pf-hero" aria-hidden="true">🏪</div><span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
-        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. Дальше — своя сеть: цех, первая точка и весь город на карте.</p>
+        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
         <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
         <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
         <details class="pf-det"><summary>Куда уходили деньги</summary><p class="pro-note">Заработано ${fm(sm.earned)}, отложено ${fm(sm.sav)}.</p>${where}</details>
-        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="finalMain">Открыть свою сеть</button></div></div></div>`;
+        <div class="pf-btns">${BK.Stage1UI ? '<button type="button" class="btn primary block pro-big" data-pa="finalShop">Открыть свою кофейню</button><button type="button" class="btn block" data-pa="finalMain">Пропустить кофейню — сразу своя сеть</button>' : '<button type="button" class="btn primary block pro-big" data-pa="finalMain">Открыть свою сеть</button>'}</div></div></div>`;
     } else {
       const tips = [];
       if (sm.fun > sm.earned * 0.12) tips.push(`На желания ушло ${fm(sm.fun)} — почти ${Math.round(sm.fun / Math.max(1, sm.earned) * 100)} % заработанного.`);
@@ -573,6 +573,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'shiftEnd': shiftEnd(); break;
       case 'shiftDone': shiftClose(); break;
       case 'finalMain': toMain(false); break;
+      case 'finalShop': if (BK.Stage1UI) BK.Stage1UI.begin(s); break; // стадия 1 «Своя кофейня» (src/ui/stage1.js)
       case 'retry': retry(); break;
       case 'skipMain': toMain(true); break;
       default: break;

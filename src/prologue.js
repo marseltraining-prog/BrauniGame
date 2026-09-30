@@ -93,7 +93,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     Object.assign(st.rel, P.rel); Object.assign(st.m, P.sm); Object.assign(st.f, P.sf);
     st.shares = P.shares.slice(); Object.assign(st.seen, P.seen); st.log = P.slog.slice(-120);
     if (P.status === 'life') st.ending = 'hired';
-    if (P.status === 'done' || P.status === 'skipped') st.ch = 'own'; // стадии 1 пока нет — сразу своя сеть (глава 1 «Своя точка»)
+    if ((P.status === 'done' || P.status === 'skipped') && (!S.stage1 || S.stage1.status !== 'done')) st.ch = 'own'; // глава 1 «Своя точка» (стадия 1 — stage1.js; после неё — 'city')
   }
   const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
   function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info' }); if (P.feed.length > 40) P.feed.shift(); }
@@ -759,7 +759,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function applyCarry(S) {
     const P = S.prologue; if (!P || P.status !== 'won') return null;
     const cr = carry(P, S);
-    if (cr.bonus > 0) { S.cash += cr.bonus; }
+    if (cr.bonus > 0 && !P.toStage1) { S.cash += cr.bonus; } // в стадию 1 «Своя кофейня» идут все накопления целиком (stage1.js)
     if (Object.keys(cr.skills).length) {
       if (BK.Trainers) BK.Trainers.ensure(S); else S.player = S.player || { skills: {}, study: [], log: [], spent: 0 };
       for (const a of Object.keys(cr.skills)) S.player.skills[a] = Math.max(S.player.skills[a] | 0, cr.skills[a]);
@@ -770,7 +770,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const E = BK.Engine, I = E && E._int;
     if (I) {
       const parts = [];
-      if (cr.bonus) parts.push(`накопления сверх цели +${fm(cr.bonus)} к капиталу`);
+      if (cr.bonus && !P.toStage1) parts.push(`накопления сверх цели +${fm(cr.bonus)} к капиталу`);
       const skn = Object.keys(cr.skills).map((a) => (BK.Trainers ? BK.Trainers.AREA[a].short : a));
       if (skn.length) parts.push(`навыки: ${skn.join(', ')} 1`);
       if (cr.baker) parts.push(`${cr.baker.name} придёт в первую точку (уровень ${cr.baker.lvl})`);

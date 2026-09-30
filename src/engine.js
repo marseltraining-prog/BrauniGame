@@ -503,6 +503,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // мощность производства
     let cap = 0; for (const p of S.productions) cap += prodCapacity(S, p);
+    if (S.stage1 && S.stage1.selfBake) cap += totalUnits; // стадия 1 (stage1.js): кофейня печёт сама из закупленных полуфабрикатов — цеха нет
     if (S.corp && BK.Corp && BK.Corp.remoteFill) { const rf = BK.Corp.remoteFill(S); if (rf) cap += totalUnits; } // второй акт: везут из цеха другого города — хватает на всё (false — поставки прерваны)
     const fill = totalUnits > 0 ? Math.min(1, cap / totalUnits) : 1;
     S.cache.capUse = cap > 0 ? totalUnits / cap : 0; S.cache.cap = cap; S.cache.units = totalUnits; S.cache.fill = fill;
@@ -667,6 +668,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (let i = st.staff.length - 1; i >= 0; i--) {
         const e = st.staff[i];
         e.fatigue += (fatT - e.fatigue) * 0.1;
+        if (e.hero) continue; // стадия 1: сам игрок за стойкой — не увольняется, настроение и силы ведёт stage1.js
         const stagn = e.lvl <= 2 && S.day - e.lvlDay > 180 ? 5 : 0;
         const target = (cfg.MOOD_BASE != null ? cfg.MOOD_BASE : 60) + payTerm + cult + bonusTerm + S.loyaltyMod + diffK(S, 'mood') + e.trait - e.fatigue * 0.35 - underPen + (e.lvl - 1) * 2.5 - stagn;
         e.mood = clamp(e.mood + (target - e.mood) * 0.08, 0, 100);
