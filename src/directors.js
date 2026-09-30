@@ -286,15 +286,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       + (o.payMode === 'year' ? o.area * o.rentM2 * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT) : o.area * o.rentM2) + K().DIR_EQUIP * pl;
     return { rev, profit, capex, staff, payback: profit > 0 ? capex / profit : 999 };
   }
-  function openPacked(S, c, o, est) { // внутри withCity: точка сразу «упакована» со снимком потенциала
+  function openPacked(S, c, o, est, free) { // внутри withCity: точка сразу «упакована» со снимком потенциала; free — куплена (e208): без затрат, уже работает
     const cfg = C(), pk = c.packed, pl = S.macro.priceLevel, sz = cfg.SIZES[o.size];
     const staffT = clamp(est.staff, sz.staffMin, sz.staffMax);
     const hireC = staffT * cfg.HIRE_COST_SALARIES * CI().salaryCity(S, c, 1);
     const rent0 = o.payMode === 'year' ? o.area * o.rentM2 * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT) : o.area * o.rentM2;
     const fit = o.area * cfg.FITOUT_PER_M2 * pl + cfg.STORE_EQUIP[o.size] * pl + K().DIR_EQUIP * pl;
-    I.spend(S, fit, 'capex'); I.spend(S, hireC, 'hire');
-    if (o.payMode === 'year') I.spend(S, rent0, 'rent'); else I.spend(S, rent0, 'capex');
-    const people = []; for (let i = 0; i < staffT; i++) people.push({ lvl: I.rnd(S) < 0.28 ? 2 : 1, mood: 62 });
+    if (!free) { I.spend(S, fit, 'capex'); I.spend(S, hireC, 'hire'); if (o.payMode === 'year') I.spend(S, rent0, 'rent'); else I.spend(S, rent0, 'capex'); }
+    const people = []; for (let i = 0; i < staffT; i++) people.push({ lvl: free ? 2 : I.rnd(S) < 0.28 ? 2 : 1, mood: 62 });
     const st = { id: I.nextId(S, 's'), address: o.address, district: o.district, x: o.x, y: o.y, area: o.area, size: o.size, rentM2: o.rentM2, payMode: o.payMode,
       rentPaidUntil: o.payMode === 'year' ? S.day + cfg.OPEN_DAYS + 365 : 0, traffic: o.traffic, solv: o.solv, landmarks: o.landmarks, comp: o.comp,
       status: 'opening', openDay: S.day + cfg.OPEN_DAYS, repair: 0, repairUntil: 0, closedUntil: 0, staff: people, incoming: [], staffTarget: staffT,
@@ -302,11 +301,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ms = E.menuStats(S), wz = E.wasteFactors(S, ms);
     const p = CI().packStore(S, st, ms, wz, pk.fill != null ? pk.fill : 1, BK.Corp.demandMult(S));
     p.status = 'opening'; p.openDay = st.openDay; p.openedDay = null; p.moodOff = 0; p.mood0 = 62; p.staff.mood = 62; p.byDir = true;
+    if (free) { p.status = 'open'; p.openDay = S.day; p.openedDay = S.day - 400; p.bought = true; if (o.payMode === 'year') p.rentPaidUntil = S.day + 365; }
     pk.stores.push(p);
-    S.stats.hires += staffT;
+    if (!free) S.stats.hires += staffT;
     return p;
   }
-  function buildProd(S, c, forceFirst) { // внутри withCity: цех — самое дешёвое по «открытие + 2 года» из трёх предложений
+  function buildProd(S, c, forceFirst, free) { // внутри withCity: цех — самое дешёвое по «открытие + 2 года» из трёх предложений
     const cfg = C(), pk = c.packed, pl = S.macro.priceLevel;
     I.genProdOffers(S, 3);
     const wsum = BK.DISTRICTS.length, kmU = E.kmPerUnit();
@@ -314,7 +314,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const o = S.prodOffers.slice().sort((a, b) => cost(a) - cost(b))[0]; if (!o) return null;
     const oc = E.prodOpenCost(S, o);
     if (!forceFirst && S.cash < oc.total) return null;
-    I.spend(S, oc.total, 'capex');
+    if (!free) I.spend(S, oc.total, 'capex');
     const p = { id: I.nextId(S, 'f'), district: o.district, x: o.x, y: o.y, address: o.address, area: o.area, rentM2: o.rentM2, status: 'opening', openDay: S.day + cfg.PROD_OPEN_DAYS, equip: {}, staff: cfg.PROD_STAFF_BASE + 1, need: cfg.PROD_STAFF_BASE + 1, morale: 65, load: 0, capex: oc.total, name: `Цех №${pk.productions.length + 1}` };
     pk.productions.push(p);
     return { p, cost: oc.total };
@@ -328,6 +328,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const nOf = 2 + Math.round(sk.growth / 40); // сколько мест смотрит за раз
       for (let i = 0; i < nOf; i++) {
         const of = I.makeStoreOffer(S);
+        if (i === 0 && c.spOffer && c.spOffer.n > 0 && c.spOffer.until > S.day) { of.rentM2 = Math.round(of.rentM2 * c.spOffer.rent); of.special = true; } // особое помещение из события (аренда со скидкой)
         const e = estimate(S, c, of, ms);
         const noisy = e.payback * Math.exp(I.gauss(S) * sd); // слабый директор ошибается в оценке чаще
         cand.push({ of, e, noisy });
@@ -339,6 +340,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (S.cash < best.e.capex + (o.first ? 0 : 5e6 * S.macro.priceLevel)) { c.dev.why = 'cash'; break; }
       c.dev.why = null;
       openPacked(S, c, best.of, best.e);
+      if (best.of.special && c.spOffer) c.spOffer.n--;
       b.left = Math.max(0, b.left - best.e.capex); c.dev.opened++; c.dev.mOpened = (c.dev.mOpened || 0) + 1; opened++;
       c.wantBudget = null;
       if (c.dev.opened >= openLimit(S, c, d) && !o.first) break;
@@ -396,6 +398,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
     c.dev.closed++; c.dev.mClosed = (c.dev.mClosed || 0) + 1;
     I.log(S, `${CI().def(c.id).name}: ${d ? d.name + ' закрыл' + (d.f ? 'а' : '') : 'закрыта'} убыточную точку №${s.num} (${s.address}). Продано оборудование на ${fm(refund)}.`, 'warn');
     return refund;
+  }
+  // покупка местной сети (e208): цех и n работающих точек без затрат (цена сделки — в событии); город без директора
+  function buyStores(S, id, n, moodAdd) {
+    const c = S.corp.cities[id], ms = E.menuStats(S), wz = E.wasteFactors(S, ms);
+    c.packed = { stores: [], productions: [], offersSpecial: [], rival: { enabled: false, stores: [], hist: [], ban: {}, opened: 0, closed: 0, grabbed: 0 },
+      office: Object.assign({}, S.office, { hr: false, academy: false, ownerHires: 0, ownerTrains: 0 }), fcPct: S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct * (C().FOODCOST_MULT || 1), fcMs0: ms.fcPct, fill: 1, sales: wz.sales, fcK0: S.corp.hqFcK || 1 };
+    c.aggFrom = S.day; c.numSeq = 0;
+    ensure(S);
+    const out = [];
+    BK.Corp.withCity(S, id, () => {
+      const r = buildProd(S, c, true, true); if (r) { r.p.status = 'open'; r.p.openDay = S.day; }
+      for (let i = 0; i < n; i++) {
+        const cand = []; for (let j = 0; j < 3; j++) { const of = I.makeStoreOffer(S); cand.push({ of, e: estimate(S, c, of, ms) }); }
+        cand.sort((a, b) => b.e.profit - a.e.profit);
+        const p = openPacked(S, c, cand[0].of, cand[0].e, true); p.staff.mood = clamp(62 + (moodAdd || 0), 10, 90); out.push(p);
+      }
+    });
+    return out;
   }
   // вход в город под директором: цех и первые точки ставит директор, игрок остаётся в своём городе
   function launch(S, id, dirId) {
@@ -638,7 +658,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Dir = { ensure, mods, train, monthly, afterMonth, yearly, launch, hire, assign, fire, setSalary, praise, setPriority, setBudget, answer, award, refreshCands,
     marketPay, openLimit, payback, eff, match, dirById, dirOf, planFact, fedStatus, inboxOpen, cityDev, proposeCapex, PRIO_OF, SK, STYLES,
-    makeDirector, pushInbox, makePlan, removeDir, districtName, closePacked };
+    makeDirector, pushInbox, makePlan, removeDir, districtName, closePacked, buyStores };
   Object.assign(BK.Engine, { dirHire: hire, dirAssign: assign, dirFire: fire, dirSalary: setSalary, dirPraise: praise, dirAnswer: answer, dirAward: award, dirRefresh: refreshCands,
     citySetPriority: setPriority, citySetBudget: setBudget, fedStatus });
 })();
