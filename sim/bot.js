@@ -583,7 +583,7 @@ function summarize(r) {
   };
 }
 
-module.exports = { play, estStore, summarize, PROFILES, manage, settlementEstimate };
+module.exports = { play, estStore, summarize, PROFILES, manage, settlementEstimate, chooseEvent, chooseMenu, manageBad };
 if (require.main === module) {
   const flags = {}, pos = [];
   for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }

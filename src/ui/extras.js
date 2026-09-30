@@ -196,6 +196,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repay: (c) => ({ ic: '✅', t: `Кредит погашен полностью (${fm(c.v)})` }),
     crisis: (c) => ({ ic: '🌪', t: `Кризис ${qt(c.title)}${c.label ? `: ${qt(c.label)}` : ''}${c.cost ? ` за ${fm(c.cost)}` : ''}` }),
     choice: (c) => ({ ic: c.risky ? '🎲' : '⚖️', t: `${qt(c.title)}: выбрано ${qt(c.label)}${c.cost ? ` за ${fm(c.cost)}` : ''}${c.risky ? ' — с отложенными последствиями' : ''}` }),
+    rewind: (c) => ({ ic: '↩️', t: `Переиграли: вернулись сюда с ${E().fmtDate(c.from)}${c.lost ? ' после банкротства' : ''}` }), // «Переиграть» (rewind.js)
   };
   function storeCard(r, kind) {
     const h = H();
@@ -217,6 +218,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Точек (максимум)</span><span class="v">${Math.max(S.stats.peakStores || 0, S.stores.length)}</span></div>
       <div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div>
       <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div></div>`;
+    if (S.rewind && S.rewind.n) s += `<p class="hint sumrw">↩️ Переигровок в этой игре: ${S.rewind.n} (отменено ${S.rewind.days} ${plural(S.rewind.days, 'день', 'дня', 'дней')} игры). Итоги и достижения — по той версии событий, что осталась.</p>`;
     s += `<div class="sec"><h3>Вся игра по месяцам</h3><div class="sumcharts">
       <figure><figcaption>Выручка и прибыль за месяц</figcaption>${lineChart(h, [{ v: (x) => x.rev, cls: 's-rev', label: 'Выручка', area: true }, { v: (x) => x.profit, cls: 's-prof', label: 'Прибыль' }], 'Выручка и прибыль по месяцам')}</figure>
       <figure><figcaption>Точки в сети</figcaption>${lineChart(h, [{ v: (x) => x.stores, cls: 's-stores', label: 'Работающие точки', step: true, area: true, money: false }], 'Число точек по месяцам')}</figure>
@@ -229,7 +231,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (R.decisions.length) s += `<div class="sec"><h3>Главные решения</h3><ol class="timeline">${R.decisions.map((c) => { const d = (DEC[c.t] || (() => ({ ic: '•', t: c.t })))(c); return `<li><span class="ti" aria-hidden="true">${d.ic}</span><span class="td">${E().fmtDate(c.day)}</span><span class="tt">${esc(d.t)}</span></li>`; }).join('')}</ol></div>`;
     const on = L.filter((a) => A().isOn(S, a.id)).sort((a, b) => S.achievements[a.id] - S.achievements[b.id]);
     s += `<div class="sec"><h3>Достижения <small>${got} из ${L.length}</small></h3>${on.length ? `<div class="achchips">${on.map((a) => `<span class="achchip rar-${a.rar}" title="${esc(a.desc)}"><span aria-hidden="true">${a.icon}</span>${esc(a.name)}</span>`).join('')}</div>` : '<div class="empty">Пока ни одного.</div>'}<button class="btn" type="button" data-act="achievements">Все достижения</button></div>`;
-    s += `</div><div class="modal-f">${S.lost ? '' : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
+    const rw = S.lost && BK.Rewind && BK.Rewind.can(S); // банкротство: можно вернуться к окну «Переиграть»
+    s += `</div><div class="modal-f">${S.lost ? (rw ? '<button class="btn primary block" type="button" data-act="rewindLost">Переиграть…</button>' : '') : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost && !rw ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
     return s;
   }
   function openSummary() {
