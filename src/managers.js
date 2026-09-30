@@ -361,7 +361,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       keys.add(pr.key); out.push(pr);
     }
     // лишний совет: вероятность (1 − точность) × WRONG_K; место — случайное среди предложений
-    if (rnd(R) < (1 - m.acc) * k.WRONG_K * (out.length ? 1 : 0.35)) { // в пустом докладе выдумывать реже
+    if (rnd(R) < (1 - m.acc) * k.WRONG_K * (out.length ? 1 : 0.15)) { // в пустом докладе выдумывает редко
       const w = wrongOne(S, R, stores);
       if (w && !keys.has(w.key) && !cool(w.key)) {
         if (out.length >= k.MAX_PER_REPORT) out.pop();
