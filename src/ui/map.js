@@ -107,10 +107,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
     truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
     layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 5-9 5-9-5z"/><path d="M3 14l9 5 9-5"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
     globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.2 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.2-3.8-8.5s1.2-6.1 3.8-8.5Z"/></svg>',
   };
   BK.ICON_GLOBE = IC.globe;
-  const LAYERS = [['profit', 'Прибыль', IC.rub], ['mood', 'Настроение', IC.mood], ['staff', 'Штат', IC.team], ['delivery', 'Доставка', IC.truck]];
+  const LAYERS = [['profit', 'Прибыль', IC.rub], ['mood', 'Настроение', IC.mood], ['staff', 'Штат', IC.team], ['delivery', 'Доставка', IC.truck], ['daypart', 'Время суток', IC.clock]];
+  const DP_COL = { m: 'var(--dp-m)', d: 'var(--dp-d)', e: 'var(--dp-e)', flat: 'var(--line-2)' }; // слой «Время суток» (цвета — delivery.css)
+  const DP_ROWS = [['m', 'Пик утром'], ['d', 'Пик в обед'], ['e', 'Пик вечером'], ['flat', 'Ровно весь день']];
   const TONE_COL = { good: 'var(--good)', warn: 'var(--warn)', bad: 'var(--bad)', none: 'var(--line-2)' };
   const MOOD_COL = { happy: 'var(--face-happy)', mid: 'var(--face-mid)', sad: 'var(--face-sad)' };
   const MOOD_TONE = { happy: 'good', mid: 'warn', sad: 'bad' };
@@ -142,6 +145,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (layer === 'profit') { if (st.last && st.last.rev > 0) { const mg = st.last.profit / st.last.rev; tone = mg >= 0.15 ? 'good' : mg >= 0 ? 'warn' : 'bad'; } else if (st.last) tone = 'bad'; }
     else if (layer === 'mood') tone = mood ? MOOD_TONE[mood] : 'none';
     else if (layer === 'staff') { if (!opening) { const n = st.staff.length; tone = n >= st.staffTarget ? 'good' : n >= min ? 'warn' : 'bad'; } }
+    else if (layer === 'delivery') tone = st.agg ? 'good' : 'none'; // подключена к агрегаторам
+    else if (layer === 'daypart' && E.daypartOf) tone = 'dp-' + E.daypartOf(st).peak;
     return { st, tone, prob, mood, vac, cls: opening ? 'opening' : st.status === 'repair' ? 'repair' : closed ? 'closed' : 'open' };
   }
 
@@ -422,7 +427,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const o of S.prodOffers) pre.push(['po' + o.id, `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`]);
     for (const o of S.offers) {
       const pulse = S.phase === 'setup_store' || S.stores.length < 2 ? ' pulse' : '';
-      offers.push(['o' + o.id, `<g class="m-offer${isSel('offer', o.id) ? ' sel' : ''}${pulse}" data-kind="offer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><circle r="11"/><path d="M-4.5,0 H4.5 M0,-4.5 V4.5"/></g>`]);
+      const dpo = layer === 'daypart' && E.daypartOf ? ' dp-' + E.daypartOf(o).peak : '';
+      offers.push(['o' + o.id, `<g class="m-offer${dpo}${isSel('offer', o.id) ? ' sel' : ''}${pulse}" data-kind="offer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><circle r="11"/><path d="M-4.5,0 H4.5 M0,-4.5 V4.5"/></g>`]);
     }
     for (const p of S.productions) {
       let g = `<g class="m-prod ${p.status}${isSel('prod', p.id) ? ' sel' : ''}" data-kind="prod" data-id="${p.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/>`;
@@ -441,7 +447,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
           const c = { happy: 0, mid: 0, sad: 0 };
           for (const st of n.items) for (const e of st.staff) c[BK.moodKind(e.mood)]++;
           parts = ['happy', 'mid', 'sad'].map((q) => [MOOD_COL[q], c[q]]);
-        } else if (layer === 'delivery') parts = [['var(--map-route)', 1]];
+        } else if (layer === 'daypart') {
+          const c = { m: 0, d: 0, e: 0, flat: 0 }; for (const i of infos) c[i.tone.slice(3)]++;
+          parts = ['m', 'd', 'e', 'flat'].map((q) => [DP_COL[q], c[q]]);
+        } else if (layer === 'delivery') { const n = infos.filter((i) => i.tone === 'good').length; parts = [['var(--good)', n], ['var(--map-route)', infos.length - n]]; }
         else {
           const c = { good: 0, warn: 0, bad: 0, none: 0 };
           for (const i of infos) c[i.tone]++;
@@ -526,8 +535,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       h += `<span class="lg-t">Слой · штат точек</span>`;
       h += row(dot('var(--good)'), 'Полный штат', c.good) + row(dot('var(--warn)'), 'Есть вакансии', c.warn) + row(dot('var(--bad)'), 'Меньше минимума', c.bad);
       h += `<span class="lg-h">${ring3([['var(--good)', 0.7], ['var(--warn)', 0.2], ['var(--bad)', 0.1]])}<span>Открытых вакансий: <b class="num">${vac}</b><br>кольцо — доли точек</span></span>`;
+    } else if (layer === 'daypart') {
+      const c = { m: 0, d: 0, e: 0, flat: 0 }; for (const i of infos) c[i.tone.slice(3)]++;
+      h += `<span class="lg-t">Слой · когда приходят гости</span>`;
+      for (const [q, l] of DP_ROWS) h += row(dot(DP_COL[q]), l, c[q]);
+      h += `<span class="lg-h">${ring3([['var(--dp-m)', 0.4], ['var(--dp-d)', 0.2], ['var(--dp-e)', 0.4]])}<span>Кластер: доли точек по пику,<br>свободные помещения — тем же цветом</span></span>`;
     } else {
       h += `<span class="lg-t">Слой · доставка из цехов</span>`;
+      const na = S.stores.filter((st) => st.agg).length;
+      h += row(dot('var(--good)'), 'В агрегаторах доставки', na) + row(dot('var(--line-2)', true), 'Без агрегаторов', S.stores.length - na);
       for (const p of S.productions) {
         const n = S.stores.filter((st) => st.status !== 'opening' && E.nearestProd(S, st) === p).length;
         h += `<span class="lg-r"><svg viewBox="0 0 16 16" class="lg-sw" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5" fill="var(--prod-bg)"/></svg><span>${esc(p.name)}${p.status === 'open' ? ` · ${nw(n, 'точка', 'точки', 'точек')}` : ' · открывается'}</span><b>${Math.round((p.load || 0) * 100)} %</b></span>`;
