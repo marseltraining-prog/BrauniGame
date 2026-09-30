@@ -182,8 +182,10 @@ async function slots(b, sv) {
   qp.on('pageerror', (e) => qerr.push('PAGEERR ' + e.message)); qp.on('console', (mm) => { if (mm.type() === 'error' && !/Failed to load resource/.test(mm.text())) qerr.push('CONSOLE ' + mm.text()); });
   await qp.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
   await qp.addInitScript(() => { const no = () => { throw new Error('SecurityError'); }; Object.defineProperty(window, 'localStorage', { get: no, configurable: true }); });
+  await qp.addInitScript(() => { let x = 5; Math.random = () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }); // зерно: иначе изредка нет помещения по карману
   await qp.goto(require('./lib').URL); await qp.waitForTimeout(200);
   const hint = await qp.evaluate(() => (document.querySelector('#slots') || {}).innerText || '');
+  if (await qp.locator('#start [data-tutopt="0"]').count()) await qp.click('#start [data-tutopt="0"]'); // без хранилища обучение по умолчанию включено; здесь проверяем сохранения
   await qp.click('#startForm button'); await qp.waitForTimeout(100);
   await qp.click('[data-act="rentProd"]:not([disabled])'); await qp.click('[data-act="rent"]:not([disabled])'); await qp.evaluate(() => BK.App.ACT.closeModal());
   await qp.evaluate(() => { BK.App.setSpeed(10); }); await qp.waitForTimeout(1500);

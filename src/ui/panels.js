@@ -141,7 +141,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     } else if (S.stores.length) {
       const f = billsForecast(S);
       if (f.cashAt1 + S.reserve < 0) { counts.fin++; add({ lvl: S.negMonths > 0 ? 'bad' : 'warn', ic: 'rub', t: `К 1-му числу не хватит ≈ ${fm(-(f.cashAt1 + S.reserve))}`, d: `Через ${nw(f.left + 1, 'день', 'дня', 'дней')} спишутся аренда, зарплаты и налоги ≈ ${fm(f.bills)}.`, b: { act: 'tab', arg: 'fin', label: 'Финансы' } }); }
-      else if (S.loan > 0 && S.cash > S.loan + f.bills * 1.5) add({ lvl: 'info', ic: 'bank', t: `Кредит ${fm(S.loan)} можно погасить`, d: `Денег хватает; проценты ≈ ${fm(S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12)} в месяц.`, b: { act: 'repay', arg: 1e15, label: 'Погасить' } });
+      // гасить — когда сеть уже работает 3+ месяца и ничего не открывается (иначе совет «погасить» приходит в первые недели,
+      // пока расходы ещё не начались, и новичок остаётся без денег к первым зарплатам)
+      else if (S.loan > 0 && S.cash > S.loan + f.bills * 1.5 && S.history.length >= 3 && !S.stores.some((s) => s.status === 'opening')) add({ lvl: 'info', ic: 'bank', t: `Кредит ${fm(S.loan)} можно погасить`, d: `Денег хватает; проценты ≈ ${fm(S.loan * (S.macro.keyRate + cfg.LOAN_SPREAD) / 12)} в месяц.`, b: { act: 'repay', arg: 1e15, label: 'Погасить' } });
     }
     // штат: вакансии, перегруз, кто может уволиться
     const vac = [], risk = [], tired = []; let vacN = 0, tiredN = 0;
@@ -203,6 +205,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { items, counts };
   }
   BK.attention = attention;
+  BK.billsForecast = (S) => billsForecast(S); // обучение новичка и sim/newbie.js
   const attRow = (a) => `<div class="it"><span class="ic ${a.lvl}">${ICO[a.ic] || ICO.alert}</span><div class="tx"><div class="tt">${a.t}${a.lvl === 'bad' ? '<span class="new" aria-hidden="true"></span>' : ''}</div><div class="ds">${a.d}</div></div>${a.b ? `<button class="btn${a.b.primary ? ' primary' : ''}" data-act="${a.b.act}"${a.b.arg != null ? ` data-arg="${esc(a.b.arg)}"` : ''}>${a.b.label}</button>` : ''}</div>`;
 
   /* ---------- оценка предложения ---------- */
