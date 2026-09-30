@@ -781,6 +781,117 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------- ФИНАНСЫ ---------- */
+  /* ---------- ФИНАНСЫ: «водопад» (выручка → статьи расходов → прибыль → распределение) и таблица точек (макет 3) ---------- */
+  const FIN_PER = [['m', 'Месяц', 1], ['q', 'Квартал', 3], ['y', 'Год', 12]];
+  function finSum(S, n) { // сумма отчётов за последние n месяцев
+    const h = S.history.slice(-n).filter((x) => x.pnl);
+    if (!h.length) return null;
+    const keys = ['rev', 'fc', 'waste', 'rent', 'payroll', 'delivery', 'util', 'upkeep', 'hire', 'train', 'tax', 'interest', 'other', 'income', 'profit', 'toReserve', 'bonus', 'marketing'];
+    const o = { n: h.length, from: h[0], to: h[h.length - 1] };
+    for (const k of keys) o[k] = h.reduce((a, x) => a + (x.pnl[k] || 0), 0);
+    o.dist = h.reduce((a, x) => a + Math.max(0, x.pnl.profit || 0), 0); // распределяется только прибыль прибыльных месяцев (как в движке)
+    return o;
+  }
+  function finUnit(v) { const a = Math.abs(v); return a >= 5e9 ? [1e9, 'млрд ₽', 2] : a >= 5e6 ? [1e6, 'млн ₽', 1] : [1e3, 'тыс. ₽', 0]; }
+  function waterfall(S, ui) {
+    const per = FIN_PER.find((x) => x[0] === ui.finPeriod) || FIN_PER[0];
+    const p = finSum(S, per[2]);
+    const seg = `<div class="seg finper">${FIN_PER.map(([k, l]) => `<button data-act="finPeriod" data-arg="${k}" aria-pressed="${per[0] === k}">${l}</button>`).join('')}</div>`;
+    const M = E().MONTHS, m3 = (x) => M[x.m].slice(0, 3).toLowerCase();
+    const when = p ? (p.n === 1 ? `${M[p.to.m]} ${p.to.y}` : `${m3(p.from)} ${p.from.y} — ${m3(p.to)} ${p.to.y}`) : '';
+    let s = `<div class="sec fin-wf"><div class="finhead"><h3>Куда ушла выручка${p ? ` <small>${when}</small>` : ''}</h3>${seg}</div>`;
+    if (!p || p.rev <= 0) return s + `<div class="empty">«Водопад» появится 1-го числа следующего месяца — после первого расчёта.</div></div>`;
+    const R = p.rev;
+    // статьи; мелкие (< 2 % выручки) складываем в «Прочее», чтобы столбики читались
+    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest]];
+    const items = []; let other = p.other - p.income;
+    for (const [l, v] of raw) { if (!v) continue; if (Math.abs(v) < R * 0.02 && l !== 'Налоги') other += v; else items.push([l, v]); }
+    if (Math.abs(other) >= 1) items.push([other >= 0 ? 'Прочее' : 'Доходы', other]);
+    const [U, un, dg] = finUnit(R);
+    const f = (v) => (v / U).toFixed(dg).replace('.', ',').replace('-', '−');
+    const sg = (x) => (x.v > 0 && !x.tot && x.cls !== 'rev' ? '+' : '');
+    const bars = [{ l: 'Выручка', a: 0, b: R, cls: 'rev', v: R }];
+    let run = R;
+    for (const [l, v] of items) { bars.push({ l, a: Math.min(run, run - v), b: Math.max(run, run - v), cls: v >= 0 ? 'exp' : 'inc', v: -v }); run -= v; }
+    const profit = p.profit;
+    bars.push({ l: 'Прибыль', a: Math.min(0, profit), b: Math.max(0, profit), cls: profit >= 0 ? 'prof' : 'loss', v: profit, tot: true });
+    const dist = [];
+    if (p.dist > 0) {
+      const keep = p.dist - p.toReserve - p.bonus - p.marketing;
+      let r2 = p.dist;
+      for (const [l, v, c] of [['Резерв', p.toReserve, 'res'], ['Премии', p.bonus, 'bon'], ['Маркетинг', p.marketing, 'mkt']]) { if (v > 0) { dist.push({ l, a: r2 - v, b: r2, cls: c, v: -v }); r2 -= v; } }
+      dist.push({ l: 'На счёт', a: 0, b: Math.max(0, keep), cls: 'keep', v: keep, tot: true });
+    }
+    const all = bars.concat(dist);
+    const lo = Math.min(0, ...all.map((x) => x.a)), hi = Math.max(...all.map((x) => x.b));
+    const margin = profit / R;
+    // вертикальный «водопад» (ПК) — SVG
+    const W = 760, pl = 4, gap = dist.length ? 14 : 0, axW = 34;
+    const bw = (W - pl - axW - gap) / all.length, stag = bw < 58; // узкие столбики — подписи в две строки «лесенкой»
+    const H = stag ? 236 : 222, pt = 20, pb = stag ? 48 : 34;
+    const y = (v) => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo || 1));
+    let g = `<svg class="wf" viewBox="0 0 ${W} ${H}" role="img" aria-label="От выручки к прибыли, ${un}: ${esc(all.map((x) => x.l + ' ' + f(x.v)).join(', '))}">`;
+    const raw2 = (hi - lo) / 3, pw = Math.pow(10, Math.floor(Math.log10(raw2 || 1))), step = [1, 2, 5, 10].map((k) => k * pw).find((v) => v >= raw2) || raw2;
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-6; v += step) g += `<line class="grid" x1="${pl}" x2="${W - axW + 4}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="ax" x="${W - 2}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${Math.abs(v) < 1e-9 ? '0' : f(v).replace(/,0+$/, '')}</text>`;
+    if (lo < 0) g += `<line class="zero" x1="${pl}" x2="${W - axW + 4}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+    const xs = (i) => pl + i * bw + (i >= bars.length ? gap : 0);
+    all.forEach((x, i) => {
+      const x0 = xs(i) + 4, w = bw - 8, y0 = y(x.b), y1 = y(x.a), hh = Math.max(1.5, y1 - y0);
+      if (i === bars.length && gap) { const xl = (xs(i) - gap / 2).toFixed(1); g += `<line class="sep" x1="${xl}" x2="${xl}" y1="${pt - 8}" y2="${H - 4}"/>`; }
+      g += `<rect class="b ${x.cls}" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${w.toFixed(1)}" height="${hh.toFixed(1)}" rx="2"><title>${esc(x.l)}: ${fm(x.v)}</title></rect>`;
+      // соединитель с началом следующего шага
+      const nx = all[i + 1];
+      if (nx && i !== bars.length - 1 && !x.tot) { const yc = y(x.cls === 'rev' ? x.b : x.v < 0 ? x.a : x.b); g += `<line class="con" x1="${(x0 + w).toFixed(1)}" x2="${(xs(i + 1) + 4).toFixed(1)}" y1="${yc.toFixed(1)}" y2="${yc.toFixed(1)}"/>`; }
+      const below = x.cls === 'loss';
+      g += `<text class="val ${x.cls}" x="${(x0 + w / 2).toFixed(1)}" y="${(below ? y1 + 11 : y0 - 5).toFixed(1)}" text-anchor="middle">${sg(x)}${f(x.v)}</text>`;
+      g += `<text class="lab${x.tot || x.cls === 'rev' ? ' tot' : ''}" x="${(x0 + w / 2).toFixed(1)}" y="${H - pb + 14 + (stag && i % 2 ? 13 : 0)}" text-anchor="middle">${esc(x.l)}</text>`;
+    });
+    g += `<text class="cap" x="${pl + 4}" y="${H - 3}">ОТ ВЫРУЧКИ К ПРИБЫЛИ</text>${dist.length ? `<text class="cap" x="${(xs(bars.length) + 4).toFixed(1)}" y="${H - 3}">РАСПРЕДЕЛЕНИЕ</text>` : ''}</svg>`;
+    // горизонтальный (телефон) — строки с полосами
+    const X = (v) => (v - lo) / (hi - lo || 1) * 100;
+    let rows = `<div class="wfr" role="list">`;
+    all.forEach((x, i) => {
+      if (i === bars.length) rows += `<div class="wfsep">Распределение прибыли</div>`;
+      rows += `<div class="wfrow${x.tot || x.cls === 'rev' ? ' tot' : ''}" role="listitem"><span class="l">${esc(x.l)}</span><span class="tr"><i class="${x.cls}" style="left:${X(x.a).toFixed(2)}%;width:${Math.max(0.8, X(x.b) - X(x.a)).toFixed(2)}%"></i></span><span class="v ${x.cls}">${sg(x)}${f(x.v)}</span></div>`;
+    });
+    rows += `</div>`;
+    s += `<div class="finsub">${un} · маржа <b class="${margin >= 0 ? 'pos' : 'negc'}">${pct(margin, 1)}</b>${p.n < per[2] ? ` · данных за ${nw(p.n, 'месяц', 'месяца', 'месяцев')}` : ''}</div><div class="wfbox">${g}</div>${rows}</div>`;
+    return s;
+  }
+  const FIN_COLS = [['num', '№'], ['addr', 'Адрес · район'], ['rating', 'Рейтинг'], ['rev', 'Выручка, ₽'], ['profit', 'Прибыль, ₽'], ['margin', 'Маржа'], ['mood', 'Настроение'], ['staff', 'Штат']];
+  function finStores(S, ui) {
+    const E_ = E();
+    const open = S.stores.filter((st) => st.status !== 'opening' && st.last);
+    if (!open.length) return '';
+    const key = ui.finSort || 'profit', dir = ui.finDir || (key === 'profit' || key === 'margin' || key === 'rating' ? 1 : -1); // 1 — по возрастанию («от худших»)
+    const filt = ui.finFilter || 'all';
+    const mg = (st) => (st.last.rev > 0 ? st.last.profit / st.last.rev : -1);
+    const val = { num: (st) => st.num, rev: (st) => st.last.rev, profit: (st) => st.last.profit, margin: mg, rating: (st) => E_.storeRating(S, st), staff: (st) => st.staff.length / Math.max(1, st.staffTarget), mood: (st) => { const k = BK.storeMood(st); return k === 'sad' ? 0 : k === 'mid' ? 1 : k === 'happy' ? 2 : -1; } };
+    const loss = open.filter((st) => st.last.profit < 0), short = open.filter((st) => st.staff.length < st.staffTarget);
+    const list = (filt === 'loss' ? loss : filt === 'short' ? short : open).slice().sort((a, b) => (val[key](a) - val[key](b)) * dir || a.num - b.num);
+    const maxAbs = Math.max(1, ...open.map((st) => Math.abs(st.last.profit)));
+    const chips = [['all', 'Все', open.length], ['loss', 'Убыточные', loss.length], ['short', 'Нехватка штата', short.length]];
+    const lastM = S.history[S.history.length - 1];
+    let s = `<div class="sec fin-st"><div class="finhead"><h3>Точки <small>прибыль и маржа${lastM ? ` за ${E_.MONTHS[lastM.m].toLowerCase()}` : ''}</small></h3><div class="finchips">${chips.map(([k, l, n]) => `<button class="finchip" data-act="finFilter" data-arg="${k}" aria-pressed="${filt === k}">${l} <b>${n}</b></button>`).join('')}</div></div>`;
+    if (!list.length) return s + `<div class="empty">${filt === 'loss' ? 'Убыточных точек нет.' : 'Везде полный штат.'}</div></div>`;
+    const head = FIN_COLS.map(([k, l]) => {
+      if (k === 'addr') return `<th class="c-addr">${l}</th>`;
+      const on = key === k, arr = on ? (dir > 0 ? '▲' : '▼') : '';
+      return `<th class="c-${k}${on ? ' on' : ''}"><button data-act="finSort" data-arg="${k}" aria-pressed="${on}" title="Сортировать: ${l.toLowerCase()}">${l}${arr ? `<i>${arr}</i>` : ''}</button></th>`;
+    }).join('');
+    const MOOD = { happy: 'довольны', mid: 'терпят', sad: 'недовольны' };
+    const fr = (v) => fm(v).replace(/\s₽$/, ''); // «₽» — в заголовке колонки
+    let body = '';
+    for (const st of list) {
+      const L = st.last, m = mg(st), r = E_.storeRating(S, st), mood = BK.storeMood(st);
+      const w = Math.min(50, Math.abs(L.profit) / maxAbs * 50);
+      const cls = L.profit < 0 ? 'neg' : m < 0.15 ? 'low' : 'ok';
+      body += `<tr class="${L.profit < 0 ? 'lossrow' : ''}" data-act="openStore" data-arg="${st.id}"><td class="c-num"><span class="numc ${cls}">${st.num}</span></td><td class="c-addr"><b>${esc(st.address)}</b> <span>${dname(st.district)}<i class="m-stf${st.staff.length < st.staffTarget ? ' warnc' : ''}"> · штат ${st.staff.length}/${st.staffTarget}</i></span></td><td class="c-rating"><span class="rt">★ ${r1(r)}</span></td><td class="c-rev">${fr(L.rev)}</td><td class="c-profit"><span class="pcell"><span class="pbar" aria-hidden="true"><i class="${cls}" style="${L.profit < 0 ? 'right' : 'left'}:50%;width:${w.toFixed(1)}%"></i></span><span class="${L.profit < 0 ? 'negc' : ''}">${fr(L.profit)}</span></span></td><td class="c-margin ${cls}">${L.rev > 0 ? pct(m) : '—'}</td><td class="c-mood">${mood ? `${BK.faceIcon(mood)}<span>${MOOD[mood]}</span>` : '—'}</td><td class="c-staff${st.staff.length < st.staffTarget ? ' warnc' : ''}">${st.staff.length}/${st.staffTarget}</td></tr>`;
+    }
+    s += `<div class="fintbl-w"><table class="fintbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div><span class="hint">Нажмите на строку — откроется карточка точки. Прибыль точки — до общих расходов сети (цех, офис, управление), налог — по текущей ставке.</span></div>`;
+    return s;
+  }
+
   function finance(S, ui) {
     const cfg = C(), E_ = E();
     const a = S.alloc;
@@ -794,13 +905,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
     const lastM = S.history[S.history.length - 1];
-    s += `<div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
-    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
+    s += waterfall(S, ui);
+    s += finStores(S, ui);
+    s += `<div class="fin2"><div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
       ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
       ${sl('marketing', 'Маркетинг', `Больше гостей в следующем месяце (до +${Math.round(cfg.MARKETING_EFF * 100)}%).`)}
-      <div class="kv"><span>Остаётся на развитие</span><span><b>${pct(rest)}</b></span></div></div>`;
+      <div class="kv"><span>Остаётся на развитие</span><span><b>${pct(rest)}</b></span></div></div></div>`;
+    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
     s += `<div class="sec"><h3>Резервный фонд <small>${fm(S.reserve)}</small></h3><div class="row">
       ${btn('reserve', '+1 млн', { cls: 'sm', arg: 1e6, dis: S.cash < 1e6, title: 'Перевести 1 млн со счёта в резерв' })}${btn('reserve', '+10 млн', { cls: 'sm', arg: 1e7, dis: S.cash < 1e7, title: 'Перевести 10 млн со счёта в резерв' })}${btn('reserve', '−1 млн', { cls: 'sm', arg: -1e6, dis: S.reserve < 1e6, title: 'Вернуть 1 млн из резерва на счёт' })}${btn('reserve', '−10 млн', { cls: 'sm', arg: -1e7, dis: S.reserve < 1e7, title: 'Вернуть 10 млн из резерва на счёт' })}${btn('reserve', 'Всё на счёт', { cls: 'sm', arg: -1e15, dis: S.reserve < 1 })}</div>
       <span class="hint">«+» — перевести со счёта в резерв, «−» — вернуть на счёт.</span></div>`;

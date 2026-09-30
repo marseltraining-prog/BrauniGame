@@ -323,12 +323,37 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .modal-b { padding: 4px 20px 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
 .modal-f { padding: 12px 20px 18px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
 .effects { display: flex; flex-wrap: wrap; gap: 6px; }
-.choice { text-align: left; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; background: var(--surface); cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; }
+.choice { text-align: left; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px 11px; background: var(--surface); color: var(--ink); cursor: pointer; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; font: inherit; }
 .choice:hover:not(:disabled) { border-color: var(--crust); background: var(--crust-soft); }
-.choice:disabled { opacity: .5; cursor: not-allowed; }
-.choice b { font-weight: 600; font-size: 14px; }
-.choice .cd { font-size: 12px; color: var(--ink-2); grid-column: 1; }
-.choice .cc { grid-row: 1 / span 2; grid-column: 2; font-family: var(--f-mono); font-size: 13px; font-weight: 600; }
+.choice:hover:not(:disabled) .cl { background: var(--btn-primary); color: var(--on-primary); }
+.choice:disabled { cursor: not-allowed; background: transparent; border-style: dashed; }
+.choice:disabled b, .choice:disabled .cc { color: var(--ink-3); font-weight: 500; }
+.choice:disabled .cd { color: var(--ink-3); }
+.choice:disabled .fx { opacity: .5; }
+.choice .cl { grid-row: 1 / span 2; grid-column: 1; width: 26px; height: 26px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--f-display); font-size: 11px; font-weight: 600; color: var(--ink-2); margin-top: 1px; }
+.choice b { font-weight: 600; font-size: 14px; grid-column: 2; }
+.choice .cd { font-size: 12.5px; color: var(--ink-2); grid-column: 2; }
+.choice .cc { grid-row: 1 / span 2; grid-column: 3; font-family: var(--f-mono); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+.choice .cc small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.choice .cwhy { grid-column: 2 / -1; display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--warn-t); margin-top: 4px; }
+.choice .cwhy svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+.choice .fx { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.chq { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 2px; }
+.chq h4 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.chq span { font-size: 12px; color: var(--ink-3); }
+.fxc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.fxc svg { width: 13px; height: 13px; flex: none; }
+.fxc .ar { font-size: 10.5px; letter-spacing: -1.5px; }
+.fxc.up { background: var(--good-soft); color: var(--good-t); }
+.fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+.fxc.zero { background: transparent; color: var(--ink-3); border: 1px dashed var(--line-2); }
+.fxc.zero .fxn, .fxc.zero svg { opacity: .75; }
+.fxc.risk { background: var(--warn-soft); color: var(--warn-t); }
+.modal:has(> .evh) { max-width: 640px; }
+.modal-h.evh.crisis { border-top: 4px solid var(--bad); border-radius: 14px 14px 0 0; background: repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--bad) 6%, transparent) 9px 10px); }
+.modal-h.evh.neg { border-top: 4px solid var(--bad); border-radius: 14px 14px 0 0; }
+.modal-h.evh.pos { border-top: 4px solid var(--good); border-radius: 14px 14px 0 0; }
+@media (max-width: 420px) { .choice { grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 8px; padding: 9px 10px 10px; } .choice .cl { width: 22px; height: 22px; } .fxc { padding: 0 6px; gap: 4px; } }
 .chefgrid { display: flex; flex-direction: column; gap: 8px; }
 .chefitem { border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; cursor: pointer; }
 .chefitem.on { border-color: var(--crust); background: var(--crust-soft); }
@@ -698,6 +723,107 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .mapscale .sc-bars { height: 5px; border-color: var(--ink-3); }
   .mapscale .sc-bars i:nth-child(odd) { background: var(--ink-3); }
 }
+
+/* ---------- Финансы: «водопад» и таблица точек (макет 3) ---------- */
+@media (min-width: 1101px) { .main.fin-wide { grid-template-columns: minmax(0, 1fr) min(760px, 50vw); } }
+@media (min-width: 821px) and (max-width: 1100px) { .main.fin-wide { grid-template-columns: minmax(0, 1fr) 520px; } }
+.finhead { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.finhead > h3 { font-family: var(--f-display); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 0; }
+.finhead > h3 small { font-family: var(--f-body); text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); font-size: 12px; margin-left: 6px; }
+.seg.finper button { padding: 5px 12px; font-size: 12.5px; color: var(--ink-2); }
+.seg.finper button[aria-pressed="true"] { color: var(--surface); }
+.finsub { font-size: 12px; color: var(--ink-3); margin-top: -2px; }
+.finsub b { font-family: var(--f-mono); font-weight: 600; }
+.fin-wf { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px; background: var(--surface); }
+.wfbox { display: none; }
+.wf { width: 100%; height: auto; display: block; }
+.wf text { font-family: var(--f-mono); font-size: 11px; fill: var(--ink-3); }
+.wf .grid { stroke: var(--line); stroke-dasharray: 2 3; }
+.wf .zero { stroke: var(--ink-3); }
+.wf .sep { stroke: var(--line-2); stroke-dasharray: 3 3; }
+.wf .con { stroke: var(--ink-3); stroke-dasharray: 2 2; opacity: .7; }
+.wf .lab { font-family: var(--f-body); font-size: 11px; fill: var(--ink-2); }
+.wf .lab.tot { font-weight: 700; fill: var(--ink); }
+.wf .cap { font-family: var(--f-display); font-size: 9.5px; letter-spacing: .1em; fill: var(--ink-3); }
+.wf .val { font-size: 11px; font-weight: 600; fill: var(--ink-2); }
+.wf .val.exp, .wf .val.loss { fill: var(--bad-t); } .wf .val.prof, .wf .val.inc { fill: var(--good-t); } .wf .val.keep { fill: var(--crust-t); } .wf .val.rev { fill: var(--ink); }
+.wf .b.rev, .wfr i.rev { fill: var(--ink-2); background: var(--ink-2); }
+.wf .b.exp, .wfr i.exp { fill: var(--bad); background: var(--bad); }
+.wf .b.inc, .wfr i.inc, .wf .b.prof, .wfr i.prof { fill: var(--good); background: var(--good); }
+.wf .b.loss, .wfr i.loss { fill: var(--bad); background: var(--bad); }
+.wf .b.res, .wfr i.res { fill: var(--river); background: var(--river); }
+.wf .b.bon, .wfr i.bon { fill: var(--good); background: var(--good); opacity: .75; }
+.wf .b.mkt, .wfr i.mkt { fill: var(--rye); background: var(--rye); }
+.wf .b.keep, .wfr i.keep { fill: var(--crust); background: var(--crust); }
+.wfr { display: flex; flex-direction: column; gap: 3px; }
+.wfrow { display: grid; grid-template-columns: 92px minmax(0, 1fr) 62px; gap: 8px; align-items: center; font-size: 12.5px; min-height: 22px; }
+.wfrow .l { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wfrow.tot .l { color: var(--ink); font-weight: 700; }
+.wfrow .tr { position: relative; height: 14px; border-radius: 3px; background: color-mix(in srgb, var(--line) 45%, transparent); }
+.wfrow .tr i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.wfrow .v { font-family: var(--f-mono); font-size: 12px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wfrow .v.exp, .wfrow .v.loss { color: var(--bad-t); } .wfrow .v.prof, .wfrow .v.inc { color: var(--good-t); } .wfrow .v.keep { color: var(--crust-t); }
+.wfsep { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 8px 0 2px; padding-top: 8px; border-top: 1px dashed var(--line-2); }
+@media (min-width: 1101px) { .main.fin-wide .wfbox { display: block; } .main.fin-wide .wfr { display: none; } }
+
+.fin-wf, .fin-st { min-width: 0; }
+.fintbl .c-addr { overflow-wrap: anywhere; }
+.fintbl .m-stf { display: none; font-style: normal; }
+.fin-st { border: 1px solid var(--line); border-radius: 12px; padding: 12px 0 10px; background: var(--surface); }
+.fin-st > .finhead, .fin-st > .hint { padding: 0 14px; }
+.finchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.finchip { border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); border-radius: 999px; padding: 4px 11px; min-height: 30px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.finchip b { font-family: var(--f-mono); font-weight: 600; margin-left: 3px; color: var(--bad-t); }
+.finchip[data-arg="all"] b { color: inherit; }
+.finchip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.finchip[aria-pressed="true"] b { color: inherit; }
+.fintbl-w { overflow-x: auto; }
+.fintbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fintbl th { text-align: left; font-weight: 500; font-size: 12px; color: var(--ink-3); padding: 6px 6px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface-2) 60%, transparent); white-space: nowrap; }
+.fintbl th button { border: 0; background: none; color: inherit; font: inherit; padding: 4px 0; cursor: pointer; }
+.fintbl th.on button { color: var(--ink); font-weight: 700; }
+.fintbl th i { font-style: normal; font-size: 10.5px; margin-left: 3px; color: var(--crust-t); }
+.fintbl td { padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.fintbl tr:last-child td { border-bottom: 0; }
+.fintbl tbody tr { cursor: pointer; content-visibility: auto; contain-intrinsic-size: auto 42px; }
+.fintbl tbody tr:hover td { background: var(--crust-soft); }
+.fintbl tr.lossrow td { background: color-mix(in srgb, var(--bad-soft) 55%, transparent); }
+.fintbl tr.lossrow td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+.fintbl th:first-child, .fintbl td:first-child { padding-left: 14px; }
+.fintbl th:last-child, .fintbl td:last-child { padding-right: 14px; }
+.fintbl .c-rev, .fintbl .c-profit, .fintbl .c-margin, .fintbl .c-staff { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fintbl th.c-rev, .fintbl th.c-profit, .fintbl th.c-margin, .fintbl th.c-staff { text-align: right; }
+.numc { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 5px; border-radius: 12px; border: 2px solid var(--good); font-family: var(--f-mono); font-size: 12px; font-weight: 700; }
+.numc.low { border-color: var(--warn); } .numc.neg { border-color: var(--bad); color: var(--bad-t); }
+.fintbl .c-addr b { font-weight: 600; }
+.fintbl .c-addr span { color: var(--ink-3); font-size: 12px; }
+.fintbl .rt { font-family: var(--f-mono); white-space: nowrap; display: inline-block; } .fintbl .rt::first-letter { color: var(--crust); }
+.fintbl .pcell { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.pbar { position: relative; width: 70px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--line) 60%, transparent); flex: none; }
+.pbar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; min-width: 3px; }
+.pbar i.ok { background: var(--good); } .pbar i.low { background: var(--warn); } .pbar i.neg { background: var(--bad); }
+.fintbl .c-margin.neg { color: var(--bad-t); } .fintbl .c-margin.low { color: var(--warn-t); }
+.fintbl .c-mood { white-space: nowrap; color: var(--ink-2); font-size: 12px; }
+.fintbl .c-mood .face { display: inline-block; vertical-align: -5px; margin-right: 5px; }
+.fin2 { display: grid; gap: 14px; }
+@media (min-width: 1101px) { .main.fin-wide .fin2 { grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; } }
+/* средняя ширина панели (520 px) и телефон: без рейтинга, настроения и полос */
+@media (max-width: 1100px) { .fintbl .c-rating, .fintbl .c-mood, .pbar { display: none; } }
+@media (max-width: 820px) {
+  .fin-wf { padding: 12px 12px; }
+  .fintbl { font-size: 12px; }
+  .fintbl th, .fintbl td { padding: 6px 4px; }
+  .fintbl th:first-child, .fintbl td:first-child { padding-left: 10px; }
+  .fintbl th:last-child, .fintbl td:last-child { padding-right: 10px; }
+  .fintbl .c-addr span { display: block; font-size: 11px; }
+  .fintbl th { white-space: normal; line-height: 1.2; vertical-align: bottom; }
+  .fintbl th button { text-align: inherit; }
+  .fintbl .c-num { width: 30px; }
+  .fintbl .c-addr b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .numc { min-width: 26px; height: 22px; font-size: 11px; }
+  .fin-st > .finhead, .fin-st > .hint { padding: 0 10px; }
+}
+@media (max-width: 420px) { .fintbl .c-margin, .fintbl .c-staff { display: none; } .fintbl .m-stf { display: inline; } .wfrow { grid-template-columns: 84px minmax(0, 1fr) 56px; gap: 6px; } }
 
 /* ===== Дополнения: слоты сохранений, достижения, итоговый экран (src/ui/extras.js). Только токены темы из styles.css. ===== */
 .rar-c { --rar: var(--good); --rar-t: var(--good-t); --rar-soft: var(--good-soft); }
@@ -9333,6 +9459,117 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------- ФИНАНСЫ ---------- */
+  /* ---------- ФИНАНСЫ: «водопад» (выручка → статьи расходов → прибыль → распределение) и таблица точек (макет 3) ---------- */
+  const FIN_PER = [['m', 'Месяц', 1], ['q', 'Квартал', 3], ['y', 'Год', 12]];
+  function finSum(S, n) { // сумма отчётов за последние n месяцев
+    const h = S.history.slice(-n).filter((x) => x.pnl);
+    if (!h.length) return null;
+    const keys = ['rev', 'fc', 'waste', 'rent', 'payroll', 'delivery', 'util', 'upkeep', 'hire', 'train', 'tax', 'interest', 'other', 'income', 'profit', 'toReserve', 'bonus', 'marketing'];
+    const o = { n: h.length, from: h[0], to: h[h.length - 1] };
+    for (const k of keys) o[k] = h.reduce((a, x) => a + (x.pnl[k] || 0), 0);
+    o.dist = h.reduce((a, x) => a + Math.max(0, x.pnl.profit || 0), 0); // распределяется только прибыль прибыльных месяцев (как в движке)
+    return o;
+  }
+  function finUnit(v) { const a = Math.abs(v); return a >= 5e9 ? [1e9, 'млрд ₽', 2] : a >= 5e6 ? [1e6, 'млн ₽', 1] : [1e3, 'тыс. ₽', 0]; }
+  function waterfall(S, ui) {
+    const per = FIN_PER.find((x) => x[0] === ui.finPeriod) || FIN_PER[0];
+    const p = finSum(S, per[2]);
+    const seg = `<div class="seg finper">${FIN_PER.map(([k, l]) => `<button data-act="finPeriod" data-arg="${k}" aria-pressed="${per[0] === k}">${l}</button>`).join('')}</div>`;
+    const M = E().MONTHS, m3 = (x) => M[x.m].slice(0, 3).toLowerCase();
+    const when = p ? (p.n === 1 ? `${M[p.to.m]} ${p.to.y}` : `${m3(p.from)} ${p.from.y} — ${m3(p.to)} ${p.to.y}`) : '';
+    let s = `<div class="sec fin-wf"><div class="finhead"><h3>Куда ушла выручка${p ? ` <small>${when}</small>` : ''}</h3>${seg}</div>`;
+    if (!p || p.rev <= 0) return s + `<div class="empty">«Водопад» появится 1-го числа следующего месяца — после первого расчёта.</div></div>`;
+    const R = p.rev;
+    // статьи; мелкие (< 2 % выручки) складываем в «Прочее», чтобы столбики читались
+    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest]];
+    const items = []; let other = p.other - p.income;
+    for (const [l, v] of raw) { if (!v) continue; if (Math.abs(v) < R * 0.02 && l !== 'Налоги') other += v; else items.push([l, v]); }
+    if (Math.abs(other) >= 1) items.push([other >= 0 ? 'Прочее' : 'Доходы', other]);
+    const [U, un, dg] = finUnit(R);
+    const f = (v) => (v / U).toFixed(dg).replace('.', ',').replace('-', '−');
+    const sg = (x) => (x.v > 0 && !x.tot && x.cls !== 'rev' ? '+' : '');
+    const bars = [{ l: 'Выручка', a: 0, b: R, cls: 'rev', v: R }];
+    let run = R;
+    for (const [l, v] of items) { bars.push({ l, a: Math.min(run, run - v), b: Math.max(run, run - v), cls: v >= 0 ? 'exp' : 'inc', v: -v }); run -= v; }
+    const profit = p.profit;
+    bars.push({ l: 'Прибыль', a: Math.min(0, profit), b: Math.max(0, profit), cls: profit >= 0 ? 'prof' : 'loss', v: profit, tot: true });
+    const dist = [];
+    if (p.dist > 0) {
+      const keep = p.dist - p.toReserve - p.bonus - p.marketing;
+      let r2 = p.dist;
+      for (const [l, v, c] of [['Резерв', p.toReserve, 'res'], ['Премии', p.bonus, 'bon'], ['Маркетинг', p.marketing, 'mkt']]) { if (v > 0) { dist.push({ l, a: r2 - v, b: r2, cls: c, v: -v }); r2 -= v; } }
+      dist.push({ l: 'На счёт', a: 0, b: Math.max(0, keep), cls: 'keep', v: keep, tot: true });
+    }
+    const all = bars.concat(dist);
+    const lo = Math.min(0, ...all.map((x) => x.a)), hi = Math.max(...all.map((x) => x.b));
+    const margin = profit / R;
+    // вертикальный «водопад» (ПК) — SVG
+    const W = 760, pl = 4, gap = dist.length ? 14 : 0, axW = 34;
+    const bw = (W - pl - axW - gap) / all.length, stag = bw < 58; // узкие столбики — подписи в две строки «лесенкой»
+    const H = stag ? 236 : 222, pt = 20, pb = stag ? 48 : 34;
+    const y = (v) => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo || 1));
+    let g = `<svg class="wf" viewBox="0 0 ${W} ${H}" role="img" aria-label="От выручки к прибыли, ${un}: ${esc(all.map((x) => x.l + ' ' + f(x.v)).join(', '))}">`;
+    const raw2 = (hi - lo) / 3, pw = Math.pow(10, Math.floor(Math.log10(raw2 || 1))), step = [1, 2, 5, 10].map((k) => k * pw).find((v) => v >= raw2) || raw2;
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-6; v += step) g += `<line class="grid" x1="${pl}" x2="${W - axW + 4}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="ax" x="${W - 2}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${Math.abs(v) < 1e-9 ? '0' : f(v).replace(/,0+$/, '')}</text>`;
+    if (lo < 0) g += `<line class="zero" x1="${pl}" x2="${W - axW + 4}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+    const xs = (i) => pl + i * bw + (i >= bars.length ? gap : 0);
+    all.forEach((x, i) => {
+      const x0 = xs(i) + 4, w = bw - 8, y0 = y(x.b), y1 = y(x.a), hh = Math.max(1.5, y1 - y0);
+      if (i === bars.length && gap) { const xl = (xs(i) - gap / 2).toFixed(1); g += `<line class="sep" x1="${xl}" x2="${xl}" y1="${pt - 8}" y2="${H - 4}"/>`; }
+      g += `<rect class="b ${x.cls}" x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${w.toFixed(1)}" height="${hh.toFixed(1)}" rx="2"><title>${esc(x.l)}: ${fm(x.v)}</title></rect>`;
+      // соединитель с началом следующего шага
+      const nx = all[i + 1];
+      if (nx && i !== bars.length - 1 && !x.tot) { const yc = y(x.cls === 'rev' ? x.b : x.v < 0 ? x.a : x.b); g += `<line class="con" x1="${(x0 + w).toFixed(1)}" x2="${(xs(i + 1) + 4).toFixed(1)}" y1="${yc.toFixed(1)}" y2="${yc.toFixed(1)}"/>`; }
+      const below = x.cls === 'loss';
+      g += `<text class="val ${x.cls}" x="${(x0 + w / 2).toFixed(1)}" y="${(below ? y1 + 11 : y0 - 5).toFixed(1)}" text-anchor="middle">${sg(x)}${f(x.v)}</text>`;
+      g += `<text class="lab${x.tot || x.cls === 'rev' ? ' tot' : ''}" x="${(x0 + w / 2).toFixed(1)}" y="${H - pb + 14 + (stag && i % 2 ? 13 : 0)}" text-anchor="middle">${esc(x.l)}</text>`;
+    });
+    g += `<text class="cap" x="${pl + 4}" y="${H - 3}">ОТ ВЫРУЧКИ К ПРИБЫЛИ</text>${dist.length ? `<text class="cap" x="${(xs(bars.length) + 4).toFixed(1)}" y="${H - 3}">РАСПРЕДЕЛЕНИЕ</text>` : ''}</svg>`;
+    // горизонтальный (телефон) — строки с полосами
+    const X = (v) => (v - lo) / (hi - lo || 1) * 100;
+    let rows = `<div class="wfr" role="list">`;
+    all.forEach((x, i) => {
+      if (i === bars.length) rows += `<div class="wfsep">Распределение прибыли</div>`;
+      rows += `<div class="wfrow${x.tot || x.cls === 'rev' ? ' tot' : ''}" role="listitem"><span class="l">${esc(x.l)}</span><span class="tr"><i class="${x.cls}" style="left:${X(x.a).toFixed(2)}%;width:${Math.max(0.8, X(x.b) - X(x.a)).toFixed(2)}%"></i></span><span class="v ${x.cls}">${sg(x)}${f(x.v)}</span></div>`;
+    });
+    rows += `</div>`;
+    s += `<div class="finsub">${un} · маржа <b class="${margin >= 0 ? 'pos' : 'negc'}">${pct(margin, 1)}</b>${p.n < per[2] ? ` · данных за ${nw(p.n, 'месяц', 'месяца', 'месяцев')}` : ''}</div><div class="wfbox">${g}</div>${rows}</div>`;
+    return s;
+  }
+  const FIN_COLS = [['num', '№'], ['addr', 'Адрес · район'], ['rating', 'Рейтинг'], ['rev', 'Выручка, ₽'], ['profit', 'Прибыль, ₽'], ['margin', 'Маржа'], ['mood', 'Настроение'], ['staff', 'Штат']];
+  function finStores(S, ui) {
+    const E_ = E();
+    const open = S.stores.filter((st) => st.status !== 'opening' && st.last);
+    if (!open.length) return '';
+    const key = ui.finSort || 'profit', dir = ui.finDir || (key === 'profit' || key === 'margin' || key === 'rating' ? 1 : -1); // 1 — по возрастанию («от худших»)
+    const filt = ui.finFilter || 'all';
+    const mg = (st) => (st.last.rev > 0 ? st.last.profit / st.last.rev : -1);
+    const val = { num: (st) => st.num, rev: (st) => st.last.rev, profit: (st) => st.last.profit, margin: mg, rating: (st) => E_.storeRating(S, st), staff: (st) => st.staff.length / Math.max(1, st.staffTarget), mood: (st) => { const k = BK.storeMood(st); return k === 'sad' ? 0 : k === 'mid' ? 1 : k === 'happy' ? 2 : -1; } };
+    const loss = open.filter((st) => st.last.profit < 0), short = open.filter((st) => st.staff.length < st.staffTarget);
+    const list = (filt === 'loss' ? loss : filt === 'short' ? short : open).slice().sort((a, b) => (val[key](a) - val[key](b)) * dir || a.num - b.num);
+    const maxAbs = Math.max(1, ...open.map((st) => Math.abs(st.last.profit)));
+    const chips = [['all', 'Все', open.length], ['loss', 'Убыточные', loss.length], ['short', 'Нехватка штата', short.length]];
+    const lastM = S.history[S.history.length - 1];
+    let s = `<div class="sec fin-st"><div class="finhead"><h3>Точки <small>прибыль и маржа${lastM ? ` за ${E_.MONTHS[lastM.m].toLowerCase()}` : ''}</small></h3><div class="finchips">${chips.map(([k, l, n]) => `<button class="finchip" data-act="finFilter" data-arg="${k}" aria-pressed="${filt === k}">${l} <b>${n}</b></button>`).join('')}</div></div>`;
+    if (!list.length) return s + `<div class="empty">${filt === 'loss' ? 'Убыточных точек нет.' : 'Везде полный штат.'}</div></div>`;
+    const head = FIN_COLS.map(([k, l]) => {
+      if (k === 'addr') return `<th class="c-addr">${l}</th>`;
+      const on = key === k, arr = on ? (dir > 0 ? '▲' : '▼') : '';
+      return `<th class="c-${k}${on ? ' on' : ''}"><button data-act="finSort" data-arg="${k}" aria-pressed="${on}" title="Сортировать: ${l.toLowerCase()}">${l}${arr ? `<i>${arr}</i>` : ''}</button></th>`;
+    }).join('');
+    const MOOD = { happy: 'довольны', mid: 'терпят', sad: 'недовольны' };
+    const fr = (v) => fm(v).replace(/\s₽$/, ''); // «₽» — в заголовке колонки
+    let body = '';
+    for (const st of list) {
+      const L = st.last, m = mg(st), r = E_.storeRating(S, st), mood = BK.storeMood(st);
+      const w = Math.min(50, Math.abs(L.profit) / maxAbs * 50);
+      const cls = L.profit < 0 ? 'neg' : m < 0.15 ? 'low' : 'ok';
+      body += `<tr class="${L.profit < 0 ? 'lossrow' : ''}" data-act="openStore" data-arg="${st.id}"><td class="c-num"><span class="numc ${cls}">${st.num}</span></td><td class="c-addr"><b>${esc(st.address)}</b> <span>${dname(st.district)}<i class="m-stf${st.staff.length < st.staffTarget ? ' warnc' : ''}"> · штат ${st.staff.length}/${st.staffTarget}</i></span></td><td class="c-rating"><span class="rt">★ ${r1(r)}</span></td><td class="c-rev">${fr(L.rev)}</td><td class="c-profit"><span class="pcell"><span class="pbar" aria-hidden="true"><i class="${cls}" style="${L.profit < 0 ? 'right' : 'left'}:50%;width:${w.toFixed(1)}%"></i></span><span class="${L.profit < 0 ? 'negc' : ''}">${fr(L.profit)}</span></span></td><td class="c-margin ${cls}">${L.rev > 0 ? pct(m) : '—'}</td><td class="c-mood">${mood ? `${BK.faceIcon(mood)}<span>${MOOD[mood]}</span>` : '—'}</td><td class="c-staff${st.staff.length < st.staffTarget ? ' warnc' : ''}">${st.staff.length}/${st.staffTarget}</td></tr>`;
+    }
+    s += `<div class="fintbl-w"><table class="fintbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div><span class="hint">Нажмите на строку — откроется карточка точки. Прибыль точки — до общих расходов сети (цех, офис, управление), налог — по текущей ставке.</span></div>`;
+    return s;
+  }
+
   function finance(S, ui) {
     const cfg = C(), E_ = E();
     const a = S.alloc;
@@ -9346,13 +9583,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Налог</span><span class="v">${pct(E_.currentTaxRate(S), 1)}</span><span class="d" title="${S.macro.regime === 'osno' ? 'ОСНО — общая система налогообложения: НДС и налог на прибыль' : 'УСН «доходы» — упрощённая система: налог считается с выручки'}">${S.macro.regime === 'osno' ? 'ОСНО: НДС + 25% прибыли' : 'УСН «доходы»'}</span></div>
     </div></div>`;
     const lastM = S.history[S.history.length - 1];
-    s += `<div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
-    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
+    s += waterfall(S, ui);
+    s += finStores(S, ui);
+    s += `<div class="fin2"><div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
       ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
       ${sl('marketing', 'Маркетинг', `Больше гостей в следующем месяце (до +${Math.round(cfg.MARKETING_EFF * 100)}%).`)}
-      <div class="kv"><span>Остаётся на развитие</span><span><b>${pct(rest)}</b></span></div></div>`;
+      <div class="kv"><span>Остаётся на развитие</span><span><b>${pct(rest)}</b></span></div></div></div>`;
+    s += `<div class="sec"><h3>Выручка и прибыль <small>последние 24 мес.</small></h3>${revChart(S)}</div>`;
     s += `<div class="sec"><h3>Резервный фонд <small>${fm(S.reserve)}</small></h3><div class="row">
       ${btn('reserve', '+1 млн', { cls: 'sm', arg: 1e6, dis: S.cash < 1e6, title: 'Перевести 1 млн со счёта в резерв' })}${btn('reserve', '+10 млн', { cls: 'sm', arg: 1e7, dis: S.cash < 1e7, title: 'Перевести 10 млн со счёта в резерв' })}${btn('reserve', '−1 млн', { cls: 'sm', arg: -1e6, dis: S.reserve < 1e6, title: 'Вернуть 1 млн из резерва на счёт' })}${btn('reserve', '−10 млн', { cls: 'sm', arg: -1e7, dis: S.reserve < 1e7, title: 'Вернуть 10 млн из резерва на счёт' })}${btn('reserve', 'Всё на счёт', { cls: 'sm', arg: -1e15, dis: S.reserve < 1 })}</div>
       <span class="hint">«+» — перевести со счёта в резерв, «−» — вернуть на счёт.</span></div>`;
@@ -11215,7 +11454,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const scroll = body.scrollTop;
     const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
     const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
-    if (main.classList.contains('ru-wide') !== wide) { main.classList.toggle('ru-wide', wide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
+    const finWide = ui.tab === 'fin'; // «Финансы» — широкая панель (водопад и таблица точек), чуть уже корпоративных таблиц
+    if (main.classList.contains('ru-wide') !== wide || main.classList.contains('fin-wide') !== finWide) { main.classList.toggle('ru-wide', wide); main.classList.toggle('fin-wide', finWide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
     let html;
     if ((S.phase === 'setup_prod' || S.phase === 'setup_store') && ui.tab !== 'log') html = P.dash(S, ui);
     else if (ui.view !== 'russia' && E.citySetup && E.citySetup(S) && ui.tab !== 'log' && ui.tab !== 'fin') html = P.dash(S, ui); // запуск нового города
@@ -11306,6 +11546,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openStore: (d) => { ui.tab = 'stores'; ui.storeId = d.arg; ui.sel = { kind: 'store', id: d.arg }; const st = E.byId(S.stores, d.arg); if (st) map.focus(st.x, st.y); $('#pbody').scrollTop = 0; refresh(); },
     closeStoreView: () => { ui.storeId = null; ui.sel = null; refresh(); },
     storeSort: (d) => { ui.storeSort = d.arg; refresh(); },
+    finPeriod: (d) => { ui.finPeriod = d.arg; refresh(); },
+    finFilter: (d) => { ui.finFilter = d.arg; refresh(); },
+    finSort: (d) => { const def = (k) => (k === 'profit' || k === 'margin' || k === 'rating' ? 1 : -1); if ((ui.finSort || 'profit') === d.arg) ui.finDir = -(ui.finDir || def(d.arg)); else { ui.finSort = d.arg; ui.finDir = def(d.arg); } refresh(); },
     logFilter: (d) => { ui.logFilter = d.arg; refresh(); },
     focusOffer: (d) => { const o = E.byId(S.offers, d.arg); if (o) { ui.sel = { kind: 'offer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
     focusProdOffer: (d) => { const o = E.byId(S.prodOffers, d.arg); if (o) { ui.sel = { kind: 'prodOffer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
@@ -11471,10 +11714,80 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function closeModal() { ui.modal = null; $('#modal').innerHTML = ''; refresh(); }
 
+  /* ---------- значки последствий вариантов события (только оценка для игрока по описанию эффектов; движок не трогаем) ---------- */
+  const FX_IC = {
+    rub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20V4h5.5a4 4 0 0 1 0 8H6M6 16h8"/></svg>',
+    team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
+    guests: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14l-1.2 9.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+    prod: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M3 20V11l5-3v3l5-3v3l5-3V4h3v16z"/></svg>',
+    dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/><path d="M12 14l-1.2 3 1.2 1.5 1.2-1.5z"/></svg>',
+    risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
+  };
+  // ось: [подпись, порог «заметно», порог «сильно», порог «очень сильно»]; первые три показываются всегда
+  const FX_AX = { rub: ['', 0.3, 5, 20], team: ['Команда', 1, 12, 25], guests: ['Гости', 1, 15, 50], check: ['Чек', 1, 15, 50], prod: ['Цех', 1, 10, 40], dir: ['Директор', 1, 12, 25] };
+  const FX_NAME = { rub: 'Деньги', team: 'Команда', guests: 'Гости', check: 'Средний чек', prod: 'Цех', dir: 'Директор' };
+  function choiceFx(S, ev, i) {
+    const src = (ev.corp ? BK.CORP_EVENTS : BK.EVENTS) || [];
+    const def = src.find((x) => x.id === ev.id), ch = def && def.choices && def.choices[i];
+    const v = { rub: 0, team: 0, guests: 0, check: 0, prod: 0, dir: 0 }; let risk = false;
+    const R = Math.max(S.lastMonthRev || 0, 1e6), pl = (S.macro && S.macro.priceLevel) || 1;
+    const scope = ev.tg && ev.tg.scope;
+    const nSt = scope === 'store' ? 1 : Math.max(1, S.stores.filter((s) => s.status !== 'opening' && (scope !== 'district' || s.district === ev.tg.target)).length);
+    const mo = (d) => Math.min(d || 365, 365) / 30;
+    const walk = (list) => { for (const f of list || []) {
+      const m = f.m != null ? f.m - 1 : 0;
+      switch (f.t) {
+        case 'cash': v.rub += f.v ? f.v * pl / R * 100 : f.perStore ? f.perStore * pl * nSt / R * 100 : f.revPct ? f.revPct * 100 : 0; break;
+        case 'tax': v.rub -= f.add * 100 * mo(f.d); break;
+        case 'foodcost': v.rub -= m * 30 * mo(f.d); break;
+        case 'delivery': v.rub -= m * 5 * mo(f.d); break;
+        case 'rent': v.rub -= m * 144; break;
+        case 'salary': v.rub -= m * 300; v.team -= m * 300; break;
+        case 'lostSales': v.rub -= (f.days || 1) / 30 * 100; break;
+        case 'sellEquity': v.rub += 30; break;
+        case 'creditLimit': v.rub += 3; break;
+        case 'buyChain': v.guests += 50; v.team -= 12; break;
+        case 'traffic': case 'conv': case 'competitor': v.guests += m * 100 * mo(f.d); break;
+        case 'close': v.guests -= 100 * (f.d || 7) / 30; break;
+        case 'awareness': v.guests += f.add * 600; break;
+        case 'pressure': v.guests -= f.add * 60; break;
+        case 'trend': v.guests += (f.add || 0) / 2; break;
+        case 'check': v.check += m * 100 * mo(f.d); break;
+        case 'capacity': v.prod += m * 100 * (f.d || 14) / 30; break;
+        case 'loyalty': v.team += f.add * 1.5; break;
+        case 'staffQuit': v.team -= 6 * (f.n || 1); break;
+        case 'staffTrain': v.team += 5 * (f.n || 1); break;
+        case 'dirLoyalty': v.dir += f.add * 1.5; break;
+        case 'dirSkill': v.dir += f.add; break;
+        case 'dirLeave': case 'dirFire': v.dir -= 30; break;
+        case 'dirAbsent': v.dir -= (f.d || 30) / 3; break;
+        case 'dirPromote': case 'dirTrait': v.dir += 15; break;
+        case 'dirOptions': case 'dirSalary': v.dir += 10; v.rub -= 1; break;
+        case 'chance': risk = true; break;
+        default: break; // schedule (скрытые последствия), offer, audit, reveal — не показываем
+      }
+    } };
+    if (ch) walk(ch.effects);
+    const cost = ev.choices[i].cost || 0;
+    if (cost > 0) v.rub -= Math.max(cost / R * 100, FX_AX.rub[1]);
+    const lvl = (k) => { const a = Math.abs(v[k]), t = FX_AX[k]; return a < t[1] ? 0 : a < t[2] ? 1 : a < t[3] ? 2 : 3; };
+    const out = [];
+    for (const k of ['rub', 'team', 'guests', 'check', 'prod', 'dir']) {
+      const n = lvl(k); if (!n && !['rub', 'team', 'guests'].includes(k)) continue;
+      const up = v[k] > 0, cls = !n ? 'zero' : up ? 'up' : 'dn';
+      const ar = n ? (up ? '▲' : '▼').repeat(n) : '·';
+      const tip = FX_NAME[k] + (n ? `: ${up ? 'лучше' : 'хуже'}${n > 1 ? (n > 2 ? ', очень сильно' : ', заметно') : ''}` : ': без изменений');
+      out.push(`<span class="fxc ${cls}" title="${tip}">${FX_IC[k]}${FX_AX[k][0] ? `<span class="fxn">${FX_AX[k][0]}</span>` : ''}<span class="ar" aria-label="${tip}">${ar}</span></span>`);
+    }
+    if (risk) out.push(`<span class="fxc risk" title="Исход не гарантирован">${FX_IC.risk}<span class="fxn">Риск</span></span>`);
+    return out.join('');
+  }
+
   function openEventModal() {
     const ev = S.ev.pending;
     const eyebrow = ev.crisis ? '<span class="eyebrow crisis">Экономический кризис</span>' : `<span class="eyebrow ${ev.kind}">${ev.corp ? 'Корпорация' : ev.kind === 'pos' ? 'Хорошие новости' : 'Событие'}${ev.corp && ev.kind === 'pos' ? ' · хорошие новости' : ''} · ${E.fmtDate(ev.day)}</span>`;
-    let html = `<div class="modal-h">${eyebrow}<h2>${H.esc(ev.title)}</h2></div><div class="modal-b"><p style="margin:0">${H.esc(ev.text)}</p>`;
+    let html = `<div class="modal-h evh ${ev.crisis ? 'crisis' : ev.kind}">${eyebrow}<h2>${H.esc(ev.title)}</h2></div><div class="modal-b"><p style="margin:0">${H.esc(ev.text)}</p>`;
     if (ev.effectsText && ev.effectsText.length) html += `<div class="effects">${ev.effectsText.map((t) => `<span class="chip ${ev.kind === 'pos' ? 'good' : 'bad'}">${H.esc(t)}</span>`).join('')}</div>`;
     html += `</div><div class="modal-f">`;
     if (ev.choices) {
@@ -11482,9 +11795,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       // если по деньгам не проходит ничего — открыт самый дешёвый вариант (уйдёт в минус, как и прочие платежи)
       const afford = (c) => !c.dis && (!c.cost || c.cost <= S.cash + S.reserve); // c.dis — корпоративный выбор без нужного отдела штаба / грейда
       const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (!c.dis && (ev.choices[b].dis || c.cost < ev.choices[b].cost) ? i : b), 0);
+      const LET = 'АБВГДЕЖЗ';
+      html += `<div class="chq"><h4>Как ответим?</h4><span>▲ — лучше, ▼ — хуже, число стрелок — сила</span></div>`;
       ev.choices.forEach((c, i) => {
         const can = afford(c) || i === cheapest;
-        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}${c.dis ? ` <em class="negc">${H.esc(c.dis)}.</em>` : ''}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}</span></button>`;
+        const why = c.dis ? `Недоступно: ${H.esc(c.dis)}` : !can ? `Недоступно: не хватает ${H.fm(c.cost - S.cash - S.reserve)} (на счёте и в резерве ${H.fm(Math.max(0, S.cash + S.reserve))})` : '';
+        let fx = ''; try { fx = choiceFx(S, ev, i); } catch (e) { fx = ''; }
+        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
     html += `</div>`;
@@ -11578,7 +11895,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const was = ui.view === 'russia';
     ui.view = 'city';
     if (isRuTab(ui.tab)) ui.tab = ui.prevTab && !isRuTab(ui.prevTab) ? ui.prevTab : 'dash';
-    const mn = $('.main'); if (mn) mn.classList.remove('ru-wide');
+    const mn = $('.main'); if (mn) mn.classList.remove('ru-wide', 'fin-wide');
     const wrap = $('.mapwrap'); if (!wrap || !BK.Russia) return;
     if (!anim || !was) { if (BK.Russia.isOpen()) { const r = wrap.querySelector('.rumap'); if (r) r.hidden = true; wrap.classList.remove('ru-on'); } $('#map').style.visibility = ''; }
     else BK.Russia.close(S, wrap, $('#map'));
