@@ -1,0 +1,64 @@
+/* ================= Обучение новичка (src/ui/tutorial.js) ================= */
+:root { --tut-dim: rgba(18, 24, 38, .30); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tut-dim: rgba(2, 4, 8, .50); } }
+:root[data-theme="dark"] { --tut-dim: rgba(2, 4, 8, .50); }
+
+.tut { position: fixed; inset: 0; z-index: 55; pointer-events: none; }
+.tut.dim { background: var(--tut-dim); }
+/* обводка нужного элемента: всё вокруг чуть притушено, касания проходят сквозь */
+.tut-ring { position: fixed; border-radius: 12px; border: 2.5px solid var(--crust); box-shadow: 0 0 0 5px color-mix(in srgb, var(--crust) 28%, transparent), 0 0 0 200vmax var(--tut-dim); transition: left .18s ease, top .18s ease, width .18s ease, height .18s ease; }
+#modal:not(:empty) ~ .tut .tut-ring { box-shadow: 0 0 0 5px color-mix(in srgb, var(--crust) 35%, transparent); }
+.tut-ring::after { content: ''; position: absolute; inset: -3px; border-radius: 14px; border: 2px solid var(--crust-2); animation: tut-pulse 1.6s ease-out infinite; }
+@keyframes tut-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.06); } }
+
+.tut-card { position: fixed; width: 360px; max-height: calc(100vh - 16px); display: flex; flex-direction: column; pointer-events: auto;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); border-top: 3px solid var(--crust); border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .28), 0 2px 6px rgba(0, 0, 0, .12); animation: tut-in .2s ease-out; }
+@keyframes tut-in { from { opacity: 0; transform: translateY(6px); } }
+.tut-in { display: flex; flex-direction: column; min-height: 0; padding: 12px 16px 14px; gap: 8px; }
+.tut-eb { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--crust-t); }
+.tut-dots { display: inline-flex; gap: 3px; }
+.tut-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); }
+.tut-dots i.d { background: var(--crust-2); }
+.tut-dots i.c { width: 14px; background: var(--crust); }
+.tut-card h3 { font-family: var(--f-display); font-size: 16px; font-weight: 600; line-height: 1.25; }
+.tut-tx { font-size: 13.5px; line-height: 1.45; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.tut-tx p { margin: 0; }
+.tut-tx b { font-weight: 600; }
+.tut-rec { padding: 7px 10px; border-radius: 8px; background: var(--crust-soft); }
+.tut-bad { color: var(--bad-t); font-weight: 600; }
+.tut-warn { color: var(--warn-t); font-weight: 600; }
+.tut-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.tut-list li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 8px; border-radius: 6px; background: var(--surface-2); }
+.tut-list:not(.plain) li b { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+.tut-list li.best { background: var(--good-soft); color: var(--good-t); }
+.tut-list li.best span::after { content: ' — выгоднее всех'; font-weight: 600; }
+.tut-list.plain li { display: block; background: none; padding: 1px 0 1px 14px; position: relative; }
+.tut-list.plain li::before { content: ''; position: absolute; left: 2px; top: .62em; width: 5px; height: 5px; border-radius: 3px; background: var(--crust); }
+.tut-f { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
+.tut-f .btn { min-height: 36px; }
+.tut-f .btn.ghost { border-color: transparent; background: transparent; color: var(--ink-2); margin-left: auto; padding-inline: 6px; }
+.tut-f .btn.ghost:hover { color: var(--ink); text-decoration: underline; }
+/* стрелка к цели: повёрнутый квадрат на краю карточки, рамка — только с внешних сторон */
+.tut-arrow { position: absolute; width: 14px; height: 14px; background: var(--surface); transform: rotate(45deg); border: 0 solid var(--line-2); }
+.tut-card[data-side="left"] .tut-arrow { border-top-width: 1px; border-right-width: 1px; }
+.tut-card[data-side="right"] .tut-arrow { border-bottom-width: 1px; border-left-width: 1px; }
+.tut-card[data-side="up"] .tut-arrow { border-top: 3px solid var(--crust); border-left: 3px solid var(--crust); }
+.tut-card[data-side="down"] .tut-arrow { border-bottom-width: 1px; border-right-width: 1px; }
+
+/* стартовый экран и «Меню игры» */
+.start .tut-opt { margin-top: 14px; }
+.tut-on .setupbanner { display: none; } /* карточка обучения говорит то же самое */
+.tut-set { gap: 10px; }
+@media (max-width: 820px) {
+  .tut-card { width: auto; right: 8px; max-height: 44vh; border-radius: 14px; }
+  .tut-card.top { max-height: 40vh; }
+  html.tut-on #app { padding-bottom: var(--tut-pad, 0px); }
+  .tut-in { padding: 10px 14px 12px; gap: 6px; }
+  .tut-card h3 { font-size: 15px; }
+  .tut-tx { font-size: 13px; }
+  .tut-f .btn { min-height: 40px; }
+  .start .tut-opt .seg button, .start .rival-opt .seg button { min-height: 40px; min-width: 52px; }
+  .tut-set .btn { min-height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) { .tut-ring::after, .tut-card { animation: none; } .tut-ring { transition: none; } }

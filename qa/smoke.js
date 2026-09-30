@@ -8,6 +8,7 @@ const { chromium } = require('playwright');
     p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
     p.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text()); });
     await p.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
+    await p.addInitScript(() => { try { localStorage.setItem('bk-ufa-tutorial', '0'); } catch (e) {} }); // обучение — в qa/tutorial.js
     await p.goto('file://' + __dirname + '/../dist/local.html');
     await p.screenshot({ path: `${out}/${vp.n}-0-start.png` });
     await p.click('#startForm button');
