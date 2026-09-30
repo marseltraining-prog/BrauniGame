@@ -19,7 +19,7 @@ const stayMonths = +(flags.stay || 24);
 const NET_IN = ['rev', 'income', 'reserveIncome'];
 const NET_OUT = ['fc', 'rent', 'payroll', 'util', 'delivery', 'tax', 'interest', 'upkeep', 'hire', 'train', 'other', 'capex', 'bonus', 'marketing', 'agg'];
 const net = (m) => NET_IN.reduce((a, k) => a + (m[k] || 0), 0) - NET_OUT.reduce((a, k) => a + (m[k] || 0), 0);
-const W = (S) => S.cash + S.reserve - S.loan;
+const W = (S) => S.cash + S.reserve - S.loan + (BK.Growth ? BK.Growth.recvTotal(S) : 0); // + дебиторка сетей супермаркетов (рост вглубь): выручка уже в отчёте, деньги придут через 30–60 дн.
 const f1 = (v) => Math.round(v / 1e6);
 
 function startCity(S, P) { // как старт в Уфе: дешёвый по полной стоимости цех + лучшая точка (при поставках из другого города — только точка)
