@@ -11,7 +11,8 @@
    Хранение: в памяти вкладки (для каждой игры — своя очередь) и в одном ключе localStorage 'bk-ufa-rewind' — только для
    текущей игры и не больше CFG.REWIND.STORE_MAX символов (старые снимки не влезают — остаются только в памяти).
    Ошибка записи (переполнение, приватный режим) — снимки живут только в памяти, игра не ломается.
-   Сохранение самой игры важнее: если на него не хватило места, app.js зовёт freeStorage() и пробует ещё раз.
+   Сохранение самой игры важнее: снимки пишутся после него (app.js: save() → flush()); если на сохранение не хватило места,
+   app.js зовёт freeStorage() (ключ снимков удаляется, до перезагрузки вкладки снимки только в памяти) и пробует ещё раз.
 
    Откат честно отмечается: S.rewind = { n, days, list[] } переносится в восстановленное состояние (итоги игры показывают
    число переигровок), запись в журнале и в летописи (S.chron, t: 'rewind'). Достижения, полученные после снимка,
@@ -21,7 +22,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const E = () => BK.Engine, C = () => BK.CFG;
   const KEY = 'bk-ufa-rewind', SEP = '\u0001'; // SEP не встречается в JSON.stringify (управляющие символы экранируются)
   const games = {}; // id игры → [{ day, info, json }] по возрастанию дня
-  const st = { id: null, storeOk: null, reloadEmpty: false, timer: null };
+  const st = { id: null, storeOk: null, reloadEmpty: false, dirty: false, blocked: false };
 
   const cfgOf = () => Object.assign({ easy: 6, normal: 3, hard: 0, STORE_MAX: 2400000 }, C().REWIND || {});
   function max(S) { const c = cfgOf(), d = (S && S.difficulty) || 'normal'; return c[d] != null ? c[d] : c.normal; }
@@ -108,13 +109,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     games[st.id] = q.filter((x) => x.day <= S.day); // снимки «из будущего» (загрузили более старое сохранение) не нужны
   }
+  // в браузере запись идёт сразу после автосохранения месяца (app.js: save() → flush()), в Node — сразу
   function schedulePersist() {
     if (!ls()) { st.storeOk = false; return; }
-    if (typeof setTimeout === 'undefined' || typeof window === 'undefined') { persist(); return; }
-    clearTimeout(st.timer); st.timer = setTimeout(persist, 400); // после автосохранения месяца — оно важнее
+    if (typeof window === 'undefined') persist(); else st.dirty = true;
   }
+  function flush() { if (st.dirty) persist(); }
   function persist() {
+    st.dirty = false;
     const L = ls(); if (!L || !st.id) { st.storeOk = false; return; }
+    if (st.blocked) { st.storeOk = false; mark(null, 0); return; }
     const q = games[st.id] || [];
     const lim = cfgOf().STORE_MAX;
     let k = q.length; // сколько последних снимков пробуем записать
@@ -133,12 +137,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // в ключе — только текущая игра: у остальных снимки теперь лишь в памяти
   function mark(q, k) { for (const id in games) if (games[id] !== q) for (const x of games[id]) x.stored = false; if (q) q.forEach((x, i) => { x.stored = i >= q.length - k; }); }
   // сохранению игры не хватило места — освободить ключ снимков (в памяти они остаются)
-  function freeStorage() { const L = ls(); if (!L) return false; try { if (L.getItem(KEY) == null) return false; L.removeItem(KEY); st.storeOk = false; mark(null, 0); return true; } catch (e) { return false; } }
+  // и больше в этой вкладке снимки в хранилище не писать, чтобы каждый месяц не отнимать место у сохранения
+  function freeStorage() { const L = ls(); if (!L) return false; try { if (L.getItem(KEY) == null) return false; L.removeItem(KEY); st.storeOk = false; st.blocked = true; mark(null, 0); return true; } catch (e) { return false; } }
   function forget(id) { if (id) delete games[id]; else for (const k in games) delete games[k]; }
   function status(S) {
     const q = st.id ? games[st.id] || [] : [];
     return { max: max(S), total: q.length, persisted: q.filter((x) => x.stored).length, storeOk: st.storeOk, reloadEmpty: st.reloadEmpty && !q.length, storage: !!ls(), chars: q.reduce((a, x) => a + x.json.length, 0) };
   }
 
-  BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, freeStorage, forget, status, take, strip, _games: games };
+  BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freeStorage, forget, status, take, strip, _games: games };
 })();

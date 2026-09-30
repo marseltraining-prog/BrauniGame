@@ -55,7 +55,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- сохранения ---------------- */
   function save() {
     if (!S) return;
-    try { localStorage.setItem(BK.Slots.key(), JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
+    const data = JSON.stringify(stripState(S));
+    try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
+      // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются)
+      if (BK.Rewind && BK.Rewind.freeStorage()) try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e2) { /* без сохранений */ }
+    }
+    if (BK.Rewind) BK.Rewind.flush(); // снимки «Переиграть» — после сохранения игры
   }
   function stripState(st) { const c = Object.assign({}, st); delete c.cache; c.notify = []; return c; }
   function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
@@ -181,11 +186,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(name, difficulty) {
     S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
+    if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
-  function continueGame(st) {
-    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+  function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+    S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
   }
@@ -204,6 +210,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       while (acc >= ms && n < 4) {
         acc -= ms; n++;
         E.tick(S);
+        if (BK.Rewind) BK.Rewind.record(S); // «Переиграть»: снимок на 1-е число
         handleNotify();
         if (ui.modal || S.ev.pending || S.chef.pending) { acc = 0; break; }
       }
@@ -450,6 +457,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: (d) => { if (d && d.arg) BK.Slots.setActive(+d.arg); const st = loadSave(); if (st) continueGame(st); },
     achievements: () => BK.Extras.openAchievements(), summary: () => BK.Extras.openSummary(),
+    rewindLost: () => { if (S.lost) openLostModal(); }, // «Переиграть» из итогов после банкротства (rewind-ui.js)
     closeModal: () => closeModal(),
     attAll: () => { ui.attAll = !ui.attAll; refresh(); },
     // второй акт: карта России, выбор города, вход и переезд между городами
@@ -798,8 +806,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>
-      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+      ${BK.RewindUI ? BK.RewindUI.blockHtml(S, true) : ''}</div><div class="modal-f"><button class="btn${BK.Rewind && BK.Rewind.can(S) ? '' : ' primary'} block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
     $('#newAfter').addEventListener('click', toStart);
+    if (BK.RewindUI) BK.RewindUI.bind($('#modal'), true);
   }
   function openTutorialModal() {
     openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
@@ -831,11 +840,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
       ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       ${BK.Tutorial ? BK.Tutorial.settingsHtml(S) : ''}
+      ${BK.RewindUI ? BK.RewindUI.blockHtml(S, false) : ''}
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>
       <div id="newConfirm"></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Вернуться в игру</button><button class="btn danger block" id="newGameBtn">Новая игра</button></div>`, { closable: true });
+    if (BK.RewindUI) BK.RewindUI.bind($('#modal'), false);
     $('#renameOk').addEventListener('click', () => { S.company = $('#renameIn').value.trim() || S.company; hudCache = ''; save(); toast('Название сохранено', S.company, 'good'); });
     $('#copyCode').addEventListener('click', () => {
       const code = exportCode(); const ta = $('#saveCode'); ta.value = code;
