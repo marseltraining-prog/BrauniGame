@@ -14,6 +14,8 @@ const flags = {}, pos = [];
 for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }
 const seeds = +(pos[0] || 3), CITY = pos[1] || 'kazan', YEARS = +(flags.years || 5);
 const GRADES = { 1: 35, 3: 60, 5: 85 };
+// Р3: калибруется месячная формула — корпоративные события и федеральный «Хлебный двор» выключены (--events — включить)
+if (!flags.events) CFG.CORP = Object.assign({}, CFG.CORP, { CEV_GAP: [1e7, 1e7], RIVAL_FOLLOW_P: 0 });
 
 function makeDir(S, grade) { // синтетический директор: стиль «Баланс», без черт, навыки по грейду
   const cr = S.corp, sk = GRADES[grade];
