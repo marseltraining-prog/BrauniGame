@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Герои — пиксельные портреты</title>
+<link rel="stylesheet" href="pixel.css">
+<style>
+  body { background: var(--paper); }
+  .sheet { width: 1440px; height: 900px; padding: 22px 24px 20px; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; background:
+    linear-gradient(var(--grid-minor) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px) 0 0 / 24px 24px, var(--paper); }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  header h1 { font-family: var(--f-display); font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin-top: 4px; }
+  header p { font-size: 13.5px; color: var(--ink-2); max-width: 560px; margin-top: 6px; }
+  .legend { display: flex; gap: 8px; }
+  .legend span { font-size: 11.5px; padding: 3px 9px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; min-height: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 14px 12px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .card .hd b { font-family: var(--f-display); font-size: 13.5px; font-weight: 600; display: block; }
+  .card .hd small { font-size: 11.5px; color: var(--ink-3); }
+  .emos { display: flex; gap: 4px; }
+  .emo { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .emo span { font-size: 10.5px; color: var(--ink-3); }
+  .fr { background: #2a1a1c; padding: 3px; clip-path: polygon(3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px), 0 3px, 3px 3px); }
+  .fr canvas { display: block; image-rendering: pixelated; }
+  .foot { display: flex; align-items: flex-end; gap: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .q { font-size: 12px; font-style: italic; color: var(--ink-2); line-height: 1.4; flex: 1; align-self: center; }
+  .sprites { display: flex; align-items: flex-end; gap: 6px; flex: none; }
+  .sprites canvas { image-rendering: pixelated; display: block; }
+  .sec .emos { gap: 10px; }
+  .pal { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; }
+  .pg { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .sw { display: flex; flex-wrap: wrap; gap: 3px; }
+  .sw i { width: 17px; height: 17px; display: block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+  .bb { display: flex; gap: 6px; align-items: flex-end; }
+  .bb canvas { image-rendering: pixelated; display: block; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <div>
+      <span class="caps">Хлебная карта · пиксельный стиль · лист 4</span>
+      <h1>Герои: портреты и фигуры</h1>
+      <p>Портрет 48×48 px (здесь ×2), фигура для сцен 16×30 px (×3). Один набор правил: контур sel-out, тень справа, свет слева-сверху, глаза 2×3 с бликом.</p>
+    </div>
+    <div class="legend"><span>палитра кожи — 3 тона</span><span>тень — 2–3 ступени</span><span>эмоции — брови + рот</span></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="pal">
+    <div class="pg"><span class="caps">День · «Калач» (как Stardew)</span><div class="sw" id="swDay"></div></div>
+    <div class="pg"><span class="caps">Ночь · «Бәлеш», Белая (как Freebird)</span><div class="sw" id="swNight"></div></div>
+    <div class="pg"><span class="caps">Пузыри над людьми</span><div class="bb" id="bubs"></div></div>
+  </div>
+</div>
+<script src="px.js"></script>
+<script src="cast.js"></script>
+<script>
+  const EMO = { neutral: 'обычно', happy: 'радость', smile: 'улыбка', sad: 'грусть', angry: 'сердится', surprised: 'удивлён', smirk: 'усмешка', worried: 'тревога', tired: 'устал', closed: 'тихо' };
+  const rows = [
+    ['hero', 'Герой (игрок)', 'бариста «Калача», 21 год', ['neutral', 'happy', 'worried'], '«Сегодняшние. Гуля с четырёх утра тут.»'],
+    ['rashid', 'Рашид Хайруллин', 'хозяин «Калача», 58', ['neutral', 'angry', 'smile'], '«Я не сержусь. Я просто молчу громко.»'],
+    ['gulya', 'Гуля Сафина', 'пекарь, 24', ['smirk', 'happy', 'angry'], '«Сахар — в синей банке, соль — в белой.»'],
+    ['oleg', 'Олег Кравцов', '«Хлебный двор», 44', ['smirk', 'neutral', 'tired'], '«Пекарня — не храм. Храм не платит аренду.»'],
+    ['elvira', 'Эльвира Ахметова', 'банк «Семь рек», 29', ['neutral', 'smirk'], '«Приходите с цифрами — и я приду с деньгами.»'],
+    ['mama', 'Мама Фания', 'учительница, Черниковка', ['smile', 'worried'], '«Я посчитала. Покушай хотя бы.»'],
+    ['sania', 'Бабушка Сания-әби', 'Кушнаренково, 72', ['smile', 'closed'], '«На мечту. Не на кроссовки.»'],
+    ['semyon', 'Семён Аркадьевич', '«Уфа жуёт», 61', ['neutral', 'happy'], '«Американо и правду.»'],
+  ];
+  const grid = document.getElementById('grid');
+  rows.forEach(([id, name, role, emos, q], i) => {
+    const c = CAST[id];
+    const card = document.createElement('div'); card.className = 'card' + (i >= 4 ? ' sec' : '');
+    card.innerHTML = `<div class="hd"><b>${name}</b><small>${role}</small></div><div class="emos"></div><div class="foot"><div class="q">${q}</div><div class="sprites"></div></div>`;
+    const em = card.querySelector('.emos');
+    emos.forEach((e) => {
+      const w = document.createElement('div'); w.className = 'emo';
+      const fr = document.createElement('div'); fr.className = 'fr'; w.appendChild(fr);
+      PX.show(PX.portrait(c.p, e), fr, 2);
+      w.insertAdjacentHTML('beforeend', `<span>${EMO[e]}</span>`); em.appendChild(w);
+    });
+    const sp = card.querySelector('.sprites');
+    const f1 = PX.figure(c, { emo: 'neutral' }), f2 = PX.figure(c, { emo: emos.includes('happy') ? 'happy' : 'smile' }), f3 = PX.figure(c, { view: 'back' });
+    [f1, f2, f3].forEach((f) => PX.show(f, sp, 3));
+    grid.appendChild(card);
+  });
+  const DAY = ['#2a1a1c','#4a2e22','#6a4430','#7a4a2c','#9c6338','#c0844a','#d9a566','#ecc38a','#f1dcb4','#f8e9c9','#b0603f','#8f4a31','#c46f17','#e59a3e','#f4c27a','#1f2a44','#2e3d60','#3f6b3a','#5d8c46','#8cb35a','#a4d3e6','#dff1f4','#c0412d','#e2705a','#6b6a73','#b5b2b2','#f4cfa6','#dca47c','#b97b5c','#3a73b8','#e3b341','#fbf6ec'];
+  const NIGHT = ['#03040a','#070b1c','#0b1128','#101a38','#16234a','#1d2d5c','#27396e','#33477e','#0a1230','#162a52','#1f3564','#3d5090','#8fa6e0','#c9d6ff','#fff3c8','#fff6d6','#2a3150','#3b4870','#6a7ab0','#a8c4ff','#1a0e0a','#8a2a1a','#e8652a','#ff9a4a','#ffb347','#ffe9a8','#ffcf6b','#141c3e','#5a4a3a','#8a7258'];
+  [['swDay', DAY], ['swNight', NIGHT]].forEach(([id, a]) => { const el = document.getElementById(id); a.forEach((c) => el.insertAdjacentHTML('beforeend', `<i style="background:${c}" title="${c}"></i>`)); });
+  const bb = document.getElementById('bubs');
+  [[['latte', 'bun']], [['heart']], [['clock', 'angry'], 'bad'], [['dots']], [['croissant'], 'hot'], [['star']], [['note']], [['zzz']]].forEach(([ic, tone]) => {
+    const w = ic.length * 9 + 4, t = new PX.Buf(w, 16); PX.bubble(t, 0, 0, ic, tone); PX.show(t, bb, 3);
+  });
+</script>
+</body>
+</html>
