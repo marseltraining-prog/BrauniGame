@@ -21,7 +21,7 @@ const PROFILES = {
     events: 'free', menu: 'none', greedy: true, capAt: 1.0, loadTarget: 1.0, prices: false, office: false, bufferRev: 0 },
 };
 
-PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null, agg: 'all' }); // списания — по умолчанию; агрегаторы — вся сеть с 3 точек
+PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null, agg: 'all', bootWait: 0 }); // списания — по умолчанию; агрегаторы — вся сеть с 3 точек
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const thrOf = (e) => CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
 const storeThr = (st) => st.staff.reduce((a, e) => a + thrOf(e), 0);
