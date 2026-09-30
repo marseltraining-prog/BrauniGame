@@ -177,7 +177,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     this.uiLayers = div('maplayers');
     this.uiLayers.setAttribute('role', 'group'); this.uiLayers.setAttribute('aria-label', 'Слой карты');
     this.uiLayers.innerHTML = `<button type="button" class="ml-crumb" data-act="russia" hidden title="Карта России (R)"></button><span class="ml-div" hidden aria-hidden="true"></span><button type="button" class="ml-toggle" aria-label="Легенда слоя" aria-expanded="false">${IC.layers}</button>` +
-      LAYERS.map(([k, n, i]) => `<button type="button" class="ml-chip" data-layer="${k}" aria-pressed="${this.layer === k}">${i}<span>${n}</span></button>`).join('');
+      LAYERS.map(([k, n, i]) => `<button type="button" class="ml-chip" data-layer="${k}" title="${n}" aria-label="${n}" aria-pressed="${this.layer === k}">${i}<span>${n}</span></button>`).join('');
     this.uiLegend = div('maplegend');
     this.uiNorth = div('mapnorth', '<svg viewBox="0 0 30 42" aria-hidden="true"><circle cx="15" cy="27" r="13" fill="none" stroke="currentColor" stroke-width="1"/><path d="M15 2 L21 27 L15 23 L9 27Z" fill="currentColor"/><path d="M15 23 L21 27 L15 38 L9 27Z" fill="none" stroke="currentColor" stroke-width="1"/></svg><span>С</span>');
     this.uiNorth.setAttribute('aria-hidden', 'true');

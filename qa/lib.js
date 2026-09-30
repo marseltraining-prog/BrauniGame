@@ -112,7 +112,8 @@ async function layoutCheck(p, label, opts = {}) {
           const inScroll = !scr || (cy >= scr.top && cy <= scr.bottom);
           if (r.top >= 0 && r.bottom <= H && inScroll) {
             const top = document.elementFromPoint(cx, cy);
-            if (top && top !== el && !el.contains(top) && !top.contains(el)) out.push(`ПЕРЕКРЫТА ${desc(el)} элементом ${desc(top)}`);
+            // прокручено под липкий HUD телефона — не перекрытие, а обычная прокрутка страницы
+            if (top && top !== el && !el.contains(top) && !top.contains(el) && !(top.closest('.hud') && !el.closest('.hud'))) out.push(`ПЕРЕКРЫТА ${desc(el)} элементом ${desc(top)}`);
           }
           if (o.mobile && el.tagName === 'BUTTON' && (r.height < 24 || r.width < 24)) out.push(`МАЛЕНЬКАЯ ЦЕЛЬ ${Math.round(r.width)}×${Math.round(r.height)} ${desc(el)}`);
         }

@@ -821,3 +821,5 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .fin-st > .finhead, .fin-st > .hint { padding: 0 10px; }
 }
 @media (max-width: 420px) { .fintbl .c-margin, .fintbl .c-staff { display: none; } .fintbl .m-stf { display: inline; } .wfrow { grid-template-columns: 84px minmax(0, 1fr) 56px; gap: 6px; } }
+/* узкая карта при широкой панели «Финансов» (ПК до 1366 px): у неактивных слоёв — только значок (6 слоёв не помещаются) */
+@media (min-width: 821px) and (max-width: 1366px) { .main.fin-wide .maplayers button.ml-chip:not([aria-pressed="true"]) span { display: none; } .main.fin-wide .maplayers button.ml-chip { padding: 0 9px; } }

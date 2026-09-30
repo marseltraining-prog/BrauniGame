@@ -23,7 +23,7 @@
 .ms-dyn { display: inline-flex; align-items: center; gap: 6px; }
 .ms-spark { flex: none; display: block; }
 .ms-tr { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-.ms-tr.up { color: var(--good-t); } .ms-tr.down { color: var(--bad-t); } .ms-tr.flat { color: var(--ink-3); }
+.ms-tr.up { color: var(--good-t); } .ms-tr.down { color: var(--bad-t); } .ms-tr.flat { color: var(--ink-2); }
 .ms-if { font-size: 12px; color: var(--ink-2); }
 .chefitem.cand { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
 .chefitem.cand.off { box-shadow: none; }
