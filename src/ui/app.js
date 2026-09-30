@@ -586,6 +586,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/><path d="M12 14l-1.2 3 1.2 1.5 1.2-1.5z"/></svg>',
     risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
   };
+  BK.FX_IC = FX_IC; // значки последствий — и в карточках управляющих (managers-ui.js)
   // ось: [подпись, порог «заметно», порог «сильно», порог «очень сильно»]; первые три показываются всегда
   const FX_AX = { rub: ['', 0.3, 5, 20], team: ['Команда', 1, 12, 25], guests: ['Гости', 1, 15, 50], check: ['Чек', 1, 15, 50], prod: ['Цех', 1, 10, 40], dir: ['Директор', 1, 12, 25] };
   const FX_NAME = { rub: 'Деньги', team: 'Команда', guests: 'Гости', check: 'Средний чек', prod: 'Цех', dir: 'Директор' };
