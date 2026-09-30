@@ -110,11 +110,15 @@ async function layoutCheck(p, label, opts = {}) {
           // элемент, прокрученный за край своего контейнера (панель справа), не считается перекрытым
           const sc = (() => { for (let e = el.parentElement; e; e = e.parentElement) { const s = getComputedStyle(e); if (/(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight) return e; } return null; })();
           const scr = sc && sc.getBoundingClientRect();
-          const inScroll = !scr || (cy >= scr.top && cy <= scr.bottom);
+          // …и прокрученный вбок за край строки-карусели (чипы слоёв на телефоне)
+          const hx = (() => { for (let e = el.parentElement; e; e = e.parentElement) { const s = getComputedStyle(e); if (/(auto|scroll)/.test(s.overflowX) && e.scrollWidth > e.clientWidth + 1) return e.getBoundingClientRect(); } return null; })();
+          const inScroll = (!scr || (cy >= scr.top && cy <= scr.bottom)) && (!hx || (cx >= hx.left && cx <= hx.right));
           if (r.top >= 0 && r.bottom <= H && inScroll) {
             const top = document.elementFromPoint(cx, cy);
             // прокручено под липкий HUD телефона — не перекрытие, а обычная прокрутка страницы
-            if (top && top !== el && !el.contains(top) && !top.contains(el) && !(top.closest('.hud') && !el.closest('.hud'))) out.push(`ПЕРЕКРЫТА ${desc(el)} элементом ${desc(top)}`);
+            // карта России под шторкой панели на телефоне (Р4 ч. 2) — не перекрытие: шторку сдвигают пальцем
+            const underSheet = top && top.closest('.main.ru-view > .panel') && getComputedStyle(top.closest('.panel')).position === 'fixed' && !el.closest('.panel');
+            if (top && top !== el && !el.contains(top) && !top.contains(el) && !(top.closest('.hud') && !el.closest('.hud')) && !underSheet) out.push(`ПЕРЕКРЫТА ${desc(el)} элементом ${desc(top)}`);
           }
           if (o.mobile && el.tagName === 'BUTTON' && (r.height < 24 || r.width < 24)) out.push(`МАЛЕНЬКАЯ ЦЕЛЬ ${Math.round(r.width)}×${Math.round(r.height)} ${desc(el)}`);
         }

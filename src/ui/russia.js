@@ -76,12 +76,56 @@ var BK = globalThis.BK || (globalThis.BK = {});
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg>',
     lock: '<path d="M-3.2,-0.6 v-1.6 a3.2,3.2 0 0 1 6.4,0 v1.6" fill="none" stroke-width="1.4"/><rect x="-4.3" y="-0.8" width="8.6" height="6.2" rx="1.2"/>',
   };
-  const view = { el: null, svg: null, gC: null, vb: { x: 0, y: 0, w: W, h: HH }, px: { w: 800, h: 450 }, sel: null, lastKey: '', tip: null };
+  const view = { el: null, svg: null, gC: null, vb: { x: 0, y: 0, w: W, h: HH }, px: { w: 800, h: 450 }, sel: null, lastKey: '', tip: null, layer: 'profit' };
+  try { const l = localStorage.getItem('bk-ru-layer'); if (l && /^(profit|dirs|potential|logistics)$/.test(l)) view.layer = l; } catch (e) { /* без хранилища — «Прибыль» */ }
+  /* ---------------- слои карты России (Р4 ч. 2, §3.1, §9.2): Прибыль · Директора · Потенциал · Логистика ---------------- */
+  const LI = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const LAYERS = [
+    ['profit', 'Прибыль', LI('<path d="M8 20V4h6a4 4 0 0 1 0 8H6M6 16h8"/>')],
+    ['dirs', 'Директора', LI('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6-.3 4.5 1.4 5 4.8"/>')],
+    ['potential', 'Потенциал', LI('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>')],
+    ['logistics', 'Логистика', LI('<path d="M2.5 7h11v9h-11zM13.5 10h4l3 3.2V16h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>')],
+  ];
+  // потенциал не освоенного города: ёмкость × доход ÷ √(аренда × зарплаты), ближе к нашим городам — лучше (как у бота good)
+  function potential(S, id) {
+    const d = BK.CITY_BY_ID[id], own = Object.keys(S.corp.cities);
+    const km = own.length ? Math.min(...own.map((o) => BK.roadKm(o, id))) : d.km;
+    return d.cap * d.inc / Math.sqrt(d.rent * d.wage) / (1 + km / 3000);
+  }
+  function potTiers(S) { // тройки: высокий / средний / низкий — по свободным городам
+    const free = BK.CITIES.filter((d) => !S.corp.cities[d.id] && !d.builtin).map((d) => [d.id, potential(S, d.id)]).sort((a, b) => b[1] - a[1]);
+    const t = {}; free.forEach(([id], i) => { t[id] = i < Math.ceil(free.length / 3) ? 'hi' : i < Math.ceil(free.length * 2 / 3) ? 'mid' : 'lo'; });
+    return t;
+  }
+  const POT_N = { hi: 'высокий', mid: 'средний', lo: 'низкий' };
+  // проблема города — одна иконка (правило §3.1): убыток > утечка > перегрузка штаба; «нет директора» — бейдж «!»
+  function problemOf(S, id) {
+    const cr = S.corp, c = cr.cities[id]; if (!c) return null;
+    const D = BK.Dir; if (!D) return null;
+    if (c.hist.length >= 3 && D.lossMonths(c) >= 2) return 'loss';
+    if (id === cr.active) return null;
+    const ls = D.leakStatus(S, id);
+    if (ls && ls.leak >= BK.CFG.CORP.LEAK_SHOW) return ls.onlyOv ? 'over' : 'leak';
+    if (c.directorId && BK.HQ && BK.HQ.load && BK.HQ.load(S).over > 0) return 'over';
+    return null;
+  }
+  const PROB = {
+    loss: { t: 'Убыток 2+ мес. подряд', g: '<text y="0.4">₽</text>' },
+    leak: { t: 'Утечка денег: слабый директор', g: '<path d="M0,-4.2C2.4,-1.2 3.1,0.4 3.1,1.4A3.1,3.1 0 0 1 -3.1,1.4C-3.1,0.4 -2.4,-1.2 0,-4.2Z"/>' },
+    over: { t: 'Штаб перегружен', g: '<path d="M-3.4,-2.6H3.4M-3.4,0H3.4M-3.4,2.6H3.4" fill="none" stroke-width="1.5" stroke-linecap="round"/>' },
+  };
+  function setLayer(l) {
+    if (!LAYERS.some((x) => x[0] === l)) return;
+    view.layer = l; view.lastKey = '';
+    try { localStorage.setItem('bk-ru-layer', l); } catch (e) { /* без хранилища — только до перезагрузки */ }
+    if (view.el) view.el.querySelectorAll('.ru-lay').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.arg === l)));
+    if (view.S) render(view.S, true);
+  }
   function build(wrap) {
     if (view.el) return view;
     const d = document.createElement('div'); d.className = 'rumap'; d.hidden = true;
     d.innerHTML = `<svg class="rusvg" viewBox="0 0 ${W} ${HH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Карта России: города сети">${staticSheet()}<g class="ru-links"></g><g class="ru-cities"></g></svg>
-      <div class="ru-top"><span class="ru-crumb"><svg viewBox="0 0 24 24" aria-hidden="true">${''}</svg><b>Россия</b></span><button type="button" class="ru-back" data-act="ruBack"></button></div>
+      <div class="ru-top"><span class="ru-crumb"><svg viewBox="0 0 24 24" aria-hidden="true">${''}</svg><b>Россия</b></span><button type="button" class="ru-back" data-act="ruBack"></button><span class="ml-div" aria-hidden="true"></span><div class="ru-lays" role="group" aria-label="Слой карты России">${LAYERS.map(([k, l, ic]) => `<button type="button" class="ru-lay" data-act="ruLayer" data-arg="${k}" aria-pressed="${k === view.layer}">${ic}<span>${l}</span></button>`).join('')}</div></div>
       <div class="maplegend ru-legend"></div>
       <div class="mapctl ru-ctl"><button data-act="ruZoom" data-arg="in" aria-label="Приблизить">${ICON.plus}</button><button data-act="ruZoom" data-arg="out" aria-label="Отдалить">${ICON.minus}</button><button data-act="ruZoom" data-arg="reset" aria-label="Вся карта">${ICON.home}</button></div>
       <div class="mapcart ru-cart"></div><div class="maptip ru-tip" hidden></div>`;
@@ -105,6 +149,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let w = box.x1 - box.x0, h = w * a;
     if (h < box.y1 - box.y0) { h = box.y1 - box.y0; w = h / a; }
     view.vb = { x: (box.x0 + box.x1) / 2 - w / 2, y: (box.y0 + box.y1) / 2 - h / 2 - (narrow ? 0 : 50), w, h };
+    // телефон со шторкой: города — в видимой части над шторкой (шторка закрывает низ листа)
+    if (sheetOn() && sheet.el) {
+      const top = view.el.getBoundingClientRect().top, ph = sheet.el.getBoundingClientRect().top - top, vis = Math.max(120, Math.min(view.px.h, ph) - 56); // 56 — плашка «Россия» и слои сверху
+      const s = view.px.w / w, bh = (box.y1 - box.y0) * s;
+      if (vis > 0) { let k = 1; if (bh > vis) { k = bh / vis; view.vb.w = w * k; view.vb.h = h * k; view.vb.x = (box.x0 + box.x1) / 2 - view.vb.w / 2; }
+        view.vb.y = (box.y0 + box.y1) / 2 - (56 + vis / 2) / (view.px.w / view.vb.w); }
+    }
     setVB();
   }
   function zoom(f, cx, cy) {
@@ -164,7 +215,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!d) return '';
     let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.km ? ` · ${H().n0(d.km)} км от Уфы` : ''}`;
     if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
-    else { const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`; }
+    else {
+      const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`;
+      if (view.layer === 'potential') { const t = potTiers(S)[id]; if (t) s += `<br>Потенциал: ${POT_N[t]}`; }
+      if (view.layer === 'logistics' && BK.Corp.supplyHubs) { const hb = BK.Corp.supplyHubs(S, id); s += `<br>${hb.fresh ? `Без своего цеха: свежая выпечка ${esc(BK.CITY_BY_ID[hb.fresh.from].in || '')}, ${hb.fresh.km} км` : hb.frozen ? `Без своего цеха: заморозка, ${hb.frozen.km} км` : 'Нужен свой цех'}`; }
+      if (!lock && BK.HQ && BK.HQ.load) { const L = BK.HQ.load(S, 1); if (L.over > 0) s += `<br><span class="tip-warn">После входа штаб перегружен: ${n1(L.load)} при мощности ${n1(L.cap)}</span>`; }
+    }
+    if (st) { const pr = problemOf(S, id); if (pr) s += `<br><span class="tip-warn">${esc(PROB[pr].t)}</span>`; }
     return s;
   }
   const rad = (d) => 5.5 + 11 * Math.log(d.pop / 0.28) / Math.log(13.1 / 0.28); // радиус кружка (px на экране) растёт с населением
@@ -174,14 +231,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const k = upp(), sm = BK.Corp.summary(S); if (!sm) return;
     const own = {}; for (const c of sm.cities) own[c.id] = c;
     const sup = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : [], supTo = {}; for (const l of sup) supTo[l.to] = l; // линии снабжения (Р4, §7.2)
-    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join(), sup.map((l) => l.from + l.to + l.mode + l.ok).join()].join('|');
+    const L = view.layer, hl = BK.HQ && BK.HQ.load ? BK.HQ.load(S) : null;
+    const key = [k.toFixed(3), S.day, view.sel, sm.active, L, hl ? hl.load + '/' + hl.cap : '', sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '') + ':' + (S.corp.cities[c.id].leak || 0)).join(), sup.map((l) => l.from + l.to + l.mode + l.ok).join()].join('|');
     if (key === view.lastKey && !force) return;
     view.lastKey = key;
     const narrow = view.px.w < 700;
     view.svg.style.setProperty('--rk', k.toFixed(3));
     view.svg.classList.toggle('far', k > 2.2); // сильно отдалено — без подписей рек и стран
-    const out = [], labels = [], links = [];
+    view.svg.setAttribute('data-layer', L);
+    const out = [], labels = [], links = [], zones = [];
     const ufa = P(BK.CITY_BY_ID.ufa.lon, BK.CITY_BY_ID.ufa.lat);
+    const pot = L === 'potential' ? potTiers(S) : null;
+    const hubsOf = L === 'logistics' && BK.Corp.supplyHubs ? (id) => BK.Corp.supplyHubs(S, id) : null;
+    const tally = view.tally = { good: 0, warn: 0, bad: 0, none: 0, nodir: 0, nodir2: 0, hi: 0, mid: 0, lo: 0, hub: 0, fresh: 0, frozen: 0, rfresh: 0, rfrozen: 0, loss: 0, leak: 0, over: 0 };
     for (const d of BK.CITIES) {
       const p = P(d.lon, d.lat), c = own[d.id], r = rad(d) * k, sel = view.sel === d.id;
       if (c && d.id !== 'ufa' && !supTo[d.id]) links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
@@ -189,19 +251,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
       let g = `<g class="ru-city${c ? ' own' : ''}${c && c.active ? ' act' : ''}${sel ? ' sel' : ''}" data-city="${d.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">`;
       g += `<circle class="hit" r="${(Math.max(r, 12 * k) + 4 * k).toFixed(1)}"/>`;
       if (c) {
-        const tone = c.lastRev > 0 ? (c.lastProfit / c.lastRev >= 0.15 ? 'good' : c.lastProfit >= 0 ? 'warn' : 'bad') : 'none';
+        const cc = S.corp.cities[d.id];
+        let tone = c.lastRev > 0 ? (c.lastProfit / c.lastRev >= 0.15 ? 'good' : c.lastProfit >= 0 ? 'warn' : 'bad') : 'none';
+        if (L === 'dirs') { const dr = BK.Dir && BK.Dir.dirOf(S, cc); tone = dr ? (dr.loyalty >= 55 ? 'good' : dr.loyalty >= 35 ? 'warn' : 'bad') : c.active ? 'none' : 'nodir'; }
+        else if (L === 'potential') tone = 'none';
+        else if (L === 'logistics') { const rc = BK.Corp.remoteOf && BK.Corp.remoteOf(S, d.id); tone = rc ? (rc.supplyMode === 'frozen' ? 'frozen' : 'fresh') : c.prods ? 'hub' : 'none'; if (tone === 'hub') zones.push(zone(S, d, p)); }
+        tally[tone] = (tally[tone] || 0) + 1;
         const R = Math.max(r, 11 * k);
         if (c.active) g += `<circle class="halo" r="${(R + 9 * k).toFixed(1)}"/>`;
         if (sel) g += `<circle class="selring" r="${(R + 5.5 * k).toFixed(1)}" stroke-width="${(2 * k).toFixed(2)}"/>`;
-        g += `<circle class="ring t-${tone}" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/><circle class="b" r="${R.toFixed(1)}" stroke-width="${(1.4 * k).toFixed(2)}"/>`;
+        g += `<circle class="ring t-${tone}" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"${tone === 'nodir' ? ` stroke-dasharray="${(3 * k).toFixed(1)} ${(2.2 * k).toFixed(1)}"` : ''}/><circle class="b" r="${R.toFixed(1)}" stroke-width="${(1.4 * k).toFixed(2)}"/>`;
         g += `<text class="n" style="font-size:${((c.stores >= 100 ? 9.5 : 11) * k).toFixed(2)}px">${c.stores}</text>`;
         if (c.status === 'launch' && !c.stores) g += `<circle class="launch" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/>`;
         const bd = BK.CorpUI && BK.CorpUI.mapBadge(S, d.id); // инициалы директора или «!» — нет директора
-        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; }
+        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; if (bd.t === '!') tally.nodir2++; }
+        const pr = problemOf(S, d.id); // иконка проблемы: одна на город
+        if (pr) { tally[pr]++; const px = ((LSIDE[d.id] || 'r') === 'r' ? -1 : 1) * R * 0.78, py = R * 0.78; g += `<g class="ru-prob p-${pr}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${k.toFixed(3)})"><title>${esc(PROB[pr].t)}</title><circle r="6.4"/>${PROB[pr].g}</g>`; }
       } else {
         const lock = E().enterLock(S, d.id);
+        let cls = '';
+        if (pot && pot[d.id]) { cls = ' pot-' + pot[d.id]; tally[pot[d.id]]++; }
+        if (hubsOf) { const hb = hubsOf(d.id); if (hb.fresh) { cls = ' reach-fresh'; tally.rfresh++; } else if (hb.frozen) { cls = ' reach-frozen'; tally.rfrozen++; } }
         if (sel) g += `<circle class="selring" r="${(r + 5 * k).toFixed(1)}" stroke-width="${(2 * k).toFixed(2)}"/>`;
-        g += `<circle class="free${lock ? ' locked' : ''}" r="${r.toFixed(1)}" stroke-width="${(1.3 * k).toFixed(2)}" stroke-dasharray="${(3 * k).toFixed(1)} ${(2.4 * k).toFixed(1)}"/>`;
+        g += `<circle class="free${lock ? ' locked' : ''}${cls}" r="${r.toFixed(1)}" stroke-width="${(1.3 * k).toFixed(2)}" stroke-dasharray="${(3 * k).toFixed(1)} ${(2.4 * k).toFixed(1)}"/>`;
         if (lock && d.big) g += `<g class="lk" transform="scale(${(k * 0.95).toFixed(3)})">${ICON.lock}</g>`;
       }
       g += `</g>`;
@@ -213,28 +285,46 @@ var BK = globalThis.BK || (globalThis.BK = {});
       labels.push(`<text class="ru-clabel${c ? ' own' : ''}${c && c.active ? ' act' : ''}" x="${(p.x + lx).toFixed(1)}" y="${(p.y + ly).toFixed(1)}" text-anchor="${anchor}">${esc(name)}${c && c.active && !narrow ? '<tspan class="here" dx="' + (5 * k).toFixed(1) + '">· вы здесь</tspan>' : ''}</text>`);
     }
     out.sort((a, b) => a[0] - b[0]);
-    view.gL.innerHTML = links.join('');
+    view.gL.innerHTML = zones.join('') + links.join('');
     view.gC.innerHTML = out.map((x) => x[1]).join('') + `<g class="ru-labels">${labels.join('')}</g>`;
     renderUi(S, sm);
   }
+  // зона свежей выпечки вокруг цеха-хаба (слой «Логистика»): эллипс в проекции листа, км по дорогам → по прямой ÷ 1,25
+  function zone(S, d, p) {
+    const km = (BK.Corp.supplyHubs(S, d.id).freshKm || 150) / 1.25;
+    const rx = km / (111.2 * Math.cos(d.lat * Math.PI / 180)) * 24, ry = km / 111.2 * 34;
+    return `<ellipse class="ru-zone" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"/>`;
+  }
+  const n1 = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
   function renderUi(S, sm) {
     const a = view.el.querySelector('.ru-back'), name = BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].name : '';
     const bt = `← ${esc(BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].short || name : '')}`;
     if (a.innerHTML !== bt) { a.innerHTML = bt; a.title = `Вернуться на карту: ${name}`; a.setAttribute('aria-label', `Вернуться на карту города ${name}`); }
-    const tone = { good: 0, warn: 0, bad: 0 };
-    for (const c of sm.cities) if (c.lastRev > 0) tone[c.lastProfit / c.lastRev >= 0.15 ? 'good' : c.lastProfit >= 0 ? 'warn' : 'bad']++;
+    const t = view.tally || {}, L = view.layer;
     const sw = (cls) => `<svg viewBox="-9 -9 18 18" class="lg-sw" aria-hidden="true"><circle r="6" class="${cls}"/></svg>`;
-    const lg = `<span class="lg-t">Слой · прибыль городов</span>
-      <span class="lg-r">${sw('lg-own t-good')}<span>Маржа 15 % и выше</span><b>${tone.good}</b></span>
-      <span class="lg-r">${sw('lg-own t-warn')}<span>От 0 до 15 %</span><b>${tone.warn}</b></span>
-      <span class="lg-r">${sw('lg-own t-bad')}<span>Убыток</span><b>${tone.bad}</b></span>
-      <span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>${supLegend(S)}`;
+    const row = (cls, txt, n) => `<span class="lg-r">${sw(cls)}<span>${txt}</span><b>${n || 0}</b></span>`;
+    let lg;
+    if (L === 'dirs') lg = `<span class="lg-t">Слой · директора</span>${row('lg-own t-good', 'Лояльность 55 и выше', t.good)}${row('lg-own t-warn', 'От 35 до 55', t.warn)}${row('lg-own t-bad', 'Ниже 35 — могут уйти', t.bad)}${row('lg-own t-nodir', 'Нет директора', t.nodir)}`;
+    else if (L === 'potential') lg = `<span class="lg-t">Слой · потенциал входа</span>${row('lg-free pot-hi', 'Высокий', t.hi)}${row('lg-free pot-mid', 'Средний', t.mid)}${row('lg-free pot-lo', 'Низкий', t.lo)}<span class="lg-h"><span>Ёмкость × доход гостей ÷ аренда и зарплаты; ближе к сети — лучше. Цена входа — в карточке города.</span></span>`;
+    else if (L === 'logistics') lg = `<span class="lg-t">Слой · логистика</span>${row('lg-own t-hub', 'Свой цех — снабжает соседей', t.hub)}${row('lg-own t-fresh', 'Свежая выпечка из другого города', t.fresh)}${t.frozen ? row('lg-own t-frozen', 'Фабрика заморозки', t.frozen) : ''}${row('lg-free reach-fresh', 'Можно войти без своего цеха', t.rfresh)}${t.rfrozen ? row('lg-free reach-frozen', 'Дотянется заморозка', t.rfrozen) : ''}<span class="lg-h"><svg viewBox="0 0 22 12" class="lg-sw lg-ln" aria-hidden="true"><ellipse class="ru-zone" cx="11" cy="6" rx="9" ry="4.5"/></svg><span>Зона свежей выпечки вокруг цеха — ${BK.Corp.supplyHubs ? BK.Corp.supplyHubs(S, 'ufa').freshKm : 150} км</span></span>`;
+    else lg = `<span class="lg-t">Слой · прибыль городов</span>${row('lg-own t-good', 'Маржа 15 % и выше', t.good)}${row('lg-own t-warn', 'От 0 до 15 %', t.warn)}${row('lg-own t-bad', 'Убыток', t.bad)}<span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>`;
+    if (L !== 'logistics') lg += supLegend(S);
+    // иконки проблем — только те, что есть сейчас
+    const pi = (k, txt, n) => `<span class="lg-r"><svg viewBox="-8 -8 16 16" class="lg-sw" aria-hidden="true"><g class="ru-prob p-${k}"><circle r="6.4"/>${PROB[k].g}</g></svg><span>${txt}</span><b>${n}</b></span>`;
+    let pr = '';
+    if (t.loss) pr += pi('loss', 'Убыток 2+ мес.', t.loss);
+    if (t.leak) pr += pi('leak', 'Утечка денег', t.leak);
+    if (t.over) pr += pi('over', 'Штаб перегружен', t.over);
+    if (t.nodir2) pr += `<span class="lg-r"><svg viewBox="-8 -8 16 16" class="lg-sw" aria-hidden="true"><g class="ru-bdg bad"><rect x="-6" y="-6" width="12" height="12" rx="2.5"/><text y="0.5" style="font-size:9px">!</text></g></svg><span>Нет директора</span><b>${t.nodir2}</b></span>`;
+    if (pr) lg += `<span class="lg-t lg-t2">Проблемы</span>${pr}`;
     const lgEl = view.el.querySelector('.ru-legend'); if (lgEl.innerHTML !== lg) lgEl.innerHTML = lg;
     const cart = view.el.querySelector('.ru-cart');
-    if (!cart.firstChild) cart.innerHTML = `<div class="ct-in"><div class="ct-c ct-full"><small>Генплан сети</small><div class="ct-t">Россия · лист 2</div></div><div class="ct-c"><small>Масштаб</small><div class="ct-v">1 : 20 000 000</div></div><div class="ct-c"><small>Дата</small><div class="ct-v ct-d"></div></div><div class="ct-c ct-full ct-last"><small>Городов · точек</small><div class="ct-v ct-n"></div></div></div>`;
+    if (!cart.firstChild) cart.innerHTML = `<div class="ct-in"><div class="ct-c ct-full"><small>Генплан сети</small><div class="ct-t">Россия · лист 2</div></div><div class="ct-c"><small>Масштаб</small><div class="ct-v">1 : 20 000 000</div></div><div class="ct-c"><small>Дата</small><div class="ct-v ct-d"></div></div><div class="ct-c ct-last"><small>Городов · точек</small><div class="ct-v ct-n"></div></div><div class="ct-c ct-last"><small>Штаб: нагрузка / мощность</small><div class="ct-v ct-hq"></div></div></div>`;
     const d = E().dateOf(S.day), dv = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`, nv = `${sm.cities.length} · ${sm.stores}`;
-    const cd = cart.querySelector('.ct-d'), cn = cart.querySelector('.ct-n');
+    const hl = BK.HQ && BK.HQ.load ? BK.HQ.load(S) : null, hv = hl ? `${n1(hl.load)} / ${n1(hl.cap)}` : '—';
+    const cd = cart.querySelector('.ct-d'), cn = cart.querySelector('.ct-n'), ch = cart.querySelector('.ct-hq');
     if (cd.textContent !== dv) cd.textContent = dv; if (cn.textContent !== nv) cn.textContent = nv;
+    if (ch && ch.textContent !== hv) { ch.textContent = hv; ch.classList.toggle('negc', !!(hl && hl.over > 0)); }
   }
   function supLegend(S) { // линии снабжения — только когда они есть
     const ls = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : []; if (!ls.length) return '';
@@ -258,6 +348,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     build(wrap);
     const was = !view.el.hidden;
     view.el.hidden = false; wrap.classList.add('ru-on');
+    if (wrap.parentElement) wrap.parentElement.classList.add('ru-view'); // телефон: панель — шторка (до замера листа)
     view.measure();
     if (!view.inited) { view.inited = true; resetVB(); }
     render(S, true);
@@ -286,6 +377,51 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function isOpen() { return !!(view.el && !view.el.hidden); }
   function select(id) { view.sel = id; view.lastKey = ''; }
+
+  /* ---------------- телефон: шторка на экране России (макет russia-4-mobile; §9.2) ----------------
+     Панель «Россия» выдвигается снизу поверх карты. Три положения: «peek» — видны ручка, вкладки и начало сводки;
+     «half» — половина экрана (по умолчанию); «full» — почти весь экран под HUD. Ручка: нажатие — следующее положение,
+     перетаскивание — вверх/вниз с привязкой к ближайшему. Положение запоминается (localStorage — только удобство). */
+  const SHEET = ['peek', 'half', 'full'];
+  const sheet = { el: null, pos: 'half' };
+  try { const v = localStorage.getItem('bk-ru-sheet'); if (SHEET.indexOf(v) >= 0) sheet.pos = v; } catch (e) { /* без хранилища */ }
+  const sheetOn = () => !!(sheet.el && sheet.el.parentElement && sheet.el.parentElement.classList.contains('ru-view') && globalThis.matchMedia && matchMedia('(max-width: 820px)').matches);
+  function sheetSet(pos, keep) {
+    if (SHEET.indexOf(pos) < 0) return;
+    sheet.pos = pos;
+    if (sheet.el) { sheet.el.dataset.sheet = pos; if (sheet.el.parentElement) sheet.el.parentElement.dataset.sheet = pos; /* .main[data-sheet] — кнопки масштаба над шторкой */ sheet.el.style.removeProperty('--sheet-drag'); sheet.el.classList.remove('dragging'); const g = sheet.el.querySelector('.sheet-grip'); if (g) g.setAttribute('aria-label', pos === 'full' ? 'Свернуть панель' : 'Развернуть панель'); }
+    if (!keep) { try { localStorage.setItem('bk-ru-sheet', pos); } catch (e) { /* без хранилища */ } }
+  }
+  function sheetCycle() { sheetSet(sheet.pos === 'peek' ? 'half' : sheet.pos === 'half' ? 'full' : 'peek'); }
+  function sheetShow() { if (sheetOn() && sheet.pos === 'peek') sheetSet('half', true); } // выбрали город — показать карточку
+  function bindSheet(panel) {
+    if (!panel || sheet.el) return;
+    sheet.el = panel; panel.dataset.sheet = sheet.pos; if (panel.parentElement) panel.parentElement.dataset.sheet = sheet.pos;
+    const grip = panel.querySelector('.sheet-grip'); if (!grip) return;
+    let st = null;
+    grip.addEventListener('pointerdown', (e) => {
+      if (!sheetOn()) return;
+      st = { y: e.clientY, h: panel.getBoundingClientRect().height, moved: false };
+      try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!st) return;
+      const dy = e.clientY - st.y; if (!st.moved && Math.abs(dy) < 6) return;
+      st.moved = true; panel.classList.add('dragging');
+      const max = window.innerHeight - 40;
+      panel.style.setProperty('--sheet-drag', Math.max(96, Math.min(max, st.h - dy)).toFixed(0) + 'px');
+    });
+    const end = (e) => {
+      if (!st) return;
+      const moved = st.moved, h = panel.getBoundingClientRect().height; st = null;
+      if (!moved) { if (e.type === 'pointerup') sheetCycle(); return; }
+      const vh = window.innerHeight, pos = h < vh * 0.33 ? 'peek' : h < vh * 0.72 ? 'half' : 'full';
+      sheetSet(pos);
+    };
+    grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
+    grip.addEventListener('click', (e) => e.preventDefault());
+    grip.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); sheetSet(sheet.pos === 'peek' ? 'half' : 'full'); } else if (e.key === 'ArrowDown') { e.preventDefault(); sheetSet(sheet.pos === 'full' ? 'half' : 'peek'); } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sheetCycle(); } });
+  }
 
   /* ---------------- панель «Россия» ---------------- */
   const COMPN = (c) => (BK.CITY_COMP[c] || {}).name || c;
@@ -318,7 +454,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const pk = S.corp.perks && S.corp.perks[id], pre = S.corp.prePressure && S.corp.prePressure[id];
       if (pk && pk.until >= S.day) s += `<div class="perk">Приглашение губернатора до ${esc(E().fmtDate(pk.until))}: регистрация бесплатно, цех ${Math.round((1 - pk.prodRent) * 100)} % дешевле</div>`;
       if (pre) s += `<div class="hint warnc">«${esc(C().RIVAL_NAME)}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
-      s += `<div class="grid2">${h.kv('Вход: регистрация и маркетинг', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
+      if (BK.CorpUI && BK.CorpUI.hqLoadHtml) s += BK.CorpUI.hqLoadHtml(S, { extra: 1 }) + `<p class="hint" style="margin:0">${esc(BK.CorpUI.enterCostNote(S))}.</p>`; // Р4 ч. 2: цена входа и штаб
+      s += `<div class="grid2">${h.kv('Вход: регистрация, маркетинг, штаб города', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
       s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Запустите город сами (переезд) или поручите директору — тогда вы останетесь, где были.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
     }
     return s + `</div>`;
@@ -332,7 +469,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec ru-head"><div class="dkpis">
       <div class="dkpi"><div class="lab">Выручка сети${last ? ' за ' + E().MONTHS[last.m] : ''}</div><div class="v">${fm(last ? last.rev : S.month.rev)}</div><div class="sub">за 12 мес.: <span class="num">${fm(roll)}</span></div></div>
       <div class="dkpi"><div class="lab">Прибыль сети</div><div class="v ${last && last.profit < 0 ? 'negc' : ''}">${last ? fm(last.profit) : '—'}</div><div class="sub">${h.nw(sm.cities.length, 'город', 'города', 'городов')} · ${h.nw(sm.stores, 'точка', 'точки', 'точек')}</div></div></div></div>`;
-    if (BK.CorpUI) s = `<div class="sec">${BK.CorpUI.fedCard(S)}</div>` + s + BK.CorpUI.attentionHtml(S, 5);
+    if (BK.CorpUI) s = `<div class="sec">${BK.CorpUI.fedCard(S)}</div>` + s + (BK.CorpUI.hqLoadHtml ? `<div class="sec">${BK.CorpUI.hqLoadHtml(S, { btn: true })}</div>` : '') + BK.CorpUI.attentionHtml(S, 5);
     // доля городов в выручке за 12 мес.
     const tot = sm.cities.reduce((a, c) => a + Math.max(0, c.rev12), 0);
     if (tot > 0) {
@@ -378,5 +515,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
-  BK.Russia = { build, render, open, close, isOpen, select, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
+  BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
 })();

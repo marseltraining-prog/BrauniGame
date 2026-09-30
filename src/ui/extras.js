@@ -200,7 +200,44 @@ var BK = globalThis.BK || (globalThis.BK = {});
     crisis: (c) => ({ ic: '🌪', t: `Кризис ${qt(c.title)}${c.label ? `: ${qt(c.label)}` : ''}${c.cost ? ` за ${fm(c.cost)}` : ''}` }),
     choice: (c) => ({ ic: c.risky ? '🎲' : '⚖️', t: `${qt(c.title)}: выбрано ${qt(c.label)}${c.cost ? ` за ${fm(c.cost)}` : ''}${c.risky ? ' — с отложенными последствиями' : ''}` }),
     rewind: (c) => ({ ic: '↩️', t: `Переиграли: вернулись сюда с ${E().fmtDate(c.from)}${c.lost ? ' после банкротства' : ''}` }), // «Переиграть» (rewind.js)
+    // второй акт (Россия): вход в город, штаб, контроль
+    city: (c) => ({ ic: '🗺', t: `${c.bought ? 'Куплена местная сеть' : 'Вход'} ${cityIn(c.id)}${c.cost ? ` за ${fm(c.cost)}` : ''}${c.over ? ' — штаб перегружен' : ''}` }),
+    hq: (c) => ({ ic: '🏛', t: `Штаб: отдел «${((BK.CORP_HQ || {})[c.key] || {}).name || c.key}»${c.lvl > 1 ? ', уровень ' + c.lvl : ''}${c.cost ? ` за ${fm(c.cost)}` : ''}` }),
+    campaign: (c) => ({ ic: '📣', t: `«Федеральная реклама» за ${fm(c.cost)}` }),
+    audit: (c) => ({ ic: '🔎', t: `Аудит ${cityIn(c.city)}${c.found ? ' — нашёл нарушения' : ' — чисто'}` }),
+    option: (c) => ({ ic: '📜', t: `Опцион директору ${c.dir}` }),
+    caught: (c) => ({ ic: '⚖️', t: `Пойман директор ${c.dir}` }),
   };
+  const cityIn = (id) => { const d = (BK.CITY_BY_ID || {})[id]; return d ? d.in || 'в ' + d.name : id; };
+  /* итоги второго акта по городам (Р4 ч. 2): сколько открыто, лучший и худший город, директора, таблица */
+  function citiesHtml(S) {
+    const cr = S.corp; if (!cr || !cr.cities || Object.keys(cr.cities).length < 2 || !BK.Corp) return '';
+    const h = H(), rows = Object.keys(cr.cities).map((id) => {
+      const c = cr.cities[id], st = BK.Corp.cityStats(S, id), hs = c.hist || [];
+      const rev = hs.reduce((a, x) => a + (x[2] || 0), 0), prof = hs.reduce((a, x) => a + (x[3] || 0), 0);
+      const d = BK.Dir ? BK.Dir.dirOf(S, c) : null;
+      let lossMax = 0, run = 0; for (const x of hs) { if (x[3] < 0) { run++; lossMax = Math.max(lossMax, run); } else run = 0; }
+      return { id, name: (BK.CITY_BY_ID[id] || {}).name || id, st, rev, prof, m: hs.length, d, day: c.enteredDay, bought: !!c.bought, lossMax };
+    });
+    const withHist = rows.filter((r) => r.m >= 6), byP = withHist.slice().sort((a, b) => b.prof - a.prof);
+    const best = byP[0], worst = byP.length > 1 ? byP[byP.length - 1] : null;
+    const stores = rows.reduce((a, r) => a + r.st.stores, 0), dirs = (cr.directors || []).length, st = cr.stat || {};
+    const f = BK.Dir && BK.Dir.fedStatus ? BK.Dir.fedStatus(S) : null, yrs = (S.day - cr.unlockedDay) / 365;
+    const hl = BK.HQ && BK.HQ.load ? BK.HQ.load(S) : null;
+    let s = `<div class="sec sumcities"><h3>Россия: города <small>второй акт · ${String(Math.round(yrs * 10) / 10).replace('.', ',')} ${plural(Math.round(yrs), 'год', 'года', 'лет')} после выхода</small></h3>`;
+    s += `<div class="kpis sumk"><div class="kpi"><span class="k">Городов открыто</span><span class="v">${rows.length - 1}${rows.some((r) => r.bought) ? ` <small>(${rows.filter((r) => r.bought).length} купл.)</small>` : ''}</span></div>
+      <div class="kpi"><span class="k">Точек во всех городах</span><span class="v">${stores}</span></div>
+      <div class="kpi"><span class="k">Директоров сейчас</span><span class="v">${dirs}</span><span class="d">${st.left ? `ушли ${st.left}${st.poached ? `, переманили ${st.poached}` : ''}` : 'никто не ушёл'}${st.caught ? ` · поймано ${st.caught}` : ''}</span></div>
+      <div class="kpi"><span class="k">«Федеральная сеть»</span><span class="v">${cr.fed && cr.fed.goalDay != null ? E().fmtDate(cr.fed.goalDay) : f ? `${f.cities}/${f.need}` : '—'}</span><span class="d">${cr.fed && cr.fed.goalDay != null ? 'цель акта взята' : 'городов с 10+ точками'}</span></div>
+      ${hl ? `<div class="kpi"><span class="k">Штаб: нагрузка / мощность</span><span class="v${hl.over > 0 ? ' negc' : ''}">${String(hl.load).replace('.', ',')} / ${String(hl.cap).replace('.', ',')}</span><span class="d">${hl.over > 0 ? 'перегружен' : 'справляется'}</span></div>` : ''}
+      ${st.stolen ? `<div class="kpi"><span class="k">Украли директора</span><span class="v negc">${fm(st.stolen)}</span></div>` : ''}</div>`;
+    const card = (r, kind) => `<div class="card sumstore ${kind}"><div class="card-h"><div><div class="card-t">${kind === 'best' ? 'Лучший город' : 'Худший город'} · ${esc(r.name)}</div><div class="card-s">${r.id === 'ufa' ? 'родной город' : `${r.bought ? 'куплен' : 'вход'} ${E().fmtDate(r.day)}`} · ${r.d ? 'директор ' + esc(r.d.name) : r.st.active ? 'ведёте сами' : 'без директора'}</div></div><span class="chip ${r.prof >= 0 ? 'good' : 'bad'}">${fm(r.prof)}</span></div>
+      <div class="grid2">${h.kv('Прибыль за всё время', fm(r.prof))}${h.kv('Выручка за всё время', fm(r.rev))}${h.kv('Точек', r.st.stores)}${h.kv('Худшая серия', r.lossMax ? r.lossMax + ' мес. в минусе' : 'без убыточных месяцев')}</div></div>`;
+    if (best) s += `<div class="sumstores">${card(best, 'best')}${worst ? card(worst, 'worst') : ''}</div>`;
+    const list = rows.slice().sort((a, b) => b.rev - a.rev);
+    s += `<div class="sumctwrap"><table class="sumctbl"><thead><tr><th>Город</th><th class="n">Точки</th><th class="n">Выручка</th><th class="n">Прибыль</th><th class="c-dir">Директор</th></tr></thead><tbody>${list.map((r) => `<tr><td class="cn">${esc(r.name)}<small>${r.id === 'ufa' ? 'с начала игры' : E().fmtDate(r.day)}</small></td><td class="n">${r.st.stores}</td><td class="n">${fm(r.rev)}</td><td class="n ${r.prof < 0 ? 'negc' : ''}">${fm(r.prof)}</td><td class="c-dir">${r.d ? esc(r.d.name) : r.st.active ? '<span class="muted">вы</span>' : '<span class="negc">нет</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+    return s + `</div>`;
+  }
   function storeCard(r, kind) {
     const h = H();
     return `<div class="card sumstore ${kind}"><div class="card-h"><div><div class="card-t">${kind === 'best' ? 'Лучшая точка' : 'Худшая точка'} · №${r.num}</div><div class="card-s">${esc(r.addr)} · ${h.dname(r.d)}${r.open ? '' : ' · закрыта'}</div></div><span class="chip ${r.pAll >= 0 ? 'good' : 'bad'}">${fm(r.pAll)}</span></div>
@@ -228,6 +265,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <figure><figcaption>Деньги на конец месяца</figcaption>${lineChart(h, [{ v: (x) => x.cash, cls: 's-cash', label: 'Счёт' }, { v: (x) => x.reserve, cls: 's-res', label: 'Резерв' }], 'Счёт и резерв по месяцам')}</figure>
       <figure><figcaption>Команда</figcaption>${lineChart(h, [{ v: (x) => x.staff, cls: 's-staff', label: 'Сотрудники в точках', area: true, money: false }], 'Сотрудники по месяцам')}</figure>
     </div></div>`;
+    s += citiesHtml(S); // второй акт: итоги по городам
     if (R.best) s += `<div class="sec"><h3>Лучшая и худшая точка <small>по прибыли за всё время</small></h3><div class="sumstores">${storeCard(R.best, 'best')}${R.worst ? storeCard(R.worst, 'worst') : ''}</div></div>`;
     s += `<div class="sumcols"><div class="sec okcol"><h3>Что сделано верно</h3><ul class="sumlist ok">${R.good.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
       <div class="sec badcol"><h3>Что можно было лучше</h3><ul class="sumlist bad">${R.bad.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div></div>`;
@@ -253,5 +291,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
-  BK.Extras = { achToast, openAchievements, openSummary, settingsHtml, lineChart };
+  BK.Extras = { achToast, openAchievements, openSummary, settingsHtml, lineChart, citiesHtml };
 })();

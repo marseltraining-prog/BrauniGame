@@ -334,6 +334,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cr.cities[id] = { id, name: cname(id), enteredDay: S.day, status: 'run', bought: true, seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: BK.Corp.awStart(S, id) - K().AW_MKT + 0.1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     HQ().onEnter(S, id);
+    if (S.chron) S.chron.push({ day: S.day, t: 'city', id, bought: true }); // летопись: покупка местной сети (итоги игры)
     const list = D().buyStores(S, id, ctx.n || 8, f.mood || 0);
     const c = cr.cities[id];
     if (f.rebrand) { for (const s of list) s.rating = Math.max(1, (s.rating || 4) + f.rebrand.rating); I.spend(S, f.rebrand.perStore * S.macro.priceLevel * list.length, 'capex'); }

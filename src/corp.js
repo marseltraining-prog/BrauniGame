@@ -721,6 +721,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let supTxt = '';
     if (sm) { const r = setSupply(S, id, sm); supTxt = ` Выпечку повезут: ${supplyName(S, cr.cities[id])} (${r.km} км).`; }
     if (BK.HQ) BK.HQ.onEnter(S, id); // давление местных сетей и «Хлебного двора», льгота губернатора
+    if (S.chron) S.chron.push({ day: S.day, t: 'city', id, cost, over: BK.HQ && BK.HQ.load && BK.HQ.load(S).over > 0 ? 1 : undefined }); // летопись: вход в город (итоги игры)
     if (dirId) {
       I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.${supTxt}`, 'good');
       const r = BK.Dir.launch(S, id, dirId);
