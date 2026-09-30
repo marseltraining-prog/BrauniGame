@@ -8665,6 +8665,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const dn = (id) => (E().byId(BK.DISTRICTS, id) || {}).name || id;
   const pctx = (v) => String(Math.round(v * 1000) / 10).replace('.', ',') + '%';
   const TOTAL = 12;
+  // советы с оценкой помещений считаются не каждый кадр, а при изменении дня, денег, кредита или рынка
+  const memoS = {};
+  const memo = (name, S, fn) => { const k = [S.day, Math.round(S.cash), S.loan, S.offers.length, S.stores.length, S.prodOffers.length, S.phase].join('|'); const m = memoS[name]; if (m && m.S === S && m.k === k) return m.v; const v = fn(); memoS[name] = { S, k, v }; return v; };
+  const prodPick = (S) => memo('prod', S, () => A.prodPick(S)), storePick = (S) => memo('store', S, () => A.storePick(S)), nextStore = (S) => memo('next', S, () => A.nextStore(S));
 
   /* ---------- состояние ---------- */
   function st(S) { if (!S.tutorial) S.tutorial = { on: false, step: null, done: [] }; return S.tutorial; }
@@ -8681,24 +8685,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
      done(S, ui) → шаг выполнен сам (карточка закрывается); ok — подпись кнопки «прочитал» (нет — нужно действие игрока). */
   const STEPS = [
     { id: 'prod', seq: true, n: 1, skip: (S) => S.phase !== 'setup_prod', done: (S) => S.phase !== 'setup_prod',
-      start(S) { const p = A.prodPick(S); if (p) APP().ACT.focusProdOffer({ arg: p.best.o.id }); },
-      target(S) { const p = A.prodPick(S); const b = p && $(`#pbody [data-act="rentProd"][data-arg="${p.best.o.id}"]`); return b ? b.closest('.card') : null; },
-      key(S) { const p = A.prodPick(S); return p && $(`#pbody [data-act="rentProd"][data-arg="${p.best.o.id}"]`); },
+      start(S) { const p = prodPick(S); if (p) APP().ACT.focusProdOffer({ arg: p.best.o.id }); },
+      target(S) { const p = prodPick(S); const b = p && $(`#pbody [data-act="rentProd"][data-arg="${p.best.o.id}"]`); return b ? b.closest('.card') : null; },
+      key(S) { const p = prodPick(S); return p && $(`#pbody [data-act="rentProd"][data-arg="${p.best.o.id}"]`); },
       title: 'Цех — не в центре',
       body(S) {
-        const p = A.prodPick(S); if (!p) return '';
+        const p = prodPick(S); if (!p) return '';
         const row = (x) => `<li${x === p.best ? ' class="best"' : ''}><span>${esc(dn(x.o.district))}, до центра ${String(x.toCenter.toFixed(1)).replace('.', ',')} км</span><b>${fm(x.c.total)}</b></li>`;
         return `<p>Цех печёт для всех точек. В центре аренда дороже всего, а экономия на доставке мала — одна-две точки её не окупят. Сравните, во сколько цех обойдётся <b>за 2 года</b> (открытие, аренда, доставка):</p>
           <ul class="tut-list">${p.list.map(row).join('')}</ul>
           <p>Нажмите <b>«Арендовать под цех»</b> на подсвеченной карточке.</p>`;
       } },
     { id: 'store', seq: true, n: 2, skip: (S) => S.phase === 'play', done: (S) => S.phase === 'play',
-      start(S) { const p = A.storePick(S); if (p) APP().ACT.focusOffer({ arg: p.o.id }); },
-      target(S) { const p = A.storePick(S); return p ? $(`#pbody [data-offer="${p.o.id}"]`) : null; },
-      key(S) { const p = A.storePick(S); return p ? $(`#pbody [data-act="rent"][data-arg="${p.o.id}"]`) : null; },
+      start(S) { const p = storePick(S); if (p) APP().ACT.focusOffer({ arg: p.o.id }); },
+      target(S) { const p = storePick(S); return p ? $(`#pbody [data-offer="${p.o.id}"]`) : null; },
+      key(S) { const p = storePick(S); return p ? $(`#pbody [data-act="rent"][data-arg="${p.o.id}"]`) : null; },
       title: 'Первая точка: прогноз и запас',
       body(S) {
-        const p = A.storePick(S);
+        const p = storePick(S);
         const gen = `<p>Главное — строка <b>«Прогноз прибыли»</b>: столько точка даст в месяц, когда раскрутится. Первые недели гостей ~60% от прогноза, а зарплаты и аренда — 1-го числа, поэтому после аренды оставьте на счёте <b>≥ ${fm(A.cushion(S))}</b>. Оплата «за год» уже учтена в строке «останется».</p>`;
         if (!p) return gen;
         const needLoan = p.left < A.cushion(S) && A.loanRoom(S) > 0;
@@ -8706,7 +8710,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
           : `<p class="tut-rec">Запаса не оставляет ни одно помещение. Возьмите то, после которого останется больше денег (<b>${esc(p.o.address)}</b>), и сразу кредит.</p>`;
         return rec + gen;
       },
-      acts(S) { const p = A.storePick(S); return p && p.left < A.cushion(S) && A.loanRoom(S) > 0 ? [{ id: 'loan5', label: 'Взять кредит 5 млн', primary: true }] : []; } },
+      acts(S) { const p = storePick(S); return p && p.left < A.cushion(S) && A.loanRoom(S) > 0 ? [{ id: 'loan5', label: 'Взять кредит 5 млн', primary: true }] : []; } },
     { id: 'time', seq: true, n: 3, pause: true, start: () => { if (phone()) window.scrollTo(0, 0); }, target: () => $('.hud .speed'), title: 'Время и пауза',
       body(S) { const s0 = S.stores[0], d = s0 && s0.status === 'opening' ? Math.max(0, s0.openDay - S.day) : 0; return `<p>Время пошло: <b>1 секунда — 1 день</b>. Пауза — эта кнопка${phone() ? '' : ' или пробел'}, ×3 и ×10 — быстрее.${d ? ` Точка откроется через ${H().nw(d, 'день', 'дня', 'дней')}.` : ''}</p><p>На важных шагах обучения игра сама встаёт на паузу.</p>`; }, ok: 'Понятно' },
     { id: 'dash', seq: true, n: 4, pause: true, start: () => tab('dash'), target: () => $('#pbody .sec.att'), title: '«Сводка» и «Требует внимания»',
@@ -8718,7 +8722,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const r = E().loanRate(S);
         const head = ui.tab === 'fin' ? '<p>Нажмите <b>«Взять 5 млн»</b>.</p>' : '<p>Откройте вкладку <b>«Финансы»</b>.</p>';
         return `${head}<p>Кредит на старте — это нормально: первые месяцы точка раскручивается и сеть в минусе, а зарплаты, аренду и цех платить 1-го числа. Проценты ≈ ${fm(5e6 * r / 12)} в месяц.</p><p>Без запаса легко получить <b>кассовый разрыв</b> (денег не хватает на платежи), а 3 месяца подряд в минусе — банкротство. Вернёте, когда сеть выйдет в плюс, — «Требует внимания» подскажет.</p>`;
-      }, ok: 'Не сейчас' },
+      }, ok: 'Не сейчас', okPlain: true },
     { id: 'alloc', seq: true, n: 6, pause: true, start: () => tab('fin'),
       target: () => { const i = $('#al-reserve'); return i ? i.closest('.sec') : null; },
       done: (S) => { const a = S.alloc, w = A.alloc(S); return Math.abs(a.reserve - w.reserve) < 0.005 && Math.abs(a.bonus - w.bonus) < 0.005 && Math.abs(a.marketing - w.marketing) < 0.005; },
@@ -8757,18 +8761,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }, ok: 'Понятно' },
     { id: 'second', n: 11, pause: true, trig: (S) => { const o = S.stores.filter((x) => x.status !== 'opening'); return o.length >= 1 && o.every((x) => x.last && x.last.profit > 0); },
       start: () => tab('market'),
-      target(S) { const n = A.nextStore(S); return (n.ok && $(`#pbody [data-offer="${n.pick.o.id}"]`)) || $('#tabs [data-arg="market"]'); },
-      key(S) { const n = A.nextStore(S); return (n.ok && $(`#pbody [data-act="rent"][data-arg="${n.pick.o.id}"]`)) || null; },
+      target(S) { const n = nextStore(S); return (n.ok && $(`#pbody [data-offer="${n.pick.o.id}"]`)) || $('#tabs [data-arg="market"]'); },
+      key(S) { const n = nextStore(S); return (n.ok && $(`#pbody [data-act="rent"][data-arg="${n.pick.o.id}"]`)) || null; },
       title: 'Когда открывать вторую точку',
       body(S) {
-        const n = A.nextStore(S);
+        const n = nextStore(S);
         let rec = '';
         if (n.ok) rec = `<p class="tut-rec">Сейчас подходит: <b>${esc(n.pick.o.address)}</b> — прогноз ≈ <b>${fm(n.pick.est.profit)}/мес</b>${n.loan > 0 ? `; не хватает ${fm(n.loan)} — сначала кредит` : ''}.</p>`;
         else if (n.why === 'cash') rec = '<p class="tut-rec">Сейчас денег на запас не хватает — подождите месяц-другой: выручка растёт, а с ней и кредитный лимит.</p>';
         else if (n.why === 'offers') rec = '<p class="tut-rec">Сейчас на рынке нет помещения с хорошим прогнозом — новые появляются раз в 1–2 недели.</p>';
         return `${rec}<p>Точка в плюсе. Цех рассчитан на 5–8 точек, поэтому с одной точкой сеть в целом в минусе. Следующую открывайте, когда:</p><ul class="tut-list plain"><li>все точки в плюсе за прошлый месяц;</li><li>после аренды останется ≥ ${fm(A.cushion(S))} — можно с кредитом, но не выбирайте лимит до конца;</li><li>третью и дальше — только когда в плюсе вся сеть («Сводка» → «Прибыль»).</li></ul>`;
       },
-      acts: (S) => { const n = A.nextStore(S); return n.ok && n.loan > 0 && A.loanRoom(S) > 0 ? [{ id: 'loan5', label: 'Взять 5 млн', primary: true }] : []; }, ok: 'Понятно' },
+      acts: (S) => { const n = nextStore(S); return n.ok && n.loan > 0 && A.loanRoom(S) > 0 ? [{ id: 'loan5', label: 'Взять 5 млн', primary: true }] : []; }, ok: 'Понятно' },
     { id: 'final', n: 12, pause: true, trig: (S) => isDone(S, 'second') && (S.stores.length >= 2 || S.day >= 240), target: () => $('.hud .goal'),
       title: 'Дальше — сами',
       body: () => `<ul class="tut-list plain"><li>Больше ${C().HR_REQUIRED_STORES} точек — нужен <b>HR-отдел</b> («Команда»), иначе найм медленный.</li><li>Больше ${C().TRAIN_REQUIRED_STORES} — <b>отдел обучения</b>.</li><li>Цех загружен на 90% — докупайте оборудование («Цех»).</li><li>Кредит погашен и точек 3+ — резерв 10–15%.</li><li>Цель — <b>5 млрд ₽</b> оборота за 12 месяцев.</li></ul><p>Пройти обучение заново — «Меню игры» (шестерёнка).</p>`,
@@ -8806,7 +8810,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const acts = s.acts ? s.acts(S, ui) : [];
     const html = `<div class="tut-eb"><span>Обучение · шаг ${s.n} из ${TOTAL}</span><span class="tut-dots" aria-hidden="true">${STEPS.map((x) => `<i class="${isDone(S, x.id) ? 'd' : x.id === s.id ? 'c' : ''}"></i>`).join('')}</span></div>
       <h3 id="tut-t">${s.title}</h3><div class="tut-tx">${s.body(S, ui)}</div>
-      <div class="tut-f">${acts.map((a) => `<button type="button" class="btn${a.primary ? ' primary' : ''}" data-tut="${a.id}">${a.label}</button>`).join('')}${s.ok ? `<button type="button" class="btn${acts.length ? '' : ' primary'}" data-tut="ok">${s.ok}</button>` : ''}${s.id === 'final' ? '' : '<button type="button" class="btn ghost" data-tut="skip">Пропустить обучение</button>'}</div>`;
+      <div class="tut-f">${acts.map((a) => `<button type="button" class="btn${a.primary ? ' primary' : ''}" data-tut="${a.id}">${a.label}</button>`).join('')}${s.ok ? `<button type="button" class="btn${acts.length || s.okPlain ? '' : ' primary'}" data-tut="ok">${s.ok}</button>` : ''}${s.id === 'final' ? '' : '<button type="button" class="btn ghost" data-tut="skip">Пропустить обучение</button>'}</div>`;
     if (html !== curHtml) { card.querySelector('.tut-in').innerHTML = html; curHtml = html; }
   }
   function onCardClick(e) {
