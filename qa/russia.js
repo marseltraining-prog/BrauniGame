@@ -286,8 +286,8 @@ async function corpR3(p, tag, shot) {
   if (m1.study !== 'ops' || m1.kpi !== 'rev+rating' || Math.abs(m1.bonus - 0.2) > 0.001) issues.push(`[${tag}] университет/KPI: ${JSON.stringify(m1)}`);
   await p.evaluate(() => { const el = document.querySelector('.ddet .mot'); if (el) el.scrollIntoView({ block: 'center' }); });
   await shot('24-dir-motivation');
-  // квартал: учёба закончится, KPI-премия выплачена
-  await live(p, 100, false); await realTicks(p, 1); await clear(p);
+  // квартал: учёба закончится, KPI-премия выплачена (учёба 3 мес. завершается 1-го числа — ждём с запасом)
+  await live(p, 125, false); await realTicks(p, 1); await clear(p);
   const m2 = await p.evaluate((id) => { const S = BK.App.state, d = BK.Dir.dirById(S, id); return d ? { study: !!d.study, progs: d.progs.join(), kpiLast: d.kpiLast ? d.kpiLast.pay : null, paid: S.corp.stat.kpiPaid } : null; }, did);
   if (!m2 || m2.study || m2.progs !== 'ops' || !(m2.paid >= 0) || m2.kpiLast == null) issues.push(`[${tag}] через квартал: ${JSON.stringify(m2)}`);
   else notes.push(`университет: «Операционное управление» окончено; KPI-премия за квартал ${Math.round(m2.kpiLast / 1e3)} тыс. ₽`);
@@ -404,7 +404,7 @@ async function r1Save(b, st) {
   for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['directorId', 'priority', 'budget', 'plan', 'dev', 'wantBudget', 'closeReq', 'budgetCutY', 'pressure', 'rp', 'rivalIn', 'spOffer', 'perk']) delete c[k]; c.hist = c.hist.map((x) => x.slice(0, 7)); if (c.packed) { delete c.packed.fcK0; for (const s of c.packed.stores) { delete s.mn0; delete s.byDir; delete s.pr0; } } }
   const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 3 });
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
-  await realTicks(p, 40); await clear(p);
+  await live(p, 35, false); await realTicks(p, 1); await clear(p); // гарантированно через 1-е число: строка истории — новой длины
   const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { dirs: Array.isArray(cr.directors), cand: cr.dirCand.length, inbox: Array.isArray(cr.inbox), budgets: Object.values(cr.cities).every((c) => c.budget && c.dev), hist: Object.values(cr.cities).every((c) => c.hist.slice(-1)[0].length === 9) }; });
   if (!r.dirs || r.cand < 3 || !r.inbox || !r.budgets || !r.hist) issues.push(`[${tag}] ${JSON.stringify(r)}`);
   await p.keyboard.press('r'); await p.waitForTimeout(600);
