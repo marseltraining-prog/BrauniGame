@@ -74,15 +74,6 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 .pmy-b .btn { flex: 1 1 auto; padding: 5px 6px; }
 
 /* --- герой --- */
-.pro-scene { width: 100%; height: auto; display: block; border-radius: 14px; }
-.sc-wall { fill: var(--district); } .sc-board { fill: var(--rye); } .sc-bt { fill: #fff6e6; font-family: var(--f-display); font-size: 14px; font-weight: 700; letter-spacing: .12em; } .sc-bs { fill: #f4dfc2; font-size: 9px; }
-.sc-mach { fill: var(--ink-2); } .sc-machp { fill: var(--surface-2); }
-.sc-steam { fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-linecap: round; opacity: .6; animation: pro-steam 2.4s ease-in-out infinite; }
-@keyframes pro-steam { 0%, 100% { transform: translateY(0); opacity: .25; } 50% { transform: translateY(-4px); opacity: .7; } }
-.sc-head { fill: #f1c9a5; } .sc-eye { stroke: #3a2a1c; stroke-width: 3; stroke-linecap: round; } .sc-mouth { fill: none; stroke: #3a2a1c; stroke-width: 2; stroke-linecap: round; }
-.sc-body { fill: var(--surface); stroke: var(--line-2); }
-.sc-counter { fill: var(--rye); opacity: .88; } .sc-top { fill: var(--crust); }
-.sc-case rect { fill: color-mix(in srgb, var(--river-soft) 70%, transparent); stroke: var(--river); stroke-width: 1.5; }
 .pro-ladder { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .pro-ladder li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 6px 8px; min-width: 0; }
 .pro-ladder .lb { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); font-weight: 700; font-size: 12px; flex: none; }
