@@ -313,7 +313,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const body = $('#pbody');
     const scroll = body.scrollTop;
     const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
-    const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
+    const wide = (ui.view === 'russia' && !!RU_WIDE[ui.tab]) || ui.tab === 'fin', main = $('.main'); // «Финансы» — тоже широкая панель (водопад и таблица точек)
     if (main.classList.contains('ru-wide') !== wide) { main.classList.toggle('ru-wide', wide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
     let html;
     if ((S.phase === 'setup_prod' || S.phase === 'setup_store') && ui.tab !== 'log') html = P.dash(S, ui);
@@ -405,6 +405,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openStore: (d) => { ui.tab = 'stores'; ui.storeId = d.arg; ui.sel = { kind: 'store', id: d.arg }; const st = E.byId(S.stores, d.arg); if (st) map.focus(st.x, st.y); $('#pbody').scrollTop = 0; refresh(); },
     closeStoreView: () => { ui.storeId = null; ui.sel = null; refresh(); },
     storeSort: (d) => { ui.storeSort = d.arg; refresh(); },
+    finPeriod: (d) => { ui.finPeriod = d.arg; refresh(); },
+    finFilter: (d) => { ui.finFilter = d.arg; refresh(); },
+    finSort: (d) => { const def = (k) => (k === 'profit' || k === 'margin' || k === 'rating' ? 1 : -1); if ((ui.finSort || 'profit') === d.arg) ui.finDir = -(ui.finDir || def(d.arg)); else { ui.finSort = d.arg; ui.finDir = def(d.arg); } refresh(); },
     logFilter: (d) => { ui.logFilter = d.arg; refresh(); },
     focusOffer: (d) => { const o = E.byId(S.offers, d.arg); if (o) { ui.sel = { kind: 'offer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
     focusProdOffer: (d) => { const o = E.byId(S.prodOffers, d.arg); if (o) { ui.sel = { kind: 'prodOffer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
