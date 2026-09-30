@@ -15,13 +15,13 @@ const PROFILES = {
   good: { every: 7, reserveMonths: 2.5, reserveShare: 0.25, culture: true, train: true, repair: true, payPremium: 0.12,
     events: 'smart', menu: 'smart', maxPayback: 26, cannibal: true, capAt: 0.8, loadTarget: 0.78,
     repairPayback: 24, trainPayback: 20, prices: true, office: true, bootstrapLoan: true, bufferRev: 0.25, realtor: true,
-    bake: 0, eveDisc: 1 }, // выпечка «норма» и вечерняя скидка 30% (ставит один раз — без штрафа за частую смену)
+    bake: 0, eveDisc: 1, agg: 'smart', bootWait: 30 }, // выпечка «норма» и вечерняя скидка 30% (ставит один раз — без штрафа за частую смену); агрегаторы — по точкам
   avg: null, // = good, но: управляет раз в 30 дней, без резерва, случайные выборы в событиях, без культуры, без риелтора
   bad: { every: 7, reserveMonths: 0, reserveShare: 0, culture: false, train: false, repair: false, payPremium: 0,
     events: 'free', menu: 'none', greedy: true, capAt: 1.0, loadTarget: 1.0, prices: false, office: false, bufferRev: 0 },
 };
 
-PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null }); // списания — по умолчанию
+PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null, agg: 'all' }); // списания — по умолчанию; агрегаторы — вся сеть с 3 точек
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const thrOf = (e) => CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
 const storeThr = (st) => st.staff.reduce((a, e) => a + thrOf(e), 0);
@@ -35,7 +35,7 @@ function estStore(S, o, P) {
   for (let i = 0; i < sz.staffMax; i++) tmp.staff.push({ lvl: 1 });
   let dem = 0, chk = 0;
   for (let dow = 0; dow < 7; dow++) { const d = E.storeDemand(S, tmp, { dow, m: 4 }, ms); dem += d.demand / 7; chk += d.check / 7; }
-  const thrPer = CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * 0.5;
+  const thrPer = (CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * 0.5) * (E.daypartOf ? E.daypartOf(o).thrK : 1); // пиковые часы
   const staff = clamp(Math.ceil(dem / (thrPer * P.loadTarget)), sz.staffMin, sz.staffMax);
   const checks = Math.min(dem, staff * thrPer * 0.95);
   const rev = checks * chk * 30.4;
@@ -111,6 +111,9 @@ function effectValue(S, effects, tg, depth) {
         if (fe.choices && fe.choices.length) fv += Math.max(...fe.choices.map((c) => effectValue(S, c.effects, tg, (depth || 0) + 1) - approxCost(S, c.cost, share, n)));
         v += (f.p != null ? f.p : 1) * fv; break;
       }
+      case 'aggComm': v -= f.add * (pnl.aggRev || 0) * ((f.d || 120) / 30); break; // агрегаторы доставки
+      case 'aggOrders': v += (f.m - 1) * (pnl.aggRev || R * 0.05) * 0.25 * ((f.d || 90) / 30); break;
+      case 'agg': v += (f.on ? 1 : -1) * Math.max(pnl.aggRev || 0, R * 0.05) * 0.2 * 6; break;
       case 'trend': { const inMenu = S.menu.some((m) => { const p = E.byId(BK.PRODUCTS, m.id); return p && p.cat === f.cat; }); if (inMenu) v += f.add * R * 0.012; break; }
       default: break;
     }
@@ -444,7 +447,8 @@ function manage(S, P, buf) {
     if (!c && P.realtor && S.stores.length >= 1 && S.day - (S._botRealtor || -999) > 60 && S.cash > buf + 6e6 * pl) { S._botRealtor = S.day; E.refreshOffers(S); }
     if (c) {
       if (S.cash > c.e.capex + buf) E.rentStore(S, c.o.id);
-      else if (P.bootstrapLoan && S.stores.length < 3 && S.loan + c.e.capex <= E.loanLimit(S) && S.cash + (E.loanLimit(S) - S.loan) > c.e.capex + buf && c.e.payback < 16) {
+      else if (P.bootstrapLoan && S.stores.length < 3 && S.loan + c.e.capex <= E.loanLimit(S) && S.cash + (E.loanLimit(S) - S.loan) > c.e.capex + buf && c.e.payback < 16
+        && (!P.bootWait || S.stores.every((x) => x.status !== 'opening' && S.day - (x.openedDay || 0) >= P.bootWait))) { // в кредит — только когда прежние точки уже поработали (видно, окупаются ли)
         E.takeLoan(S, c.e.capex + buf - S.cash);
         E.rentStore(S, c.o.id);
       }
@@ -487,12 +491,31 @@ function manage(S, P, buf) {
     list.sort((a, b) => a.pb - b.pb);
     for (const x of list) { if (x.pb > P.trainPayback || S.cash < buf + x.cost * 2) break; if (!E.train(S, x.st.id, x.e.id).ok) break; }
   }
+  // доставка через агрегаторы
+  if (P.agg && E.setAggStore) manageAgg(S, P, buf);
   // цены: при хронической перегрузке сети — чуть дороже, при недогрузе — назад к базе
   if (P.prices && open.length) {
     let ld = 0; for (const st of open) ld += (st._bot && st._bot.load) || 0; ld /= open.length;
     const pm = S.menu[0] ? S.menu[0].pm : 1;
     if (ld > 0.98 && pm < 1.25) E.setAllPrices(S, 0.03);
     else if (ld < 0.7 && pm > 1.0) E.setAllPrices(S, -0.03);
+  }
+}
+/* ---------- агрегаторы доставки ----------
+   smart (good): подключает точки, где команда успевает (загрузка < 0,85) и рейтинг ≥ 3,8★, а доставка по оценке даёт прибыль;
+                 отключает точку, если она перегружена при максимальном штате. all (avg): вся сеть одним переключателем с 3 точек. */
+function manageAgg(S, P, buf) {
+  const open = S.stores.filter((s) => s.status === 'open' && s.staff.length && s._bot);
+  if (P.agg === 'all') { if (!(S.agg && S.agg.on) && S.stores.length >= 3 && S.cash > buf) E.setAggNetwork(S, true); return; }
+  if (S.stores.length < 2) return;
+  const fc = S.cache.fcPct || 0.33, tax = E.currentTaxRate(S), rate = E.aggCommission(S) + CFG.AGG_PACK;
+  const unit = CFG.AGG_CHECK * (1 - rate - fc - tax) - CFG.AGG_CANNIBAL * (1 - fc - tax); // прибыль с заказа в долях чека зала
+  if (unit <= 0) return;
+  for (const st of open) {
+    const m = st._bot, load = m.load || 0, max = st.staff.length + st.incoming.length >= CFG.SIZES[st.size].staffMax;
+    if (st.agg) { if (load > 1.02 && max) E.setAggStore(S, st.id, false); continue; }
+    if (S.day - m.opened < 60 || load > 0.85 || E.storeRating(S, st) < 3.8) continue;
+    if (S.cash > buf + E.aggConnectCost(S, st)) E.setAggStore(S, st.id, true);
   }
 }
 function avgThrOf(st) { return st.staff.length ? storeThr(st) / st.staff.length : CFG.CHECKS_PER_STAFF_BASE; }
