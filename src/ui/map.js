@@ -424,6 +424,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const pre = [], offers = [], singles = [], clusters = []; let selM = null;
     const hq = BK.MAP.hq || { x: 402, y: 772 };
     pre.push(['hq', `<g class="m-hq" data-kind="hq" data-id="hq" transform="translate(${hq.x},${hq.y}) scale(${k})"><rect x="-9" y="-9" width="18" height="18" rx="3"/><path d="${OFFICE}" transform="scale(.8)"/></g>`]);
+    if (BK.GrowthUI) pre.push(...BK.GrowthUI.mapItems(S, k, isSel)); // рост вглубь: фабрика, флагман, франчайзи, площадки
     for (const o of S.prodOffers) pre.push(['po' + o.id, `<g class="m-prodoffer${isSel('prodOffer', o.id) ? ' sel' : ''}" data-kind="prodOffer" data-id="${o.id}" transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${k})"><rect x="-13" y="-13" width="26" height="26" rx="4"/><path d="${FACTORY}"/></g>`]);
     for (const o of S.offers) {
       const pulse = S.phase === 'setup_store' || S.stores.length < 2 ? ' pulse' : '';
@@ -549,6 +550,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const n = S.stores.filter((st) => st.status !== 'opening' && E.nearestProd(S, st) === p).length;
         h += `<span class="lg-r"><svg viewBox="0 0 16 16" class="lg-sw" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5" fill="var(--prod-bg)"/></svg><span>${esc(p.name)}${p.status === 'open' ? ` · ${nw(n, 'точка', 'точки', 'точек')}` : ' · открывается'}</span><b>${Math.round((p.load || 0) * 100)} %</b></span>`;
       }
+      if (BK.GrowthUI) h += BK.GrowthUI.legend(S);
       h += `<span class="lg-h"><svg viewBox="0 0 26 10" class="lg-rt" aria-hidden="true"><path d="M1 5H25" stroke="var(--map-route)" stroke-width="1.8" stroke-dasharray="2 3.5" stroke-linecap="round"/></svg><span>Маршрут от ближайшего цеха,<br>справа — загрузка цеха</span></span>`;
     }
     const probs = {}; for (const i of infos) if (i.prob) probs[i.prob] = (probs[i.prob] || 0) + 1;

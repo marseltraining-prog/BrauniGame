@@ -250,6 +250,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
+      else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
     }
   }
@@ -311,13 +312,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function tabDots() {
     if (!S) return {};
     const c = BK.attention(S).counts;
-    return { dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0, ruinbox: BK.Dir && BK.Corp.on(S) ? BK.Dir.inboxOpen(S) : 0 };
+    return { grow: BK.GrowthUI ? BK.GrowthUI.tabDot(S) : 0, dash: c.dash ? 'dot' : 0, team: c.team, stores: c.stores, prod: c.prod ? 'dot' : 0, menu: c.menu ? 'dot' : 0, market: c.market ? 'dot' : 0, fin: c.fin ? 'dot' : 0, ruinbox: BK.Dir && BK.Corp.on(S) ? BK.Dir.inboxOpen(S) : 0 };
   }
   function renderTabs() {
     const dots = tabDots();
     const mark = (k) => { const v = dots[k]; if (!v || ui.tab === k) return ''; return v === 'dot' ? '<span class="dot" aria-hidden="true"></span>' : `<em class="badge" aria-label="проблем: ${v}">${v}</em>`; };
-    const html = (ui.view === 'russia' ? RU_TABS : TABS).map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
-    if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; }
+    const list = ui.view === 'russia' ? RU_TABS : BK.GrowthUI ? BK.GrowthUI.tabs(S, TABS) : TABS; // «Рост» — с первым направлением роста вглубь
+    const html = list.map(([k, l]) => `<button class="tab" role="tab" data-act="tab" data-arg="${k}" aria-selected="${ui.tab === k}">${l}${mark(k)}</button>`).join('');
+    if (html !== ui.tabsHtml) { $('#tabs').innerHTML = html; ui.tabsHtml = html; $('#tabs').classList.toggle('t9', list.length > 8); }
   }
   function renderPanel() {
     if (!S) return;
@@ -325,7 +327,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     renderTabs();
     const body = $('#pbody');
     const scroll = body.scrollTop;
-    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab }[ui.tab] || P.dash;
+    const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab, grow: BK.GrowthUI ? BK.GrowthUI.panel : P.dash }[ui.tab] || P.dash;
     const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
     const finWide = ui.tab === 'fin'; // «Финансы» — широкая панель (водопад и таблица точек), чуть уже корпоративных таблиц
     if (main.classList.contains('ru-wide') !== wide || main.classList.contains('fin-wide') !== finWide) { main.classList.toggle('ru-wide', wide); main.classList.toggle('fin-wide', finWide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
@@ -379,6 +381,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (hit.kind === 'prod') ui.tab = 'prod';
     else if (hit.kind === 'prodOffer') ui.tab = setupNow() ? 'dash' : 'market';
     else if (hit.kind === 'hq') ui.tab = 'team';
+    else if (/^g(fac|flag|fr|site)$/.test(hit.kind)) ui.tab = 'grow'; // рост вглубь: фабрика, флагман, франчайзи, площадки
     refresh();
     requestAnimationFrame(() => {
       const card = hit.kind === 'offer' ? document.querySelector(`[data-offer="${hit.id}"]`) : document.querySelector('.card.sel');
@@ -404,6 +407,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (kind === 'prod') { const p = E.byId(S.productions, id); return p ? `<b>${p.name}</b><br>${e(p.address)}<br>Загрузка ${H.pct(p.load || 0)}` : ''; }
     if (kind === 'prodOffer') { const o = E.byId(S.prodOffers, id); return o ? `<b>Под производство: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${H.fm(o.area * o.rentM2)}/мес` : ''; }
     if (kind === 'hq') return `<b>Офис компании</b><br>Найм, обучение, культура`;
+    if (BK.GrowthUI && /^g(fac|flag|fr|site)$/.test(kind)) return BK.GrowthUI.tip(S, kind, id);
     if (kind === 'rival') { const R = E.rivalSummary && E.rivalSummary(S), o = R && R.stores.find((x) => x.id === id); return o ? `<b>«${e(R.name)}» — конкурент</b><br>${e(o.address)} · ${H.dname(o.district)}<br>Забирает часть гостей у ваших точек ближе ~0,9 км` : ''; }
     return '';
   }

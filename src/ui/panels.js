@@ -201,6 +201,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
     if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
+    if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -318,6 +319,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     bills += S.loan * E().loanRate(S) / 12;
     if (BK.Trainers) bills += BK.Trainers.monthFee(S); // личные тренеры — 1-го числа
     if (BK.Managers) bills += BK.Managers.monthFee(S); // оклады управляющих — 1-го числа
+    if (BK.Growth) bills += BK.Growth.monthFee(S); // рост вглубь: фабрика, флагман, команда кейтеринга, контроль франчайзи
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -358,6 +360,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td${cls === 'subr' ? ' class="sub"' : ''}>${k}</td><td>${v}</td></tr>`;
     let s = `<table class="tbl">`;
     s += row('Выручка', fm(p.rev));
+    if (p.gRev) s += row('в т. ч. фабрика, полки, франшиза, флагман, заказы', fm(p.gRev), 'subr');
     s += row('Себестоимость (фудкост)', '−' + fm(p.fc - (p.waste || 0)));
     if (p.waste != null) s += row('Списания', '−' + fm(p.waste));
     s += row('Аренда', '−' + fm(p.rent));

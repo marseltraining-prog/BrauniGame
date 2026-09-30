@@ -15,13 +15,13 @@ const PROFILES = {
   good: { every: 7, reserveMonths: 2.5, reserveShare: 0.25, culture: true, train: true, repair: true, payPremium: 0.12,
     events: 'smart', menu: 'smart', maxPayback: 26, cannibal: true, capAt: 0.8, loadTarget: 0.78,
     repairPayback: 24, trainPayback: 20, prices: true, office: true, bootstrapLoan: true, bufferRev: 0.25, realtor: true,
-    bake: 0, eveDisc: 1, agg: 'smart', bootWait: 30 }, // выпечка «норма» и вечерняя скидка 30% (ставит один раз — без штрафа за частую смену); агрегаторы — по точкам
+    bake: 0, eveDisc: 1, agg: 'smart', bootWait: 30, growth: 'smart' }, // выпечка «норма» и вечерняя скидка 30% (ставит один раз — без штрафа за частую смену); агрегаторы — по точкам
   avg: null, // = good, но: управляет раз в 30 дней, без резерва, случайные выборы в событиях, без культуры, без риелтора
   bad: { every: 7, reserveMonths: 0, reserveShare: 0, culture: false, train: false, repair: false, payPremium: 0,
     events: 'free', menu: 'none', greedy: true, capAt: 1.0, loadTarget: 1.0, prices: false, office: false, bufferRev: 0 },
 };
 
-PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null, agg: 'all', bootWait: 0 }); // списания — по умолчанию; агрегаторы — вся сеть с 3 точек
+PROFILES.avg = Object.assign({}, PROFILES.good, { every: 30, reserveMonths: 0, reserveShare: 0, events: 'random', culture: false, realtor: false, bake: null, eveDisc: null, agg: 'all', bootWait: 0, growth: 'simple' }); // списания — по умолчанию; агрегаторы — вся сеть с 3 точек
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const thrOf = (e) => CFG.CHECKS_PER_STAFF_BASE + CFG.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
 const storeThr = (st) => st.staff.reduce((a, e) => a + thrOf(e), 0);
@@ -131,6 +131,7 @@ function chooseEvent(S, P) {
   const inst = S.ev.pending, ch = inst.choices;
   if (!ch) return 0;
   if (inst.corp) return BK.CorpEv.botChoice(S, inst, P.corpLevel === 'badfix' ? 'bad' : P.corpLevel || P.level || 'good'); // корпоративные события (e201–e218) — профиль корпоративного бота
+  if (/^g\d\d$/.test(inst.id) && BK.Growth && P.events !== 'free') return P.events === 'smart' ? BK.Growth.botChoice(S, inst, 'good') : Math.floor(rand(S) * ch.length); // рост вглубь (g01–g03)
   if (P.events === 'random') return Math.floor(rand(S) * ch.length);
   if (P.events === 'free') { const i = ch.findIndex((c) => !c.cost); return i < 0 ? 0 : i; }
   const def = E.byId(BK.EVENTS, inst.id);
@@ -283,7 +284,7 @@ function play(opts) {
       const rev = h.reduce((a, x) => a + x.rev, 0), prof = h.reduce((a, x) => a + x.profit, 0);
       const avgStaff = yDays ? yStaffDays / yDays : 0;
       mem.quitsYear.push(yQuits); mem.staffYear.push(avgStaff);
-      out.push({ year: t.y - CFG.START_YEAR, stores: S.stores.length, rev: Math.round(rev / 1e6), profit: Math.round(prof / 1e6), cash: Math.round(S.cash / 1e6), reserve: Math.round(S.reserve / 1e6), loan: Math.round(S.loan / 1e6), staff: E.allStaff(S), 'turn%': avgStaff ? Math.round(yQuits / avgStaff * 100) : 0, capUse: +(S.cache.capUse || 0).toFixed(2), avgLvl: +(avgLvl(S)).toFixed(2), mood: Math.round(avgMood(S)), menu: S.menu.length, prods: S.productions.length, cult: S.culture, pm: S.menu[0] ? S.menu[0].pm : 1, pl: +pl().toFixed(2), rv: rivalN(S) });
+      out.push({ year: t.y - CFG.START_YEAR, stores: S.stores.length, rev: Math.round(rev / 1e6), profit: Math.round(prof / 1e6), cash: Math.round(S.cash / 1e6), reserve: Math.round(S.reserve / 1e6), loan: Math.round(S.loan / 1e6), staff: E.allStaff(S), 'turn%': avgStaff ? Math.round(yQuits / avgStaff * 100) : 0, capUse: +(S.cache.capUse || 0).toFixed(2), avgLvl: +(avgLvl(S)).toFixed(2), mood: Math.round(avgMood(S)), menu: S.menu.length, prods: S.productions.length, cult: S.culture, pm: S.menu[0] ? S.menu[0].pm : 1, pl: +pl().toFixed(2), rv: rivalN(S), ...growthRow(S, h) });
       yQuits = 0; yStaffDays = 0; yDays = 0;
     }
     if (opts.onDay) opts.onDay(S, P, mem); // внешняя стратегия поверх бота (sim/corp.js — города России)
@@ -493,6 +494,8 @@ function manage(S, P, buf) {
   }
   // доставка через агрегаторы
   if (P.agg && E.setAggStore) manageAgg(S, P, buf);
+  // рост вглубь: кейтеринг, флагман, фабрика, полки, франшиза
+  if (P.growth && BK.Growth && CFG.GROWTH && CFG.GROWTH.ON) manageGrowth(S, P, buf);
   // цены: при хронической перегрузке сети — чуть дороже, при недогрузе — назад к базе
   if (P.prices && open.length) {
     let ld = 0; for (const st of open) ld += (st._bot && st._bot.load) || 0; ld /= open.length;
@@ -517,6 +520,63 @@ function manageAgg(S, P, buf) {
     if (S.day - m.opened < 60 || load > 0.85 || E.storeRating(S, st) < 3.8) continue;
     if (S.cash > buf + E.aggConnectCost(S, st)) E.setAggStore(S, st.id, true);
   }
+}
+/* ---------- рост вглубь (src/growth.js) ----------
+   smart (good): берёт заказы и контракты, только если хватает мощности (не отнимая у точек), фабрика — с плановым обслуживанием,
+                 полуфабрикаты — на всю сеть, мука впрок, когда дёшево; франчайзи — от 3,5★ при регулярном контроле; флагман — лучшее место.
+   simple (avg): берёт заказы, если хоть как-то успевает; контракты — «на глаз» (бывают недопоставки); фабрика без обслуживания,
+                 полуфабрикаты на половину сети; франчайзи — от 2,5★ без контроля; флагман — первое место; позже и с меньшим запасом денег. */
+function manageGrowth(S, P, buf) {
+  const GR = BK.Growth, g = GR.ensure(S), K = CFG.GROWTH, pl = S.macro.priceLevel, smart = P.growth === 'smart';
+  if (!GR.anyUnlocked(S) || !GR.ufaOn(S)) return;
+  const free = () => S.cash - buf;
+  // кейтеринг
+  if (GR.unlocked(S, 'cater')) {
+    if (!g.cat.team && GR.ufaStores(S) >= (smart ? 18 : 26) && free() > K.CAT_TEAM * pl * 4) GR.hireTeam(S);
+    for (const o of g.cat.offers.slice()) {
+      const plan = GR.capPlan(S, o.start, o.units / o.days);
+      const ok = smart ? plan.fill >= 0.99 && plan.wsOver <= plan.wsSpare * 0.02 : plan.fill >= 0.9;
+      if (ok) GR.acceptOrder(S, o.id); else if (smart) GR.declineOrder(S, o.id);
+    }
+  }
+  // флагман
+  if (GR.unlocked(S, 'flag') && !g.flag && g.flagSites.length) {
+    const site = smart ? g.flagSites.slice().sort((a, b) => b.tk / b.rentK - a.tk / a.rentK)[0] : g.flagSites[0];
+    if (free() > GR.flagBuildCost(S, site) * (smart ? 1.3 : 1.6)) GR.buildFlag(S, site.id);
+  }
+  if (g.flag && g.flag.status === 'open' && smart && !g.flag.tour) GR.setTour(S, true);
+  // фабрика
+  if (GR.unlocked(S, 'factory') && !g.fac && g.facSites.length) {
+    const site = smart ? g.facSites.slice().sort((a, b) => a.k * a.logi - b.k * b.logi)[0] : g.facSites[0];
+    if (free() > GR.facBuildCost(S, site) * (smart ? 1.2 : 1.5)) { GR.buildFactory(S, site.id); GR.setMaint(S, smart ? 1 : 0); GR.setSemis(S, smart ? 1 : 0.5); }
+  }
+  const f = g.fac;
+  if (f && f.status === 'open') {
+    const plan = GR.capPlan(S, S.day + 1), use = (plan.fromFac + plan.frGot) / Math.max(1, plan.fcap);
+    if (!f.expDay && f.lvl < K.FAC_CAP.length && use > (smart ? 0.75 : 0.95) && free() > GR.facExpCost(S) * 1.3) GR.expandFactory(S);
+    if (smart && g.flour < 0.95 && !(f.hedge && f.hedge.until > S.day) && free() > GR.hedgeCost(S) * 3) GR.hedge(S);
+    if (smart && f.maint < 2 && f.lvl >= 2) GR.setMaint(S, 2);
+  }
+  // полки
+  if (GR.unlocked(S, 'retail')) {
+    for (const o of g.ret.offers.slice()) {
+      const plan = GR.capPlan(S, S.day + 1);
+      const room = f && f.status === 'open' ? plan.fcap - plan.fromFac - plan.frGot : 0;
+      const margin = o.price * pl * GR.brandPrice(S) - (room ? GR.facUnit(S) : K.RET_WS_UNIT * pl) - K.RET_LOGI * pl;
+      const ok = margin > 0 && (smart ? room >= o.units * 1.05 : (room >= o.units * 0.7 || plan.wsSpare - plan.fromWs >= o.units));
+      if (ok) GR.acceptContract(S, o.id); else if (smart && (!f || f.status === 'open')) GR.declineOffer(S, o.id);
+    }
+  }
+  // франшиза
+  if (GR.unlocked(S, 'fran')) {
+    if (g.fr.ctrl !== (smart ? 2 : 0)) GR.setControl(S, smart ? 2 : 0);
+    for (const c of g.fr.cand.slice()) if (c.seen >= (smart ? 3.5 : 2.5)) GR.signFran(S, c.id);
+  }
+}
+function growthRow(S, h) { // по годам: франчайзи, направлений в работе, выручка направлений за год (млн) и доля
+  if (!BK.Growth || !S.growth) return {};
+  const sm = BK.Growth.summary(S), gr = h.reduce((a, x) => a + ((x.pnl && x.pnl.gRev) || 0), 0), rev = h.reduce((a, x) => a + x.rev, 0);
+  return { dir: sm.active, fr: sm.fr, gRev: Math.round(gr / 1e6), 'g%': rev ? Math.round(gr / rev * 100) : 0 };
 }
 function avgThrOf(st) { return st.staff.length ? storeThr(st) / st.staff.length : CFG.CHECKS_PER_STAFF_BASE; }
 
@@ -579,6 +639,7 @@ function summarize(r) {
     pb: med(payback), pbNet: med(paybackNet), turn: Math.round((med(turn.slice(1)) || 0) * 100),
     fc: +(share('fc', 12) * 100).toFixed(1), pay: +(share('payroll', 12) * 100).toFixed(1), rent: +(share('rent', 12) * 100).toFixed(1), del: +(share('delivery', 12) * 100).toFixed(1), upk: +(share('upkeep', 12) * 100).toFixed(1), tax: +(share('tax', 12) * 100).toFixed(1),
     minLiq: Math.round(mem.minLiq / 1e6), cris: mem.crises.length,
+    g10: yv(10, 'gRev'), g15: yv(15, 'gRev'), gp15: yv(15, 'g%'), fr15: yv(15, 'fr'),
     rv5: yv(5, 'rv'), rv10: yv(10, 'rv'), rv15: yv(15, 'rv'), rvW: r.won ? r.won.rv : null, rvL: r.won ? r.won.rvL : null,
   };
 }
