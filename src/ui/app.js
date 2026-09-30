@@ -599,24 +599,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openChefModal() {
     if (!S.chef.pending) return;
     const pick = new Set(), drop = new Set();
-    const pl = S.macro.priceLevel;
     const draw = () => {
-      const after = S.menu.length - drop.size + pick.size;
-      let html = `<div class="modal-h"><span class="eyebrow">Шеф-пекарь · новинки ${E.dateOf(S.day).y}</span><h2>Что добавим в меню?</h2></div><div class="modal-b">
-        <p class="hint" style="margin:0">Выберите до ${C.CHEF_PICK} новинок и выведите до ${C.CHEF_REMOVE} старых позиций. Цену шеф предлагает сам — изменить её можно во вкладке «Меню».</p><div class="chefgrid">`;
-      for (const id of S.chef.pending) {
-        const p = E.byId(BK.PRODUCTS, id); const ok = E.eqUnlocked(S, p.req);
-        const reqName = p.req ? (E.byId(BK.EQUIPMENT, p.req) || {}).name : '';
-        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
-          <span class="cm"><span>цена ${H.n0(p.price * pl)} ₽</span><span>фудкост ${H.pct(p.fc)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span><span>популярность ${p.pop}</span>${ok ? '' : `<span class="negc">нужно: ${H.esc(reqName)}</span>`}</span></label>`;
-      }
-      html += `</div><h3 style="font-size:13px;margin-top:6px">Вывести из меню</h3><div class="chefgrid">`;
-      for (const it of S.menu) {
-        const p = E.byId(BK.PRODUCTS, it.id);
-        html += `<label class="chefitem ${drop.has(it.id) ? 'off' : ''}"><input type="checkbox" data-drop="${it.id}" ${drop.has(it.id) ? 'checked' : ''}><span class="cn">${H.esc(p.name)}</span><span class="chip">${BK.CATEGORIES[p.cat].name}</span><span class="cm"><span>тренд ${Math.round(S.trends[p.cat])}</span><span>фудкост ${H.pct(p.fc / it.pm)}</span></span></label>`;
-      }
-      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${H.nw(after, 'позиция', 'позиции', 'позиций')} (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
-      openModal(html, { keepScroll: true });
+      openModal(BK.MenuStats.chefHtml(S, pick, drop), { keepScroll: true }); // разметка и статистика продуктов — ui/menu-stats.js
+      $('#modal .modal').classList.add('wide', 'chefwide');
       $('#modal').querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.pick; if (b.checked) { if (pick.size >= C.CHEF_PICK) { b.checked = false; return; } pick.add(id); } else pick.delete(id); draw(); }));
       $('#modal').querySelectorAll('[data-drop]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.drop; if (b.checked) { if (drop.size >= C.CHEF_REMOVE) { b.checked = false; return; } drop.add(id); } else drop.delete(id); draw(); }));
       $('#chefOk').addEventListener('click', () => { const r = E.chefConfirm(S, [...pick], [...drop]); if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; } closeModal(); save(); });

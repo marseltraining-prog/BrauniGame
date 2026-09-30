@@ -1,0 +1,53 @@
+/* статистика продуктов: окно шеф-пекаря и вкладка «Меню» (ui/menu-stats.js) */
+.modal.chefwide { max-width: 820px; }
+.ms-h { font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ms-sub { margin: -6px 0 0; font-size: 12px; }
+.ms-note { font-size: 12.5px; padding: 8px 10px; border-radius: 8px; background: var(--river-soft); color: var(--ink); }
+.ms-est { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; border: 1px dashed var(--ink-3); color: var(--ink-2); line-height: 1.5; white-space: nowrap; }
+.ms-src { font-size: 11.5px; font-weight: 400; color: var(--ink-3); }
+.ms-src.est { color: var(--river-t); }
+.ms-flag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn-t); white-space: nowrap; line-height: 1.6; }
+.ms-flag.cand { background: var(--bad-soft); color: var(--bad-t); font-weight: 600; }
+.ms-pos { color: var(--good-t); } .ms-neg { color: var(--bad-t); }
+.warnv { color: var(--warn-t); }
+
+/* карточки окна шефа */
+.chefitem .ms-grid, .chefitem .ms-if { grid-column: 2 / span 2; }
+.ms-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.ms-grid.five { grid-template-columns: minmax(0, .8fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+.ms-k { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 5px 8px; border-radius: 7px; background: var(--surface-2); }
+.ms-k .l { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.ms-k .v { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ms-bar { display: block; height: 4px; border-radius: 2px; background: var(--line); margin-top: 3px; overflow: hidden; }
+.ms-bar i { display: block; height: 100%; background: var(--crust); border-radius: 2px; }
+.ms-dyn { display: inline-flex; align-items: center; gap: 6px; }
+.ms-spark { flex: none; display: block; }
+.ms-tr { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.ms-tr.up { color: var(--good-t); } .ms-tr.down { color: var(--bad-t); } .ms-tr.flat { color: var(--ink-3); }
+.ms-if { font-size: 12px; color: var(--ink-2); }
+.chefitem.cand { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
+.chefitem.cand.off { box-shadow: none; }
+.chefitem.on .ms-k, .chefitem.off .ms-k { background: var(--surface); }
+.chefitem.on .ms-k .l, .chefitem.off .ms-k .l, .chefitem.on .ms-if, .chefitem.off .ms-if { color: var(--ink-2); }
+.ms-sum { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+
+/* вкладка «Меню»: строка под продуктом */
+.ms-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; font-size: 11.5px; color: var(--ink-2); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.ms-line b { font-weight: 600; color: var(--ink); }
+.ms-line.est { color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .ms-grid, .ms-grid.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ms-grid.five .ms-k:nth-child(2) { grid-column: 1 / span 2; }
+}
+@media (max-width: 480px) {
+  .chefitem.ms-new input, .chefitem.ms-cur input { grid-row: 1 / span 5; }
+  .chefitem .ms-grid { grid-row: 4; } .chefitem .ms-if { grid-row: 5; }
+  /* телефон: показатели — компактным списком «название … значение» */
+  .ms-grid, .ms-grid.five { grid-template-columns: 1fr; gap: 0; margin-top: 2px; }
+  .ms-grid.five .ms-k:nth-child(2) { grid-column: auto; }
+  .ms-k { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px 8px; padding: 4px 0; background: none; border-radius: 0; border-bottom: 1px dashed var(--line); }
+  .chefitem.on .ms-k, .chefitem.off .ms-k { background: none; }
+  .ms-k .v { text-align: right; }
+  .ms-k .ms-bar { flex: 1 0 100%; margin-top: 2px; }
+}
