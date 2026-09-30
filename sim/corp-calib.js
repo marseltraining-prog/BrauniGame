@@ -5,7 +5,8 @@
 //      Это проверка месячной формулы: допуск ±5% выручки и ±2 п. п. маржи для директора грейда 3 (навыки 60).
 //   Б. «Рост» — 5 лет с нуля: бот good вручную против директора грейда 1 / 3 / 5 (город запускает директор).
 //      Сравнивается выручка за 5 лет, маржа и точки в конце; игрок в это время ведёт Уфу.
-// Запуск: node sim/corp-calib.js [сидов=3] [город=kazan] [--years=5] [--events] [--leak]
+// Запуск: node sim/corp-calib.js [сидов=3] [город=kazan] [--years=5] [--events] [--leak] [--prices] [--train=5]
+//   --prices — бот двигает цены сети и после переключения; --train — цель обучения директора в блоке А (по умолчанию 5, как у бота)
 const BK = require('./load');
 const { play, estStore } = require('./bot');
 const E = BK.Engine, CFG = BK.CFG;
@@ -50,8 +51,11 @@ function run(seed, mode, grade, phase) {
     const m = (S.day - t0) / 30.44;
     if (phase === 'team' && !switched && m >= 12 && E.dateOf(S.day).d === 3) {
       switched = true;
+      // цены меню — общие для сети, и бот двигает их по загрузке активного города (вручную — Казань, с директором — Уфа):
+      // с этого дня цены замораживаются в обоих прогонах, иначе сравнивается реакция бота на разные города, а не модель (§17)
+      if (!flags.prices) P.prices = false;
       if (mode === 'manual') { P.maxPayback = 0; P.realtor = false; } // тот же город, но без новых точек
-      else { const d = makeDir(S, grade); E.switchCity(S, 'ufa'); E.dirAssign(S, d.id, CITY); E.citySetBudget(S, CITY, { capex: 200e6, close: false, train: 4, open: false }); }
+      else { const d = makeDir(S, grade); E.switchCity(S, 'ufa'); E.dirAssign(S, d.id, CITY); E.citySetBudget(S, CITY, { capex: 200e6, close: false, train: +(flags.train || 5), open: false }); } // цель обучения — 5, как у бота good вручную (та же команда; --train=4 — как было до §17)
     }
     if (phase === 'grow' && mode === 'manual' && !switched) { switched = true; }
     // Уфа без роста у обоих: бот ведёт Уфу только в сценарии с директором (как и игрок), а в ручном — Уфа на автопилоте

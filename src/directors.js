@@ -301,7 +301,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       capex: fit + hireC + (o.payMode === 'year' ? 0 : rent0), hist: [], num: (c.numSeq = (c.numSeq || 0) + 1), rating: cfg.RATING_START };
     const ms = E.menuStats(S), wz = E.wasteFactors(S, ms);
     const p = CI().packStore(S, st, ms, wz, pk.fill != null ? pk.fill : 1, BK.Corp.demandMult(S));
-    p.status = 'opening'; p.openDay = st.openDay; p.openedDay = null; p.moodOff = 0; p.mood0 = 62; p.staff.mood = 62; p.byDir = true;
+    p.status = 'opening'; p.openDay = st.openDay; p.openedDay = null; p.moodOff = undefined; p.mood0 = 62; p.staff.mood = 62; p.byDir = true;
     if (free) { p.status = 'open'; p.openDay = S.day; p.openedDay = S.day - 400; p.bought = true; if (o.payMode === 'year') p.rentPaidUntil = S.day + 365; }
     pk.stores.push(p);
     if (!free) S.stats.hires += staffT;
@@ -354,6 +354,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C(), K_ = K(), pk = c.packed; if (!pk) return;
     c.dev.mOpened = 0; c.dev.mClosed = 0;
     BK.Corp.withCity(S, c.id, () => {
+      staffRule(S, c, d); aggRule(S, c);
       const rem = BK.Corp.remoteOf(S, c.id); // Р4: снабжение из другого города — свой цех, когда точек достаточно или поставки прервались
       if (!pk.productions.length) {
         if (!rem) { buildProd(S, c, true); return; }
@@ -371,12 +372,74 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const r = buildProd(S, c, false); if (r) c.budget.left = Math.max(0, c.budget.left - r.cost);
       }
       repairs(S, c, d);
+      equip(S, c);
       // открытия: не больше годового лимита директора, в пределах бюджета
       const lim = openLimit(S, c, d);
       if (c.budget.open === false) { c.dev.why = 'off'; return; }
       if (c.dev.opened >= lim) c.dev.why = 'limit';
       if (c.dev.opened < lim) tryOpen(S, c, d, { maxN: Math.min(lim - c.dev.opened, Math.max(1, Math.ceil(lim / 6))) });
     });
+  }
+  /* штат под загрузку (§17): директор, как бот good, держит загрузку команды около цели — нужно людей = загрузка × штат ÷ цель
+     (вверх — сразу, вниз — по одному в месяц); загрузка — из прошлого месяца агрегата (зал + доставка).
+     Цель — DIR_LOAD_TARGET = [цель, k]: сильный в «Операциях» (85+) держит 0,78, как бот good; слабее — работает «впритык»: + k × (0,85 − операции/100) */
+  function staffRule(S, c, d) {
+    const cfg = C(), LT = K().DIR_LOAD_TARGET; if (!LT) return;
+    const lt = LT[0] + LT[1] * Math.max(0, 0.85 - eff(S, d, c).ops / 100);
+    for (const s of c.packed.stores) {
+      if (s.status !== 'open' || s.ld == null || !s.staff.n) continue;
+      const sz = cfg.SIZES[s.size], need = clamp(Math.ceil(s.ld * s.staff.n / lt), sz.staffMin, sz.staffMax);
+      if (need > s.staffTarget) s.staffTarget = need; else if (need < s.staffTarget - 1) s.staffTarget--;
+    }
+  }
+  /* доставка через агрегаторы (§17), внутри withCity: директор подключает точку, когда команда успевает (загрузка < 0,85),
+     рейтинг ≥ 3,8★, точка работает 2+ месяца и заказ по оценке прибылен; отключает перегруженную (загрузка > 1,02) при полном штате.
+     То же правило, что у бота good в подробном городе. */
+  function aggRule(S, c) {
+    const cfg = C(), K_ = K(), pk = c.packed; if (!pk || cfg.AGG_SHARE == null) return;
+    let unit = null;
+    for (const s of pk.stores) {
+      if (s.status !== 'open' || s.ld == null) continue;
+      if (s.agg) { if (s.ld > K_.DIR_AGG_OFF && s.staff.n >= cfg.SIZES[s.size].staffMax) { s.agg = undefined; s.aggDay = undefined; } continue; }
+      if (s.ld >= K_.DIR_AGG_LOAD || (s.rating || 0) < K_.DIR_AGG_RATING || (s.openedDay != null && S.day - s.openedDay < 60)) continue;
+      if (unit == null) { // прибыль с заказа в долях чека зала (как у бота good) — считаем, только когда есть кого подключать
+        const fc = pk.fcB != null ? pk.fcB : pk.fcPct || 0.33, tax = E.currentTaxRate(S), rate = E.aggCommission(S) + cfg.AGG_PACK;
+        unit = cfg.AGG_CHECK * (1 - rate - fc - tax) - cfg.AGG_CANNIBAL * (1 - fc - tax);
+      }
+      if (unit <= 0) break;
+      const cost = E.aggConnectCost(S, s);
+      if (cost && S.cash < cost + 5e6 * S.macro.priceLevel) continue;
+      if (cost) I.spend(S, cost, 'agg');
+      s.agg = true; s.aggPaid = true; s.aggDay = S.day;
+    }
+  }
+  /* оборудование цехов (§17), внутри withCity: то, что снижает фудкост и расходы на доставку, — по окупаемости до DIR_EQ_PAYBACK мес.
+     (как бот good), по одной позиции на цех в квартал, из бюджета капвложений. Мощность в агрегате не считается — печи не покупаются. */
+  function equip(S, c) {
+    const cfg = C(), pk = c.packed, b = c.budget, pl = S.macro.priceLevel, lim = K().DIR_EQ_PAYBACK;
+    if (!lim || !pk.productions.length || E.dateOf(S.day).m % 3) return; // раз в квартал
+    // быстрый выход: всё полезное уже стоит (обычно у зрелого города)
+    let any = false, fleet = false;
+    for (const p of pk.productions) if (p.status === 'open') for (const e of BK.EQUIPMENT) if ((e.fc || e.del) && !(p.equip[e.id] > 0)) { any = true; if (e.del) fleet = true; }
+    if (!any) return;
+    let rev = 0; for (const s of pk.stores) if (s.last && s.last.frac) rev += s.last.rev / s.last.frac;
+    const del = fleet ? pk.delM || 0 : 0; // доставка из цехов за месяц (агрегат пишет её в pk.delM)
+    if (!rev) return;
+    const fcM = rev * (pk.fcB != null ? pk.fcB : pk.fcPct || 0.3) * (CI().prodFcNow(S).fc / (pk.pf0 || 1));
+    let capAll = 0; for (const p of pk.productions) capAll += E.prodCapacity(S, p);
+    for (const p of pk.productions) {
+      if (p.status !== 'open') continue;
+      const share = capAll > 0 ? E.prodCapacity(S, p) / capAll : 1, m0 = E.prodFcMult(S, p);
+      let best = null;
+      for (const e of BK.EQUIPMENT) {
+        if ((p.equip[e.id] || 0) > 0 || (!e.fc && !e.del)) continue;
+        p.equip[e.id] = 1; const m1 = E.prodFcMult(S, p); delete p.equip[e.id];
+        const gain = fcM * share * (m0 - m1) / m0 + (e.del || 0) * del * share, price = e.price * pl;
+        if (gain > 0 && price / gain < lim && (!best || price / gain < best.pb)) best = { e, pb: price / gain, price };
+      }
+      if (!best || b.left < best.price || S.cash < best.price + 5e6 * pl) continue;
+      I.spend(S, best.price, 'capex'); b.left -= best.price; p.equip[best.e.id] = 1; p.capex = (p.capex || 0) + best.price;
+    }
   }
   // ремонты по окупаемости (как у бота): ступень за раз, из бюджета капвложений; «Экономия» строже, приоритет «Качество» щедрее
   function repairs(S, c, d) {
@@ -410,7 +473,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function buyStores(S, id, n, moodAdd) {
     const c = S.corp.cities[id], ms = E.menuStats(S), wz = E.wasteFactors(S, ms);
     c.packed = { stores: [], productions: [], offersSpecial: [], rival: { enabled: false, stores: [], hist: [], ban: {}, opened: 0, closed: 0, grabbed: 0 },
-      office: Object.assign({}, S.office, { hr: false, academy: false, ownerHires: 0, ownerTrains: 0 }), fcPct: S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct * (C().FOODCOST_MULT || 1), fcMs0: ms.fcPct, fill: 1, sales: wz.sales, fcK0: S.corp.hqFcK || 1 };
+      office: Object.assign({}, S.office, { hr: false, academy: false, ownerHires: 0, ownerTrains: 0 }), fcMs0: ms.fcPct, fill: 1, sales: wz.sales, fcK0: S.corp.hqFcK || 1 };
+    Object.assign(c.packed, CI().fcBase(S, ms, wz)); // фудкост без событий и заморозки активного города (§17)
     c.aggFrom = S.day; c.numSeq = 0;
     ensure(S);
     const out = [];
@@ -429,7 +493,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cr = S.corp, c = cr.cities[id], cfg = C();
     const ms = E.menuStats(S), wz = E.wasteFactors(S, ms);
     c.packed = { stores: [], productions: [], offersSpecial: [], rival: { enabled: false, stores: [], hist: [], ban: {}, opened: 0, closed: 0, grabbed: 0 },
-      office: Object.assign({}, S.office, { hr: false, academy: false, ownerHires: 0, ownerTrains: 0 }), fcPct: S.cache && S.cache.fcPct ? S.cache.fcPct : ms.fcPct * (cfg.FOODCOST_MULT || 1), fcMs0: ms.fcPct, fill: 1, sales: wz.sales };
+      office: Object.assign({}, S.office, { hr: false, academy: false, ownerHires: 0, ownerTrains: 0 }), fcMs0: ms.fcPct, fill: 1, sales: wz.sales };
+    Object.assign(c.packed, CI().fcBase(S, ms, wz)); // фудкост без событий и заморозки активного города (§17)
     c.aggFrom = S.day; c.numSeq = 0;
     ensure(S);
     const r = assign(S, dirId, id, true); if (!r.ok) return r;
