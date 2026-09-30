@@ -1,7 +1,7 @@
 // Загружает игровые модули в Node (глобальный BK)
 const path = require('path');
 const src = path.join(__dirname, '..', 'src');
-for (const f of ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js']) {
+for (const f of ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js']) {
   delete require.cache[require.resolve(path.join(src, f))];
   require(path.join(src, f));
 }
