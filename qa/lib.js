@@ -24,6 +24,10 @@ async function openPage(browser, vpName, opts = {}) {
   if (opts.seed) await p.addInitScript((seed) => { let x = seed >>> 0; Math.random = () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }, opts.seed);
   if (opts.save) await p.addInitScript((s) => { try { localStorage.setItem('bk-ufa-save-v1', s); } catch (e) {} }, opts.save);
   await p.goto(URL);
+  // обучение новичка (по умолчанию на стартовом экране включено, если сохранений нет) в общих сценариях выключено;
+  // его проверяет qa/tutorial.js (opts.tutorial: true — оставить выбор по умолчанию). Не через addInitScript: чтение
+  // localStorage в самом начале загрузки страницы сразу после записи больших сохранений давало устаревшие данные.
+  if (!opts.tutorial) await p.evaluate(() => { try { if (localStorage.getItem('bk-ufa-tutorial') == null) localStorage.setItem('bk-ufa-tutorial', '0'); } catch (e) {} document.querySelectorAll('#start [data-tutopt]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tutopt === '0'))); });
   return p;
 }
 

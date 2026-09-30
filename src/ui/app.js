@@ -76,7 +76,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     document.body.insertAdjacentHTML('afterbegin', `
 <div id="app">
   <header class="hud">
-    <div class="brand">${LOGO}<div class="brand-tx"><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта Уфы</div></div></div>
+    <div class="brand">${LOGO}<div class="brand-tx"><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта</div></div></div>
     <div class="clock"><span class="date" id="hud-date"></span>
       <div class="speed" role="group" aria-label="Скорость времени">
         <button data-speed="0" aria-label="Пауза" title="Пауза (пробел)">${ICON.pause}</button>
@@ -149,7 +149,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.className = 'start';
     el.hidden = false;
     el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
-      <h1>Хлебная<br>карта <em>Уфы</em></h1>
+      <h1>Хлебная<br><em>карта</em></h1>
       <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. Стартовый капитал, одно производство — и весь город на карте.</p>
       <div class="rules">
         <div class="r-diff"><b id="ruleCash">10 млн ₽</b>стартовый капитал</div>
@@ -158,7 +158,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
       <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
-      ${rivalOpt()}
+      ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
@@ -168,6 +168,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
     BK.Slots.bind(el);
+    if (BK.Tutorial) BK.Tutorial.bindStart(el);
     $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
@@ -179,6 +180,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   function newGame(name, difficulty) {
     S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
+    if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
@@ -408,7 +410,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     focusProdOffer: (d) => { const o = E.byId(S.prodOffers, d.arg); if (o) { ui.sel = { kind: 'prodOffer', id: o.id }; map.focus(o.x, o.y); refresh(); } },
     rent: (d) => {
       const r = E.rentStore(S, d.arg);
-      if (r.ok) { ui.sel = { kind: 'store', id: r.store.id }; toast('Помещение арендовано', `${r.store.address}. Открытие через ${C.OPEN_DAYS} дн.`, 'good'); if (S.phase === 'play' && S.stores.length === 1 && !S.corp) { ui.tab = 'dash'; ui.modalQueue.push(openTutorialModal); } else if (S.corp && S.stores.length === 1) ui.tab = 'dash'; }
+      if (r.ok) { ui.sel = { kind: 'store', id: r.store.id }; toast('Помещение арендовано', `${r.store.address}. Открытие через ${C.OPEN_DAYS} дн.`, 'good'); if (S.phase === 'play' && S.stores.length === 1 && !S.corp) { ui.tab = 'dash'; if (!(BK.Tutorial && BK.Tutorial.active(S))) ui.modalQueue.push(openTutorialModal); } else if (S.corp && S.stores.length === 1) ui.tab = 'dash'; }
       res(r);
     },
     rentProd: (d) => { const r = E.chooseProduction(S, d.arg); if (r.ok) toast('Производство арендовано', `Запуск через ${C.PROD_OPEN_DAYS} дн.`, 'good'); ui.sel = null; res(r); },
@@ -746,6 +748,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
       ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
+      ${BK.Tutorial ? BK.Tutorial.settingsHtml(S) : ''}
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>
@@ -778,7 +781,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart, openRussia, cityView };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart, openRussia, cityView, refresh };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();
