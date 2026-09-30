@@ -561,6 +561,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<button class="back" data-act="closeStoreView">← Все точки</button>`;
     s += `<div class="sec"><div class="card-h"><div><h2 style="font-family:var(--f-display);font-size:18px">№${st.num} · ${esc(st.address)}</h2><div class="card-s">${dname(st.district)} · ${fmtLong(st.size)}, ${st.area} м²</div></div></div>
       <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}${rivalChip(S, st)}</div></div>`;
+    if (BK.PixelUI) s += BK.PixelUI.storeSlot(S, st); // «живая точка» вблизи — пиксельная сцена (src/pixel/live.js)
     if (T && !T.closed) {
       s += `<div class="sec"><h3>Сегодня</h3><div class="kpis">
         <div class="kpi"><span class="k">Чеков</span><span class="v">${n0(T.checks)}</span><span class="d">трафик ${n0(T.traffic)} чел.</span></div>

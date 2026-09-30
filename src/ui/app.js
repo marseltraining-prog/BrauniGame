@@ -346,6 +346,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else body.innerHTML = html;
       ui.lastHtml = html; ui.lastTab = ui.tab + '|' + ui.storeId; body.scrollTop = scroll;
     }
+    if (BK.PixelUI) BK.PixelUI.afterPanel(S); // «живая точка»: смонтировать/обновить пиксельную сцену
   }
   /* Минимальный DOM-diff: узлы с тем же тегом переиспользуются, меняются только отличающиеся атрибуты и текст. */
   function morph(el, html) {
@@ -359,6 +360,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!x) { a.appendChild(y); continue; }
       if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) { a.replaceChild(y, x); continue; }
       if (x.nodeType !== 1) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; continue; }
+      if (x.dataset.keep && x.dataset.keep === y.dataset.keep) continue; // узел со своей жизнью (пиксельная сцена) — не трогать
       if (x.isEqualNode(y)) continue;
       syncAttrs(x, y);
       syncChildren(x, y);

@@ -131,7 +131,8 @@ async function until(p, pred, stop) {
         const sl = await p.evaluate(() => BK.App.state.prologue.hist.length);
         if (sl < 3) issues.push(`[${tag}] месяцы не идут: история ${sl}`);
         // --- сохранение и загрузка посреди пролога ---
-        const before = await p.evaluate(() => { BK.App.save(); return BK.App.state.prologue.m; });
+        // месяц отводим от границы: после загрузки время сразу идёт на ×1, и месяц на 97–99 % успевал перевалить до проверки (гонка теста)
+        const before = await p.evaluate(() => { const P = BK.App.state.prologue; P.t = Math.min(P.t, 0.5); BK.App.save(); return P.m; });
         await p.reload();
         await p.waitForSelector('#slots [data-act=continue]');
         const slotTxt = await p.textContent('#slots .slot');

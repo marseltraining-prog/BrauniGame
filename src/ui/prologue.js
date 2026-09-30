@@ -201,20 +201,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function repHint(p) { return p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'; }
   const beans = (v) => { const n = Math.min(5, 1 + Math.floor(v / 20)); return `<span class="pro-beans" aria-label="уровень ${n} из 5">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`; };
 
-  function scene(p) {
-    // стойка «Калача»: витрина, кофемашина, бариста; лицо — настроение
-    const face = p.mood >= 45 ? 'M-5 3 q5 4 10 0' : p.mood >= 25 ? 'M-5 4 h10' : 'M-5 5 q5 -4 10 0';
-    const cap = ['#c46f17', '#3b8796', '#6b4a2e'][p.job] || '#c46f17';
-    return `<svg class="pro-scene" viewBox="0 0 360 150" role="img" aria-label="Стойка пекарни «Калач»">
-      <rect x="0" y="0" width="360" height="150" rx="14" class="sc-wall"/>
-      <rect x="18" y="16" width="120" height="44" rx="6" class="sc-board"/><text x="78" y="34" text-anchor="middle" class="sc-bt">КАЛАЧ</text><text x="78" y="50" text-anchor="middle" class="sc-bs">хлеб · кофе · эчпочмак</text>
-      <g transform="translate(248 38)"><rect x="0" y="0" width="70" height="56" rx="6" class="sc-mach"/><rect x="10" y="10" width="50" height="14" rx="3" class="sc-machp"/><rect x="26" y="30" width="18" height="8" rx="2" class="sc-machp"/>
-        <path class="sc-steam" d="M26 -6 q4 -6 0 -12 M36 -4 q4 -6 0 -12 M46 -6 q4 -6 0 -12"/></g>
-      <g transform="translate(176 58)"><circle r="17" class="sc-head"/><path d="M-6 -3 h0.1 M6 -3 h0.1" class="sc-eye"/><path d="${face}" class="sc-mouth"/><path d="M-19 -8 q19 -22 38 0" fill="${cap}"/>
-        <path d="M-26 44 q0 -24 26 -24 q26 0 26 24 z" class="sc-body"/><path d="M-12 22 h24 v22 h-24 z" fill="${cap}" opacity=".85"/></g>
-      <rect x="0" y="98" width="360" height="52" class="sc-counter"/><rect x="0" y="96" width="360" height="6" class="sc-top"/>
-      <g class="sc-case"><rect x="22" y="104" width="120" height="36" rx="6"/><text x="44" y="130" font-size="18">🥐</text><text x="70" y="130" font-size="18">🥟</text><text x="96" y="130" font-size="18">🥯</text></g>
-      <text x="296" y="132" font-size="22">☕</text></svg>`;
+  // стойка «Калача» в пикселях (src/pixel/scenes.js): герой — настроение и силы, Рашид — мнение о вас, огонь и пар живые
+  function scene() { return `<div class="pro-px" id="proPxSlot"></div>`; }
+  const PX = () => BK.Px && BK.Px.stage && BK.Px.scenes;
+  function heroEmo(p) { return p.hp < 30 ? 'tired' : p.mood >= 70 ? 'happy' : p.mood >= 45 ? 'smile' : p.mood >= 25 ? 'neutral' : 'sad'; }
+  function monthScene() {
+    const slot = document.getElementById('proPxSlot'), p = Pp(); if (!slot || !p || !PX()) return;
+    const d = { mode: 'month', heroEmo: heroEmo(p), heroDrop: p.hp < 45, job: p.job, rashidEmo: p.rep >= 72 ? 'smile' : p.rep < 38 ? 'angry' : 'neutral', gulyaEmo: (p.rel && p.rel.gulya > 20) ? 'happy' : 'smile' };
+    if (!ui.pxMonth) ui.pxMonth = BK.Px.stage({ cls: 'pro-pxc', fps: 8, label: 'Пекарня «Калач»: вы за стойкой, Рашид у печи, Гуля с противнем', height: (W) => (W < 200 ? 112 : 128), scale: (a) => (a >= 760 ? 3 : 2), minW: 150, maxW: 300, active: () => !ui.mode || ui.mode === 'card', draw: (b, t, W, H, dd) => BK.Px.scenes.kalach(b, t, W, H, dd) });
+    const k = JSON.stringify(d);
+    if (ui.pxMonth.slot !== slot || !ui.pxMonth.cv.isConnected) { ui.pxMonth.data = d; ui.pxMonth.attach(slot); }
+    else if (k !== ui.pxMonthKey) ui.pxMonth.set(d);
+    ui.pxMonthKey = k;
   }
   function jobLadder(p) {
     const J = C().JOBS, pc = PR().promoCheck(p);
@@ -253,7 +251,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `</section>`;
     // герой: стойка, должность, «Смена», состояние, навыки
     const why = PR().shiftWhy(p);
-    s += `<section class="pc pro-hero">${scene(p)}${jobLadder(p)}
+    s += `<section class="pc pro-hero">${scene()}${jobLadder(p)}
       <button type="button" class="btn primary block pro-big pro-shiftbtn${!why ? ' ready' : ''}" data-pa="shift" ${why ? 'disabled' : ''}><span aria-hidden="true">☕</span> Выйти на смену<small>${why ? esc(why) : 'чаевые, навык и оценка начальника · 40 с'}</small></button>
       <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
       <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
@@ -310,18 +308,36 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!force && ui.pressing) return;
     ui.dirty = false; ui.lastRender = performance.now();
     setPart('proTop', top(p)); setPart('proColA', colA(p)); setPart('proColB', colB(p));
+    monthScene();
     if (ui.menu) menu(); bar();
   }
 
   /* ---------------- карточки-решения ---------------- */
   function avatar(h, big) { return `<span class="pro-av${big ? ' big' : ''}" style="--h:${h.hue}" aria-hidden="true">${esc(h.ini)}</span>`; }
+  // пиксельный портрет говорящего: кто и с какой эмоцией (по карточке); «Жизнь» — сам герой
+  const CARD_EMO = {
+    p01: 'neutral', p02: 'smirk', p03: 'smile', p04: 'smirk', p05: 'worried', p06: 'neutral', h_school: 'smile', h_lesson: 'neutral', promo: 'happy', goal: 'smile', p07: 'worried', p08: 'smile',
+    warn: 'angry', fired: 'angry', err: 'angry', sick: 'tired', splurge: 'worried', e_grandma: 'smile', e_lottery: 'surprised', e_bonus: 'happy', e_guest: 'happy', e_praise: 'happy', e_fest: 'happy',
+    e_cashback: 'smile', e_newyear: 'happy', e_phone: 'sad', e_fine: 'sad', e_rent: 'worried', e_cut: 'worried', e_loan: 'worried', e_sneakers: 'smile', e_sea: 'happy', e_bday: 'happy',
+    e_short: 'angry', e_parents: 'worried', e_tooth: 'tired', e_wallet: 'sad', e_invest: 'smirk', e_flood: 'surprised', e_blackfri: 'smile', e_quit: 'tired', e_check: 'worried',
+  };
+  function speaker(cv) {
+    const who = cv.who === 'family' ? (cv.id === 'e_parents' ? 'mama' : 'sania') : cv.who === 'friend' ? 'damir' : cv.who === 'life' || !BK.Px || !BK.Px.CAST[cv.who] ? 'hero' : cv.who;
+    const emo = CARD_EMO[cv.id] || (cv.kind === 'pos' ? 'happy' : cv.kind === 'neg' ? 'worried' : 'neutral');
+    return { who, emo };
+  }
+  function portrait(cv) {
+    if (!BK.Px || !BK.Px.portraitTag) return avatar(cv.hero, true);
+    const sp = speaker(cv);
+    return `<span class="pxframe" title="${esc(cv.hero.name)}">${BK.Px.portraitTag(sp.who, sp.emo)}</span>`;
+  }
   function showCard() {
     const s = S(), cv = PR().card(s); if (!cv) { hideOv(); return; }
     ui.mode = 'card';
     const LET = 'АБВГДЕ', kind = cv.kind === 'pos' ? 'pos' : cv.kind === 'neg' ? 'neg' : 'hero';
     const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
-      <div class="pcd-h">${avatar(cv.hero, true)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
+      <div class="pcd-h">${portrait(cv)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
       <h2 id="proCardT">${esc(cv.title)}</h2><p class="pcd-t">${esc(cv.text)}</p><div class="pcd-c">`;
     if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
     cv.choices.forEach((c, i) => {
@@ -331,6 +347,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
     h += `</div></div></div>`;
     $('#proOv').innerHTML = h;
+    if (BK.Px && BK.Px.hydrate) BK.Px.hydrate($('#proOv'));
     const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
   }
   function hideOv() { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
@@ -365,7 +382,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const k of cr.perks) gains.push(`<li><span aria-hidden="true">🎁</span><span>${esc(PK[k])}</span></li>`);
       if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
       h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
-        <div class="pf-hero" aria-hidden="true">🏪</div><span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
+        ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🏪</div>'}<span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
         <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
         <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
         <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
@@ -380,15 +397,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (p.job < 2) tips.push('До управляющего сменой вы так и не дошли — без этого своё дело не открыть.');
       if (!tips.length) tips.push('Копилка и вклад защищают деньги от срывов, а «Смена» и учёба быстрее ведут к повышению.');
       h = `<div class="pro-ovbg"><div class="pro-card pro-final life" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
-        <div class="pf-hero" aria-hidden="true">🕰️</div><span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
+        ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🕰️</div>'}<span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
         <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, а Семён Аркадьевич всё так же берёт американо и правду. Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
         <h3>Куда ушли деньги</h3>${where}
         <ul class="pf-tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
         <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="retry">Попробовать заново</button><button type="button" class="btn block pro-big2" data-pa="skipMain">Начать сразу со своей сети</button></div></div></div>`;
     }
     $('#proOv').innerHTML = h;
+    finalScene(p);
     const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
     if (p.status === 'won') confetti();
+  }
+  // пиксельная сцена финала: «Своя точка» — утро у своей вывески; «Жизнь в найме» — поздний вечер в «Калаче», постаревший герой
+  function finalScene(p) {
+    const slot = document.getElementById('proFinPx'); if (!slot || !BK.Px || !BK.Px.stage) return;
+    const won = p.status === 'won' || p.status === 'done';
+    const d = won ? { gulya: p.sf && (p.sf.gulya === 'with' || p.sf.gulya === 'share'), rashid: p.sf && p.sf.mentor === 'partner' }
+      : { mode: 'life', light: 'night', old: true, job: p.job, heroEmo: 'tired', rashidEmo: 'neutral', gulya: false, fill: 0.2 };
+    if (ui.pxFin) ui.pxFin.destroy();
+    ui.pxFin = BK.Px.stage({ cls: 'pro-pxf', fps: 8, data: d, label: won ? 'Своя точка: вывеска, ленточка у входа, вы машете' : 'Поздний вечер в «Калаче»: вы за той же стойкой', height: (W) => (W < 200 ? 104 : 120), scale: () => 2, minW: 150, maxW: 320, draw: (b, t, W, H, dd) => (won ? BK.Px.scenes.own(b, t, W, H, dd) : BK.Px.scenes.kalach(b, t, W, H, dd)) });
+    ui.pxFin.attach(slot);
   }
   // переход в основную игру (стадия 2) с переносом бонусов
   function toMain(skipped) {
@@ -441,7 +469,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const pat = (sh.plan.patience - (sh.tired ? 3 : 0)) * (rush ? 0.85 : 1);
     sh.total++;
     const sem = sh.total === 1 && sh.first; // первый гость первой смены — Семён Аркадьевич: «Американо и правду!»
-    return { id: ++sh.id, face: sem ? '👴' : FACES[Math.floor(R() * FACES.length)], order: sem ? ['esp'] : order, pat: sem ? pat + 6 : pat, max: sem ? pat + 6 : pat, asked: false, up: null, note: sh.total === 1 && sh.first ? 'Американо и правду!' : '' };
+    const g = { id: ++sh.id, face: sem ? '👴' : FACES[Math.floor(R() * FACES.length)], order: sem ? ['esp'] : order, pat: sem ? pat + 6 : pat, max: sem ? pat + 6 : pat, asked: false, up: null, note: sh.total === 1 && sh.first ? 'Американо и правду!' : '' };
+    g.look = sem ? 'sem' : FACES.indexOf(g.face); // пиксельный облик — по тому же лицу (ГСЧ смены не трогаем)
+    return g;
   }
   function shiftTick(dt) {
     const sh = ui.sh; if (!sh || sh.state !== 'play') return;
@@ -466,22 +496,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sh = ui.sh, p = Pp(); if (!sh) return;
     let h;
     if (sh.state === 'intro') {
-      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro"><span class="sh-big" aria-hidden="true">☕</span><h2 id="shT">${sh.first ? 'Первая смена' : 'Смена в «Калаче»'}</h2>
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : 'Смена в «Калаче»'}</h2>
         <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
         ${sh.tired ? '<p class="pro-note">Вы не выспались после ночной смены — гости покажутся нетерпеливее.</p>' : ''}
         <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftGo">Начать смену · ${sh.plan.sec} с</button><button type="button" class="btn block" data-pa="shiftCancel">Не сейчас</button></div></div></div>`;
     } else if (sh.state === 'play') {
       const g = sh.guests[0];
-      const q = sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" style="--pat:${(x.pat / x.max * 100).toFixed(0)}"><span class="sh-f" aria-hidden="true">${x.face}</span></span>`).join('');
-      const order = g ? g.order.map((id, i) => `<span class="sh-oi${g.up === i ? ' up' : ''}"><span aria-hidden="true">${itemById(id).icon}</span><small>${esc(itemById(id).name)}</small></span>`).join('') : '';
+      const q = PX() ? sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" role="img" aria-label="Гость ${i + 1}"></span>`).join('')
+        : sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" style="--pat:${(x.pat / x.max * 100).toFixed(0)}"><span class="sh-f" aria-hidden="true">${x.face}</span></span>`).join('');
+      const order = g ? g.order.map((id, i) => `<span class="sh-oi${g.up === i ? ' up' : ''}">${itIc(id)}<small>${esc(itemById(id).name)}</small></span>`).join('') : '';
       const canUp = g && !g.asked;
       h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-label="Смена"><div class="sh-in">
         <div class="sh-top"><div class="sh-tb"><i id="shTime" style="width:${(100 - sh.t / sh.plan.sec * 100).toFixed(1)}%"></i></div><span class="sh-rush" id="shRush" hidden>Час пик!</span>
           <span class="sh-sc"><span title="Обслужено">✅ ${sh.served}</span><span title="Ошибки">❌ ${sh.errors}</span><span title="Ушли">😠 ${sh.lost}</span><b title="Чаевые (примерно)">${fm(sh.tips)}</b></span><button type="button" class="btn sm" data-pa="shiftEnd">Закончить</button></div>
-        <div class="sh-queue" aria-label="Очередь: ${sh.guests.length}">${q || '<span class="sh-empty">Пока никого — протрите стойку</span>'}</div>
+        ${PX() ? `<div class="sh-scene" id="shScene"></div><div class="sh-queue sr" aria-label="Очередь: ${sh.guests.length}">${q}</div>` : `<div class="sh-queue" aria-label="Очередь: ${sh.guests.length}">${q || '<span class="sh-empty">Пока никого — протрите стойку</span>'}</div>`}
         <div class="sh-order">${g ? `<div class="sh-bub">${g.note ? `<span class="sh-note">${esc(g.note)}</span>` : ''}<span class="sh-ol">${order}</span></div>${canUp ? `<button type="button" class="btn sh-upb" data-pa="shiftUp">🥐 Предложить к заказу</button>` : ''}` : ''}<span class="sh-msg" id="shMsg" aria-live="polite"></span></div>
-        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itemById(id).icon}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ</button></div>
-        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}"><span aria-hidden="true">${x.icon}</span><small>${esc(x.name)}</small><kbd>${i + 1}</kbd></button>`).join('')}</div></div></div>`;
+        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itIc(id)}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ</button></div>
+        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}">${itIc(x.id)}<small>${esc(x.name)}</small><kbd>${i + 1}</kbd></button>`).join('')}</div></div></div>`;
     } else {
       const r = sh.result, st = r.stars;
       h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-res"><span class="sh-stars" aria-label="Оценка ${st} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= st ? 'on' : ''}" style="animation-delay:${i * 0.12}s">★</i>`).join('')}</span>
@@ -493,6 +524,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     let el = $('#proSh'); if (!el) { $('#proOv').insertAdjacentHTML('beforeend', '<div id="proSh"></div>'); el = $('#proSh'); }
     el.innerHTML = h;
+    if (PX()) { BK.Px.hydrate(el); shiftScene(); }
+  }
+  // значок позиции: пиксельная иконка (или эмодзи, если пиксельного движка нет)
+  function itIc(id) { const it = itemById(id); return PX() ? BK.Px.iconTag(BK.Px.scenes.ITEM_IC[id] || 'cup') : `<span aria-hidden="true">${it.icon}</span>`; }
+  // сцена «Смены»: гости-пиксели в очереди с пузырями заказов и шкалой терпения, герой за стойкой, Рашид у печи, Гуля
+  function shiftScene() {
+    const slot = document.getElementById('shScene'); if (!slot) return;
+    if (!ui.pxShift) ui.pxShift = BK.Px.stage({ cls: 'pro-pxs', fps: 10, label: 'Очередь в «Калаче»: гости с заказами, вы за стойкой', height: (W) => (W < 200 ? 100 : 124), scale: (a) => (a >= 900 ? 3 : 2), minW: 150, maxW: 360, active: () => ui.mode === 'shift', draw: (b, t, W, H) => {
+      const sh = ui.sh, now = performance.now();
+      const d = { mode: 'shift', gulya: true, pos: ui.pxPos || (ui.pxPos = {}), queue: [], heroEmo: 'smile', rashidEmo: 'neutral' };
+      if (sh) {
+        d.queue = sh.state === 'play' ? sh.guests.map((g, i) => ({ id: g.id, look: g.look, pat: g.pat / g.max, order: i === 0 ? g.order : null })) : [];
+        d.heroEmo = sh.heroUntil > now ? sh.heroFx : sh.guests.some((g) => g.pat / g.max < 0.3) ? 'worried' : 'smile';
+        d.rashidEmo = sh.errors >= 2 ? 'angry' : sh.served >= 3 && !sh.errors ? 'smile' : 'neutral';
+        if (sh.coinAt && now - sh.coinAt < 900) d.coin = t - (now - sh.coinAt) / 1000;
+      }
+      BK.Px.scenes.kalach(b, t, W, H, d);
+    } });
+    if (!ui.sh || ui.sh.state !== 'play') ui.pxPos = {};
+    ui.pxShift.attach(slot);
   }
   function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); return; } sh.tray.push(id); shiftRender(); }
   function shiftServe() {
@@ -502,8 +553,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       sh.served++; if (g.up != null) sh.upsells++;
       const p = Pp(), tip = Math.round(C().SHIFT_TIP * (0.7 + p.sk.sales / 100) + (g.up != null ? C().SHIFT_UPSELL : 0));
       sh.tips += tip; sh.guests.shift(); sh.tray = [];
+      sh.heroFx = 'happy'; sh.heroUntil = performance.now() + 900; sh.coinAt = performance.now();
       flash(`Спасибо! +${tip} ₽`, 'up');
-    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); flash('Не тот заказ! 😬', 'dn'); }
+    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); sh.heroFx = 'worried'; sh.heroUntil = performance.now() + 1100; flash('Не тот заказ! 😬', 'dn'); }
     shiftRender();
   }
   function shiftUp() {
