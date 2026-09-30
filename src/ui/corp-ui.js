@@ -98,9 +98,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const dv = D().cityDev(S, id); const st = BK.Corp.cityStats(S, id);
       if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
       else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      const ls = D().leakStatus && D().leakStatus(S, id);
+      if (ls) { const a = leakAct(S, ls, id); out.push({ w: ls.lossM >= 3 ? 9 : 6, ico: '₽', cls: 'bad', t: leakTitle(ls, id), s: leakText(ls), act: a.a, arg: a.arg, b: a.b, prim: a.prim }); } // Р4: денежный риск
       else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
     }
     return out.sort((a, b) => b.w - a.w);
+  }
+  /* ---------------- денежный риск (Р4): «город теряет деньги» — почему и что сделать ---------------- */
+  function leakAct(S, ls, id) { // «Учить» — карточка директора (университет), иначе «Сменить»
+    const uni = BK.HQ && BK.HQ.lvlOf(S, 'uni') > 0, train = ls.d && ls.whyKeys.some((k) => k === 'skills' || k === 'nouni');
+    if (!ls.d) return { a: 'ruHireFor', arg: id, b: 'Назначить', prim: true };
+    if (train && uni && !ls.d.study) return { a: 'ruDir', arg: ls.d.id, b: 'Учить', prim: true };
+    if (ls.whyKeys.length === 1 && ls.whyKeys[0] === 'mismatch') return { a: 'ruSel', arg: id, b: 'Приоритет' };
+    return { a: 'ruHireFor', arg: id, b: 'Сменить', prim: !ls.d.study };
+  }
+  function leakTitle(ls, id) { return `${cname(id)}: ${ls.lossM >= 2 ? `теряет деньги ${ls.lossM} мес. подряд` : `утечка денег ${Math.round(ls.leak * 100)} %`}`; }
+  function leakText(ls) {
+    const why = ls.why.length ? ls.why.join('; ') : 'убыточные точки';
+    return `${why}${ls.whyKeys.indexOf('skills') >= 0 ? ` (навыки ${ls.skill} при нужных ${ls.need} для ${ls.n} точек)` : ''}. Что сделать: ${ls.fix}.`;
+  }
+  function leakBox(S, id, ls) {
+    if (!ls) return '';
+    const a = leakAct(S, ls, id);
+    return `<div class="leakbox"><b>${esc(leakTitle(ls, id))}</b><span>Расходы ползут вверх, выручка отстаёт${ls.leak >= 0.01 ? ` — утечка ≈ ${Math.round(ls.leak * 100)} % выручки` : ''}. ${esc(leakText(ls))}</span>${ls.d && ls.d.study ? `<span class="hint">Директор учится — утечка спадёт после диплома.</span>` : `<button class="btn sm ${a.prim ? 'primary' : ''}" data-act="${a.a}" data-arg="${esc(a.arg)}">${a.b}</button>`}</div>`;
   }
   function attentionHtml(S, max) {
     const a = attention(S); if (!a.length) return '';
@@ -131,6 +151,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<div class="dcard none"><div class="dh"><span class="dav bad">!</span><div><b>Нет директора</b><span>Город только живёт: новых точек нет, найм из вашего лимита, рейтинг сползает к 3,5★, выручка × 0,95.</span></div></div>
         <div class="row dbtns"><button class="btn sm primary" data-act="ruHireFor" data-arg="${id}">${res.length ? 'Назначить директора' : 'Нанять директора'}</button></div></div>`;
     }
+    if (D().leakStatus) s += leakBox(S, id, D().leakStatus(S, id)); // Р4: денежный риск
     // конкуренты: местные сети и федеральный «Хлебный двор»
     if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(C().RIVAL_NAME)}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
     // план / факт
@@ -347,6 +368,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${kpi('Бюджет', fm(it.left), 'остаток из ' + fm(it.capex), it.left > 0 ? 'good' : 'warn')}
       ${kpi('Персонал', it.staff + ' чел.', it.missing ? 'нехватка ' + it.missing : 'штат полный', it.missing ? 'warn' : 'good')}</div>
       <blockquote class="rq-q">«${esc(it.phrase)}»<small>${it.dev != null ? `Выручка на точку к прогнозу: ${pc1(it.dev)}` : 'Прогноз — со второго месяца'} · ${it.fin ? 'цифры сверены финансовым департаментом' : 'отчёт директора без проверки: точность ±5 %'}</small></blockquote>`;
+    if (it.leak) { const lk = it.leak; s += `<div class="leakbox"><b>${lk.lossM >= 2 ? `Город теряет деньги ${lk.lossM} мес. подряд` : `Утечка денег ≈ ${Math.round(lk.pct * 100)} % выручки`}</b><span>${esc((lk.why && lk.why.length ? lk.why.join('; ') : 'убыточные точки') + (lk.skill ? ` (навыки ${lk.skill} при нужных ${lk.need})` : '') + '. Что сделать: ' + lk.fix + '.')}</span></div>`; } // Р4: денежный риск
     s += (it.reqs || []).map((r, i) => reqBlock(S, it, r, i)).join('');
     const d = D().dirById(S, it.dir), canPraise = d && !it.praised && S.day - d.praiseDay >= 90;
     s += `<div class="rfoot"><span class="hint">${open ? `Нет ответа до ${dateTxt(it.due)} — отказ по умолчанию (−1 лояльности).` : 'Все вопросы решены.'}</span>${d ? `<button class="btn sm" data-act="repPraise" data-arg="${it.id}"${canPraise ? '' : ' disabled'} title="${canPraise ? 'Благодарность в ответ на отчёт: +2 лояльности, не чаще раза в квартал' : 'Отмечать можно не чаще раза в квартал'}">★ Отметить · +${K().LOY_PRAISE}</button>` : ''}</div></div>`;
@@ -378,15 +400,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Object.keys(cr.cities).map((id) => {
       const st = BK.Corp.cityStats(S, id), c = cr.cities[id], d = D().dirOf(S, c), dv = D().cityDev(S, id);
       const open = cr.inbox.find((it) => it.city === id && (it.reqs || []).some((r) => r.st === 'open'));
+      const ls = id !== cr.active && D().leakStatus ? D().leakStatus(S, id) : null;
       let act = null;
       if (id === cr.active) act = null;
       else if (!d) act = { a: 'ruHireFor', arg: id, b: 'Назначить', prim: true };
+      else if (ls) act = leakAct(S, ls, id); // Р4: город теряет деньги — учить или сменить директора
       else if (open) act = { a: 'ruRep', arg: open.id, b: 'Ответить' };
       else if (d.loyalty < 40) act = { a: 'ruDir', arg: d.id, b: 'Мотивация' };
       else if (c.dev.why === 'budget') act = { a: 'ruSel', arg: id, b: 'Дать бюджет' };
       else act = { a: 'ruSel', arg: id, b: 'Город', link: true };
       const act0 = id === cr.active; // подробный город: прогноза агрегата нет
-      return { id, st, c, d, dev: dv && !act0 ? dv.dev : null, dev3: dv && !act0 ? dv.dev3 : null, turn: dv ? dv.turn : null, rev12: st.rev12, margin: st.rev12 > 0 ? st.prof12 / st.rev12 : null, rating: st.rating, act, loss: st.prof12 < 0 || (st.lastProfit != null && st.lastProfit < 0) };
+      return { id, st, c, d, dev: dv && !act0 ? dv.dev : null, dev3: dv && !act0 ? dv.dev3 : null, turn: dv ? dv.turn : null, rev12: st.rev12, margin: st.rev12 > 0 ? st.prof12 / st.rev12 : null, rating: st.rating, act, ls, loss: st.prof12 < 0 || (st.lastProfit != null && st.lastProfit < 0) || !!(ls && ls.lossM) };
     });
   }
   function cmpTab(S, ui) {
@@ -405,15 +429,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const tone = (r) => (r.st.lastRev > 0 ? (r.st.lastProfit / r.st.lastRev >= 0.15 ? 'good' : r.st.lastProfit >= 0 ? 'warn' : 'bad') : 'none');
     const who = (r) => (r.d ? `${av(r.d.name, 'sm')}<span class="cw"><b>${esc(r.d.name)}</b>${loyBar(r.d)}</span>` : r.id === S.corp.active ? `<span class="cw"><b>вы управляете</b><small>${r.st.name === 'Уфа' ? 'родной город' : 'активный город'}</small></span>` : `<span class="dav sm bad">!</span><span class="cw"><b class="negc">Нет директора</b><small>${r.st.months} мес. в сети</small></span>`);
     const since = (r) => { const t = E().dateOf(r.c.enteredDay); return r.id === 'ufa' ? 'с ' + C().START_YEAR : `с ${E().MONTHS_G[t.m].slice(0, 4)}. ${t.y}`; };
+    const lossTag = (r) => (r.ls ? `<small class="negc lossm">${r.ls.lossM >= 2 ? `в минусе ${r.ls.lossM} мес.` : 'утечка ' + Math.round(r.ls.leak * 100) + ' %'} · ${esc(r.ls.whyKeys.map((k) => ({ skills: 'слабые навыки', nouni: 'не учился', mismatch: 'стиль ≠ приоритет' })[k]).join(', ') || 'убыточные точки')}</small>` : ''); // Р4: денежный риск
     const act = (r) => (r.act ? (r.act.link ? `<button class="linkbtn" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b} →</button>` : `<button class="btn sm ${r.act.prim ? 'primary' : ''}" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b}</button>`) : '<span class="muted">—</span>');
     s += `<div class="cmpwrap"><table class="cmp"><thead><tr>${th('name', 'Город')}${th('loy', 'Директор · лояльность')}${th('rev12', 'Выручка, 12 мес.', 'r')}${th('dev', 'На точку к прогнозу', 'c')}${th('margin', 'Маржа', 'r')}${th('rating', 'Рейтинг', 'r')}${th('turn', 'Текучка', 'r')}<th class="r">Что сделать</th></tr></thead><tbody>`;
-    s += rows.map((r) => `<tr class="${r.dev != null && r.dev < -0.05 ? 'bad' : r.dev != null && r.dev < -0.03 ? 'warn' : ''}"><td><span class="ccir t-${tone(r)}">${r.st.stores}</span><span class="cw"><b>${esc(r.st.name)}</b><small>${since(r)}${r.id === S.corp.active ? ' · вы здесь' : ''}</small></span></td><td><span class="cdir">${who(r)}</span></td>
+    s += rows.map((r) => `<tr class="${r.dev != null && r.dev < -0.05 ? 'bad' : r.dev != null && r.dev < -0.03 ? 'warn' : ''}"><td><span class="ccir t-${tone(r)}">${r.st.stores}</span><span class="cw"><b>${esc(r.st.name)}</b><small>${since(r)}${r.id === S.corp.active ? ' · вы здесь' : ''}</small>${lossTag(r)}</span></td><td><span class="cdir">${who(r)}</span></td>
       <td class="r num">${h.spark(r.c.hist.slice(-12).map((x) => x[2]), 44, 16)} ${fm(r.rev12)}</td><td class="c">${r.id === S.corp.active ? '<span class="muted">подробно</span>' : devBar(r.dev)}</td>
       <td class="r num ${r.margin != null && r.margin < 0 ? 'negc' : ''}">${r.margin != null ? h.pctS(r.margin, true) : '—'}</td><td class="r num">${r.rating ? '★ ' + n1(r.rating) : '—'}</td><td class="r num">${r.turn != null ? Math.round(r.turn * 100) + ' %' : '—'}</td><td class="r">${act(r)}</td></tr>`).join('');
     const all = cmpRows(S), tot = all.reduce((a, r) => a + r.rev12, 0), pr = all.reduce((a, r) => a + r.st.prof12, 0), ds = S.corp.directors;
     s += `</tbody><tfoot><tr><td><b>Вся сеть · ${all.reduce((a, r) => a + r.st.stores, 0)} точек</b></td><td>${ds.length ? `${h.nw(ds.length, 'директор', 'директора', 'директоров')} · в среднем ${Math.round(ds.reduce((a, d) => a + d.loyalty, 0) / ds.length)}` : 'директоров нет'}</td><td class="r num">${fm(tot)}</td><td></td><td class="r num">${tot > 0 ? h.pctS(pr / tot, true) : '—'}</td><td></td><td></td><td></td></tr></tfoot></table></div>`;
     // телефон: карточки
-    s += `<div class="cmpcards">${rows.map((r) => `<div class="card cmpc"><div class="card-h"><span class="ccir t-${tone(r)}">${r.st.stores}</span><div class="cw"><b>${esc(r.st.name)}</b><small>${since(r)}</small></div>${act(r)}</div><div class="cdir">${who(r)}</div>
+    s += `<div class="cmpcards">${rows.map((r) => `<div class="card cmpc"><div class="card-h"><span class="ccir t-${tone(r)}">${r.st.stores}</span><div class="cw"><b>${esc(r.st.name)}</b><small>${since(r)}</small>${lossTag(r)}</div>${act(r)}</div><div class="cdir">${who(r)}</div>
       <div class="cg"><span>Выручка 12 мес.<b class="num">${fm(r.rev12)}</b></span><span>К прогнозу${r.id === S.corp.active ? '<b class="muted">подробно</b>' : devBar(r.dev)}</span><span>Маржа<b class="num">${r.margin != null ? h.pctS(r.margin, true) : '—'}</b></span><span>Рейтинг · текучка<b class="num">${r.rating ? n1(r.rating) + '★' : '—'} · ${r.turn != null ? Math.round(r.turn * 100) + ' %' : '—'}</b></span></div></div>`).join('')}</div>`;
     s += `<p class="hint" style="margin:0"><span class="lgw warn"></span>ниже прогноза на 3 %+ <span class="lgw bad"></span>на 5 %+ — слабый директор, текучка или устаревшие точки. Прогноз — выручка точек «как при снимке»: без директора, случайностей и перемен в команде.</p></div>`;
     return s;

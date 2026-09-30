@@ -4,6 +4,8 @@
    приоритет и бюджет города, вход в Екатеринбург под директором, Уфа под директором, «Сравнение городов», достижения,
    сохранение Р1 (без полей директоров). Р3: штаб (финдеп → Москва открыта), университет, KPI, аудит нашёл воровство,
    корпоративное событие с выбором (и недоступным вариантом), переманивание; сохранение Р2 (без полей Р3).
+   Р4: вход в Стерлитамак без своего цеха (свежая выпечка из Уфы), продажи и поставка, линия снабжения на карте России;
+   денежный риск — слабый директор: «теряет деньги» в «Требует внимания», «Сравнении», отчёте и карточке города.
    Экраны 1440 / 390 / 360 в светлой и тёмной теме, цели на телефоне ≥ 40 px.
    Запуск: node qa/russia.js [папка=qa/shots/russia]   Итог — <папка>/issues.txt, код выхода 1 при проблемах. */
 const fs = require('fs'), path = require('path');
@@ -142,6 +144,7 @@ async function flow(b, sv) {
   await shot('12-ufa-back');
   await directors(p, tag, shot);
   await corpR3(p, tag, shot);
+  await r4(p, tag, shot);
   // сохранение и загрузка с двумя городами
   const before = await p.evaluate(() => { BK.App.save(); const S = BK.App.state; return { day: S.day, cash: Math.round(S.cash), cities: Object.keys(S.corp.cities).join(), size: localStorage.getItem('bk-ufa-save-v1').length }; });
   notes.push(`сохранение с двумя городами: ${Math.round(before.size / 1024)} КБ`);
@@ -328,6 +331,57 @@ async function corpR3(p, tag, shot) {
   else notes.push(`переманивание: директор Екатеринбурга ушёл в «Хлебный двор», город без директора`);
   await p.evaluate(() => BK.App.ACT.tab({ arg: 'ruhq' })); await shot('28-hq-after');
   await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(200);
+}
+
+// Р4: логистика между городами и денежный риск
+async function r4(p, tag, shot) {
+  await p.evaluate(() => { const S = BK.App.state; if (S.cash < 3e9) S.cash = 3e9; for (const id in S.corp.cities) if (id !== 'ufa') S.corp.cities[id].enteredDay -= 800; });
+  await p.keyboard.press('r'); await p.waitForTimeout(700);
+  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'sterlitamak' })); await p.waitForTimeout(250);
+  await p.click('[data-act="ruEnter"][data-arg="sterlitamak"]'); await p.waitForTimeout(300);
+  const m = await p.evaluate(() => { const r = [...document.querySelectorAll('#modal input[name="supply"]')].map((x) => x.value + (x.disabled ? ':off' : '')); return r; });
+  if (m.join() !== 'own,fresh,frozen:off') issues.push(`[${tag}] выбор снабжения при входе в Стерлитамак: ${m.join()}`);
+  await p.check('#modal input[name="supply"][value="fresh"]');
+  await shot('29-m-enter-supply');
+  await p.click('#ruEnterOk'); await p.waitForTimeout(800);
+  const s1 = await p.evaluate(() => { const S = BK.App.state, c = S.corp.cities.sterlitamak; return { active: S.corp.active, from: c.supplyFrom, mode: c.supplyMode, km: c.supplyKm, setup: BK.Engine.citySetup(S), prods: S.productions.length }; });
+  if (s1.active !== 'sterlitamak' || s1.from !== 'ufa' || s1.mode !== 'fresh' || s1.setup !== 'store' || s1.prods) issues.push(`[${tag}] вход без цеха: ${JSON.stringify(s1)}`);
+  await p.click('[data-act="rent"]:not([disabled])'); await p.waitForTimeout(300);
+  await live(p, 75, false); await realTicks(p, 1); await clear(p);
+  const s2 = await p.evaluate(() => { const S = BK.App.state, st = S.stores[0]; return { rev: st && st.last ? Math.round(st.last.rev) : 0, del: st ? Math.round(BK.Engine.deliveryCost(S, st)) : 0, remote: Math.round(BK.Corp.remoteDel(S, st) || 0), fill: S.cache && S.cache.fill }; });
+  if (!(s2.rev > 0) || s2.del !== s2.remote || s2.fill !== 1) issues.push(`[${tag}] точка без своего цеха: ${JSON.stringify(s2)}`);
+  else notes.push(`Стерлитамак без цеха (выпечка из Уфы, ${s1.km} км): выручка точки ${Math.round(s2.rev / 1e6)} млн/мес, поставка ${Math.round(s2.del / 1e3)} тыс. ₽/мес`);
+  await p.keyboard.press('r'); await p.waitForTimeout(700);
+  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'sterlitamak' })); await p.waitForTimeout(300);
+  const ln = await p.evaluate(() => ({ n: [...document.querySelectorAll('.ru-sup.fresh')].filter((x) => !x.closest('.ru-legend')).length, lg: /Свежая выпечка из цеха/.test(document.querySelector('.ru-legend').textContent) }));
+  if (ln.n !== 1 || !ln.lg) issues.push(`[${tag}] линия снабжения на карте России: ${JSON.stringify(ln)}`);
+  await shot('30-russia-supply');
+  // денежный риск: слабый директор в городе на автопилоте
+  const lid = await p.evaluate(() => {
+    const S = BK.App.state, cr = S.corp;
+    const ok = (x) => x !== cr.active && cr.cities[x].directorId && cr.cities[x].packed && cr.cities[x].packed.stores.length;
+    const id = Object.keys(cr.cities).filter((x) => x !== 'ufa').find(ok) || Object.keys(cr.cities).find(ok);
+    const c = cr.cities[id], d = BK.Dir.dirOf(S, c);
+    for (const k of BK.Dir.SK) d.skills[k] = 20; d.progs = []; d.study = null; d.cityMonths = 30; c.leak = 0.3;
+    return id;
+  });
+  await live(p, 40, false); await realTicks(p, 1); await clear(p);
+  await live(p, 31, false); await realTicks(p, 1); await clear(p);
+  const L = await p.evaluate((id) => { const S = BK.App.state, ls = BK.Dir.leakStatus(S, id), att = BK.CorpUI.attention(S).find((x) => x.t.indexOf(BK.CITY_BY_ID[id].name) === 0 && /теряет|утечка/.test(x.t)), rep = S.corp.inbox.find((x) => x.kind === 'report' && x.city === id); return { leak: ls && ls.leak, lossM: ls && ls.lossM, why: ls && ls.whyKeys.join(), att: att ? att.t + ' → ' + att.b : null, rep: !!(rep && rep.leak) }; }, lid);
+  if (!L.leak || !L.att || !L.rep) issues.push(`[${tag}] сигналы утечки: ${JSON.stringify(L)}`);
+  else notes.push(`денежный риск: ${L.att} (утечка ${Math.round(L.leak * 100)} %, ${L.why})`);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ru' })); await p.waitForTimeout(300);
+  await shot('31-leak-attention');
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'rucmp' })); await p.waitForTimeout(300);
+  const cm = await p.evaluate(() => ({ tag: document.querySelectorAll('.cmp .lossm').length, btn: [...document.querySelectorAll('.cmp button')].some((b) => /Учить|Сменить/.test(b.textContent)) }));
+  if (!cm.tag || !cm.btn) issues.push(`[${tag}] «Сравнение»: нет метки или действия при утечке ${JSON.stringify(cm)}`);
+  await shot('32-leak-cmp');
+  await p.evaluate((id) => BK.App.ACT.ruSel({ arg: id }), lid); await p.waitForTimeout(300);
+  const box = await p.evaluate(() => !!document.querySelector('.leakbox'));
+  if (!box) issues.push(`[${tag}] карточка города без блока «теряет деньги»`);
+  await p.evaluate(() => { const el = document.querySelector('.leakbox'); if (el) el.scrollIntoView({ block: 'center' }); });
+  await shot('33-leak-city');
+  await p.evaluate(() => { BK.Engine.switchCity(BK.App.state, 'ufa'); BK.App.cityView(false); }); await p.waitForTimeout(200); // дальше сценарий ждёт игрока в Уфе
 }
 
 // цели на телефоне: новые кнопки второго акта — не меньше 40 px по высоте

@@ -361,3 +361,10 @@ table.cmp.uni tr.lock td { color: var(--ink-3); }
   .mot .bv b { min-width: 80px; }
 }
 .uniwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
+
+/* денежный риск (Р4): город теряет деньги — почему и что сделать */
+.leakbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 11px; border: 1px solid var(--bad); border-left-width: 4px; border-radius: 10px; background: color-mix(in srgb, var(--bad) 8%, transparent); margin: 6px 0; }
+.leakbox b { grid-column: 1; font-size: 13.5px; color: var(--bad-t); }
+.leakbox span { grid-column: 1; font-size: 12.5px; color: var(--ink-2); }
+.leakbox .btn { grid-column: 2; grid-row: 1 / span 2; }
+.cmp .lossm, .cmpc .lossm { display: block; font-size: 11px; }
