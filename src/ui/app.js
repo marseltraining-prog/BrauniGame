@@ -76,7 +76,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     document.body.insertAdjacentHTML('afterbegin', `
 <div id="app">
   <header class="hud">
-    <div class="brand">${LOGO}<div class="brand-tx"><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта Уфы</div></div></div>
+    <div class="brand">${LOGO}<div class="brand-tx"><div class="brand-name" id="hud-name"></div><div class="brand-sub">Хлебная карта</div></div></div>
     <div class="clock"><span class="date" id="hud-date"></span>
       <div class="speed" role="group" aria-label="Скорость времени">
         <button data-speed="0" aria-label="Пауза" title="Пауза (пробел)">${ICON.pause}</button>
@@ -149,7 +149,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.className = 'start';
     el.hidden = false;
     el.innerHTML = `<div class="start-in"><div class="start-top"><span>Тема</span>${themeSeg()}</div><div>
-      <h1>Хлебная<br>карта <em>Уфы</em></h1>
+      <h1>Хлебная<br><em>карта</em></h1>
       <p class="lead">Постройте сеть пекарен от первой точки до городского бренда. Стартовый капитал, одно производство — и весь город на карте.</p>
       <div class="rules">
         <div class="r-diff"><b id="ruleCash">10 млн ₽</b>стартовый капитал</div>
