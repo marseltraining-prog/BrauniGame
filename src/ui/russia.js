@@ -303,6 +303,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else s += `<div class="row sp"><span class="hint">${hasDir(S, id) ? 'Зайдите, чтобы вести город самому: директор станет заместителем (дольше 2 месяцев — лояльность падает).' : 'Без директора город только живёт. Зайдите, чтобы вести его самому.'}</span><button class="btn primary" data-act="ruGo" data-arg="${id}">Зайти в город</button></div>`;
     } else {
       const lock = E().enterLock(S, id), cost = E().enterCost(S, id), aw = BK.Corp.awStart(S, id);
+      const pk = S.corp.perks && S.corp.perks[id], pre = S.corp.prePressure && S.corp.prePressure[id];
+      if (pk && pk.until >= S.day) s += `<div class="perk">Приглашение губернатора до ${esc(E().fmtDate(pk.until))}: регистрация бесплатно, цех ${Math.round((1 - pk.prodRent) * 100)} % дешевле</div>`;
+      if (pre) s += `<div class="hint warnc">«${esc(C().RIVAL_NAME)}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
       s += `<div class="grid2">${h.kv('Вход: регистрация и маркетинг', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
       s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Запустите город сами (переезд) или поручите директору — тогда вы останетесь, где были.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
     }

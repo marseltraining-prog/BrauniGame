@@ -158,8 +158,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     c.packed = {
       stores: S.stores.map((st) => packStore(S, st, ms, wz, fill, aw)),
       productions: S.productions.map((p) => { const q = Object.assign({}, p); delete q.mountFrom; delete q.mountK; return q; }),
-      offersSpecial: S.offers.filter((o) => o.special), rival: S.rival, office: S.office, fcPct: fc, fcMs0: ms.fcPct, fill, sales: wz.sales,
+      offersSpecial: S.offers.filter((o) => o.special), rival: S.rival, office: S.office, fcPct: fc, fcMs0: ms.fcPct, fill, sales: wz.sales, fcK0: cr.hqFcK || 1,
     };
+    // давление соперника в снимке: в подробном городе «Хлебный двор» уже учтён спросом (Р3)
+    if (S.rival && S.rival.enabled && c.id !== 'ufa') for (const p of c.packed.stores) p.pr0 = c.rp || 0;
     c.payK = S.pay.seller / S.market.seller; c.payKb = S.pay.baker / S.market.baker;
     c.numSeq = S.flags.storeNum || 0; c.aggFrom = S.day;
     cr.market0 = corpMarket(S);
@@ -212,6 +214,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       E.refreshCandidates(S, true);
     });
     c.packed = null; c.aggFrom = null;
+    if (c.rivalIn && id !== 'ufa' && !(S.rival && S.rival.enabled) && I.rivalInit) I.rivalInit(S, true); // федеральный «Хлебный двор» уже в городе (Р3)
     S.cache = null;
   }
   function switchCity(S, id) {
@@ -219,6 +222,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (cr.active === id) return { ok: true };
     const from = cr.active;
     unmount(S); mount(S, id);
+    if (BK.HQ) BK.HQ.onVisit(S, id); // личный визит: касса без фильтра директора («цифры не сходятся»)
     I.log(S, `Вы взяли управление ${cityIn(id)}. ${cityName(from)} — на автопилоте: точки работают, новых не открывается.`, 'info');
     return { ok: true };
   }
@@ -251,8 +255,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return withCity(S, c.id, () => {
       const seas = I.SEASON[m] * (BK.CITY.season ? BK.CITY.season[m] : 1) / I.SEASON[4];
       const hol = holidayAvg(S, d0, S.day);
-      const gmD = I.modScope(S, 'traffic', 'global') * I.modScope(S, 'conv', 'global') * I.modScope(S, 'competitor', 'global'), gmC = I.modScope(S, 'check', 'global');
-      const fcm = I.modScope(S, 'foodcost', 'global');
+      const cm = (t) => I.modScope(S, t, 'global') * I.modScope(S, t, 'city', c.id); // события сети и корпоративные события города (Р3)
+      const gmD = cm('traffic') * cm('conv') * cm('competitor'), gmC = cm('check');
+      const fcm = cm('foodcost') * (cr.hqFcK || 1) / (pk.fcK0 || 1); // отдел закупок штаба (в снимке — то, что было при упаковке)
       // меню сети (привлекательность, тренды, цены) менялось после упаковки: гости и чек — к снимку (как в storeDemand)
       const msN = E.menuStats(S), apN = msN.avgPrice / pl, fcMenu = pk.fcMs0 ? msN.fcPct / pk.fcMs0 : 1;
       const aw = c.id === 'ufa' ? 1 : awMult(c.aw);
@@ -306,13 +311,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const ramp = s.openedDay != null && cfg.RAMP_DAYS ? Math.min(1, cfg.RAMP_START + (1 - cfg.RAMP_START) * (S.day - days / 2 - s.openedDay) / cfg.RAMP_DAYS) : 1;
         const sum = m >= 5 && m <= 7 && (s.landmarks || []).some((id) => { const l = E.byId(BK.LANDMARKS, id); return l && l.summer; }) ? 1.25 : 1; // парки летом (как в storeDemand)
         const mn = s.mn0, prD = mn ? msN.appeal / mn[0] * Math.pow(msN.priceIdx / mn[2], -0.6) : 1, pr = mn ? Math.pow(apN / mn[1], 0.7) : 1;
-        const F = seas * sum * hol.dem * Qd * aw * D * Math.max(0.3, ramp) * gmD * prD * Math.max(0.5, 1 + epsC + I.gauss(S) * K_.EPS_STORE);
+        const Rc = BK.HQ ? BK.HQ.rivalMult(S, c, s) : 1; // давление «Хлебного двора» и местных сетей (§5.3 R_c)
+        const F = seas * sum * hol.dem * Qd * aw * D * Rc * Math.max(0.3, ramp) * gmD * prD * Math.max(0.5, 1 + epsC + I.gauss(S) * K_.EPS_STORE);
         let cpd = 0;
         if (s.dem7 && s.dem7.length) { for (const x of s.dem7) cpd += Math.min(x * F, (s.thr0 || 1e9) * G) / s.dem7.length; cpd *= (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1); }
         else cpd = s.base / (s.chk0 || 200) * F * Math.min(1, G);
         let closed = s.status === 'repair' || n === 0 ? 0 : 1;
         if (s.lostDays && closed) { closed = clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = 0; } // ремонт директора: точка закрыта несколько дней
-        const r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr;
+        let r = closed * days * cpd * (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr;
+        if (dm && dm.theft) { const lost = r * dm.theft; r -= lost; dm.d.stolen = (dm.d.stolen || 0) + lost; cr.stat.stolen += lost; } // «Нечист на руку»: касса честно показывает меньше
         // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню и ценами сети (для «На точку к прогнозу»)
         if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * Math.max(0.3, ramp) * gmD * prD; let c0 = 0; for (const x of s.dem7) c0 += Math.min(x * F0, s.thr0 || 1e9) / s.dem7.length; out.fc += closed * days * c0 * (pk.fill != null ? pk.fill : 1) * (pk.sales != null ? pk.sales : 1) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
         const f1 = r * pk.fcPct * fcMenu * fcm * (dm ? dm.fcK : 1);
@@ -391,7 +398,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const c = cr.cities[id]; if (id === 'ufa') { c.aw = 1; continue; }
       const n = id === cr.active ? S.stores.length : c.packed ? c.packed.stores.length : 0;
       const target = Math.min(1, K().AW_BASE + K().AW_PER_STORE * n + mkt);
-      c.aw = clamp(c.aw + (target - c.aw) * K().AW_SPEED, 0, 1);
+      c.aw = clamp(c.aw + (target - c.aw) * clamp(K().AW_SPEED * (BK.HQ ? BK.HQ.awSpeedK(S, c) : 1), 0, 1), 0, 1); // бренд-отдел и «Любимец СМИ» — быстрее
     }
     return out;
   }
@@ -435,24 +442,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function ownCount(S) { return on(S) ? Object.keys(S.corp.cities).length : 0; }
   function enterCost(S, id) {
     const d = def(id); if (!d) return 0;
-    return Math.round((K().ENTER_FEE + K().ENTER_MKT * d.rent) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) / 1e5) * 1e5;
+    const pk = on(S) && S.corp.perks && S.corp.perks[id], free = pk && pk.regFree && pk.until >= S.day; // приглашение губернатора (e207): регистрация бесплатно
+    return Math.round(((free ? 0 : K().ENTER_FEE) + K().ENTER_MKT * d.rent) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) / 1e5) * 1e5;
   }
   function awStart(S, id) {
     const d = def(id);
     if (d.aw0 != null) return d.aw0;
     let near = 0; for (const o in S.corp.cities) if (BK.roadKm(o, id) < K().AW_NEAR_KM) near++;
-    return Math.min(K().AW_START_MAX, K().AW_START + K().AW_NEAR * near) + K().AW_MKT;
+    return Math.min(K().AW_START_MAX, K().AW_START + K().AW_NEAR * near) + K().AW_MKT + (BK.HQ ? BK.HQ.awStartAdd(S) : 0);
   }
   function enterLock(S, id) { // null — можно; иначе причина
     const d = def(id);
     if (!on(S)) return 'Выход в Россию ещё не открыт';
     if (!d || d.builtin) return 'Город недоступен';
     if (S.corp.cities[id]) return 'Уже ваш город';
-    // TODO(Р3): Москва и Петербург — после 3 городов И финансового департамента (штаб появится на этапе Р3)
-    if (d.big && ownCount(S) < K().BIG_MIN_CITIES) return `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города`;
-    const launching = Object.values(S.corp.cities).filter((c) => c.id !== 'ufa' && S.day - c.enteredDay < K().LAUNCH_DAYS);
+    // Москва и Петербург — после 3 городов И финансового департамента (§12 п. 8)
+    if (d.big) { const bl = BK.HQ ? BK.HQ.bigLock(S) : ownCount(S) < K().BIG_MIN_CITIES ? `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города` : null; if (bl) return bl; }
+    const LD = BK.HQ ? BK.HQ.launchDays(S) : K().LAUNCH_DAYS; // GR и юристы — запуск следующего города раньше
+    const launching = Object.values(S.corp.cities).filter((c) => c.id !== 'ufa' && S.day - c.enteredDay < LD);
     if (launching.length >= K().MAX_LAUNCHING) {
-      const left = Math.min(...launching.map((c) => c.enteredDay + K().LAUNCH_DAYS - S.day)), m = Math.max(1, Math.ceil(left / 30.4));
+      const left = Math.min(...launching.map((c) => c.enteredDay + LD - S.day)), m = Math.max(1, Math.ceil(left / 30.4));
       return `Штаб запускает ${K().MAX_LAUNCHING > 1 ? 'не больше ' + K().MAX_LAUNCHING + ' городов' : 'один город'} за раз — следующий можно открыть через ${m} мес.`;
     }
     return null;
@@ -469,6 +478,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     void cur;
+    if (BK.HQ) BK.HQ.onEnter(S, id); // давление местных сетей и «Хлебного двора», льгота губернатора
     if (dirId) {
       I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.`, 'good');
       const r = BK.Dir.launch(S, id, dirId);
@@ -476,6 +486,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Выберите помещение под цех.`, 'good');
     switchCity(S, id);
+    const pc = cr.cities[id].perk; if (pc && pc.prodRent) for (const o of S.prodOffers) o.rentM2 = Math.round(o.rentM2 * pc.prodRent); // цех в индустриальном парке за полцены
     return { ok: true, cost };
   }
   // шаг запуска нового города: 'prod' — нужен цех, 'store' — первая точка, null — город работает

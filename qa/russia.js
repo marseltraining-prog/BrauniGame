@@ -2,7 +2,9 @@
    карта России, вход в Казань, цех и точка, 6 месяцев жизни, возврат в Уфу (агрегат Уфы), сохранение/загрузка с двумя городами,
    старое сохранение без S.corp. Р2: найм директора в Казань, отчёт во входящих, решение просьбы (да / отказ по сроку),
    приоритет и бюджет города, вход в Екатеринбург под директором, Уфа под директором, «Сравнение городов», достижения,
-   сохранение Р1 (без полей директоров). Экраны 1440 / 390 / 360 в светлой и тёмной теме, цели на телефоне ≥ 40 px.
+   сохранение Р1 (без полей директоров). Р3: штаб (финдеп → Москва открыта), университет, KPI, аудит нашёл воровство,
+   корпоративное событие с выбором (и недоступным вариантом), переманивание; сохранение Р2 (без полей Р3).
+   Экраны 1440 / 390 / 360 в светлой и тёмной теме, цели на телефоне ≥ 40 px.
    Запуск: node qa/russia.js [папка=qa/shots/russia]   Итог — <папка>/issues.txt, код выхода 1 при проблемах. */
 const fs = require('fs'), path = require('path');
 const { chromium, openPage, layoutCheck, realTicks } = require('./lib');
@@ -139,6 +141,7 @@ async function flow(b, sv) {
   await realTicks(p, 3); await clear(p);
   await shot('12-ufa-back');
   await directors(p, tag, shot);
+  await corpR3(p, tag, shot);
   // сохранение и загрузка с двумя городами
   const before = await p.evaluate(() => { BK.App.save(); const S = BK.App.state; return { day: S.day, cash: Math.round(S.cash), cities: Object.keys(S.corp.cities).join(), size: localStorage.getItem('bk-ufa-save-v1').length }; });
   notes.push(`сохранение с двумя городами: ${Math.round(before.size / 1024)} КБ`);
@@ -258,9 +261,78 @@ async function directors(p, tag, shot) {
   await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(200);
 }
 
+// Р3: штаб, финдеп → Москва, университет, KPI, аудит с воровством, корпоративное событие, переманивание
+async function corpR3(p, tag, shot) {
+  await p.keyboard.press('r'); await p.waitForTimeout(700);
+  await p.evaluate(() => { const S = BK.App.state; if (S.cash < 3e9) S.cash = 3e9; BK.App.ACT.tab({ arg: 'ruhq' }); });
+  const lock0 = await p.evaluate(() => ({ big: BK.HQ.bigLock(BK.App.state), n: Object.keys(BK.App.state.corp.cities).length }));
+  if (!lock0.big) issues.push(`[${tag}] Москва открыта без финдепа: ${JSON.stringify(lock0)}`);
+  await shot('23-hq');
+  await p.click('[data-act="hqOpen"][data-arg="finance"]'); await p.waitForTimeout(200);
+  const f1 = await p.evaluate(() => { const S = BK.App.state; return { fin: S.corp.hq.finance, big: BK.HQ.bigLock(S), lock: BK.Engine.enterLock(S, 'moscow') }; });
+  if (f1.fin !== 1 || f1.big) issues.push(`[${tag}] финдеп не открыл Москву: ${JSON.stringify(f1)}`);
+  else notes.push(`финдеп открыт: Москва — ${f1.lock ? f1.lock : 'можно входить'}`);
+  await p.click('[data-act="hqOpen"][data-arg="uni"]'); await p.waitForTimeout(200);
+  await p.click('[data-act="hqOpen"][data-arg="hr"]'); await p.waitForTimeout(200);
+  // университет и KPI — в карточке директора Казани
+  const did = await p.evaluate(() => { const S = BK.App.state, d = BK.Dir.dirOf(S, S.corp.cities.kazan); BK.App.ui.dirSel = null; BK.App.ACT.ruDir({ arg: d.id }); return d.id; });
+  await p.waitForTimeout(250);
+  await p.click(`.ddet [data-act="uniEnroll"][data-arg="${did}"][data-arg2="ops"]`); await p.waitForTimeout(150);
+  await p.click(`.ddet [data-act="dirKpi"][data-arg="${did}"][data-arg2="rev"]`); await p.waitForTimeout(100);
+  await p.click(`.ddet [data-act="dirKpi"][data-arg="${did}"][data-arg2="rating"]`); await p.waitForTimeout(100);
+  await p.click(`.ddet [data-act="dirBonus"][data-arg="${did}"][data-arg2="0.1"]`); await p.waitForTimeout(100);
+  await p.click(`.ddet [data-act="dirBonus"][data-arg="${did}"][data-arg2="0.1"]`); await p.waitForTimeout(100);
+  const m1 = await p.evaluate((id) => { const d = BK.Dir.dirById(BK.App.state, id); return { study: d.study && d.study.prog, kpi: d.kpi.keys.join('+'), bonus: d.kpi.bonus }; }, did);
+  if (m1.study !== 'ops' || m1.kpi !== 'rev+rating' || Math.abs(m1.bonus - 0.2) > 0.001) issues.push(`[${tag}] университет/KPI: ${JSON.stringify(m1)}`);
+  await p.evaluate(() => { const el = document.querySelector('.ddet .mot'); if (el) el.scrollIntoView({ block: 'center' }); });
+  await shot('24-dir-motivation');
+  // квартал: учёба закончится, KPI-премия выплачена (учёба 3 мес. завершается 1-го числа — ждём с запасом)
+  await live(p, 125, false); await realTicks(p, 1); await clear(p);
+  const m2 = await p.evaluate((id) => { const S = BK.App.state, d = BK.Dir.dirById(S, id); return d ? { study: !!d.study, progs: d.progs.join(), kpiLast: d.kpiLast ? d.kpiLast.pay : null, paid: S.corp.stat.kpiPaid } : null; }, did);
+  if (!m2 || m2.study || m2.progs !== 'ops' || !(m2.paid >= 0) || m2.kpiLast == null) issues.push(`[${tag}] через квартал: ${JSON.stringify(m2)}`);
+  else notes.push(`университет: «Операционное управление» окончено; KPI-премия за квартал ${Math.round(m2.kpiLast / 1e3)} тыс. ₽`);
+  // аудит: директор Казани «нечист на руку» — аудит находит (шанс для теста 100 %)
+  await p.evaluate(() => { const S = BK.App.state, d = BK.Dir.dirOf(S, S.corp.cities.kazan); d.hidden = ['theft']; d.known = []; d.theta = 0.035; d.stolen = 12e6; d.caught = false; BK.CFG.CORP.AUDIT_P.theft = 1; BK.App.ACT.ruSel({ arg: 'kazan' }); });
+  await p.waitForTimeout(250);
+  await p.click('[data-act="ruAudit"][data-arg="kazan"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { BK.CFG.CORP.AUDIT_P.theft = 0.7; });
+  const a1 = await p.evaluate(() => { const S = BK.App.state, it = S.corp.inbox.find((x) => x.kind === 'caught' && !x.done); return it ? { id: it.id, text: it.text, tab: BK.App.ui.tab } : null; });
+  if (!a1) issues.push(`[${tag}] аудит не нашёл воровство`);
+  else {
+    notes.push(`аудит Казани: «${a1.text.slice(0, 90)}…»`);
+    await p.evaluate((id) => BK.App.ACT.ruRep({ arg: id }), a1.id); await p.waitForTimeout(250);
+    await shot('25-caught');
+    await p.click(`[data-act="caughtDecide"][data-arg="${a1.id}"][data-arg2="sue"]`); await p.waitForTimeout(200);
+    const a2 = await p.evaluate(() => { const S = BK.App.state; return { dir: S.corp.cities.kazan.directorId, pending: (S.corp.pending || []).length, caught: S.corp.stat.caught }; });
+    if (a2.dir || !a2.pending || !a2.caught) issues.push(`[${tag}] решение «в суд»: ${JSON.stringify(a2)}`);
+  }
+  // корпоративное событие с выбором: анонимное письмо (вариант «служба безопасности» недоступен без отдела)
+  await p.evaluate(() => { const S = BK.App.state; if (!S.corp.cities.kazan.directorId) { if (!S.corp.dirCand.length) BK.Engine.dirRefresh(S, true); BK.Engine.dirHire(S, S.corp.dirCand[0].id, 'kazan'); } BK.CorpEv.start(S, BK.CorpEv.byId('e211'), null); });
+  await realTicks(p, 1); await p.waitForTimeout(300);
+  const ev1 = await p.evaluate(() => ({ modal: !!document.querySelector('#modal .choice'), n: document.querySelectorAll('#modal .choice').length, dis: document.querySelectorAll('#modal .choice[disabled]').length, eyebrow: (document.querySelector('#modal .eyebrow') || {}).textContent || '', corp: !!(BK.App.state.ev.pending && BK.App.state.ev.pending.corp) }));
+  if (!ev1.modal || ev1.n !== 3 || ev1.dis < 1 || !ev1.corp || !/Корпорация/.test(ev1.eyebrow)) issues.push(`[${tag}] событие e211: ${JSON.stringify(ev1)}`);
+  await shot('26-m-corp-event');
+  await p.click('#modal .choice[data-choice="2"]'); await p.waitForTimeout(200);
+  const ev2 = await p.evaluate(() => ({ pending: !!BK.App.state.ev.pending, log: BK.App.state.log.slice(0, 5).map((x) => x.text || x).join(' | ') }));
+  if (ev2.pending || !/Анонимное письмо: выбрано/.test(ev2.log)) issues.push(`[${tag}] выбор в e211: ${JSON.stringify(ev2)}`);
+  // переманивание: e202 из очереди, «Отпустить» — директор уходит через месяц
+  const pd = await p.evaluate(() => { const S = BK.App.state, d = BK.Dir.dirOf(S, S.corp.cities.ekb); BK.CorpEv.queue(S, { id: 'e202', day: S.day, dir: d.id, offerPct: 45, poacher: '«Хлебный двор»' }); return d.id; });
+  await realTicks(p, 2); await p.waitForTimeout(300);
+  const pz = await p.evaluate(() => ({ id: BK.App.state.ev.pending && BK.App.state.ev.pending.id, text: (document.querySelector('#modal .modal-b') || {}).textContent || '' }));
+  if (pz.id !== 'e202' || !/45%/.test(pz.text)) issues.push(`[${tag}] переманивание e202: ${JSON.stringify(pz).slice(0, 200)}`);
+  await shot('27-m-poach');
+  await p.click('#modal .choice[data-choice="3"]'); await p.waitForTimeout(200);
+  await live(p, 65, false); await realTicks(p, 1); await clear(p);
+  const pg = await p.evaluate((id) => { const S = BK.App.state; return { gone: !BK.Dir.dirById(S, id), ekb: S.corp.cities.ekb.directorId, poached: S.corp.stat.poached }; }, pd);
+  if (!pg.gone || pg.ekb === pd || pg.poached < 1) issues.push(`[${tag}] директор не ушёл после «Отпустить»: ${JSON.stringify(pg)}`);
+  else notes.push(`переманивание: директор Екатеринбурга ушёл в «Хлебный двор», город без директора`);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ruhq' })); await shot('28-hq-after');
+  await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(200);
+}
+
 // цели на телефоне: новые кнопки второго акта — не меньше 40 px по высоте
 async function touchTargets(p, label) {
-  const bad = await p.evaluate(() => [...document.querySelectorAll('#pbody .fchip, #pbody .btn.stp, #pbody .ra .btn, #pbody .rqb .btn, #pbody .dbtns .btn, #pbody .seg.prio button, #pbody .seg.sm button, #pbody .rfoot .btn, #pbody .nom .btn, #pbody .cmpc .btn, #pbody .dcand .btn, #modal .choice, #modal .wopt')]
+  const bad = await p.evaluate(() => [...document.querySelectorAll('#pbody .fchip, #pbody .btn.stp, #pbody .ra .btn, #pbody .rqb .btn, #pbody .dbtns .btn, #pbody .seg.prio button, #pbody .seg.sm button, #pbody .rfoot .btn, #pbody .nom .btn, #pbody .cmpc .btn, #pbody .dcand .btn, #pbody .hqf .btn, #pbody .mot .btn, #pbody .mot .fchip, #pbody .stud .btn, #modal .choice, #modal .wopt')]
     .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 39.5; }).slice(0, 5).map((e) => `${e.className} «${e.textContent.trim().slice(0, 20)}» ${Math.round(e.getBoundingClientRect().height)}px`));
   return bad.map((x) => `[${label}] ЦЕЛЬ < 40 px: ${x}`);
 }
@@ -289,7 +361,7 @@ async function screens(b, vp, theme, st) {
   await shot('04-kazan'); await tt('04');
   if (mobile) await shot('04b-kazan-full', { full: true });
   await p.evaluate(() => window.scrollTo(0, 0));
-  for (const [tab, n] of [['rudirs', '05-dirs'], ['ruinbox', '06-inbox'], ['rucmp', '07-cmp']]) {
+  for (const [tab, n] of [['rudirs', '05-dirs'], ['ruinbox', '06-inbox'], ['rucmp', '07-cmp'], ['ruhq', '07b-hq']]) {
     await p.evaluate((t) => { BK.App.ACT.tab({ arg: t }); if (t === 'rudirs') { const d = BK.App.state.corp.directors[0]; if (d) { BK.App.ui.dirSel = d.id; BK.App.ACT.tab({ arg: t }); } } }, tab);
     await shot(n); await tt(n);
     if (mobile) await shot(n + '-full', { full: true });
@@ -328,15 +400,33 @@ async function oldSave(b, sv) {
 async function r1Save(b, st) {
   const tag = 'сохранение Р1';
   const sv = JSON.parse(JSON.stringify(st)), cr = sv.corp;
-  for (const k of ['directors', 'dirCand', 'dirCandDay', 'inbox', 'fed', 'dirYear', 'dirSeq', 'repSeq', 'q0']) delete cr[k];
-  for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['directorId', 'priority', 'budget', 'plan', 'dev', 'wantBudget', 'closeReq', 'budgetCutY']) delete c[k]; c.hist = c.hist.map((x) => x.slice(0, 7)); if (c.packed) for (const s of c.packed.stores) { delete s.mn0; delete s.byDir; } }
+  for (const k of ['directors', 'dirCand', 'dirCandDay', 'inbox', 'fed', 'dirYear', 'dirSeq', 'repSeq', 'q0', 'hq', 'hqSince', 'stat', 'perks', 'prePressure', 'equitySold', 'rivalOn', 'hqFcK', 'hqDelK', 'ev', 'creditK', 'cov', 'pending', 'campaignDay', 'uniOwnDay']) delete cr[k];
+  for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['directorId', 'priority', 'budget', 'plan', 'dev', 'wantBudget', 'closeReq', 'budgetCutY', 'pressure', 'rp', 'rivalIn', 'spOffer', 'perk']) delete c[k]; c.hist = c.hist.map((x) => x.slice(0, 7)); if (c.packed) { delete c.packed.fcK0; for (const s of c.packed.stores) { delete s.mn0; delete s.byDir; delete s.pr0; } } }
   const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 3 });
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
-  await realTicks(p, 40); await clear(p);
+  await live(p, 35, false); await realTicks(p, 1); await clear(p); // гарантированно через 1-е число: строка истории — новой длины
   const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { dirs: Array.isArray(cr.directors), cand: cr.dirCand.length, inbox: Array.isArray(cr.inbox), budgets: Object.values(cr.cities).every((c) => c.budget && c.dev), hist: Object.values(cr.cities).every((c) => c.hist.slice(-1)[0].length === 9) }; });
   if (!r.dirs || r.cand < 3 || !r.inbox || !r.budgets || !r.hist) issues.push(`[${tag}] ${JSON.stringify(r)}`);
   await p.keyboard.press('r'); await p.waitForTimeout(600);
-  for (const t of ['ru', 'rudirs', 'ruinbox', 'rucmp']) { await p.evaluate((x) => BK.App.ACT.tab({ arg: x }), t); await p.waitForTimeout(150); issues.push(...await textProblems(p, `${tag} ${t}`)); }
+  for (const t of ['ru', 'rudirs', 'ruhq', 'ruinbox', 'rucmp']) { await p.evaluate((x) => BK.App.ACT.tab({ arg: x }), t); await p.waitForTimeout(150); issues.push(...await textProblems(p, `${tag} ${t}`)); }
+  errors.push(...p.errs.map((e) => `[${tag}] ${e}`));
+  await p.context().close();
+}
+
+// сохранение Р2: директора есть, полей Р3 нет — грузится, штаб и мотивация по умолчанию
+async function r2Save(b, st) {
+  const tag = 'сохранение Р2';
+  const sv = JSON.parse(JSON.stringify(st)), cr = sv.corp;
+  for (const k of ['hq', 'hqSince', 'stat', 'perks', 'prePressure', 'equitySold', 'rivalOn', 'hqFcK', 'hqDelK', 'ev', 'creditK', 'cov', 'pending', 'campaignDay', 'uniOwnDay']) delete cr[k];
+  for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['pressure', 'rp', 'rivalIn', 'spOffer', 'perk']) delete c[k]; if (c.packed) { delete c.packed.fcK0; for (const s of c.packed.stores) delete s.pr0; } }
+  for (const d of cr.directors.concat(cr.dirCand)) for (const k of ['known', 'kpi', 'opt', 'progs', 'region', 'study', 'board', 'regional', 'theta', 'emb', 'poachP', 'kpiLast', 'checked', 'lastAudit', 'stolen', 'caught', 'burnAt', 'agentAt']) delete d[k];
+  const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 4 });
+  await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await realTicks(p, 40); await clear(p);
+  const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { hq: cr.hq && cr.hq.finance === 0, stat: !!cr.stat, kpi: cr.directors.every((d) => d.kpi && Array.isArray(d.known)), press: Object.values(cr.cities).every((c) => c.pressure != null) }; });
+  if (!r.hq || !r.stat || !r.kpi || !r.press) issues.push(`[${tag}] ${JSON.stringify(r)}`);
+  await p.keyboard.press('r'); await p.waitForTimeout(600);
+  for (const t of ['ru', 'rudirs', 'ruhq', 'ruinbox']) { await p.evaluate((x) => { BK.App.ACT.tab({ arg: x }); const d = BK.App.state.corp.directors[0]; if (x === 'rudirs' && d) { BK.App.ui.dirSel = d.id; BK.App.ACT.tab({ arg: x }); } }, t); await p.waitForTimeout(150); issues.push(...await textProblems(p, `${tag} ${t}`)); }
   errors.push(...p.errs.map((e) => `[${tag}] ${e}`));
   await p.context().close();
 }
@@ -354,6 +444,7 @@ async function r1Save(b, st) {
   log('сценарий (1440, светлая)'); const st = await flow(b, pre);
   log('старое сохранение'); await oldSave(b, young);
   log('сохранение Р1'); await r1Save(b, st);
+  log('сохранение Р2'); await r2Save(b, st);
   for (const vp of ['d1440', 'm390', 'm360']) for (const th of ['light', 'dark']) { log('экраны', vp, th); await screens(b, vp, th, st); }
   await b.close();
   const uniq = [...new Set(issues)], errs = [...new Set(errors)];

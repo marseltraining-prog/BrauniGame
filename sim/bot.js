@@ -127,6 +127,7 @@ function approxCost(S, c, share, n) {
 function chooseEvent(S, P) {
   const inst = S.ev.pending, ch = inst.choices;
   if (!ch) return 0;
+  if (inst.corp) return BK.CorpEv.botChoice(S, inst, P.corpLevel || P.level || 'good'); // корпоративные события (e201–e218) — профиль корпоративного бота
   if (P.events === 'random') return Math.floor(rand(S) * ch.length);
   if (P.events === 'free') { const i = ch.findIndex((c) => !c.cost); return i < 0 ? 0 : i; }
   const def = E.byId(BK.EVENTS, inst.id);
@@ -205,6 +206,7 @@ function play(opts) {
   if (opts.pay != null) P.payPremium = opts.pay;
   if (opts.culture != null) P.culture = !!opts.culture;
   if (opts.reserve != null) P.reserveFixed = opts.reserve;
+  if (opts.corp) P.corpLevel = (opts.corpOpt && opts.corpOpt.level) || lvl;
   const S = E.newGame({ seed: opts.seed || 1, difficulty: opts.difficulty });
   S._botRng = (opts.seed || 1) % 2147483647;
   const mem = { months: [], quitsYear: [], staffYear: [], crises: [], minLiq: Infinity };
@@ -564,7 +566,7 @@ if (require.main === module) {
   for (const a of process.argv.slice(2)) { if (a.startsWith('--')) { const [k, v] = a.slice(2).split('='); flags[k] = v == null ? true : v; } else pos.push(a); }
   const level = pos[0] || 'good', seeds = +(pos[1] || 3), years = +(pos[2] || 20);
   const difficulty = pos[3] || process.env.BK_DIFF || 'normal';
-  const opts = { level, years, stopOnWin: !!flags.stop, difficulty, corp: !!flags.corp };
+  const opts = { level, years, stopOnWin: !!flags.stop, difficulty, corp: !!flags.corp, corpOpt: { level: typeof flags.corp === 'string' ? flags.corp : level } }; // --corp=avg|bad — корпоративный профиль второго акта
   if (flags.reserve != null) opts.reserve = +flags.reserve;
   if (flags.pay != null) opts.pay = +flags.pay;
   if (flags.culture != null) opts.culture = +flags.culture;
