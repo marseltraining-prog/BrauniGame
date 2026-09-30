@@ -570,10 +570,80 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function closeModal() { ui.modal = null; $('#modal').innerHTML = ''; refresh(); }
 
+  /* ---------- значки последствий вариантов события (только оценка для игрока по описанию эффектов; движок не трогаем) ---------- */
+  const FX_IC = {
+    rub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20V4h5.5a4 4 0 0 1 0 8H6M6 16h8"/></svg>',
+    team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 13.9c2.4.2 4 1.7 4.5 4.6"/></svg>',
+    guests: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14l-1.2 9.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+    prod: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M3 20V11l5-3v3l5-3v3l5-3V4h3v16z"/></svg>',
+    dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/><path d="M12 14l-1.2 3 1.2 1.5 1.2-1.5z"/></svg>',
+    risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
+  };
+  // ось: [подпись, порог «заметно», порог «сильно», порог «очень сильно»]; первые три показываются всегда
+  const FX_AX = { rub: ['', 0.3, 5, 20], team: ['Команда', 1, 12, 25], guests: ['Гости', 1, 15, 50], check: ['Чек', 1, 15, 50], prod: ['Цех', 1, 10, 40], dir: ['Директор', 1, 12, 25] };
+  const FX_NAME = { rub: 'Деньги', team: 'Команда', guests: 'Гости', check: 'Средний чек', prod: 'Цех', dir: 'Директор' };
+  function choiceFx(S, ev, i) {
+    const src = (ev.corp ? BK.CORP_EVENTS : BK.EVENTS) || [];
+    const def = src.find((x) => x.id === ev.id), ch = def && def.choices && def.choices[i];
+    const v = { rub: 0, team: 0, guests: 0, check: 0, prod: 0, dir: 0 }; let risk = false;
+    const R = Math.max(S.lastMonthRev || 0, 1e6), pl = (S.macro && S.macro.priceLevel) || 1;
+    const scope = ev.tg && ev.tg.scope;
+    const nSt = scope === 'store' ? 1 : Math.max(1, S.stores.filter((s) => s.status !== 'opening' && (scope !== 'district' || s.district === ev.tg.target)).length);
+    const mo = (d) => Math.min(d || 365, 365) / 30;
+    const walk = (list) => { for (const f of list || []) {
+      const m = f.m != null ? f.m - 1 : 0;
+      switch (f.t) {
+        case 'cash': v.rub += f.v ? f.v * pl / R * 100 : f.perStore ? f.perStore * pl * nSt / R * 100 : f.revPct ? f.revPct * 100 : 0; break;
+        case 'tax': v.rub -= f.add * 100 * mo(f.d); break;
+        case 'foodcost': v.rub -= m * 30 * mo(f.d); break;
+        case 'delivery': v.rub -= m * 5 * mo(f.d); break;
+        case 'rent': v.rub -= m * 144; break;
+        case 'salary': v.rub -= m * 300; v.team -= m * 300; break;
+        case 'lostSales': v.rub -= (f.days || 1) / 30 * 100; break;
+        case 'sellEquity': v.rub += 30; break;
+        case 'creditLimit': v.rub += 3; break;
+        case 'buyChain': v.guests += 50; v.team -= 12; break;
+        case 'traffic': case 'conv': case 'competitor': v.guests += m * 100 * mo(f.d); break;
+        case 'close': v.guests -= 100 * (f.d || 7) / 30; break;
+        case 'awareness': v.guests += f.add * 600; break;
+        case 'pressure': v.guests -= f.add * 60; break;
+        case 'trend': v.guests += (f.add || 0) / 2; break;
+        case 'check': v.check += m * 100 * mo(f.d); break;
+        case 'capacity': v.prod += m * 100 * (f.d || 14) / 30; break;
+        case 'loyalty': v.team += f.add * 1.5; break;
+        case 'staffQuit': v.team -= 6 * (f.n || 1); break;
+        case 'staffTrain': v.team += 5 * (f.n || 1); break;
+        case 'dirLoyalty': v.dir += f.add * 1.5; break;
+        case 'dirSkill': v.dir += f.add; break;
+        case 'dirLeave': case 'dirFire': v.dir -= 30; break;
+        case 'dirAbsent': v.dir -= (f.d || 30) / 3; break;
+        case 'dirPromote': case 'dirTrait': v.dir += 15; break;
+        case 'dirOptions': case 'dirSalary': v.dir += 10; v.rub -= 1; break;
+        case 'chance': risk = true; break;
+        default: break; // schedule (скрытые последствия), offer, audit, reveal — не показываем
+      }
+    } };
+    if (ch) walk(ch.effects);
+    const cost = ev.choices[i].cost || 0;
+    if (cost > 0) v.rub -= Math.max(cost / R * 100, FX_AX.rub[1]);
+    const lvl = (k) => { const a = Math.abs(v[k]), t = FX_AX[k]; return a < t[1] ? 0 : a < t[2] ? 1 : a < t[3] ? 2 : 3; };
+    const out = [];
+    for (const k of ['rub', 'team', 'guests', 'check', 'prod', 'dir']) {
+      const n = lvl(k); if (!n && !['rub', 'team', 'guests'].includes(k)) continue;
+      const up = v[k] > 0, cls = !n ? 'zero' : up ? 'up' : 'dn';
+      const ar = n ? (up ? '▲' : '▼').repeat(n) : '·';
+      const tip = FX_NAME[k] + (n ? `: ${up ? 'лучше' : 'хуже'}${n > 1 ? (n > 2 ? ', очень сильно' : ', заметно') : ''}` : ': без изменений');
+      out.push(`<span class="fxc ${cls}" title="${tip}">${FX_IC[k]}${FX_AX[k][0] ? `<span class="fxn">${FX_AX[k][0]}</span>` : ''}<span class="ar" aria-label="${tip}">${ar}</span></span>`);
+    }
+    if (risk) out.push(`<span class="fxc risk" title="Исход не гарантирован">${FX_IC.risk}<span class="fxn">Риск</span></span>`);
+    return out.join('');
+  }
+
   function openEventModal() {
     const ev = S.ev.pending;
     const eyebrow = ev.crisis ? '<span class="eyebrow crisis">Экономический кризис</span>' : `<span class="eyebrow ${ev.kind}">${ev.corp ? 'Корпорация' : ev.kind === 'pos' ? 'Хорошие новости' : 'Событие'}${ev.corp && ev.kind === 'pos' ? ' · хорошие новости' : ''} · ${E.fmtDate(ev.day)}</span>`;
-    let html = `<div class="modal-h">${eyebrow}<h2>${H.esc(ev.title)}</h2></div><div class="modal-b"><p style="margin:0">${H.esc(ev.text)}</p>`;
+    let html = `<div class="modal-h evh ${ev.crisis ? 'crisis' : ev.kind}">${eyebrow}<h2>${H.esc(ev.title)}</h2></div><div class="modal-b"><p style="margin:0">${H.esc(ev.text)}</p>`;
     if (ev.effectsText && ev.effectsText.length) html += `<div class="effects">${ev.effectsText.map((t) => `<span class="chip ${ev.kind === 'pos' ? 'good' : 'bad'}">${H.esc(t)}</span>`).join('')}</div>`;
     html += `</div><div class="modal-f">`;
     if (ev.choices) {
@@ -581,9 +651,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       // если по деньгам не проходит ничего — открыт самый дешёвый вариант (уйдёт в минус, как и прочие платежи)
       const afford = (c) => !c.dis && (!c.cost || c.cost <= S.cash + S.reserve); // c.dis — корпоративный выбор без нужного отдела штаба / грейда
       const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (!c.dis && (ev.choices[b].dis || c.cost < ev.choices[b].cost) ? i : b), 0);
+      const LET = 'АБВГДЕЖЗ';
+      html += `<div class="chq"><h4>Как ответим?</h4><span>▲ — лучше, ▼ — хуже, число стрелок — сила</span></div>`;
       ev.choices.forEach((c, i) => {
         const can = afford(c) || i === cheapest;
-        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}${c.dis ? ` <em class="negc">${H.esc(c.dis)}.</em>` : ''}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}</span></button>`;
+        const why = c.dis ? `Недоступно: ${H.esc(c.dis)}` : !can ? `Недоступно: не хватает ${H.fm(c.cost - S.cash - S.reserve)} (на счёте и в резерве ${H.fm(Math.max(0, S.cash + S.reserve))})` : '';
+        let fx = ''; try { fx = choiceFx(S, ev, i); } catch (e) { fx = ''; }
+        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
     html += `</div>`;

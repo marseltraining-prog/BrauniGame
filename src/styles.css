@@ -320,12 +320,37 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .modal-b { padding: 4px 20px 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
 .modal-f { padding: 12px 20px 18px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
 .effects { display: flex; flex-wrap: wrap; gap: 6px; }
-.choice { text-align: left; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; background: var(--surface); cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; }
+.choice { text-align: left; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px 11px; background: var(--surface); color: var(--ink); cursor: pointer; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; font: inherit; }
 .choice:hover:not(:disabled) { border-color: var(--crust); background: var(--crust-soft); }
-.choice:disabled { opacity: .5; cursor: not-allowed; }
-.choice b { font-weight: 600; font-size: 14px; }
-.choice .cd { font-size: 12px; color: var(--ink-2); grid-column: 1; }
-.choice .cc { grid-row: 1 / span 2; grid-column: 2; font-family: var(--f-mono); font-size: 13px; font-weight: 600; }
+.choice:hover:not(:disabled) .cl { background: var(--crust); color: #fff; }
+.choice:disabled { cursor: not-allowed; background: transparent; border-style: dashed; }
+.choice:disabled b, .choice:disabled .cc { color: var(--ink-3); font-weight: 500; }
+.choice:disabled .cd { color: var(--ink-3); }
+.choice:disabled .fx { opacity: .5; }
+.choice .cl { grid-row: 1 / span 2; grid-column: 1; width: 26px; height: 26px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--f-display); font-size: 11px; font-weight: 600; color: var(--ink-2); margin-top: 1px; }
+.choice b { font-weight: 600; font-size: 14px; grid-column: 2; }
+.choice .cd { font-size: 12.5px; color: var(--ink-2); grid-column: 2; }
+.choice .cc { grid-row: 1 / span 2; grid-column: 3; font-family: var(--f-mono); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+.choice .cc small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.choice .cwhy { grid-column: 2 / -1; display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--warn-t); margin-top: 4px; }
+.choice .cwhy svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+.choice .fx { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.chq { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 2px; }
+.chq h4 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.chq span { font-size: 12px; color: var(--ink-3); }
+.fxc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.fxc svg { width: 13px; height: 13px; flex: none; }
+.fxc .ar { font-size: 9px; letter-spacing: -1px; }
+.fxc.up { background: var(--good-soft); color: var(--good-t); }
+.fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+.fxc.zero { background: transparent; color: var(--ink-3); border: 1px dashed var(--line-2); }
+.fxc.zero .fxn, .fxc.zero svg { opacity: .75; }
+.fxc.risk { background: var(--warn-soft); color: var(--warn-t); }
+.modal:has(> .evh) { max-width: 640px; }
+.modal-h.evh.crisis { border-top: 4px solid var(--bad); border-radius: 14px 14px 0 0; background: repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--bad) 6%, transparent) 9px 10px); }
+.modal-h.evh.neg { border-top: 4px solid var(--bad); border-radius: 14px 14px 0 0; }
+.modal-h.evh.pos { border-top: 4px solid var(--good); border-radius: 14px 14px 0 0; }
+@media (max-width: 420px) { .choice { grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 8px; padding: 9px 10px 10px; } .choice .cl { width: 22px; height: 22px; } .fxc { padding: 0 6px; gap: 4px; } }
 .chefgrid { display: flex; flex-direction: column; gap: 8px; }
 .chefitem { border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; cursor: pointer; }
 .chefitem.on { border-color: var(--crust); background: var(--crust-soft); }
