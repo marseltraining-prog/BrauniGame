@@ -9,7 +9,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const fm = (v) => BK.fmtMoney(v);
   const DIFF = { easy: 'Лёгкий', normal: 'Нормальный', hard: 'Хардкор' };
-  const monthsW = (n) => `${n} ${n === 1 ? 'месяц' : n < 5 ? 'месяца' : 'месяцев'}`;
+  const monthsW = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'месяца' : 'месяцев'}`; // «до 3 месяцев назад»
   const monthOf = (day) => { const t = E().dateOf(day); return `${E().MONTHS[t.m]} ${t.y}`; };
   const cityName = (id) => (id && BK.CITY_BY_ID && BK.CITY_BY_ID[id] ? BK.CITY_BY_ID[id].name : '');
   function nextFirst(S) { let d = S.day + 1; while (E().dateOf(d).d !== 1) d++; return d; }
