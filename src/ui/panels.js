@@ -200,6 +200,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       break;
     }
     if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
+    if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -316,6 +317,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     bills += E_.hrCount(S) * (cfg.HR_SALARY || 0) * tx * pl + E_.trainersCount(S) * (cfg.TRAINER_SALARY || 0) * tx * pl;
     bills += S.loan * E().loanRate(S) / 12;
     if (BK.Trainers) bills += BK.Trainers.monthFee(S); // личные тренеры — 1-го числа
+    if (BK.Managers) bills += BK.Managers.monthFee(S); // оклады управляющих — 1-го числа
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -470,11 +472,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div>`;
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
+    if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
     s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
       ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
     if (BK.TrainersUI) s += BK.TrainersUI.dashBlock(S); // личные тренеры
+    if (BK.ManagersUI) s += BK.ManagersUI.dashBlock(S); // управляющие точек
     s += holidaysBlock(S).replace('<div class="sec">', '<div class="sec lazy">');
     const nr = E_.networkRating(S), lp = last && last.pnl;
     s += `<div class="dkpis mini">
@@ -562,6 +566,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       </div></div>`;
     }
     if (BK.TrainersUI) s += BK.TrainersUI.storeBlock(S, st); // «Взгляд тренера»
+    if (BK.ManagersUI) s += BK.ManagersUI.storeBlock(S, st); // предложения управляющего по точке
     if (st.status !== 'opening') s += ratingSection(S, st);
     if (BK.DeliveryUI) s += BK.DeliveryUI.storeSection(S, st); // время суток и доставка через агрегаторы
     s += `<div class="sec"><h3>Помещение</h3><div class="grid2">
