@@ -223,7 +223,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const W = cfg.RATING_W, fresh = cfg.BAKE_LEVELS[clamp(Math.round(E.wasteState(S).bake), -3, 3) + 3].fresh;
     const rAdd0 = 0.1 * (sk.ops - 60) / 40 + (st === 'service' ? 0.2 : 0) - (st === 'economy' && late ? 0.2 : 0) + (c.priority === 'quality' ? 0.1 : 0);
     const m = {
-      d, D, eps: has('gambler') ? 2 : has('reliable') ? 0.6 : 1,
+      d, D, eps: has('gambler') ? 2 : has('reliable') ? 0.6 : 1, leak: c.leak || 0, // Р4: утечка слабого директора
       mood: K().DIR_MOOD_PEOPLE * (sk.people - 50) / 50 + (st === 'service' ? 3 : st === 'economy' ? -3 : 0),
       quitK: has('charismatic') ? 0.85 : 1,
       fcK: (1 + 0.04 * (0.5 - sk.econ / 100)) * (st === 'economy' ? 0.97 : 1),
@@ -260,7 +260,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const tmp = Object.assign({}, o, { id: 'tmp', status: 'open', repair: 0, staff: [] });
     for (let i = 0; i < sz.staffMax; i++) tmp.staff.push({ lvl: 1 });
     let dem = 0, chk = 0;
-    for (let dow = 0; dow < 7; dow++) { const d = E.storeDemand(S, tmp, { dow, m: 4 }, ms); dem += d.demand / 7; chk += d.check / 7; }
+    let dW = null, dE = null; // будни и выходные внутри группы одинаковы — два расчёта вместо семи
+    for (let dow = 0; dow < 7; dow++) { const d = dow >= 5 ? dE || (dE = E.storeDemand(S, tmp, { dow, m: 4 }, ms)) : dW || (dW = E.storeDemand(S, tmp, { dow, m: 4 }, ms)); dem += d.demand / 7; chk += d.check / 7; }
     const thrPer = cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * 0.5;
     const staff = clamp(Math.ceil(dem / (thrPer * 0.8)), sz.staffMin, sz.staffMax);
     const checks = Math.min(dem, staff * thrPer * 0.95), rev = checks * chk * 30.4;
@@ -268,7 +269,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rent = o.area * o.rentM2 * (o.payMode === 'year' ? 1 - cfg.YEARLY_RENT_DISCOUNT : 1);
     const pay = staff * CI().salaryCity(S, c, 1.4) * (1 + cfg.PAYROLL_TAX);
     const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * o.area) * pl;
-    const del = S.productions.length ? E.deliveryCost(S, tmp) : 40000 * pl;
+    const del = S.productions.length || BK.Corp.remoteOf(S) ? E.deliveryCost(S, tmp) : 40000 * pl; // выпечка из другого города — своя формула (§7.2)
     const hq = cfg.HQ_PER_STORE * pl + rev * (cfg.HQ_REV_SHARE || 0);
     const payB = BK.Corp.corpMarket(S).baker * (def(c.id).wage || 1) * (c.payKb || c.payK || 1);
     const bakers = checks * cfg.ITEMS_PER_CHECK / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX);
@@ -321,7 +322,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function tryOpen(S, c, d, o) { // o: { tries, first, maxN } — открыть до maxN лучших мест из свежих предложений
     const cr = S.corp, b = c.budget, sk = eff(S, d, c), K_ = K();
-    const ms = E.menuStats(S), sd = K_.DIR_EST_ERR * (1 - 0.6 * sk.growth / 100);
+    const lk = c.leak || 0; // Р4: слабый директор ошибается в местах сильнее и берёт места с долгой окупаемостью
+    const ms = E.menuStats(S), sd = K_.DIR_EST_ERR * (1 - 0.6 * sk.growth / 100) * (1 + K_.LEAK_EST * lk);
     let opened = 0;
     for (let k = 0; k < o.maxN; k++) {
       const cand = [];
@@ -335,7 +337,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       cand.sort((a, b2) => a.noisy - b2.noisy);
       const best = cand[0]; if (!best) break;
-      if (!o.first && best.noisy > payback(d, c, S)) { c.dev.why = 'payback'; break; }
+      if (!o.first && best.noisy > payback(d, c, S) * (1 + K_.LEAK_PB * lk)) { c.dev.why = 'payback'; break; }
       if (b.left < best.e.capex && !o.first) { c.dev.why = 'budget'; c.wantBudget = { n: Math.max(1, Math.min(3, openLimit(S, c, d) - c.dev.opened)), cost: best.e.capex, day: S.day }; break; }
       if (S.cash < best.e.capex + (o.first ? 0 : 5e6 * S.macro.priceLevel)) { c.dev.why = 'cash'; break; }
       c.dev.why = null;
@@ -352,15 +354,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C(), K_ = K(), pk = c.packed; if (!pk) return;
     c.dev.mOpened = 0; c.dev.mClosed = 0;
     BK.Corp.withCity(S, c.id, () => {
-      if (!pk.productions.length) { buildProd(S, c, true); return; }
+      const rem = BK.Corp.remoteOf(S, c.id); // Р4: снабжение из другого города — свой цех, когда точек достаточно или поставки прервались
+      if (!pk.productions.length) {
+        if (!rem) { buildProd(S, c, true); return; }
+        const own = K_.SUPPLY_OWN_STORES[rem.supplyMode === 'frozen' ? 'frozen' : 'fresh'];
+        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().def(c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
+      }
       // закрытие: полгода подряд в убытке и старше года (§5.3 п. 6)
       for (const s of pk.stores.slice()) {
         if ((s.lossStreak || 0) < K_.DIR_LOSS_CLOSE || s.status === 'opening' || (s.openedDay != null && S.day - s.openedDay < 365)) continue;
-        if (c.budget.close) closePacked(S, c, s, d); else if (!c.closeReq) c.closeReq = s.id;
+        if (c.budget.close && (c.leak || 0) < K_.LEAK_NOCLOSE) closePacked(S, c, s, d); else if (!c.closeReq) c.closeReq = s.id; // слабый директор сам не закрывает — только просит
       }
       // второй и третий цех — по тем же порогам, что в Уфе
       const nOpen = pk.stores.length, np = pk.productions.length;
-      if ((np === 1 && nOpen >= cfg.SECOND_PROD_STORES) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) {
+      if ((np === 1 && nOpen >= BK.Corp.prod2Stores()) || (np === 2 && nOpen >= cfg.THIRD_PROD_STORES)) { // город-лента — второй цех раньше (Р4)
         const r = buildProd(S, c, false); if (r) c.budget.left = Math.max(0, c.budget.left - r.cost);
       }
       repairs(S, c, d);
@@ -428,8 +435,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const r = assign(S, dirId, id, true); if (!r.ok) return r;
     const d = dirById(S, dirId);
     let n = 0;
-    BK.Corp.withCity(S, id, () => { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: цех и ${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
+    const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
+    BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
+    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
     return { ok: true, opened: n };
   }
 
@@ -451,6 +459,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const k of own) d.skills[k] = Math.min(K_.DIR_CAP[d.grade], d.skills[k] + gain / own.length * (own.length > 2 ? 2 : 1));
       if (d.loyalty < K_.LOY_QUIT) quit(S, d);
     }
+    // Р4: утечка у слабых директоров (денежный риск) — в городах на автопилоте
+    for (const id in cr.cities) { const c = cr.cities[id]; if (!c.packed || id === cr.active) { if (c.leak) leakMonthly(S, c, null); continue; } const d = dirOf(S, c); leakMonthly(S, c, d && !(d.absentUntil > S.day) && d.leaveDay == null ? d : null); }
     if (S.day - (cr.dirCandDay || 0) >= K_.DIR_CAND_DAYS) refreshCands(S, false);
     if (BK.HQ) BK.HQ.monthly(S); // штаб, учёба, KPI, опционы, скрытые черты, переманивание, соперник
   }
@@ -562,7 +572,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       rev: shown.rev, profit: shown.profit, stores: row[4], rating: emb ? Math.min(5, +(row[5] + 0.15).toFixed(2)) : row[5], staff: row[6], fc: row[7], quits: row[8] || 0,
       prev: prev ? { rev: prev[2], profit: prev[3], stores: prev[4], rating: prev[5] } : null,
       plan: c.plan ? { rev: c.plan.monthRev, stores: c.plan.stores, margin: c.plan.margin } : null,
-      left: c.budget.left, capex: c.budget.capex, missing, mood: Math.round(mood), phrase, reqs, due: reqs.length ? S.day + 30 : null, opened, closed, dev: row[7] > 0 ? row[2] / row[7] - 1 : null });
+      left: c.budget.left, capex: c.budget.capex, missing, mood: Math.round(mood), phrase, reqs, due: reqs.length ? S.day + 30 : null, opened, closed, dev: row[7] > 0 ? row[2] / row[7] - 1 : null,
+      leak: (() => { const ls = leakStatus(S, c.id); return ls ? { pct: +ls.leak.toFixed(3), lossM: ls.lossM, why: ls.why, fix: ls.fix, skill: ls.skill, need: ls.need } : undefined; })() });
     void it; void cfg; void h;
   }
   function districtName(c, did) {
@@ -647,6 +658,47 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- сводки для интерфейса ---------------- */
   function inboxOpen(S) { if (!on(S) || !S.corp.inbox) return 0; let n = 0; for (const it of S.corp.inbox) { n += openCount(it); if ((it.kind === 'award' || it.kind === 'caught') && !it.done) n++; } return n; }
+  /* ---------------- денежный риск второго акта (Р4, решение владельца 30.09.2026): «утечка» у слабого директора ----------------
+     Директор, чьи навыки ниже нужного для размера города (нужно больше с ростом числа точек), без программ университета
+     или со стилем против приоритета города, медленно разоряет город: расходы ползут вверх (фудкост, лишний ФОТ), выручка
+     отстаёт, места для открытий выбираются хуже, убыточные точки не закрываются. Первые LEAK_GRACE мес. после входа в город —
+     льготный период (ошибки мягкие). Учёба, замена директора, закрытие точек останавливают утечку (она спадает быстрее, чем росла).
+     Поля города: leak (0…LEAK_MAX, доля), leakWhy (['skills' | 'nouni' | 'mismatch']), leakNeed — нужный уровень навыков. */
+  function leakInfo(S, c, d) {
+    const K_ = K(); if (!d || !c) return { target: 0, why: [], gap: 0, need: 0, skill: 0, n: 0 };
+    const sk = eff(S, d, c); let skill = 0; for (const k of SK) skill += sk[k] / SK.length;
+    const n = packedList(c).length;
+    const need = K_.LEAK_NEED0 + K_.LEAK_NEED_K * Math.log2(Math.max(1, n / K_.LEAK_NEED_N0));
+    const progs = (d.progs || []).filter((p) => p !== 'brand').length;
+    let gap = need - skill - K_.LEAK_PROG * Math.min(4, progs); const why = [];
+    if (gap > 0) why.push('skills');
+    if (!progs && d.cityMonths >= 12) { gap += K_.LEAK_NOUNI; why.push('nouni'); }
+    if (match(d, c) < 0) { gap += K_.LEAK_MISMATCH; why.push('mismatch'); }
+    gap = Math.max(0, gap);
+    return { target: Math.min(K_.LEAK_MAX, K_.LEAK_PER * gap), why: gap > 0 ? why : [], gap, need, skill, n, progs };
+  }
+  function leakMonthly(S, c, d) {
+    const K_ = K(), L = c.leak || 0;
+    if (!d) { if (L) c.leak = +Math.max(0, L - K_.LEAK_FALL).toFixed(4); if (!c.leak) { delete c.leak; delete c.leakWhy; } return; }
+    const li = leakInfo(S, c, d);
+    let tgt = li.target;
+    if (c.id !== 'ufa' && S.day - c.enteredDay < K_.LEAK_GRACE * 30.4) tgt = Math.min(tgt, K_.LEAK_GRACE_CAP); // льготный период после входа
+    const nx = tgt > L ? Math.min(tgt, L + K_.LEAK_RAMP) : Math.max(tgt, L - K_.LEAK_FALL);
+    if (nx > 0) { c.leak = +nx.toFixed(4); c.leakWhy = li.why; c.leakNeed = Math.round(li.need); } else { delete c.leak; delete c.leakWhy; delete c.leakNeed; }
+  }
+  // сколько месяцев подряд город в убытке (по истории города)
+  function lossMonths(c) { let n = 0; for (let i = c.hist.length - 1; i >= 0 && c.hist[i][3] < 0; i--) n++; return n; }
+  const LEAK_WHY = { skills: 'навыков директора не хватает на город такого размера', nouni: 'директор не учился в университете', mismatch: 'стиль директора против приоритета города' };
+  // для интерфейса: что происходит и что сделать
+  function leakStatus(S, id) {
+    const c = S.corp.cities[id]; if (!c) return null;
+    const d = dirOf(S, c), lm = lossMonths(c), L = c.leak || 0;
+    if (L < K().LEAK_SHOW && lm < 2) return null;
+    const li = leakInfo(S, c, d), uni = BK.HQ ? BK.HQ.lvlOf(S, 'uni') : 0;
+    const why = (c.leakWhy || []).map((k) => LEAK_WHY[k]).filter(Boolean);
+    let fix = !d ? 'назначьте директора' : (c.leakWhy || []).indexOf('nouni') >= 0 || (c.leakWhy || []).indexOf('skills') >= 0 ? (uni ? 'отправьте директора учиться (университет) или замените сильнее' : 'откройте университет в штабе и отправьте директора учиться — или замените сильнее') : (c.leakWhy || []).indexOf('mismatch') >= 0 ? 'смените приоритет города под стиль директора' : 'закройте убыточные точки';
+    return { leak: L, lossM: lm, why, whyKeys: c.leakWhy || [], fix, skill: Math.round(li.skill), need: Math.round(li.need), n: li.n, d };
+  }
   function cityDev(S, id) { // для карточки города и сравнения: прогноз, отклонение, текучка
     const c = S.corp.cities[id]; if (!c) return null;
     const h = c.hist.slice(-12), fcRows = h.filter((x) => x[7] > 0);
@@ -658,7 +710,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Dir = { ensure, mods, train, monthly, afterMonth, yearly, launch, hire, assign, fire, setSalary, praise, setPriority, setBudget, answer, award, refreshCands,
     marketPay, openLimit, payback, eff, match, dirById, dirOf, planFact, fedStatus, inboxOpen, cityDev, proposeCapex, PRIO_OF, SK, STYLES,
-    makeDirector, pushInbox, makePlan, removeDir, districtName, closePacked, buyStores };
+    makeDirector, pushInbox, makePlan, removeDir, districtName, closePacked, buyStores, leakInfo, leakMonthly, leakStatus, lossMonths };
   Object.assign(BK.Engine, { dirHire: hire, dirAssign: assign, dirFire: fire, dirSalary: setSalary, dirPraise: praise, dirAnswer: answer, dirAward: award, dirRefresh: refreshCands,
     citySetPriority: setPriority, citySetBudget: setBudget, fedStatus });
 })();

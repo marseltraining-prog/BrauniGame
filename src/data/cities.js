@@ -7,69 +7,80 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* inc — доход (× платёжеспособность), rent — аренда, wage — зарплаты, comp — конкуренция (low/mid/high/vhigh),
      km — от Уфы по дорогам, cap — ориентир ёмкости (точек), lat/lon — для карты России,
      shape: compact | river-strip | coast | bay | radial; water: none | one-river | confluence | coast | bay | strip,
-     muslim — доля эффекта байрамов (Уфа = 1), sab — сила Сабантуя, in — «в Казани», feat — особенность (текст; механика — этап Р4). */
+     muslim — доля эффекта байрамов (Уфа = 1), sab — сила Сабантуя, in — «в Казани», feat — особенность (текст для карточки).
+     Механика особенностей (этап Р4, docs/russia-design.md §16): season — сезонный профиль ×SEASON по месяцам; kmK — город вытянут (доставка
+     внутри города дальше); prod2 — второй цех раньше (точек); park — летний множитель парковых точек (обычно 1,25); cat / hot — прибавка к чеку
+     × доля категории в меню (круглый год / июнь–август); natReq — рейтинг −★ без национальной выпечки в меню; grow — рост населения в год
+     (поток гостей, не больше CORP.GROW_CAP); archK — поправки архетипов районов (трафик, платёжеспособность, вес в предложениях);
+     gate — «ворота»: вход в другой город дешевле (множитель); fedK — «Хлебный двор» приходит и давит слабее. */
   const CITIES = [
     { id: 'ufa', name: 'Уфа', in: 'в Уфе', pop: 1.16, inc: 1.00, rent: 1.00, wage: 1.00, comp: 'mid', km: 0, cap: 55, lat: 54.7, lon: 56.0, builtin: true,
       feat: 'Родной город: узнаваемость 100%' },
     { id: 'sterlitamak', name: 'Стерлитамак', in: 'в Стерлитамаке', pop: 0.28, inc: 0.85, rent: 0.60, wage: 0.85, comp: 'low', km: 130, cap: 14, lat: 53.6, lon: 55.9,
-      shape: 'compact', water: 'one-river', rivers: [['р. Белая', 15]], muslim: 1, sab: 1, aw0: 0.4, feat: 'Спутник Уфы: стартовая узнаваемость 40%',
+      shape: 'compact', water: 'one-river', rivers: [['р. Белая', 15]], muslim: 1, sab: 1, aw0: 0.4, feat: 'Спутник Уфы (130 км): можно возить выпечку из уфимского цеха без своего; стартовая узнаваемость 40%',
       districts: [['Центр', 'center'], ['Проспект Октября', 'biz'], ['Западный', 'sleep'], ['Северный', 'sleep'], ['Южный', 'far'], ['Промзона «Сода»', 'industrial']],
       streets: ['ул. Худайбердина', 'пр. Ленина', 'ул. Коммунистическая', 'ул. Артёма', 'пр. Октября'] },
     { id: 'chelny', name: 'Набережные Челны', short: 'Н. Челны', in: 'в Набережных Челнах', pop: 0.55, inc: 0.92, rent: 0.70, wage: 0.92, comp: 'mid', km: 290, cap: 25, lat: 55.7, lon: 52.4,
-      shape: 'compact', water: 'one-river', rivers: [['р. Кама', 18]], muslim: 1, sab: 1, feat: 'Татарский календарь',
+      shape: 'compact', water: 'one-river', rivers: [['р. Кама', 18]], muslim: 1, sab: 1, feat: 'Татарский календарь; выпечка из Уфы (290 км) — только с логистикой 1-го уровня',
       districts: [['Новый город', 'center'], ['Проспект Мира', 'biz'], ['ГЭС', 'sleep'], ['Комсомольский', 'sleep'], ['ЗЯБ', 'far'], ['Сидоровка', 'far'], ['Промзона КАМАЗа', 'industrial']],
       streets: ['пр. Мира', 'пр. Чулман', 'пр. Сююмбике', 'б-р Энтузиастов', 'пр. Вахитова'] },
     { id: 'orenburg', name: 'Оренбург', in: 'в Оренбурге', pop: 0.55, inc: 0.88, rent: 0.70, wage: 0.88, comp: 'low', km: 370, cap: 24, lat: 51.8, lon: 55.1,
-      shape: 'compact', water: 'one-river', rivers: [['р. Урал', 12]], muslim: 0.5, sab: 0, feat: 'Дешёвый и спокойный вход; жаркое лето',
+      shape: 'compact', water: 'one-river', rivers: [['р. Урал', 12]], muslim: 0.5, sab: 0, feat: 'Дешёвый и спокойный вход; рядом Казахстан — национальная выпечка в чеке +15%; жаркое лето — напитки +25%',
+      cat: { national: 0.15 }, hot: { drinks: 0.25 },
       districts: [['Центр', 'center'], ['Проспект Победы', 'biz'], ['Форштадт', 'sleep'], ['Степной', 'sleep'], ['Ростоши', 'far'], ['Карачи', 'far'], ['Промышленный', 'industrial']],
       streets: ['ул. Советская', 'пр. Победы', 'ул. Терешковой', 'ул. Чкалова', 'Шарлыкское шоссе'] },
     { id: 'chelyabinsk', name: 'Челябинск', in: 'в Челябинске', pop: 1.18, inc: 0.95, rent: 0.85, wage: 0.97, comp: 'mid', km: 410, cap: 50, lat: 55.2, lon: 61.4,
-      shape: 'compact', water: 'one-river', rivers: [['р. Миасс', 8]], muslim: 0.3, sab: 0, feat: 'Промышленный: у заводов и остановок чек ниже, трафик выше',
+      shape: 'compact', water: 'one-river', rivers: [['р. Миасс', 8]], muslim: 0.3, sab: 0, feat: 'Промышленный: у заводов и на окраинах поток выше, чек ниже; мест у заводов больше',
+      archK: { industrial: { traffic: 1.35, solv: 0.9, w: 1.8 }, far: { traffic: 1.12, solv: 0.94 } },
       districts: [['Центр', 'center'], ['Проспект Ленина', 'biz'], ['Северо-Запад', 'prestige'], ['Калининский', 'sleep'], ['Курчатовский', 'sleep'], ['Ленинский', 'sleep'], ['Тракторозаводский', 'far'], ['Советский', 'student'], ['Металлургический', 'industrial']],
       streets: ['пр. Ленина', 'ул. Кирова', 'пр. Победы', 'Свердловский пр.', 'Комсомольский пр.'] },
     { id: 'samara', name: 'Самара', in: 'в Самаре', pop: 1.16, inc: 1.00, rent: 0.95, wage: 1.00, comp: 'mid', km: 460, cap: 50, lat: 53.2, lon: 50.2,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 26]], muslim: 0.3, sab: 0, feat: 'Набережная Волги: летом парковые точки сильнее',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 26]], muslim: 0.3, sab: 0, feat: 'Набережная Волги: летом точки у парков +30% (в других городах +25%)', park: 1.3,
       districts: [['Самарский', 'center'], ['Ленинский', 'biz'], ['Октябрьский', 'prestige'], ['Советский', 'sleep'], ['Промышленный', 'sleep'], ['Кировский', 'far'], ['Железнодорожный', 'student'], ['Красноглинский', 'outskirts'], ['Безымянка', 'industrial']],
       streets: ['ул. Куйбышева', 'ул. Ленинградская', 'Московское шоссе', 'ул. Ново-Садовая', 'ул. Самарская'] },
     { id: 'perm', name: 'Пермь', in: 'в Перми', pop: 1.03, inc: 0.98, rent: 0.85, wage: 0.98, comp: 'mid', km: 480, cap: 45, lat: 58.0, lon: 56.2,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Кама', 22]], muslim: 0.15, sab: 0, feat: 'Город вытянут вдоль Камы — доставка дальше',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Кама', 22]], muslim: 0.15, sab: 0, feat: 'Город вытянут вдоль Камы: доставка по городу дальше (×1,35), второй цех — с 11 точек', kmK: 1.35, prod2: 11,
       districts: [['Ленинский', 'center'], ['Свердловский', 'biz'], ['Дзержинский', 'prestige'], ['Мотовилихинский', 'sleep'], ['Индустриальный', 'sleep'], ['Кировский', 'far'], ['Орджоникидзевский', 'far'], ['Гайва', 'outskirts'], ['Закамск', 'industrial']],
       streets: ['Комсомольский пр.', 'ул. Ленина', 'ул. Сибирская', 'ул. Петропавловская', 'ул. Героев Хасана'] },
     { id: 'kazan', name: 'Казань', in: 'в Казани', pop: 1.32, inc: 1.08, rent: 1.10, wage: 1.05, comp: 'high', km: 525, cap: 60, lat: 55.8, lon: 49.1,
-      shape: 'compact', water: 'confluence', rivers: [['р. Волга', 24], ['р. Казанка', 9], ['р. Волга', 24]], muslim: 1, sab: 1, feat: 'Туризм и вузы; татарский календарь; сильные местные пекарни',
+      shape: 'compact', water: 'confluence', rivers: [['р. Волга', 24], ['р. Казанка', 9], ['р. Волга', 24]], muslim: 1, sab: 1, feat: 'Туризм и вузы; татарский календарь; сильные местные пекарни — без национальной выпечки в меню рейтинг −0,3★', natReq: 0.3,
       districts: [['Вахитовский', 'center'], ['Ново-Савиновский', 'biz'], ['Приволжский', 'prestige'], ['Советский', 'sleep'], ['Московский', 'sleep'], ['Азино', 'sleep'], ['Кировский', 'far'], ['Горки', 'student'], ['Дербышки', 'outskirts'], ['Авиастроительный', 'industrial']],
       streets: ['ул. Баумана', 'ул. Пушкина', 'пр. Победы', 'пр. Ямашева', 'ул. Кремлёвская'] },
     { id: 'ekb', name: 'Екатеринбург', in: 'в Екатеринбурге', pop: 1.54, inc: 1.15, rent: 1.20, wage: 1.10, comp: 'high', km: 525, cap: 70, lat: 56.8, lon: 60.6,
-      shape: 'compact', water: 'one-river', rivers: [['р. Исеть', 9]], muslim: 0.15, sab: 0.3, feat: 'Деловая столица Урала: много БЦ, сильные местные сети',
+      shape: 'compact', water: 'one-river', rivers: [['р. Исеть', 9]], muslim: 0.15, sab: 0.3, feat: 'Деловая столица Урала: больше мест у бизнес-центров, кофейная культура — напитки в чеке +12%; сильные местные сети',
+      archK: { biz: { w: 1.4 } }, cat: { drinks: 0.12 },
       districts: [['Центр', 'center'], ['Юго-Запад', 'biz'], ['ВИЗ', 'biz'], ['Академический', 'prestige'], ['Уралмаш', 'sleep'], ['Эльмаш', 'sleep'], ['Ботаника', 'sleep'], ['Пионерский', 'student'], ['Химмаш', 'industrial'], ['Вторчермет', 'industrial']],
       streets: ['пр. Ленина', 'ул. Малышева', 'ул. 8 Марта', 'ул. Вайнера', 'ул. Куйбышева'] },
     { id: 'tyumen', name: 'Тюмень', in: 'в Тюмени', pop: 0.85, inc: 1.20, rent: 1.05, wage: 1.12, comp: 'mid', km: 800, cap: 38, lat: 57.2, lon: 65.5,
-      shape: 'compact', water: 'one-river', rivers: [['р. Тура', 12]], muslim: 0.3, sab: 0, feat: 'Нефтяные доходы: высокий чек',
+      shape: 'compact', water: 'one-river', rivers: [['р. Тура', 12]], muslim: 0.3, sab: 0, feat: 'Нефтяные доходы: высокий чек; город растёт — гостей +1,5% в год', grow: 0.015,
       districts: [['Центр', 'center'], ['Калининский', 'biz'], ['Заречный', 'prestige'], ['Восточный', 'sleep'], ['Мыс', 'sleep'], ['Ленинский', 'student'], ['Тарманы', 'far'], ['Антипино', 'industrial']],
       streets: ['ул. Республики', 'ул. Мельникайте', 'ул. Широтная', 'ул. Ленина', 'Червишевский тракт'] },
     { id: 'nnov', name: 'Нижний Новгород', short: 'Н. Новгород', in: 'в Нижнем Новгороде', pop: 1.20, inc: 1.00, rent: 0.95, wage: 1.00, comp: 'mid', km: 930, cap: 50, lat: 56.3, lon: 44.0,
-      shape: 'compact', water: 'confluence', rivers: [['р. Ока', 18], ['р. Волга', 24], ['р. Волга', 24]], muslim: 0.15, sab: 0, feat: 'Слияние Оки и Волги — как Белая и Уфа',
+      shape: 'compact', water: 'confluence', rivers: [['р. Ока', 18], ['р. Волга', 24], ['р. Волга', 24]], muslim: 0.15, sab: 0, feat: 'Слияние Оки и Волги — как Белая и Уфа; ворота к Москве: с Нижним в сети вход в Москву на 15% дешевле', gate: { moscow: 0.85 },
       districts: [['Нижегородский', 'center'], ['Советский', 'biz'], ['Приокский', 'prestige'], ['Канавинский', 'sleep'], ['Ленинский', 'sleep'], ['Московский', 'sleep'], ['Сормовский', 'far'], ['Щербинки', 'student'], ['Автозаводский', 'industrial']],
       streets: ['ул. Большая Покровская', 'ул. Рождественская', 'ул. Белинского', 'пр. Гагарина', 'ул. Родионова'] },
     { id: 'volgograd', name: 'Волгоград', in: 'в Волгограде', pop: 1.02, inc: 0.85, rent: 0.75, wage: 0.88, comp: 'low', km: 1290, cap: 40, lat: 48.7, lon: 44.5,
-      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 28]], muslim: 0.15, sab: 0, feat: 'Город-лента вдоль Волги; жаркое лето',
+      shape: 'river-strip', water: 'strip', rivers: [['р. Волга', 28]], muslim: 0.15, sab: 0, feat: 'Город-лента ~70 км вдоль Волги: доставка по городу ×1,6, второй цех — с 10 точек; жаркое лето — напитки +20%',
+      kmK: 1.6, prod2: 10, hot: { drinks: 0.2 },
       districts: [['Центральный', 'center'], ['Ворошиловский', 'biz'], ['Дзержинский', 'prestige'], ['Краснооктябрьский', 'sleep'], ['Советский', 'sleep'], ['Спартановка', 'sleep'], ['Кировский', 'far'], ['Красноармейский', 'far'], ['Тракторозаводский', 'industrial']],
       streets: ['пр. Ленина', 'ул. Мира', 'ул. Рабоче-Крестьянская', 'ул. Землячки', 'Университетский пр.'] },
     { id: 'voronezh', name: 'Воронеж', in: 'в Воронеже', pop: 1.05, inc: 0.95, rent: 0.85, wage: 0.92, comp: 'mid', km: 1330, cap: 42, lat: 51.7, lon: 39.2,
-      shape: 'compact', water: 'one-river', rivers: [['р. Воронеж', 20]], muslim: 0.15, sab: 0, feat: 'Студенческий город',
+      shape: 'compact', water: 'one-river', rivers: [['р. Воронеж', 20]], muslim: 0.15, sab: 0, feat: 'Студенческий: больше мест у вузов, летом провал сильнее (июль–август −10%)',
+      archK: { student: { w: 1.6 } }, season: [1, 1, 1, 1, 1, 0.96, 0.88, 0.9, 1.03, 1, 1, 1],
       districts: [['Центральный', 'center'], ['Ленинский', 'biz'], ['Северный', 'prestige'], ['Коминтерновский', 'sleep'], ['Советский', 'sleep'], ['Левобережный', 'far'], ['Университетский', 'student'], ['Шилово', 'outskirts'], ['Железнодорожный', 'industrial']],
       streets: ['пр. Революции', 'ул. Плехановская', 'ул. Кольцовская', 'Московский пр.', 'ул. Фридриха Энгельса'] },
     { id: 'rostov', name: 'Ростов-на-Дону', short: 'Ростов', in: 'в Ростове-на-Дону', pop: 1.14, inc: 1.00, rent: 0.95, wage: 0.95, comp: 'high', km: 1750, cap: 48, lat: 47.2, lon: 39.7,
-      shape: 'compact', water: 'one-river', rivers: [['р. Дон', 18]], muslim: 0.15, sab: 0, feat: 'Южная кухня, много уличных пекарен',
+      shape: 'compact', water: 'one-river', rivers: [['р. Дон', 18]], muslim: 0.15, sab: 0, feat: 'Южная кухня, много уличных пекарен (высокая конкуренция); короткая зима — провал зимой мельче',
+      season: [1.05, 1.06, 1.03, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       districts: [['Кировский', 'center'], ['Ленинский', 'biz'], ['Октябрьский', 'prestige'], ['Западный', 'sleep'], ['Ворошиловский', 'sleep'], ['Пролетарский', 'sleep'], ['Первомайский', 'far'], ['Левенцовка', 'far'], ['Железнодорожный', 'industrial']],
       streets: ['ул. Большая Садовая', 'Будённовский пр.', 'ул. Пушкинская', 'Ворошиловский пр.', 'пр. Стачки'] },
     { id: 'krasnodar', name: 'Краснодар', in: 'в Краснодаре', pop: 1.10, inc: 1.02, rent: 1.00, wage: 0.95, comp: 'high', km: 2030, cap: 50, lat: 45.0, lon: 39.0,
-      shape: 'compact', water: 'one-river', rivers: [['р. Кубань', 16]], muslim: 0.15, sab: 0, feat: 'Самый быстрорастущий город',
+      shape: 'compact', water: 'one-river', rivers: [['р. Кубань', 16]], muslim: 0.15, sab: 0, feat: 'Самый быстрорастущий: новые микрорайоны — гостей +2% в год', grow: 0.02,
       districts: [['Центр', 'center'], ['Фестивальный', 'biz'], ['Юбилейный', 'prestige'], ['Западный', 'sleep'], ['Карасунский', 'sleep'], ['Прикубанский', 'sleep'], ['ЮМР', 'student'], ['Пашковский', 'far'], ['Гидрострой', 'industrial']],
       streets: ['ул. Красная', 'ул. Северная', 'ул. Ставропольская', 'ул. Кубанская Набережная', 'ул. Российская'] },
     { id: 'sochi', name: 'Сочи', in: 'в Сочи', pop: 0.45, inc: 1.25, rent: 1.50, wage: 1.10, comp: 'mid', km: 2300, cap: 20, lat: 43.6, lon: 39.7,
-      shape: 'coast', water: 'coast', rivers: [['р. Сочи', 7]], sea: 'Чёрное море', muslim: 0.15, sab: 0, feat: 'Курорт: лето сильнее, зима слабее; дорогая аренда',
-      season: [0.82, 0.8, 0.86, 0.95, 1.05, 1.25, 1.42, 1.42, 1.18, 0.98, 0.86, 0.9],
+      shape: 'coast', water: 'coast', rivers: [['р. Сочи', 7]], sea: 'Чёрное море', muslim: 0.15, sab: 0, feat: 'Курорт: лето ×1,5, зима ×0,8; дорогая аренда; город-лента вдоль моря — доставка ×1,3',
+      season: [0.8, 0.8, 0.86, 0.95, 1.05, 1.28, 1.5, 1.5, 1.2, 0.98, 0.86, 0.88], kmK: 1.3,
       districts: [['Центральный', 'center'], ['Адлер', 'biz'], ['Хоста', 'prestige'], ['Мацеста', 'sleep'], ['Дагомыс', 'far'], ['Лазаревское', 'outskirts'], ['Кудепста', 'industrial']],
       streets: ['Курортный пр.', 'ул. Навагинская', 'ул. Роз', 'ул. Виноградная', 'ул. Орджоникидзе'] },
     { id: 'moscow', name: 'Москва', in: 'в Москве', pop: 13.1, inc: 1.80, rent: 3.00, wage: 1.70, comp: 'vhigh', km: 1350, cap: 250, lat: 55.8, lon: 37.6,
@@ -77,12 +88,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       districts: [['Центр', 'center'], ['Москва-Сити', 'biz'], ['Павелецкая', 'biz'], ['Белорусская', 'biz'], ['Хамовники', 'prestige'], ['Юго-Запад', 'prestige'], ['Север', 'sleep'], ['Северо-Восток', 'sleep'], ['Восток', 'sleep'], ['Юг', 'far'], ['Новая Москва', 'outskirts'], ['Юго-Восток', 'industrial']],
       streets: ['ул. Тверская', 'ул. Арбат', 'ул. Мясницкая', 'пр. Мира', 'Ленинский пр.', 'Кутузовский пр.'] },
     { id: 'spb', name: 'Санкт-Петербург', short: 'Петербург', in: 'в Петербурге', pop: 5.6, inc: 1.40, rent: 1.90, wage: 1.40, comp: 'vhigh', km: 2050, cap: 150, lat: 59.9, lon: 30.3,
-      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных; белые ночи',
-      season: [1, 1, 1, 1, 1, 1.12, 1.12, 1, 1, 1, 1, 1],
+      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; белые ночи (июнь–июль +15%)',
+      season: [1, 1, 1, 1, 1, 1.15, 1.15, 1, 1, 1, 1, 1], cat: { sweet: 0.12 },
       districts: [['Центральный', 'center'], ['Адмиралтейский', 'biz'], ['Василеостровский', 'biz'], ['Петроградский', 'prestige'], ['Московский', 'sleep'], ['Приморский', 'sleep'], ['Невский', 'sleep'], ['Калининский', 'sleep'], ['Выборгский', 'student'], ['Красносельский', 'far'], ['Кировский', 'industrial']],
       streets: ['Невский пр.', 'ул. Рубинштейна', 'Большой пр. П. С.', 'Литейный пр.', 'Московский пр.', 'ул. Марата'] },
     { id: 'nsk', name: 'Новосибирск', in: 'в Новосибирске', pop: 1.63, inc: 1.05, rent: 0.95, wage: 1.05, comp: 'mid', km: 2100, cap: 60, lat: 55.0, lon: 82.9,
-      shape: 'compact', water: 'one-river', rivers: [['р. Обь', 26]], muslim: 0.15, sab: 0, far: true, feat: 'Самый дальний: вход дороже на 20%; суровая зима',
+      shape: 'compact', water: 'one-river', rivers: [['р. Обь', 26]], muslim: 0.15, sab: 0, far: true, feat: 'Самый дальний: вход дороже на 20%; суровая зима (январь–февраль −5%); федеральные сети слабы — «Хлебный двор» приходит реже и давит вдвое слабее', fedK: 0.5,
       season: [0.95, 0.95, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       districts: [['Центральный', 'center'], ['Железнодорожный', 'biz'], ['Заельцовский', 'prestige'], ['Октябрьский', 'sleep'], ['Дзержинский', 'sleep'], ['Калининский', 'sleep'], ['Ленинский', 'far'], ['Кировский', 'far'], ['Академгородок', 'student'], ['Первомайский', 'industrial']],
       streets: ['Красный пр.', 'ул. Ленина', 'ул. Кирова', 'ул. Фрунзе', 'ул. Большевистская'] },
@@ -276,9 +287,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const own = def.streets || [];
     const DISTRICTS = list.map((d) => {
       const a = ARCH[d.arch], sh = COMMON_STREETS.slice().sort(() => R() - 0.5);
+      const ak = Object.assign({ traffic: 1, solv: 1, w: 1 }, (def.archK || {})[d.arch]); // особенность города (Р4): промзоны Челябинска, вузы Воронежа… — без лишних вызовов ГСЧ
       const ownPick = own.slice().sort(() => R() - 0.5).slice(0, d.ring === 0 ? own.length : 3);
-      return { id: def.id + d.i, name: d.name, x: Math.round(d.x), y: Math.round(d.y), arch: d.arch, ring: d.ring, w: a.w,
-        rent: a.rent.map((v) => rnd10(v * def.rent, 10)), solv: a.solv.map((v) => rnd10(v * def.inc, 5)), traffic: a.traffic.map((v) => rnd10(v * dens, 50)), prodRent: a.prodRent.map((v) => rnd10(v * def.rent, 10)),
+      return { id: def.id + d.i, name: d.name, x: Math.round(d.x), y: Math.round(d.y), arch: d.arch, ring: d.ring, w: +(a.w * ak.w).toFixed(3),
+        rent: a.rent.map((v) => rnd10(v * def.rent, 10)), solv: a.solv.map((v) => rnd10(v * def.inc * ak.solv, 5)), traffic: a.traffic.map((v) => rnd10(v * dens * ak.traffic, 50)), prodRent: a.prodRent.map((v) => rnd10(v * def.rent, 10)),
         streets: ownPick.concat(sh.slice(0, 3)) };
     });
     const ids = (f) => DISTRICTS.filter(f).map((d) => d.id);
@@ -296,7 +308,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
   function cityInfo(def) { // описание для движка: масштаб, конкуренция, сезон, календарь
     if (def.builtin) return { id: def.id, name: def.name, in: def.in };
-    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 } };
+    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
+      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }; // особенности города (Р4)
   }
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;

@@ -38,6 +38,11 @@
 .ru-cont { stroke: var(--ink-3); stroke-width: 1.2px; stroke-dasharray: 6 5; opacity: .6; vector-effect: non-scaling-stroke; }
 .ru-cont-t { font-family: var(--f-mono); font-size: calc(10.5px * var(--rk)); stroke-width: calc(3px * var(--rk)); fill: var(--ink-3); text-anchor: middle; letter-spacing: .04em; }
 .ru-link { fill: none; stroke: var(--map-route); stroke-width: 1.4px; stroke-dasharray: 2 5; stroke-linecap: round; opacity: .75; vector-effect: non-scaling-stroke; }
+/* линии снабжения (Р4): свежая выпечка — корочкой, фабрика заморозки — бирюзой, прервано — красным */
+.ru-sup { fill: none; stroke: var(--crust); stroke-width: 2.2px; stroke-dasharray: 7 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ru-sup.frozen { stroke: var(--river); }
+.ru-sup.off { stroke: var(--bad); stroke-dasharray: 3 5; }
+.maplegend .lg-sw.lg-ln { width: 22px; height: 8px; }
 /* города: наш — залитый кружок корочкой с числом точек и кольцом прибыли; свободный — пунктирный круг */
 .ru-city { cursor: pointer; }
 .ru-city .hit { fill: transparent; }
@@ -294,6 +299,7 @@ table.cmp { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .wopt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: 10px; cursor: pointer; }
 .wopt:has(input:checked) { border-color: var(--crust); background: var(--crust-soft); }
 .wopt input { margin-top: 3px; accent-color: var(--crust); }
+.wopt.dis { opacity: .55; cursor: default; }
 .wopt span { display: flex; flex-direction: column; gap: 2px; }
 .wopt b { font-size: 13.5px; font-weight: 600; } .wopt small { font-size: 12px; color: var(--ink-2); }
 @media (max-width: 820px) {
@@ -355,3 +361,10 @@ table.cmp.uni tr.lock td { color: var(--ink-3); }
   .mot .bv b { min-width: 80px; }
 }
 .uniwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
+
+/* денежный риск (Р4): город теряет деньги — почему и что сделать */
+.leakbox { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 11px; border: 1px solid var(--bad); border-left-width: 4px; border-radius: 10px; background: color-mix(in srgb, var(--bad) 8%, transparent); margin: 6px 0; }
+.leakbox b { grid-column: 1; font-size: 13.5px; color: var(--bad-t); }
+.leakbox span { grid-column: 1; font-size: 12.5px; color: var(--ink-2); }
+.leakbox .btn { grid-column: 2; grid-row: 1 / span 2; }
+.cmp .lossm, .cmpc .lossm { display: block; font-size: 11px; }

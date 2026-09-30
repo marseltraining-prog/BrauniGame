@@ -5,7 +5,7 @@
 //      Это проверка месячной формулы: допуск ±5% выручки и ±2 п. п. маржи для директора грейда 3 (навыки 60).
 //   Б. «Рост» — 5 лет с нуля: бот good вручную против директора грейда 1 / 3 / 5 (город запускает директор).
 //      Сравнивается выручка за 5 лет, маржа и точки в конце; игрок в это время ведёт Уфу.
-// Запуск: node sim/corp-calib.js [сидов=3] [город=kazan] [--years=5]
+// Запуск: node sim/corp-calib.js [сидов=3] [город=kazan] [--years=5] [--events] [--leak]
 const BK = require('./load');
 const { play, estStore } = require('./bot');
 const E = BK.Engine, CFG = BK.CFG;
@@ -16,6 +16,8 @@ const seeds = +(pos[0] || 3), CITY = pos[1] || 'kazan', YEARS = +(flags.years ||
 const GRADES = { 1: 35, 3: 60, 5: 85 };
 // Р3: калибруется месячная формула — корпоративные события и федеральный «Хлебный двор» выключены (--events — включить)
 if (!flags.events) CFG.CORP = Object.assign({}, CFG.CORP, { CEV_GAP: [1e7, 1e7], RIVAL_FOLLOW_P: 0 });
+// Р4: денежный риск («утечка» слабого директора) — отдельная механика поверх формулы; калибруется без неё (--leak — включить)
+if (!flags.leak) CFG.CORP = Object.assign({}, CFG.CORP, { LEAK_MAX: 0 });
 
 function makeDir(S, grade) { // синтетический директор: стиль «Баланс», без черт, навыки по грейду
   const cr = S.corp, sk = GRADES[grade];

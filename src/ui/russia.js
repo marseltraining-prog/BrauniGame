@@ -173,7 +173,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.S = S;
     const k = upp(), sm = BK.Corp.summary(S); if (!sm) return;
     const own = {}; for (const c of sm.cities) own[c.id] = c;
-    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join()].join('|');
+    const sup = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : [], supTo = {}; for (const l of sup) supTo[l.to] = l; // линии снабжения (Р4, §7.2)
+    const key = [k.toFixed(3), S.day, view.sel, sm.active, sm.cities.map((c) => c.id + c.stores + ':' + c.lastRev + ':' + (S.corp.cities[c.id].directorId || '')).join(), sup.map((l) => l.from + l.to + l.mode + l.ok).join()].join('|');
     if (key === view.lastKey && !force) return;
     view.lastKey = key;
     const narrow = view.px.w < 700;
@@ -183,7 +184,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ufa = P(BK.CITY_BY_ID.ufa.lon, BK.CITY_BY_ID.ufa.lat);
     for (const d of BK.CITIES) {
       const p = P(d.lon, d.lat), c = own[d.id], r = rad(d) * k, sel = view.sel === d.id;
-      if (c && d.id !== 'ufa') links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
+      if (c && d.id !== 'ufa' && !supTo[d.id]) links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
+      if (supTo[d.id]) { const l = supTo[d.id], f = BK.CITY_BY_ID[l.from], q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
       let g = `<g class="ru-city${c ? ' own' : ''}${c && c.active ? ' act' : ''}${sel ? ' sel' : ''}" data-city="${d.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">`;
       g += `<circle class="hit" r="${(Math.max(r, 12 * k) + 4 * k).toFixed(1)}"/>`;
       if (c) {
@@ -226,13 +228,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="lg-r">${sw('lg-own t-good')}<span>Маржа 15 % и выше</span><b>${tone.good}</b></span>
       <span class="lg-r">${sw('lg-own t-warn')}<span>От 0 до 15 %</span><b>${tone.warn}</b></span>
       <span class="lg-r">${sw('lg-own t-bad')}<span>Убыток</span><b>${tone.bad}</b></span>
-      <span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>`;
+      <span class="lg-h">${sw('lg-free')}<span>Можно открыть — нажмите на город</span></span>${supLegend(S)}`;
     const lgEl = view.el.querySelector('.ru-legend'); if (lgEl.innerHTML !== lg) lgEl.innerHTML = lg;
     const cart = view.el.querySelector('.ru-cart');
     if (!cart.firstChild) cart.innerHTML = `<div class="ct-in"><div class="ct-c ct-full"><small>Генплан сети</small><div class="ct-t">Россия · лист 2</div></div><div class="ct-c"><small>Масштаб</small><div class="ct-v">1 : 20 000 000</div></div><div class="ct-c"><small>Дата</small><div class="ct-v ct-d"></div></div><div class="ct-c ct-full ct-last"><small>Городов · точек</small><div class="ct-v ct-n"></div></div></div>`;
     const d = E().dateOf(S.day), dv = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`, nv = `${sm.cities.length} · ${sm.stores}`;
     const cd = cart.querySelector('.ct-d'), cn = cart.querySelector('.ct-n');
     if (cd.textContent !== dv) cd.textContent = dv; if (cn.textContent !== nv) cn.textContent = nv;
+  }
+  function supLegend(S) { // линии снабжения — только когда они есть
+    const ls = BK.Corp.supplyLinks ? BK.Corp.supplyLinks(S) : []; if (!ls.length) return '';
+    const ln = (cls) => `<svg viewBox="0 0 22 8" class="lg-sw lg-ln" aria-hidden="true"><path class="ru-sup ${cls}" d="M1,4L21,4"/></svg>`;
+    let s = '';
+    if (ls.some((l) => l.mode !== 'frozen')) s += `<span class="lg-r">${ln('fresh')}<span>Свежая выпечка из цеха</span><b>${ls.filter((l) => l.mode !== 'frozen').length}</b></span>`;
+    if (ls.some((l) => l.mode === 'frozen')) s += `<span class="lg-r">${ln('frozen')}<span>Фабрика заморозки</span><b>${ls.filter((l) => l.mode === 'frozen').length}</b></span>`;
+    return s;
   }
   // экранная точка города внутри .mapwrap (для анимации)
   function cityScreen(id) {
@@ -298,6 +308,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="kpi"><span class="k">Точки · цеха</span><span class="v">${c.open}${c.soon ? ` <small class="pos">+${c.soon}</small>` : ''} · ${c.prods}</span><span class="d">команда ${c.staff}</span></div>
         <div class="kpi"><span class="k">Рейтинг на картах</span><span class="v">${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : '—'}</span><span class="d">${c.active ? 'как в городе' : hasDir(S, id) ? 'ведёт директор' : 'сползает к 3,5★ без вас'}</span></div></div>`;
       if (id !== 'ufa') s += awBar(c.aw);
+      const rc = BK.Corp.remoteOf && BK.Corp.remoteOf(S, id); // Р4: снабжение из другого города
+      if (rc) s += `<p class="hint ${rc.supplyOk === false ? 'negc' : ''}" style="margin:0">Выпечка: ${esc(BK.Corp.supplyName(S, rc))}, ${rc.supplyKm} км${rc.supplyOk === false ? ' — <b>поставки прерваны</b>: точки без выпечки, нужен свой цех' : '. Свой цех в городе выгоднее, когда точек станет больше.'}</p>`;
       if (BK.CorpUI) s += BK.CorpUI.cityBlocks(S, id);
       if (c.active) s += `<div class="row sp"><span class="hint">Этот город считается подробно: вы нанимаете, учите и открываете точки сами.</span><button class="btn primary" data-act="ruBack">К карте города</button></div>`;
       else s += `<div class="row sp"><span class="hint">${hasDir(S, id) ? 'Зайдите, чтобы вести город самому: директор станет заместителем (дольше 2 месяцев — лояльность падает).' : 'Без директора город только живёт. Зайдите, чтобы вести его самому.'}</span><button class="btn primary" data-act="ruGo" data-arg="${id}">Зайти в город</button></div>`;
