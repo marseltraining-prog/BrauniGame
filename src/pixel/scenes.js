@@ -282,7 +282,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (mode === 'month' && W >= 200) {
         // Семён Аркадьевич у прилавка (спиной) и гостья за столиком
         put(b, fg('semyon', { view: 'back' }), L.vit.x + 4, H - 31, true);
-        if (W >= 300) {
+        if (W >= 220) {
           const tx = Math.round(L.c1 - 12);
           if (tx + 30 < W) { b.ellipse(tx + 12, H - 3, 16, 3, '#3a2219', 0.3); put(b, fg('elvira', { emo: 'smile', upper: true }), tx, H - 28, false); b.ellipse(tx + 12, H - 9, 13, 3, P.wood[3]); b.ellipse(tx + 12, H - 10, 12, 2, P.wood[4]); b.rect(tx + 11, H - 7, 3, 7, P.wood[0]); b.rect(tx + 5, H - 13, 5, 3, '#f5efe3'); icon(b, tx + 14, H - 16, 'croissant', false); }
         }
