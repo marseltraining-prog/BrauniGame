@@ -1907,6 +1907,7 @@ html.s1-on, html.s1-on body { overflow: hidden; }
 .s1 { position: fixed; inset: 0; z-index: 57; background: var(--paper); color: var(--ink); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; font-family: var(--f-body); }
 .s1 * { box-sizing: border-box; }
 .s1 h3 { font-family: var(--f-display); font-size: 14px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.s1 h4 small { text-transform: none; letter-spacing: 0; }
 .s1 h3 small, .s1 h4 small { font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--ink-3); }
 .s1 h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: var(--ink-2); margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .s1 .btn { border-radius: 10px; transition: transform .08s ease; }
@@ -1939,7 +1940,7 @@ html.s1-on, html.s1-on body { overflow: hidden; }
 .s1-goal { flex: 0 1 230px; min-width: 170px; display: flex; flex-direction: column; gap: 2px; }
 .s1-goal .gr { display: flex; justify-content: space-between; gap: 8px; }
 .s1-goal .k { line-height: 1.3; }
-.s1-goal .gp { font-family: var(--f-mono); font-size: 12px; color: var(--crust-t); font-weight: 700; }
+.s1-goal .gp { white-space: nowrap; font-family: var(--f-mono); font-size: 12px; color: var(--crust-t); font-weight: 700; }
 .s1-goal .gv { font-size: 12px; color: var(--ink-2); }
 .s1-gbar { height: 7px; border-radius: 9px; background: var(--paper-2); overflow: hidden; }
 .s1-gbar i { display: block; height: 100%; background: var(--crust); border-radius: 9px; transition: width .5s ease; }
@@ -2109,7 +2110,7 @@ html.s1-on, html.s1-on body { overflow: hidden; }
   .s1-goal { order: 6; flex: 1 1 100%; }
 }
 @media (max-width: 560px) {
-  .s1-top { gap: 8px 10px; padding: 8px 12px; }
+  .s1-top { gap: 8px 10px; padding: 8px 12px; position: static; }
   .s1-brand { flex: 1 1 60%; } .s1-ch { display: none; }
   .s1-when { order: 3; } .s1-speed { order: 4; } .s1-ctl { order: 2; }
   .s1-st b { font-size: 13.5px; } .s1-st small { font-size: 10.5px; }
@@ -16811,9 +16812,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Кофейня вблизи: ${esc(v.name)}${v.closed ? ', закрыто' : ''}" class="s1-svg">
       <rect x="0" y="0" width="${W}" height="${H}" class="sc-wall"/>
       <rect x="18" y="16" width="170" height="92" rx="6" class="sc-win"/><path d="M103 16 v92 M18 62 h170" class="sc-frame"/>
-      ${v.dvor ? `<rect x="36" y="26" width="72" height="30" rx="4" class="sc-dvor"/><text x="72" y="45" text-anchor="middle" class="sc-dvt">«Двор»${v.dvor === 'soon' ? ' скоро' : ''}</text>` : ''}
+      ${v.dvor ? `<rect x="26" y="24" width="150" height="30" rx="4" class="sc-dvor"/><text x="101" y="43" text-anchor="middle" class="sc-dvt">«Хлебный двор»${v.dvor === 'soon' ? ' · скоро' : ''}</text>` : ''}
       <rect x="220" y="14" width="250" height="38" rx="6" class="sc-sign"/><text x="345" y="39" text-anchor="middle" class="sc-st">${esc(v.name.toUpperCase().slice(0, 22))}</text>
-      <path d="M212 56 h266 v16 ${Array.from({ length: 10 }, (_, i) => `q${13.3} 12 ${26.6} 0`).join(' ')} v-16" class="sc-awn"/>
+      <path d="M212 56 h266 v14 ${Array.from({ length: 10 }, () => 'q-13.3 12 -26.6 0').join(' ')} z" class="sc-awn"/>
       <rect x="486" y="40" width="216" height="${Math.min(7, v.menu.length) * 17 + 18}" rx="6" class="sc-board"/>${board}
       <rect x="248" y="160" width="146" height="50" rx="8" class="sc-case"/>${pastry.join('')}
       <rect x="648" y="150" width="54" height="56" rx="6" class="sc-mach"/><path d="M660 144 q4 -8 0 -14 M675 144 q4 -8 0 -14" class="sc-steam"/>
@@ -16879,6 +16880,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const up = () => { if (ui.pressing) { ui.pressing = false; ui.dirty = true; } };
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
     }
+    else { $('#s1Ov').innerHTML = ''; $('#s1In').innerHTML = ''; } // повторное открытие (загрузка, «Переиграть») — окна прошлого состояния не нужны
     ui.open = true; ui.parts = {}; ui.dirty = true; ui.acc = 0;
     document.documentElement.classList.add('s1-on');
     render(true);

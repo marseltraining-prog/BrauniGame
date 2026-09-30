@@ -112,6 +112,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const up = () => { if (ui.pressing) { ui.pressing = false; ui.dirty = true; } };
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
     }
+    else { $('#s1Ov').innerHTML = ''; $('#s1In').innerHTML = ''; } // повторное открытие (загрузка, «Переиграть») — окна прошлого состояния не нужны
     ui.open = true; ui.parts = {}; ui.dirty = true; ui.acc = 0;
     document.documentElement.classList.add('s1-on');
     render(true);
@@ -165,7 +166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const t = T(); if (!t || !t.fx.length) return;
     const L = t.fx.splice(0, t.fx.length);
     for (const f of L) {
-      if (f.kind === 'month') { const r = f.row; slip(`<b>Итог ${esc(E().MONTHS[r.m])}: <span class="${r.profit >= 0 ? 'up' : 'dn'}">${fmS(r.profit)}</span></b><span>Выручка ${fm(r.rev)} · гостей в день ~${r.guests} · ★${r.rating.toFixed(1).replace('.', ',')}${r.share ? ` · партнёрам ${fm(r.share)}` : ''}</span>`, 5500); if (r.profit > 0) coins(); }
+      if (f.kind === 'month') { const r = f.row; slip(`<b>Итог за ${esc(E().MONTHS[r.m])}: <span class="${r.profit >= 0 ? 'up' : 'dn'}">${fmS(r.profit)}</span></b><span>Выручка ${fm(r.rev)} · гостей в день ~${r.guests} · ★${r.rating.toFixed(1).replace('.', ',')}${r.share ? ` · партнёрам ${fm(r.share)}` : ''}</span>`, 5500); if (r.profit > 0) coins(); }
       else if (f.kind === 'milestone') ui.msq = (ui.msq || []).concat([f]);
       else if (f.kind === 'sms') slip(`<span class="s1-smsh">${esc(f.who)} · СМС</span><span>${esc(f.text)}</span>`, 6500);
     }
