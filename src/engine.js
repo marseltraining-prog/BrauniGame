@@ -523,6 +523,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.month.checks += dayChecks;
     spend(S, dayFc, 'fc');
     S.cache.dayRev = dayRev;
+    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
     // производство: загрузка
     for (const p of S.productions) {
       p.load = S.cache.capUse;

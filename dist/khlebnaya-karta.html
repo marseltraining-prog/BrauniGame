@@ -1385,6 +1385,60 @@ table.cmp.uni tr.lock td { color: var(--ink-3); }
 }
 .uniwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
 
+/* статистика продуктов: окно шеф-пекаря и вкладка «Меню» (ui/menu-stats.js) */
+.modal.chefwide { max-width: 820px; }
+.ms-h { font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ms-sub { margin: -6px 0 0; font-size: 12px; }
+.ms-note { font-size: 12.5px; padding: 8px 10px; border-radius: 8px; background: var(--river-soft); color: var(--ink); }
+.ms-est { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; border: 1px dashed var(--ink-3); color: var(--ink-2); line-height: 1.5; white-space: nowrap; }
+.ms-src { font-size: 11.5px; font-weight: 400; color: var(--ink-3); }
+.ms-src.est { color: var(--river-t); }
+.ms-flag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--warn-soft); color: var(--warn-t); white-space: nowrap; line-height: 1.6; }
+.ms-flag.cand { background: var(--bad-soft); color: var(--bad-t); font-weight: 600; }
+.ms-pos { color: var(--good-t); } .ms-neg { color: var(--bad-t); }
+.warnv { color: var(--warn-t); }
+
+/* карточки окна шефа */
+.chefitem .ms-grid, .chefitem .ms-if { grid-column: 2 / span 2; }
+.ms-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.ms-grid.five { grid-template-columns: minmax(0, .8fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+.ms-k { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 5px 8px; border-radius: 7px; background: var(--surface-2); }
+.ms-k .l { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.ms-k .v { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ms-bar { display: block; height: 4px; border-radius: 2px; background: var(--line); margin-top: 3px; overflow: hidden; }
+.ms-bar i { display: block; height: 100%; background: var(--crust); border-radius: 2px; }
+.ms-dyn { display: inline-flex; align-items: center; gap: 6px; }
+.ms-spark { flex: none; display: block; }
+.ms-tr { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.ms-tr.up { color: var(--good-t); } .ms-tr.down { color: var(--bad-t); } .ms-tr.flat { color: var(--ink-3); }
+.ms-if { font-size: 12px; color: var(--ink-2); }
+.chefitem.cand { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
+.chefitem.cand.off { box-shadow: none; }
+.chefitem.on .ms-k, .chefitem.off .ms-k { background: var(--surface); }
+.chefitem.on .ms-k .l, .chefitem.off .ms-k .l, .chefitem.on .ms-if, .chefitem.off .ms-if { color: var(--ink-2); }
+.ms-sum { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+
+/* вкладка «Меню»: строка под продуктом */
+.ms-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; font-size: 11.5px; color: var(--ink-2); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.ms-line b { font-weight: 600; color: var(--ink); }
+.ms-line.est { color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .ms-grid, .ms-grid.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ms-grid.five .ms-k:nth-child(2) { grid-column: 1 / span 2; }
+}
+@media (max-width: 480px) {
+  .chefitem.ms-new input, .chefitem.ms-cur input { grid-row: 1 / span 5; }
+  .chefitem .ms-grid { grid-row: 4; } .chefitem .ms-if { grid-row: 5; }
+  /* телефон: показатели — компактным списком «название … значение» */
+  .ms-grid, .ms-grid.five { grid-template-columns: 1fr; gap: 0; margin-top: 2px; }
+  .ms-grid.five .ms-k:nth-child(2) { grid-column: auto; }
+  .ms-k { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px 8px; padding: 4px 0; background: none; border-radius: 0; border-bottom: 1px dashed var(--line); }
+  .chefitem.on .ms-k, .chefitem.off .ms-k { background: none; }
+  .ms-k .v { text-align: right; }
+  .ms-k .ms-bar { flex: 1 0 100%; margin-top: 2px; }
+}
+
 [hidden]{display:none!important}
 </style>
 <script>
@@ -4670,6 +4724,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.month.checks += dayChecks;
     spend(S, dayFc, 'fc');
     S.cache.dayRev = dayRev;
+    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
     // производство: загрузка
     for (const p of S.productions) {
       p.load = S.cache.capUse;
@@ -5670,6 +5725,222 @@ var BK = globalThis.BK || (globalThis.BK = {});
   Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
   BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects };
+})();
+
+/* prodstats.js */
+/* Хлебная карта — учёт продаж по продуктам меню (BK.ProdStats). Чистая логика без DOM.
+   Движок считает выручку точки целиком (трафик × конверсия × чек), без разбивки по позициям. Этот модуль раскладывает
+   фактические итоги дня (выручка, штуки, себестоимость, списания) по продуктам меню — теми же весами, что и движок
+   (популярность × тренд категории × цена, надбавки праздников по категориям), — и копит помесячную историю.
+   Списания раскладываются по себестоимости с поправкой на срок годности категории (напитки почти не списываются)
+   и спрос (редко берут — чаще остаётся). Итог по всем продуктам всегда равен фактическому итогу дня.
+   Учёт не тратит случайные числа и ничего не меняет в экономике: только читает итоги дня.
+
+   Состояние: S.prodStats = { v: 1, c: { [город]: { lab: 'г-м', cur: { id: [шт, выручка, себест, списания] }, days, hist: [{ y, m, d (дней с продажами), p: { id: [...] } }] } } }
+   Город — S.corp.active (во втором акте) или 'ufa'. Месяц — как в отчёте движка (1-е число относится к прошлому месяцу).
+   Старые сохранения: поля нет → создаётся при первом дне, UI пишет «копим статистику» и показывает оценку. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const C = () => BK.CFG;
+  const E = () => BK.Engine;
+  const HIST_MAX = 24, MD = 30.4; // средний месяц, дней
+  const dOf = (h) => h.d || MD;
+  // срок годности / остатки по категориям (напитки готовят под заказ — остатков почти нет)
+  const PERISH = { bread: 1.0, laminated: 1.2, sweet: 1.1, pies: 1.15, national: 0.95, desserts: 1.3, drinks: 0.08, breakfast: 1.2, healthy: 1.0 };
+
+  function prod(id) { return E().byId(BK.PRODUCTS, id); }
+  function cityKey(S) { return S.corp ? S.corp.active : 'ufa'; }
+  function ensure(S, key) {
+    if (!S.prodStats || typeof S.prodStats !== 'object') S.prodStats = { v: 1, c: {} };
+    if (!S.prodStats.c) S.prodStats.c = {};
+    if (key == null) return null;
+    const c = S.prodStats.c;
+    if (!c[key]) c[key] = { lab: '', days: 0, cur: {}, hist: [] };
+    return c[key];
+  }
+  function cityData(S) { const k = cityKey(S); return S.prodStats && S.prodStats.c && k ? S.prodStats.c[k] || null : null; }
+
+  /* ---------- надбавки праздников по категориям (как holidayDay в движке) ---------- */
+  let holKey = '', holVal = null;
+  function holCat(S, day) {
+    const cal = BK.CITY && BK.CITY.cal, key = day + ':' + (cal ? BK.CITY.id : '');
+    if (holKey === key) return holVal;
+    const H = C().HOLIDAYS || {}, out = {}; let any = false;
+    const y = E().dateOf(day).y;
+    const list = [].concat(E().holidaysOfYear(y - 1), E().holidaysOfYear(y), E().holidaysOfYear(y + 1));
+    for (const h of list) {
+      if (!(h.start <= day && day <= h.end)) continue;
+      const c = H[h.id]; if (!c || !c.cat) continue;
+      const f = cal ? (h.id === 'uraza' || h.id === 'kurban' ? cal.muslim : h.id === 'sabantuy' ? cal.sab : 1) : 1;
+      for (const k in c.cat) { out[k] = (out[k] || 0) + c.cat[k] * f; any = true; }
+    }
+    holKey = key; holVal = any ? out : null;
+    return holVal;
+  }
+
+  /* ---------- веса продуктов ---------- */
+  // u — штуки, r — выручка, c — себестоимость, w — списания
+  function weights(S, menu, hol) {
+    const rows = []; let su = 0;
+    for (const it of menu) {
+      const p = prod(it.id); if (!p) continue;
+      const u = p.pop * (0.55 + 0.9 * ((S.trends && S.trends[p.cat]) || 50) / 100) * (hol && hol[p.cat] ? 1 + hol[p.cat] : 1);
+      rows.push({ id: it.id, p, u, r: u * p.price * (it.pm || 1), c: u * p.fc * p.price }); su += u;
+    }
+    const avgU = rows.length ? su / rows.length : 1;
+    for (const x of rows) x.w = x.c * (PERISH[x.p.cat] != null ? PERISH[x.p.cat] : 1) * Math.min(1.8, Math.max(0.6, Math.sqrt(avgU / x.u)));
+    return rows;
+  }
+  // разложить итоги { units, rev, fc, waste } по продуктам → { id: [шт, выручка, себест, списания] }
+  function split(S, menu, tot, hol) {
+    const rows = weights(S, menu, hol), out = {};
+    let U = 0, R = 0, F = 0, W = 0; for (const x of rows) { U += x.u; R += x.r; F += x.c; W += x.w; }
+    for (const x of rows) out[x.id] = [tot.units * x.u / (U || 1), tot.rev * x.r / (R || 1), tot.fc * x.c / (F || 1), tot.waste * x.w / (W || 1)];
+    return out;
+  }
+
+  /* ---------- учёт дня (вызывается из dailyStores после расчёта выручки) ---------- */
+  function monthLabel(t) { // 1-е число — ещё прошлый месяц (как в отчёте движка)
+    if (t.d !== 1) return { y: t.y, m: t.m };
+    return t.m === 0 ? { y: t.y - 1, m: 11 } : { y: t.y, m: t.m - 1 };
+  }
+  function push(cd) {
+    let any = false; const p = {};
+    for (const id in cd.cur) { const a = cd.cur[id]; if (a[0] > 0 || a[1] > 0) any = true; p[id] = [Math.round(a[0]), Math.round(a[1]), Math.round(a[2]), Math.round(a[3])]; }
+    if (any && cd.lab) { const [y, m] = cd.lab.split('-').map(Number); cd.hist.push({ y, m, d: cd.days || 1, p }); if (cd.hist.length > HIST_MAX) cd.hist.splice(0, cd.hist.length - HIST_MAX); }
+    cd.cur = {}; cd.days = 0;
+  }
+  function day(S, dayRev, dayFc, dayChecks) {
+    const key = cityKey(S); if (!key) return;
+    const cd = ensure(S, key), t = E().dateOf(S.day), ml = monthLabel(t), lab = ml.y + '-' + ml.m;
+    if (cd.lab !== lab) { push(cd); cd.lab = lab; } // город простаивал (был неактивным) — закрыть старый месяц
+    if (dayRev > 0 || dayChecks > 0) {
+      cd.days = (cd.days || 0) + 1;
+      const cfg = C(), wz = (S.cache && S.cache.waste) || { waste: 0 }, M = cfg.FOODCOST_MULT || 1;
+      const waste = dayFc * Math.max(0, wz.waste) / (M + Math.max(0, wz.waste)); // dayFc = выручка × фудкост/M × (M + доля остатков)
+      const parts = split(S, S.menu, { units: dayChecks * cfg.ITEMS_PER_CHECK, rev: dayRev, fc: dayFc - waste, waste }, holCat(S, S.day));
+      for (const id in parts) { const a = cd.cur[id] || (cd.cur[id] = [0, 0, 0, 0]), b = parts[id]; a[0] += b[0]; a[1] += b[1]; a[2] += b[2]; a[3] += b[3]; }
+    }
+    if (t.d === 1) { push(cd); cd.lab = ''; } // отчёт месяца — в историю сразу, чтобы шеф в январе видел декабрь
+  }
+
+  /* ---------- оценка: как меню меняет выручку сети ---------- */
+  // выручка и штуки сети в «средний» день при данном меню (стандартный день, без праздников и событий дня)
+  function simDay(S, menu) {
+    const keep = S.menu; let rev = 0, units = 0;
+    try {
+      S.menu = menu;
+      const ms = E().menuStats(S), cfg = C(), t = { dow: 2, m: 4 };
+      for (const st of S.stores) {
+        if (st.status === 'opening' || !st.staff || !st.staff.length) continue;
+        const d = E().storeDemand(S, st, t, ms), ch = Math.min(d.demand, d.thr);
+        rev += ch * d.check; units += ch * cfg.ITEMS_PER_CHECK;
+      }
+    } finally { S.menu = keep; }
+    return { rev, units };
+  }
+  function fcMultNow(S) { // множитель себестоимости цехов (оборудование) × упаковка и потери
+    let w = 0, f = 0;
+    for (const p of S.productions) if (p.status === 'open') { const c = E().prodCapacity(S, p); w += c; f += c * E().prodFcMult(S, p); }
+    return (w > 0 ? f / w : 1) * (C().FOODCOST_MULT || 1);
+  }
+
+  /* ---------- сводка для UI ---------- */
+  // окно — последние до 12 полных месяцев текущего города
+  function summary(S) {
+    const cd = cityData(S), hist = cd ? cd.hist : [];
+    const win = hist.slice(-12), n = win.length;
+    const inMenu = S.menu.map((m) => m.id);
+    const tot = { units: 0, rev: 0, fc: 0, waste: 0 }; let days = 0;
+    for (const h of win) { days += dOf(h); for (const id in h.p) { const a = h.p[id]; tot.units += a[0]; tot.rev += a[1]; tot.fc += a[2]; tot.waste += a[3]; } }
+    const k0 = days > 0 ? MD / days : 0; // всё — в пересчёте на средний месяц (первый месяц после загрузки старого сохранения бывает неполным)
+    const base = n ? { units: tot.units * k0, rev: tot.rev * k0, fc: tot.fc * k0, waste: tot.waste * k0 } : null;
+    // оценка базы без истории: сегодняшний день × 30,4
+    const pl = S.macro.priceLevel, Mk = C().FOODCOST_MULT || 1;
+    let estBase = base;
+    if (!estBase) {
+      const now = simDay(S, S.menu), dayRev = S.cache && S.cache.dayRev > 0 ? S.cache.dayRev : now.rev, k = now.rev > 0 ? dayRev / now.rev : 1;
+      const rev = dayRev * 30.4, wz = E().wasteFactors(S, E().menuStats(S));
+      const fcShare = E().menuStats(S).fcPct * fcMultNow(S) / (C().FOODCOST_MULT || 1);
+      estBase = { units: now.units * k * 30.4, rev, fc: rev * fcShare * (C().FOODCOST_MULT || 1), waste: rev * fcShare * Math.max(0, wz.waste) };
+    }
+    const est = split(S, S.menu, estBase, null);
+    const rows = [];
+    for (const it of S.menu) {
+      const p = prod(it.id); if (!p) continue;
+      let u = 0, r = 0, f = 0, w = 0, m = 0, md = 0, shareDen = 0; const spark = [];
+      for (const h of win) {
+        const a = h.p[it.id]; let mt = 0; for (const id in h.p) mt += h.p[id][1];
+        spark.push(a ? a[1] * MD / dOf(h) : null);
+        if (!a) continue;
+        u += a[0]; r += a[1]; f += a[2]; w += a[3]; m++; md += dOf(h); shareDen += mt;
+      }
+      let row;
+      if (m) { const k = MD / md; row = { id: it.id, p, est: false, months: m, units: u * k, rev: r * k, share: shareDen > 0 ? r / shareDen : 0, fc: f * k, waste: w * k }; }
+      else { const a = est[it.id]; row = { id: it.id, p, est: true, months: 0, units: a[0], rev: a[1], share: estBase.rev > 0 ? a[1] / estBase.rev : 0, fc: a[2], waste: a[3] }; }
+      row.price = p.price * pl * it.pm;
+      row.margin = row.rev - row.fc - row.waste;
+      row.marginPct = row.rev > 0 ? row.margin / row.rev : 0;
+      row.wastePct = row.fc + row.waste > 0 ? row.waste / (row.fc / Mk + row.waste) : 0; // доля выпечки (по себестоимости), ушедшая в списание
+      row.spark = spark;
+      row.trend = trendOf(hist, it.id);
+      rows.push(row);
+    }
+    // средние по меню для флагов
+    let R = 0, M = 0, W = 0, F = 0; for (const x of rows) { R += x.rev; M += x.margin; W += x.waste; F += x.fc; }
+    const avgMargin = R > 0 ? M / R : 0, avgWaste = F + W > 0 ? W / (F / Mk + W) : 0, fair = rows.length ? 1 / rows.length : 0;
+    for (const x of rows) {
+      const fl = [];
+      if (x.share < fair * 0.6) fl.push({ k: 'share', t: 'малая доля' });
+      if (x.wastePct > avgWaste * 1.3 && x.wastePct > 0.03) fl.push({ k: 'waste', t: 'много списаний' });
+      if (x.marginPct < avgMargin - 0.07) fl.push({ k: 'margin', t: 'низкая маржа' });
+      if (x.trend && x.trend.share != null && x.trend.share < -0.15) fl.push({ k: 'trend', t: 'теряет долю' });
+      x.flags = fl;
+      x.candidate = (fl.length >= 2 && x.share < fair * 0.9) || x.share < fair * 0.4; // лидеров продаж в кандидаты не записываем
+    }
+    rows.sort((a, b) => b.rev - a.rev);
+    return { months: n, hasData: n > 0, rows, base: estBase, baseEst: !base, avgMargin, avgWaste, fair, city: cityKey(S) };
+  }
+  // динамика: год к году (нужно 24 мес.), иначе последние 3 мес. к трём предыдущим; pct — штуки в день, share — изменение доли в выручке (к доле 1/N)
+  function trendOf(hist, id) {
+    const has = (arr) => arr.every((h) => h && h.p[id]);
+    // доля — относительно «честной» доли 1/N, чтобы расширение меню само по себе не считалось падением
+    const agg = (arr) => { let u = 0, d = 0, sh = 0; for (const h of arr) { const a = h.p[id]; let t = 0, n = 0; for (const k in h.p) { t += h.p[k][1]; n++; } u += a[0]; d += dOf(h); sh += t > 0 ? a[1] / t * n : 0; } return { u: d > 0 ? u / d : 0, sh: sh / arr.length }; };
+    const cmp = (a, b, label) => { const A = agg(a), B = agg(b); return B.u > 0 ? { pct: A.u / B.u - 1, share: B.sh > 0 ? A.sh / B.sh - 1 : null, label } : null; };
+    let r = null;
+    if (hist.length >= 24) { const a = hist.slice(-12), b = hist.slice(-24, -12); if (has(a) && has(b)) r = cmp(a, b, 'к прошлому году'); }
+    if (!r && hist.length >= 6) { const a = hist.slice(-3), b = hist.slice(-6, -3); if (has(a) && has(b)) r = cmp(a, b, 'за 3 мес. к 3 предыдущим'); }
+    return r || { pct: null, share: null, label: 'мало данных' };
+  }
+
+  // оценка меню после изменений: выручка сети, штуки, маржа, списания; по каждому продукту — то же
+  function estimate(S, menu, sum) {
+    sum = sum || summary(S);
+    const b = sum.base, now = simDay(S, S.menu), nx = simDay(S, menu);
+    const kR = now.rev > 0 ? nx.rev / now.rev : 1, kU = now.units > 0 ? nx.units / now.units : 1;
+    const ms0 = E().menuStats(S), keep = S.menu; S.menu = menu; const ms1 = E().menuStats(S); S.menu = keep;
+    const wz0 = E().wasteFactors(S, ms0), wz1 = E().wasteFactors(S, ms1);
+    const rev = b.rev * kR, fcShare0 = b.rev > 0 ? b.fc / b.rev : 0;
+    const fc = rev * (ms0.fcPct > 0 ? fcShare0 * ms1.fcPct / ms0.fcPct : 0);
+    const wasteShare0 = b.rev > 0 ? b.waste / b.rev : 0;
+    const waste = rev * (wz0.waste > 0 ? wasteShare0 * (wz1.waste / wz0.waste) * (ms0.fcPct > 0 ? ms1.fcPct / ms0.fcPct : 1) : 0);
+    const tot = { units: b.units * kU, rev, fc, waste };
+    const per = split(S, menu, tot, null);
+    return { tot, per, dRev: rev - b.rev, kRev: kR, margin: rev - fc - waste, marginPct: rev > 0 ? (rev - fc - waste) / rev : 0, wastePct: fc + waste > 0 ? waste / (fc / (C().FOODCOST_MULT || 1) + waste) : 0, appeal0: ms0.appeal, appeal1: ms1.appeal, n: menu.length };
+  }
+  // карточка новинки: добавить её одну к текущему меню
+  function candidate(S, id, sum) {
+    const e = estimate(S, S.menu.concat([{ id, pm: 1 }]), sum), a = e.per[id] || [0, 0, 0, 0];
+    return { units: a[0], rev: a[1], share: e.tot.rev > 0 ? a[1] / e.tot.rev : 0, margin: a[1] - a[2] - a[3], marginPct: a[1] > 0 ? (a[1] - a[2] - a[3]) / a[1] : 0, wastePct: a[2] + a[3] > 0 ? a[3] / (a[2] / (C().FOODCOST_MULT || 1) + a[3]) : 0, dRev: e.dRev };
+  }
+  // если вывести позицию: как изменится выручка сети (часть гостей купит другое)
+  function removal(S, id, sum) {
+    sum = sum || summary(S);
+    const e = estimate(S, S.menu.filter((m) => m.id !== id), sum), b = sum.base;
+    return { dRev: e.dRev, dMargin: e.margin - (b.rev - b.fc - b.waste) };
+  }
+
+  BK.ProdStats = { day, ensure, summary, estimate, candidate, removal, split, simDay, PERISH };
 })();
 
 /* corp.js */
@@ -9826,12 +10097,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     <div class="row">${btn('allPrices', 'Все цены −5%', { cls: 'sm', arg: '-0.05' })}${btn('allPrices', 'Все цены +5%', { cls: 'sm', arg: '0.05' })}${btn('allPrices', 'Сбросить к рекомендованным', { cls: 'sm', arg: 'reset' })}</div></div>`;
     const nextY = S.chef.pending ? null : E_.dateOf(S.day).y + 1;
     s += `<div class="sec"><h3>Шеф-пекарь</h3>${S.chef.pending ? `<div class="alert warn" data-act="chef"><div><div class="a-t">Шеф подготовил 5 новинок</div><div>Добавьте в меню до 2 новинок и выведите до 2 старых позиций.</div></div></div>` : `<div class="hint">Новинки — раз в год. Следующие предложения: январь ${nextY}.</div>`}</div>`;
-    s += `<div class="sec"><h3>Меню <small>${S.menu.length} из ${cfg.MENU_MAX}</small></h3><div>`;
+    const MS = BK.MenuStats; // статистика продуктов (ui/menu-stats.js)
+    s += `<div class="sec"><h3>Меню <small>${S.menu.length} из ${cfg.MENU_MAX}</small></h3>${MS ? MS.menuHead(S) : ''}<div>`;
     for (const it of S.menu) {
       const p = E_.byId(BK.PRODUCTS, it.id);
       const sug = p.price * pl, price = sug * it.pm, fc = p.fc / it.pm;
       const tr = S.trends[p.cat];
-      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div></div>
+      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div>${MS ? MS.menuRow(S, it.id) : ''}</div>
         <div class="pr"><div class="stepper"><button data-act="price" data-arg="${p.id}" data-arg2="-0.05" aria-label="Дешевле">−</button><span title="${pct(it.pm)} от рекомендованной">${n0(price)} ₽</span><button data-act="price" data-arg="${p.id}" data-arg2="0.05" aria-label="Дороже">+</button></div></div></div>`;
     }
     s += `</div></div>`;
@@ -10104,6 +10376,126 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Panels = { dash, stores, market, production, menu, team, finance, journal, offerCard, prodOfferCard };
   BK.UIH = { fm, n0, pct, esc, dname, lname, btn, kv, meter, stars, km, plural, nw, pctS, delta, spark, goalInfo, goalBar, moodCounts, MONL, MON3 };
   BK.UIH.rating = { ratingInfo, rstars, r1 };
+})();
+
+/* ui/menu-stats.js */
+/* Хлебная карта — статистика продуктов в окне шеф-пекаря и во вкладке «Меню» (BK.MenuStats).
+   Данные — BK.ProdStats (src/prodstats.js): факт по месяцам и оценка по модели спроса для новинок.
+   app.js (openChefModal) берёт отсюда разметку окна, panels.js (menu) — строку статистики под продуктом. */
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG, H = () => BK.UIH, PS = () => BK.ProdStats;
+  const esc = (s) => H().esc(s);
+  const n0 = (v) => Math.round(v).toLocaleString('ru-RU');
+  const pc = (v, d) => { const a = v * 100; return (Math.abs(a) >= 10 || d === 0 ? a.toFixed(0) : a.toFixed(1)).replace('.', ',').replace('-', '−') + '%'; };
+  const money = (v) => BK.fmtMoney(v);
+  const signMoney = (v) => (v >= 0 ? '+' : '−') + BK.fmtMoney(Math.abs(v));
+  const cat = (p) => BK.CATEGORIES[p.cat];
+
+  // сводка с кешем: панель перерисовывается часто, а история меняется раз в месяц
+  let cache = { key: '', val: null };
+  function sum(S) {
+    const cd = S.prodStats && S.prodStats.c ? S.prodStats.c[S.corp ? S.corp.active : 'ufa'] : null;
+    const hasHist = !!(cd && cd.hist.length);
+    const key = [S.seed, S.corp ? S.corp.active : '', cd ? cd.hist.length + ':' + (cd.hist.length ? cd.hist[cd.hist.length - 1].y * 12 + cd.hist[cd.hist.length - 1].m : 0) : 0,
+      S.menu.map((m) => m.id + m.pm).join(), Math.round(S.macro.priceLevel * 1e4), hasHist ? '' : S.stores.length + ':' + Math.floor(S.day / 7)].join('|');
+    if (cache.key !== key) cache = { key, val: PS().summary(S) };
+    return cache.val;
+  }
+
+  // мини-график выручки по месяцам (пропуски — месяцы, когда продукта не было в меню)
+  function spark(vals, w, h) {
+    const pts = vals.map((v, i) => [i, v]).filter((x) => x[1] != null);
+    if (pts.length < 2) return `<svg class="ms-spark" width="${w}" height="${h}" aria-hidden="true"></svg>`;
+    const max = Math.max(...pts.map((x) => x[1])), min = Math.min(...pts.map((x) => x[1])), pad = 2.5, n = Math.max(2, vals.length);
+    const X = (i) => pad + (i * (w - pad * 2)) / (n - 1), Y = (v) => h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
+    const d = pts.map((x, k) => (k ? 'L' : 'M') + X(x[0]).toFixed(1) + ',' + Y(x[1]).toFixed(1)).join('');
+    const l = pts[pts.length - 1];
+    return `<svg class="ms-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--ink-3)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(l[0]).toFixed(1)}" cy="${Y(l[1]).toFixed(1)}" r="2.3" fill="var(--crust)"/></svg>`;
+  }
+  function trend(x) {
+    const t = x.trend;
+    if (!t || t.pct == null) return `<span class="ms-tr flat" title="Динамику покажем, когда накопится 6+ месяцев продаж">—</span>`;
+    const up = t.pct >= 0.02, dn = t.pct <= -0.02;
+    const sh = t.share != null ? `, доля в выручке ${t.share >= 0 ? '+' : ''}${pc(t.share, 0)}` : '';
+    return `<span class="ms-tr ${up ? 'up' : dn ? 'down' : 'flat'}" title="Продано штук ${t.label}: ${t.pct >= 0 ? '+' : ''}${pc(t.pct, 0)}${sh}">${up ? '▲' : dn ? '▼' : '▶'} ${pc(Math.abs(t.pct), 0)}</span>`;
+  }
+  const bar = (v, max) => `<span class="ms-bar"><i style="width:${Math.max(2, Math.min(100, (v / (max || 1)) * 100)).toFixed(0)}%"></i></span>`;
+
+  // подпись источника данных
+  function source(s) {
+    const city = s.city && s.city !== 'ufa' && BK.CITY ? ` · ${esc(BK.CITY.name || '')}` : '';
+    if (s.hasData) return `в месяц, среднее за ${H().nw(s.months, 'месяц', 'месяца', 'месяцев')}${city}`;
+    return `копим статистику — пока оценка по модели спроса${city}`;
+  }
+
+  /* ---------- вкладка «Меню»: строка под продуктом ---------- */
+  function menuHead(S) {
+    const s = sum(S);
+    return `<span class="ms-src${s.hasData ? '' : ' est'}">${source(s)}</span>`;
+  }
+  function menuRow(S, id) {
+    const s = sum(S), x = s.rows.find((r) => r.id === id); if (!x) return '';
+    const est = x.est ? '≈ ' : '';
+    const fl = x.candidate ? `<span class="ms-flag cand">кандидат на вывод</span>` : x.flags.map((f) => `<span class="ms-flag">${f.t}</span>`).join('');
+    return `<div class="ms-line${x.est ? ' est' : ''}">
+      <span title="Продано штук в месяц">${est}${n0(x.units)} шт.</span>
+      <span title="Выручка продукта в месяц и доля от выручки всех продуктов"><b>${est}${money(x.rev)}</b> · ${pc(x.share)}</span>
+      <span title="Маржа: выручка минус себестоимость и списания">маржа ${pc(x.marginPct, 0)}</span>
+      <span title="Доля выпечки, ушедшая в списание, и сумма в месяц">списано ${pc(x.wastePct)} · ${money(x.waste)}</span>
+      ${x.est ? '<span class="ms-est">оценка</span>' : `<span class="ms-dyn">${spark(x.spark, 54, 16)}${trend(x)}</span>`}${fl}</div>`;
+  }
+
+  /* ---------- окно шеф-пекаря ---------- */
+  function chefHtml(S, pick, drop) {
+    const cfg = C(), s = sum(S), pl = S.macro.priceLevel;
+    const after = S.menu.length - drop.size + pick.size;
+    const maxShare = Math.max(0.01, ...s.rows.map((r) => r.share));
+    let html = `<div class="modal-h"><span class="eyebrow">Шеф-пекарь · новинки ${E().dateOf(S.day).y}</span><h2>Что добавим в меню?</h2></div><div class="modal-b">
+      <p class="hint" style="margin:0">Выберите до ${cfg.CHEF_PICK} новинок и выведите до ${cfg.CHEF_REMOVE} старых позиций. Цену шеф предлагает сам — изменить её можно во вкладке «Меню».</p>
+      ${s.hasData ? '' : `<div class="ms-note">Копим статистику: продажи по продуктам записываются с этой версии игры. Пока цифры ниже — <b>оценка</b> по модели спроса; факт появится после первого полного месяца.</div>`}
+      <h3 class="ms-h">Новинки шефа <span class="ms-est">оценка</span></h3>
+      <p class="hint ms-sub">В месяц, если добавить одну эту новинку к нынешнему меню: сколько она продаст, её доля и маржа, и как изменится выручка всей сети (часть гостей просто переключится с других позиций).</p><div class="chefgrid">`;
+    for (const id of S.chef.pending) {
+      const p = E().byId(BK.PRODUCTS, id), ok = E().eqUnlocked(S, p.req);
+      const reqName = p.req ? (E().byId(BK.EQUIPMENT, p.req) || {}).name : '';
+      const c = PS().candidate(S, id, s);
+      html += `<label class="chefitem ms-new ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${esc(p.name)}</span><span class="chip cat" style="--cat:${cat(p).color}">${cat(p).name}</span>
+        <span class="cm"><span>цена ${n0(p.price * pl)} ₽</span><span>фудкост ${H().pct(p.fc)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span><span>популярность ${p.pop}</span>${ok ? '' : `<span class="negc">нужно: ${esc(reqName)}</span>`}</span>
+        <span class="ms-grid">
+          <span class="ms-k"><span class="l">Продажи</span><span class="v">≈ ${n0(c.units)} шт.</span></span>
+          <span class="ms-k"><span class="l">Выручка · доля</span><span class="v">≈ ${money(c.rev)} · ${pc(c.share)}</span></span>
+          <span class="ms-k"><span class="l">Маржа</span><span class="v">≈ ${pc(c.marginPct, 0)} · ${money(c.margin)}</span></span>
+          <span class="ms-k"><span class="l">Выручка сети</span><span class="v ${c.dRev >= 0 ? 'ms-pos' : 'ms-neg'}">${signMoney(c.dRev)}</span></span>
+        </span></label>`;
+    }
+    html += `</div><h3 class="ms-h">Текущее меню <span class="ms-src${s.hasData ? '' : ' est'}">${source(s)}</span></h3>
+      <p class="hint ms-sub">Отметьте, что вывести. Подсвечены кандидаты: малая доля выручки, много списаний, низкая маржа, падающая доля. Списания — доля выпечки, ушедшая в утиль, и её себестоимость; маржа — выручка минус себестоимость и списания. «Если вывести» — оценка: часть гостей купит другое, но меню станет уже.</p><div class="chefgrid">`;
+    for (const x of s.rows) {
+      const it = S.menu.find((m) => m.id === x.id), p = x.p, rm = PS().removal(S, x.id, s), est = x.est ? '≈ ' : '';
+      const flags = x.flags.map((f) => `<span class="ms-flag">${f.t}</span>`).join('');
+      html += `<label class="chefitem ms-cur ${drop.has(x.id) ? 'off' : ''} ${x.candidate ? 'cand' : ''}"><input type="checkbox" data-drop="${x.id}" ${drop.has(x.id) ? 'checked' : ''}><span class="cn">${esc(p.name)}</span><span class="chip cat" style="--cat:${cat(p).color}">${cat(p).name}</span>
+        <span class="cm"><span>цена ${n0(p.price * pl * it.pm)} ₽</span><span>фудкост ${H().pct(p.fc / it.pm)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span>${x.candidate ? '<span class="ms-flag cand">кандидат на вывод</span>' : ''}${flags}</span>
+        <span class="ms-grid five">
+          <span class="ms-k" title="Продано штук в месяц"><span class="l">Продано</span><span class="v">${est}${n0(x.units)} шт.</span></span>
+          <span class="ms-k" title="Выручка продукта в месяц и доля от выручки всех продуктов"><span class="l">Выручка · доля</span><span class="v">${est}${money(x.rev)} · ${pc(x.share)}</span>${bar(x.share, maxShare)}</span>
+          <span class="ms-k" title="Доля выпечки, ушедшая в списание, и её себестоимость в месяц"><span class="l">Списания</span><span class="v${x.flags.some((f) => f.k === 'waste') ? ' warnv' : ''}">${pc(x.wastePct)} · ${money(x.waste)}</span></span>
+          <span class="ms-k" title="Выручка минус себестоимость и списания, в месяц"><span class="l">Маржа</span><span class="v${x.flags.some((f) => f.k === 'margin') ? ' warnv' : ''}">${pc(x.marginPct, 0)} · ${money(x.margin)}</span></span>
+          <span class="ms-k"><span class="l">Динамика</span><span class="v ms-dyn">${x.est ? '<span class="ms-est">оценка</span>' : spark(x.spark, 58, 18) + trend(x)}</span></span>
+        </span>
+        <span class="ms-if">Если вывести: выручка сети <b class="${rm.dRev >= 0 ? 'ms-pos' : 'ms-neg'}">${signMoney(rm.dRev)}</b> в месяц, маржа продуктов <b class="${rm.dMargin >= 0 ? 'ms-pos' : 'ms-neg'}">${signMoney(rm.dMargin)}</b> (оценка)</span></label>`;
+    }
+    // итог выбора
+    let foot = '';
+    if (pick.size || drop.size) {
+      const menu = S.menu.filter((m) => !drop.has(m.id)).concat([...pick].map((id) => ({ id, pm: 1 })));
+      const e = PS().estimate(S, menu, s), b = s.base, m0 = b.rev - b.fc - b.waste;
+      foot = `<div class="ms-sum"><span class="ms-est">оценка</span> После изменений: выручка сети <b class="${e.dRev >= 0 ? 'ms-pos' : 'ms-neg'}">${signMoney(e.dRev)}</b> в месяц (${e.kRev >= 1 ? '+' : '−'}${pc(Math.abs(e.kRev - 1))}), маржа продуктов <b class="${e.margin - m0 >= 0 ? 'ms-pos' : 'ms-neg'}">${signMoney(e.margin - m0)}</b>, списания ${pc(e.wastePct)} выпечки, привлекательность меню ${e.appeal0.toFixed(2).replace('.', ',')} → ${e.appeal1.toFixed(2).replace('.', ',')}</div>`;
+    }
+    html += `</div></div><div class="modal-f">${foot}<div class="row sp"><span class="hint">В меню станет ${H().nw(after, 'позиция', 'позиции', 'позиций')} (от ${cfg.MENU_MIN} до ${cfg.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < cfg.MENU_MIN || after > cfg.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
+    return html;
+  }
+
+  BK.MenuStats = { sum, chefHtml, menuHead, menuRow };
 })();
 
 /* ui/extras.js */
@@ -12428,24 +12820,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openChefModal() {
     if (!S.chef.pending) return;
     const pick = new Set(), drop = new Set();
-    const pl = S.macro.priceLevel;
     const draw = () => {
-      const after = S.menu.length - drop.size + pick.size;
-      let html = `<div class="modal-h"><span class="eyebrow">Шеф-пекарь · новинки ${E.dateOf(S.day).y}</span><h2>Что добавим в меню?</h2></div><div class="modal-b">
-        <p class="hint" style="margin:0">Выберите до ${C.CHEF_PICK} новинок и выведите до ${C.CHEF_REMOVE} старых позиций. Цену шеф предлагает сам — изменить её можно во вкладке «Меню».</p><div class="chefgrid">`;
-      for (const id of S.chef.pending) {
-        const p = E.byId(BK.PRODUCTS, id); const ok = E.eqUnlocked(S, p.req);
-        const reqName = p.req ? (E.byId(BK.EQUIPMENT, p.req) || {}).name : '';
-        html += `<label class="chefitem ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${H.esc(p.name)}</span><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span>
-          <span class="cm"><span>цена ${H.n0(p.price * pl)} ₽</span><span>фудкост ${H.pct(p.fc)}</span><span>тренд ${Math.round(S.trends[p.cat])}</span><span>популярность ${p.pop}</span>${ok ? '' : `<span class="negc">нужно: ${H.esc(reqName)}</span>`}</span></label>`;
-      }
-      html += `</div><h3 style="font-size:13px;margin-top:6px">Вывести из меню</h3><div class="chefgrid">`;
-      for (const it of S.menu) {
-        const p = E.byId(BK.PRODUCTS, it.id);
-        html += `<label class="chefitem ${drop.has(it.id) ? 'off' : ''}"><input type="checkbox" data-drop="${it.id}" ${drop.has(it.id) ? 'checked' : ''}><span class="cn">${H.esc(p.name)}</span><span class="chip">${BK.CATEGORIES[p.cat].name}</span><span class="cm"><span>тренд ${Math.round(S.trends[p.cat])}</span><span>фудкост ${H.pct(p.fc / it.pm)}</span></span></label>`;
-      }
-      html += `</div></div><div class="modal-f"><div class="row sp"><span class="hint">В меню станет ${H.nw(after, 'позиция', 'позиции', 'позиций')} (от ${C.MENU_MIN} до ${C.MENU_MAX})</span><button class="btn primary" id="chefOk" ${after < C.MENU_MIN || after > C.MENU_MAX ? 'disabled' : ''}>Утвердить меню</button></div></div>`;
-      openModal(html, { keepScroll: true });
+      openModal(BK.MenuStats.chefHtml(S, pick, drop), { keepScroll: true }); // разметка и статистика продуктов — ui/menu-stats.js
+      $('#modal .modal').classList.add('wide', 'chefwide');
       $('#modal').querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.pick; if (b.checked) { if (pick.size >= C.CHEF_PICK) { b.checked = false; return; } pick.add(id); } else pick.delete(id); draw(); }));
       $('#modal').querySelectorAll('[data-drop]').forEach((b) => b.addEventListener('change', () => { const id = b.dataset.drop; if (b.checked) { if (drop.size >= C.CHEF_REMOVE) { b.checked = false; return; } drop.add(id); } else drop.delete(id); draw(); }));
       $('#chefOk').addEventListener('click', () => { const r = E.chefConfirm(S, [...pick], [...drop]); if (!r.ok) { toast('Не получилось', r.msg, 'warn'); return; } closeModal(); save(); });

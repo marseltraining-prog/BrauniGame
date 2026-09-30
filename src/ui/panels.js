@@ -690,12 +690,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     <div class="row">${btn('allPrices', 'Все цены −5%', { cls: 'sm', arg: '-0.05' })}${btn('allPrices', 'Все цены +5%', { cls: 'sm', arg: '0.05' })}${btn('allPrices', 'Сбросить к рекомендованным', { cls: 'sm', arg: 'reset' })}</div></div>`;
     const nextY = S.chef.pending ? null : E_.dateOf(S.day).y + 1;
     s += `<div class="sec"><h3>Шеф-пекарь</h3>${S.chef.pending ? `<div class="alert warn" data-act="chef"><div><div class="a-t">Шеф подготовил 5 новинок</div><div>Добавьте в меню до 2 новинок и выведите до 2 старых позиций.</div></div></div>` : `<div class="hint">Новинки — раз в год. Следующие предложения: январь ${nextY}.</div>`}</div>`;
-    s += `<div class="sec"><h3>Меню <small>${S.menu.length} из ${cfg.MENU_MAX}</small></h3><div>`;
+    const MS = BK.MenuStats; // статистика продуктов (ui/menu-stats.js)
+    s += `<div class="sec"><h3>Меню <small>${S.menu.length} из ${cfg.MENU_MAX}</small></h3>${MS ? MS.menuHead(S) : ''}<div>`;
     for (const it of S.menu) {
       const p = E_.byId(BK.PRODUCTS, it.id);
       const sug = p.price * pl, price = sug * it.pm, fc = p.fc / it.pm;
       const tr = S.trends[p.cat];
-      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div></div>
+      s += `<div class="prodrow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div><div class="pm"><span class="chip cat" style="--cat:${BK.CATEGORIES[p.cat].color}">${BK.CATEGORIES[p.cat].name}</span><span>тренд ${Math.round(tr)}</span><span>фудкост ${pct(fc)}</span><span>рекоменд. ${n0(sug)} ₽</span></div>${MS ? MS.menuRow(S, it.id) : ''}</div>
         <div class="pr"><div class="stepper"><button data-act="price" data-arg="${p.id}" data-arg2="-0.05" aria-label="Дешевле">−</button><span title="${pct(it.pm)} от рекомендованной">${n0(price)} ₽</span><button data-act="price" data-arg="${p.id}" data-arg2="0.05" aria-label="Дороже">+</button></div></div></div>`;
     }
     s += `</div></div>`;
