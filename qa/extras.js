@@ -187,7 +187,8 @@ async function slots(b, sv) {
   const hint = await qp.evaluate(() => (document.querySelector('#slots') || {}).innerText || '');
   if (await qp.locator('#start [data-tutopt="0"]').count()) await qp.click('#start [data-tutopt="0"]'); // без хранилища обучение по умолчанию включено; здесь проверяем сохранения
   await qp.click('#startForm button'); await qp.waitForTimeout(100);
-  await qp.click('[data-act="rentProd"]:not([disabled])'); await qp.click('[data-act="rent"]:not([disabled])'); await qp.evaluate(() => BK.App.ACT.closeModal());
+  await qp.click('[data-act="rentProd"]:not([disabled])'); await qp.click('[data-act="rent"]:not([disabled])');
+  await qp.waitForTimeout(300); await qp.evaluate(() => { for (let i = 0; i < 5 && document.querySelector('.modal'); i++) BK.App.ACT.closeModal(); }); // окно «Время пошло» появляется после аренды
   await qp.evaluate(() => { BK.App.setSpeed(10); }); await qp.waitForTimeout(1500);
   const ok = await qp.evaluate(() => BK.App.state.day > 3 && Object.keys(BK.App.state.achievements).length >= 2);
   if (!/не сохранится/.test(hint) || !ok) issues.push(`[${tag}] без хранилища: подсказка «${hint.slice(0, 40)}», игра идёт: ${ok}`);
