@@ -199,6 +199,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (d.style === 'growth') n *= K_.DIR_GROWTH_STYLE_K;
     if (d.style === 'service') n *= 0.85;
     if (c.priority === 'growth') n *= 1.25; else if (c.priority === 'quality') n *= 0.85;
+    const ov = BK.HQ && BK.HQ.load ? BK.HQ.load(S).over : 0; // Р4 ч. 2: перегруженный штаб не успевает согласовывать открытия
+    if (ov > 0) n *= Math.max(K_.OVER_OPEN_MIN || 0.25, 1 - (K_.OVER_OPEN || 0) * ov);
     return Math.round(n);
   }
   function payback(d, c, S) { // порог окупаемости: стиль × опыт в «Росте» (сильный директор уверенно берёт места с долгой окупаемостью)
@@ -740,20 +742,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!progs && d.cityMonths >= 12) { gap += K_.LEAK_NOUNI; why.push('nouni'); }
     if (match(d, c) < 0) { gap += K_.LEAK_MISMATCH; why.push('mismatch'); }
     gap = Math.max(0, gap);
-    return { target: Math.min(K_.LEAK_MAX, K_.LEAK_PER * gap), why: gap > 0 ? why : [], gap, need, skill, n, progs };
+    const w = gap > 0 ? why : [];
+    // Р4 ч. 2: перегрузка штаба — городов больше, чем тянет штаб: утечка во всех городах директоров (без льготного периода)
+    const ov = BK.HQ && BK.HQ.load ? BK.HQ.load(S).over : 0, ovT = ov > 0 ? (K_.OVER_LEAK || 0) * ov : 0;
+    if (ovT > 0) w.push('overload');
+    return { target: Math.min(K_.LEAK_MAX, K_.LEAK_PER * gap + ovT), skillT: Math.min(K_.LEAK_MAX, K_.LEAK_PER * gap), ovT, over: ov, why: w, gap, need, skill, n, progs };
   }
   function leakMonthly(S, c, d) {
     const K_ = K(), L = c.leak || 0;
     if (!d) { if (L) c.leak = +Math.max(0, L - K_.LEAK_FALL).toFixed(4); if (!c.leak) { delete c.leak; delete c.leakWhy; } return; }
     const li = leakInfo(S, c, d);
     let tgt = li.target;
-    if (c.id !== 'ufa' && S.day - c.enteredDay < K_.LEAK_GRACE * 30.4) tgt = Math.min(tgt, K_.LEAK_GRACE_CAP); // льготный период после входа
+    if (c.id !== 'ufa' && S.day - c.enteredDay < K_.LEAK_GRACE * 30.4) tgt = Math.min(K_.LEAK_MAX, Math.min(li.skillT, K_.LEAK_GRACE_CAP) + li.ovT); // льготный период после входа (на перегрузку штаба не действует)
     const nx = tgt > L ? Math.min(tgt, L + K_.LEAK_RAMP) : Math.max(tgt, L - K_.LEAK_FALL);
     if (nx > 0) { c.leak = +nx.toFixed(4); c.leakWhy = li.why; c.leakNeed = Math.round(li.need); } else { delete c.leak; delete c.leakWhy; delete c.leakNeed; }
   }
   // сколько месяцев подряд город в убытке (по истории города)
   function lossMonths(c) { let n = 0; for (let i = c.hist.length - 1; i >= 0 && c.hist[i][3] < 0; i--) n++; return n; }
-  const LEAK_WHY = { skills: 'навыков директора не хватает на город такого размера', nouni: 'директор не учился в университете', mismatch: 'стиль директора против приоритета города' };
+  const LEAK_WHY = { skills: 'навыков директора не хватает на город такого размера', nouni: 'директор не учился в университете', mismatch: 'стиль директора против приоритета города', overload: 'штаб перегружен: городов больше, чем он тянет' };
   // для интерфейса: что происходит и что сделать
   function leakStatus(S, id) {
     const c = S.corp.cities[id]; if (!c) return null;
@@ -761,8 +767,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (L < K().LEAK_SHOW && lm < 2) return null;
     const li = leakInfo(S, c, d), uni = BK.HQ ? BK.HQ.lvlOf(S, 'uni') : 0;
     const why = (c.leakWhy || []).map((k) => LEAK_WHY[k]).filter(Boolean);
-    let fix = !d ? 'назначьте директора' : (c.leakWhy || []).indexOf('nouni') >= 0 || (c.leakWhy || []).indexOf('skills') >= 0 ? (uni ? 'отправьте директора учиться (университет) или замените сильнее' : 'откройте университет в штабе и отправьте директора учиться — или замените сильнее') : (c.leakWhy || []).indexOf('mismatch') >= 0 ? 'смените приоритет города под стиль директора' : 'закройте убыточные точки';
-    return { leak: L, lossM: lm, why, whyKeys: c.leakWhy || [], fix, skill: Math.round(li.skill), need: Math.round(li.need), n: li.n, d };
+    const wk = c.leakWhy || [], onlyOv = wk.length === 1 && wk[0] === 'overload';
+    let fix = onlyOv ? 'разгрузите штаб — откройте отдел, посадите директора в совет, сделайте регионального; не входите в новые города' : !d ? 'назначьте директора' : (c.leakWhy || []).indexOf('nouni') >= 0 || (c.leakWhy || []).indexOf('skills') >= 0 ? (uni ? 'отправьте директора учиться (университет) или замените сильнее' : 'откройте университет в штабе и отправьте директора учиться — или замените сильнее') : (c.leakWhy || []).indexOf('mismatch') >= 0 ? 'смените приоритет города под стиль директора' : 'закройте убыточные точки';
+    return { leak: L, lossM: lm, why, whyKeys: c.leakWhy || [], fix, skill: Math.round(li.skill), need: Math.round(li.need), n: li.n, d, over: li.over || 0, ovT: li.ovT || 0, onlyOv };
   }
   function cityDev(S, id) { // для карточки города и сравнения: прогноз, отклонение, текучка
     const c = S.corp.cities[id]; if (!c) return null;

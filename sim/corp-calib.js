@@ -19,6 +19,8 @@ const GRADES = { 1: 35, 3: 60, 5: 85 };
 if (!flags.events) CFG.CORP = Object.assign({}, CFG.CORP, { CEV_GAP: [1e7, 1e7], RIVAL_FOLLOW_P: 0 });
 // Р4: денежный риск («утечка» слабого директора) — отдельная механика поверх формулы; калибруется без неё (--leak — включить)
 if (!flags.leak) CFG.CORP = Object.assign({}, CFG.CORP, { LEAK_MAX: 0 });
+// Р4 ч. 2: цена входа (штаб нового города, рост за каждый город) меняет деньги бота и его решения в Уфе — калибруем модель города по прежней цене входа
+CFG.CORP = Object.assign({}, CFG.CORP, { ENTER_HQ: 0, ENTER_GROW: 1 });
 
 function makeDir(S, grade) { // синтетический директор: стиль «Баланс», без черт, навыки по грейду
   const cr = S.corp, sk = GRADES[grade];

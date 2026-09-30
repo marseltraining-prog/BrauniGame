@@ -598,7 +598,7 @@ if (require.main === module) {
     const r = play(Object.assign({ seed: s * 7919 }, opts));
     if (!flags.summary) { console.log(`\n=== ${level} seed ${s} ${r.lost ? 'LOST at ' + r.lostYear : ''}`); console.table(r.out); }
     const sm = summarize(r); sm.seed = s; sums.push(sm);
-    if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
+    if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}${c.overM ? `; штаб перегружен ${c.overM} мес. (до +${c.overMax} гор.)` : ''}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
   }
   console.log(`\n### ${level} ${difficulty} ${JSON.stringify(flags)}`);
   console.table(sums);

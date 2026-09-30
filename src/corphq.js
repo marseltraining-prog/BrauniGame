@@ -114,7 +114,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n < need) return `Откроется, когда в сети будет ${need} города`;
     return 'Нужен финансовый департамент в штабе';
   }
-  function launchDays(S) { return Math.round(K().LAUNCH_DAYS * (lvlOf(S, 'legal') ? K().LEGAL_LAUNCH_K : 1)); }
+  function launchDays(S) { return Math.round(K().LAUNCH_DAYS * (lvlOf(S, 'legal') ? K().LEGAL_LAUNCH_K : 1)); } // до Р4 ч. 2 (таймер входа); больше не используется
+  /* ---------------- мощность штаба и перегрузка (Р4 ч. 2, vision-plan §5 п. 2) ----------------
+     Нагрузка — сколько городов штаб ведёт: каждый наш город 1; город в кластере регионального директора (не основной) — 0,5;
+     город без директора (кроме того, где вы сами) — 1,5; новый город первый год — ещё +1 → 0 (запуск). Мощность — 3 + 1 за каждый уровень отделов + 0,5 за место в совете директоров.
+     Нагрузка больше мощности — перегрузка: утечка во всех городах директоров растёт на OVER_LEAK за каждый город сверх (directors.js leakInfo).
+     extra — «что если»: +1 город (вход) для подсказок в интерфейсе и решений ботов. */
+  function load(S, extra) {
+    const k = K(), cr = on(S) ? S.corp : null;
+    const r = { cities: 0, load: 0, cap: 0, over: 0, dept: 0, board: 0, region: 0, nodir: 0, fresh: 0 };
+    if (!cr) return r;
+    const regOf = {}; for (const d of cr.directors || []) if (d.regional) for (const id of d.region || []) regOf[id] = 1;
+    for (const id in cr.cities) {
+      const c = cr.cities[id]; r.cities++;
+      if (regOf[id] && c.directorId) { r.load += k.HQ_W_REGION; r.region++; }
+      else if (!c.directorId && id !== cr.active) { r.load += k.HQ_W_NODIR; r.nodir++; }
+      else r.load += 1;
+      const age = S.day - (c.enteredDay || 0);
+      if (id !== 'ufa' && k.HQ_W_NEW && age < k.HQ_NEW_DAYS) { const x = k.HQ_W_NEW * (1 - age / k.HQ_NEW_DAYS); r.load += x; r.fresh += x; } // запуск нового города
+    }
+    if (extra) { r.cities += extra; r.load += extra * (1 + (k.HQ_W_NEW || 0)); r.fresh += extra * (k.HQ_W_NEW || 0); }
+    r.load = +r.load.toFixed(2); r.fresh = +r.fresh.toFixed(2);
+    for (const key of KEYS) { const lv = lvlOf(S, key); if (!lv) continue; const since = cr.hqSince && cr.hqSince[key]; r.dept += lv * (k.HQ_DEPT_DAYS && since != null ? clamp((S.day - since) / k.HQ_DEPT_DAYS, 0, 1) : 1); } // отдел набирает силу за HQ_DEPT_DAYS
+    r.dept = +r.dept.toFixed(2);
+    r.board = (cr.directors || []).filter((d) => d.board).length;
+    r.cap = k.HQ_CAP0 + k.HQ_CAP_DEPT * r.dept + k.HQ_CAP_BOARD * r.board;
+    r.over = Math.max(0, +(r.load - r.cap).toFixed(2));
+    return r;
+  }
   function awSpeedK(S, c) { let k = lvlOf(S, 'brand') ? K().BRAND_AW_K : 1; const d = c && c.directorId && D() ? D().dirById(S, c.directorId) : null; if (d && d.traits.indexOf('mediaStar') >= 0) k *= 1.5; if (c && c.keepSignUntil > S.day) k *= 0.5; return k; }
   function awStartAdd(S) { return lvlOf(S, 'brand') ? K().BRAND_AW_START : 0; }
   function campaign(S) {
@@ -566,7 +593,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (S.corp.directors || []).filter((d) => d.city && (d.poachP || 0) > 0.015);
   }
 
-  BK.HQ = { ensure, dirInit, KEYS, MAXLV, KPI_KEYS, lvlOf, openCost, monthCost, monthCostAt, hqTotal, hqOpen, hqClose, refreshK, rateAdd, resAdd, bigLock, launchDays, awSpeedK, awStartAdd, campaign,
+  BK.HQ = { ensure, dirInit, KEYS, MAXLV, KPI_KEYS, lvlOf, openCost, monthCost, monthCostAt, hqTotal, hqOpen, hqClose, refreshK, rateAdd, resAdd, bigLock, launchDays, load, awSpeedK, awStartAdd, campaign,
     pressOf, rivalMult, rivalEnter, onEnter, candN, skillErr, hireCost, checkCand, seats, students, progCost, progLock, enroll, setKpi, kpiSkew, kpiEstimate, kpiFacts, unvested, grantCorp, setCityShare, setBoard,
     regionCands, promote, addRegion, dropRegion, onlyProfit, corpRng, priceK, poachP, theftOf, embOf, reveal, decide, audit, auditCost, onVisit, monthly, leaveNow, takeStaff, skillAdd, modsAdj, paybackK, optShare, riskList, profit12, knows, has };
   Object.assign(BK.Engine, { hqOpen, hqCampaign: campaign, uniEnroll: enroll, dirKpi: setKpi, dirOption: grantCorp, dirCityShare: setCityShare, dirBoard: setBoard, dirPromote: promote, dirRegion: addRegion,
