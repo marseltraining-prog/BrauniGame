@@ -1560,6 +1560,347 @@ table.cmp.uni tr.lock td { color: var(--ink-3); }
 .rwbox.hard { background: transparent; }
 .sumrw { margin: 0; }
 
+/* ===== Пролог «Бариста» (src/ui/prologue.js). Цвета — токены из styles.css (светлая/тёмная тема). ===== */
+html.pro-on, html.pro-on body { overflow: hidden; }
+.pro { position: fixed; inset: 0; z-index: 58; background: var(--paper); color: var(--ink); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; font-family: var(--f-body); }
+.pro * { box-sizing: border-box; }
+.pro h3 { font-family: var(--f-display); font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pro h3 small { font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.pro .btn { border-radius: 10px; transition: transform .08s ease, background .15s; }
+.pro .btn:active:not(:disabled), .pro .po:active:not(:disabled), .pro .pw:active:not(:disabled), .pro .choice:active:not(:disabled), .pro .sh-it:active { transform: scale(.96); }
+.pro .pro-big { padding: 13px 16px; font-size: 16px; font-weight: 600; border-radius: 14px; flex-direction: column; gap: 2px; white-space: normal; }
+.pro .pro-big small { font-size: 12px; font-weight: 400; opacity: .9; }
+.pro .pro-big2 { padding: 12px 16px; font-size: 15px; border-radius: 14px; white-space: normal; }
+.pro-note { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 0; }
+
+/* --- верхняя полоса --- */
+.pro-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.pro-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pro-logo { width: 38px; height: 38px; border-radius: 11px; background: var(--crust); color: var(--on-primary); display: grid; place-items: center; font-size: 22px; flex: none; }
+.pro-bt { display: flex; flex-direction: column; min-width: 0; }
+.pro-bt b { font-family: var(--f-display); font-size: 17px; font-weight: 700; line-height: 1.1; }
+.pro-bt small { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pro-when { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; margin-left: auto; font-size: 13px; color: var(--ink-2); }
+.pro-when .chip { font-size: 12px; font-weight: 600; }
+.pro-ctl { display: flex; align-items: center; gap: 6px; }
+.pro-speed { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+.pro-speed button { border: 0; background: transparent; color: var(--ink); width: 38px; height: 34px; display: grid; place-items: center; cursor: pointer; }
+.pro-speed button svg { width: 15px; height: 13px; }
+.pro-speed button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.pro .iconbtn { width: 36px; height: 34px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.pro .iconbtn svg { width: 16px; height: 16px; }
+
+/* --- полоса месяца --- */
+.pro-mbar { position: sticky; top: 59px; z-index: 4; display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(6px); }
+.pro-mb { flex: 1; height: 10px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; }
+.pro-mb i { display: block; height: 100%; background: linear-gradient(90deg, var(--crust-2), var(--crust)); border-radius: 99px; transition: width .2s linear; }
+.pro-ml { font-family: var(--f-display); font-size: 13px; font-weight: 600; min-width: 92px; text-align: right; color: var(--ink); }
+
+/* --- сетка --- */
+.pro-in { max-width: 1180px; margin: 0 auto; padding: 8px 16px 40px; }
+.pro-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: start; }
+.pro-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pc { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+
+/* --- цель --- */
+.pro-goal { background: linear-gradient(160deg, var(--crust-soft), var(--surface) 55%); }
+.pg-h { display: flex; justify-content: space-between; align-items: center; }
+.pg-e { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; color: var(--crust-t); }
+.pg-ic { font-size: 28px; }
+.pg-v { font-family: var(--f-display); font-size: clamp(30px, 4.4vw, 42px); font-weight: 700; line-height: 1.05; margin: 2px 0 10px; letter-spacing: -.01em; }
+.pg-v.bump, .sh-tipbig.bump { animation: pro-bump .45s ease; }
+@keyframes pro-bump { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.pg-bar { position: relative; height: 16px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); }
+.pg-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--good), color-mix(in srgb, var(--good) 70%, var(--crust-2))); transition: width .6s cubic-bezier(.2, .9, .3, 1.2); }
+.pg-mk { position: absolute; top: -4px; bottom: -4px; width: 3px; border-radius: 2px; background: var(--ink); opacity: .55; }
+.pg-sc { position: relative; height: 18px; font-size: 11.5px; color: var(--ink-2); margin-top: 4px; }
+.pg-sc span { position: absolute; top: 0; white-space: nowrap; }
+.pg-sc span:first-child { left: 0; } .pg-sc span:last-child { right: 0; }
+.pg-sc span:nth-child(2) { transform: translateX(-50%); }
+.pg-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.pg-list li { display: flex; gap: 8px; align-items: flex-start; color: var(--ink-2); }
+.pg-list li.ok { color: var(--good-t); font-weight: 500; }
+.pg-list .ck { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--line-2); flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+.pg-list li.ok .ck { background: var(--good); border-color: var(--good); color: var(--on-primary); }
+.pro-goal .pro-big { margin-top: 12px; }
+.pro-money { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.pmy { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pmy.bump { animation: pro-bump .45s ease; }
+.pmy-i { font-size: 22px; line-height: 1; }
+.pmy-n { font-size: 12px; color: var(--ink-2); }
+.pmy b { font-family: var(--f-display); font-size: 17px; font-weight: 600; white-space: nowrap; }
+.pmy b.neg { color: var(--bad-t); }
+.pmy small { font-size: 11px; color: var(--ink-3); line-height: 1.25; min-height: 28px; }
+.pmy .btn { margin-top: auto; }
+.pmy-b { display: flex; gap: 4px; flex-wrap: wrap; margin-top: auto; }
+.pmy-b .btn { flex: 1 1 auto; padding: 5px 6px; }
+
+/* --- герой --- */
+.pro-scene { width: 100%; height: auto; display: block; border-radius: 14px; }
+.sc-wall { fill: var(--district); } .sc-board { fill: var(--rye); } .sc-bt { fill: #fff6e6; font-family: var(--f-display); font-size: 14px; font-weight: 700; letter-spacing: .12em; } .sc-bs { fill: #f4dfc2; font-size: 9px; }
+.sc-mach { fill: var(--ink-2); } .sc-machp { fill: var(--surface-2); }
+.sc-steam { fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-linecap: round; opacity: .6; animation: pro-steam 2.4s ease-in-out infinite; }
+@keyframes pro-steam { 0%, 100% { transform: translateY(0); opacity: .25; } 50% { transform: translateY(-4px); opacity: .7; } }
+.sc-head { fill: #f1c9a5; } .sc-eye { stroke: #3a2a1c; stroke-width: 3; stroke-linecap: round; } .sc-mouth { fill: none; stroke: #3a2a1c; stroke-width: 2; stroke-linecap: round; }
+.sc-body { fill: var(--surface); stroke: var(--line-2); }
+.sc-counter { fill: var(--rye); opacity: .88; } .sc-top { fill: var(--crust); }
+.sc-case rect { fill: color-mix(in srgb, var(--river-soft) 70%, transparent); stroke: var(--river); stroke-width: 1.5; }
+.pro-ladder { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pro-ladder li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 6px 8px; min-width: 0; }
+.pro-ladder .lb { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--paper-2); font-weight: 700; font-size: 12px; flex: none; }
+.pro-ladder .lt { line-height: 1.15; }
+.pro-ladder li.cur { background: var(--crust-soft); color: var(--crust-t); font-weight: 600; }
+.pro-ladder li.cur .lb { background: var(--btn-primary); color: var(--on-primary); }
+.pro-ladder li.done { color: var(--good-t); } .pro-ladder li.done .lb { background: var(--good); color: var(--on-primary); }
+.pro-next { margin-top: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px 10px; font-size: 12px; color: var(--ink-2); }
+.pro-next .nk { grid-column: 1 / -1; font-weight: 600; color: var(--ink); }
+.pro-req { display: flex; flex-direction: column; gap: 3px; }
+.pro-req .rb { height: 6px; border-radius: 99px; background: var(--paper-2); overflow: hidden; }
+.pro-req .rb i { display: block; height: 100%; background: var(--river); border-radius: 99px; }
+.pro-req.ok { color: var(--good-t); } .pro-req.ok .rb i { background: var(--good); }
+.pro-shiftbtn { margin-top: 12px; }
+.pro-shiftbtn.ready { animation: pro-pulse 2.2s ease-in-out infinite; }
+@keyframes pro-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--crust) 45%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+.pro-ms { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.pro-m { display: grid; grid-template-columns: 24px 96px minmax(0, 1fr) 26px; align-items: center; gap: 8px; font-size: 13.5px; }
+.pm-i { font-size: 17px; text-align: center; } .pm-n { color: var(--ink-2); } .pm-f { font-size: 20px; text-align: center; }
+.pm-bar { height: 12px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; }
+.pm-bar i { display: block; height: 100%; border-radius: 99px; transition: width .5s ease; }
+.pro-m.ok .pm-bar i { background: var(--good); } .pro-m.mid .pm-bar i { background: var(--warn); } .pro-m.low .pm-bar i { background: var(--bad); animation: pro-blink 1.4s ease-in-out infinite; }
+@keyframes pro-blink { 50% { opacity: .55; } }
+.pro-sk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.psk { background: var(--surface-2); border-radius: 10px; padding: 7px 8px; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.pro-beans { display: flex; gap: 3px; }
+.pro-beans i { width: 12px; height: 12px; border-radius: 50%; background: var(--paper-2); border: 1px solid var(--line-2); }
+.pro-beans i.on { background: var(--rye); border-color: var(--rye); }
+
+/* --- как живу --- */
+.pl-row { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 0; border-top: 1px dashed var(--line); }
+.pl-row:first-of-type { border-top: 0; }
+.pl-k { font-size: 13px; font-weight: 600; padding-top: 8px; }
+.pl-o { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+.po { font: inherit; text-align: left; border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 7px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; min-width: 0; min-height: 44px; }
+.po b { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.po .pp { font-size: 11.5px; color: var(--ink-2); }
+.po .pfx { display: flex; gap: 4px; font-size: 11px; }
+.po .pfx i { font-style: normal; } .po .pfx i.up { color: var(--good-t); } .po .pfx i.dn { color: var(--bad-t); }
+.po:hover:not(:disabled) { border-color: var(--crust); }
+.po[aria-pressed="true"] { border-color: var(--btn-primary); background: var(--crust-soft); box-shadow: inset 0 0 0 1px var(--btn-primary); }
+.po[aria-pressed="true"] b { color: var(--crust-t); }
+.po:disabled { opacity: .5; cursor: not-allowed; border-style: dashed; }
+.pl-sum { display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pl-sum b { color: var(--ink); font-weight: 700; }
+
+/* --- учёба --- */
+.ps-g { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.psc { border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.psc.cur { border-color: var(--river); background: color-mix(in srgb, var(--river-soft) 40%, var(--surface)); }
+.psc.done { background: color-mix(in srgb, var(--good-soft) 50%, var(--surface)); }
+.psc-i { font-size: 22px; } .psc b { font-size: 13.5px; line-height: 1.2; } .psc small { font-size: 11.5px; color: var(--ink-2); line-height: 1.25; }
+.psc-m { font-size: 12px; color: var(--ink-2); margin: 2px 0 6px; } .psc-m s { color: var(--ink-3); }
+.psc .btn, .psc .chip { margin-top: auto; align-self: flex-start; }
+.psc-w { font-size: 11px; color: var(--warn-t); }
+
+/* --- хочется --- */
+.pw-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 8px; }
+.pw { position: relative; font: inherit; color: var(--ink); text-align: left; border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 9px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pw:hover:not(:disabled) { border-color: var(--crust); transform: translateY(-1px); }
+.pw-i { font-size: 26px; line-height: 1.1; }
+.pw b { font-size: 13px; line-height: 1.2; }
+.pw-p { font-size: 12px; color: var(--ink-2); font-family: var(--f-mono); }
+.pw-p s { color: var(--ink-3); }
+.pw-f { font-size: 11px; color: var(--good-t); }
+.pw.sale { border-color: var(--bad); }
+.pw.sale::after { content: '−30 %'; position: absolute; top: 6px; right: 6px; background: var(--bad); color: var(--on-bad); font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 5px; }
+.pw:disabled { cursor: not-allowed; background: var(--surface-2); }
+.pw:disabled .pw-i { filter: grayscale(.6); opacity: .7; }
+.pw-has { font-size: 11px; font-weight: 600; color: var(--good-t); }
+.pw-why { font-size: 11px; color: var(--ink-2); line-height: 1.2; }
+
+/* --- лента --- */
+.pro-feed ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.pro-feed li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-2); }
+.pro-feed .fd { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
+.pro-feed li.good .fd { background: var(--good); } .pro-feed li.bad .fd { background: var(--bad); } .pro-feed li.spend .fd { background: var(--warn); } .pro-feed li.hero .fd { background: var(--crust); }
+.pro-feed .fm { font-size: 11.5px; color: var(--ink-3); }
+
+/* --- итог месяца --- */
+.pro-slip { position: fixed; right: 16px; top: 108px; z-index: 6; background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; max-width: 320px; box-shadow: var(--shadow); animation: pro-in .3s ease; pointer-events: none; }
+.pro-slip b { font-family: var(--f-display); font-size: 15px; }
+.pro-slip .up { color: #7fdca4; } .pro-slip .dn { color: #ff9c8a; }
+.pro-slip .nt { opacity: .85; }
+@keyframes pro-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* --- всплывающие числа, монетки, конфетти --- */
+.pro-fly { position: fixed; inset: 0; pointer-events: none; z-index: 15; overflow: hidden; }
+.pro-float { position: fixed; font-family: var(--f-display); font-weight: 700; font-size: 15px; padding: 2px 8px; border-radius: 99px; background: var(--surface); box-shadow: var(--shadow); animation: pro-up 1.25s ease-out forwards; white-space: nowrap; }
+.pro-float.big { font-size: 20px; }
+.pro-float.up { color: var(--good-t); } .pro-float.dn { color: var(--bad-t); }
+@keyframes pro-up { 0% { transform: translateY(6px) scale(.8); opacity: 0; } 15% { transform: translateY(0) scale(1.08); opacity: 1; } 100% { transform: translateY(-46px); opacity: 0; } }
+.pro-coin { position: fixed; width: 20px; height: 20px; border-radius: 50%; background-color: #e4a817; background-image: radial-gradient(circle at 35% 35%, #ffe38a, #e4a817 70%); color: #3d2a00; font-size: 11px; font-weight: 800; display: grid; place-items: center; transition: transform .75s cubic-bezier(.3, .1, .3, 1), opacity .75s ease; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.pro-coin.lose { background-color: #e98572; background-image: radial-gradient(circle at 35% 35%, #ffd0c6, #e98572 70%); color: #3a0d05; }
+.pro-conf { position: fixed; top: -12px; width: 9px; height: 14px; border-radius: 2px; background: hsl(var(--hue) 80% 58%); animation: pro-fall 2.1s ease-in forwards; }
+@keyframes pro-fall { to { transform: translateY(105vh) rotate(540deg); } }
+
+/* --- карточки-решения --- */
+.pro-ovbg { position: fixed; inset: 0; z-index: 20; background: var(--backdrop); display: grid; place-items: center; padding: 16px; }
+.pro-card { background: var(--surface); border: 1px solid var(--modal-line); border-radius: 20px; width: 100%; max-width: 560px; max-height: calc(100% - 8px); overflow-y: auto; padding: 18px 18px 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); animation: pro-pop .28s cubic-bezier(.2, .9, .3, 1.3); outline: none; }
+@keyframes pro-pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.pro-card h2 { font-family: var(--f-display); font-size: 21px; font-weight: 700; line-height: 1.2; margin: 8px 0 8px; }
+.pro-card .pcd-t { font-size: 14.5px; line-height: 1.5; color: var(--ink); margin: 0 0 12px; }
+.pro-card .pcd-d { font-size: 12.5px; color: var(--ink-2); margin: 6px 0 0; text-align: center; }
+.pcd-h { display: flex; align-items: center; gap: 12px; }
+.pcd-w { display: flex; flex-direction: column; min-width: 0; }
+.pcd-w small { font-size: 12px; color: var(--ink-2); }
+.pro-card .eyebrow { font-size: 11.5px; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; color: var(--crust-t); }
+.pro-card .eyebrow.pos { color: var(--good-t); } .pro-card .eyebrow.neg { color: var(--bad-t); }
+.pro-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 17px; flex: none; background: hsl(var(--h) 70% 86%); color: hsl(var(--h) 55% 22%); border: 2px solid hsl(var(--h) 45% 60%); }
+.pro-av.big { width: 52px; height: 52px; font-size: 22px; }
+:root[data-theme="dark"] .pro-av { background: hsl(var(--h) 35% 26%); color: hsl(var(--h) 70% 88%); border-color: hsl(var(--h) 40% 45%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pro-av { background: hsl(var(--h) 35% 26%); color: hsl(var(--h) 70% 88%); border-color: hsl(var(--h) 40% 45%); } }
+.pcd-c { display: flex; flex-direction: column; gap: 8px; }
+.pcd-c .chq { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pcd-c .chq h4 { font-size: 13px; margin: 0; } .pcd-c .chq span { font-size: 11.5px; color: var(--ink-2); }
+.pro .choice .cc:empty { display: none; }
+.pro .fxc .fxe { font-size: 12px; line-height: 1; }
+.pro .fxc.risk { background: var(--warn-soft); color: var(--warn-t); }
+.pro .choice .cwhy { color: var(--warn-t); }
+
+/* --- финалы --- */
+.pro-final { max-width: 620px; text-align: left; }
+.pf-hero { font-size: 54px; line-height: 1; margin-bottom: 4px; animation: pro-bump .6s ease .1s; }
+.pro-final h3 { margin-top: 14px; }
+.pf-sms { background: var(--inv-bg); color: var(--inv-ink); border-radius: 14px 14px 14px 4px; padding: 10px 12px; font-size: 13.5px; line-height: 1.4; margin: 4px 0 6px; }
+.pf-sms-h { display: block; font-size: 11px; opacity: .75; margin-bottom: 2px; }
+.pf-gain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pf-gain li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 6px; font-size: 13.5px; line-height: 1.35; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.pf-gain li span { font-size: 17px; }
+.pf-rows { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.pf-r { display: grid; grid-template-columns: 22px minmax(88px, 150px) minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; }
+.pf-r .pf-b { height: 10px; border-radius: 99px; background: var(--paper-2); overflow: hidden; }
+.pf-r .pf-b i { display: block; height: 100%; background: var(--river); border-radius: 99px; }
+.pf-r.fun .pf-b i { background: var(--crust); }
+.pf-r b { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pf-tips { margin: 12px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+.pf-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.pf-det { margin-top: 12px; font-size: 13.5px; }
+.pf-det summary { cursor: pointer; font-weight: 600; }
+.pro-menu .confirm { font-size: 13px; background: var(--warn-soft); color: var(--warn-t); border-radius: 12px; padding: 8px 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+
+/* --- мини-игра «Смена» --- */
+.pro-sh { position: fixed; inset: 0; z-index: 30; background: var(--paper); overflow-y: auto; display: grid; place-items: center; }
+@media (max-width: 640px) { .pro-sh { place-items: start center; } }
+.sh-in { width: 100%; max-width: 720px; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+.sh-intro, .sh-res { max-width: 520px; margin: auto; text-align: center; padding-top: 32px; }
+.sh-big { font-size: 60px; line-height: 1; }
+.sh-in h2 { font-family: var(--f-display); font-size: 22px; font-weight: 700; margin: 4px 0; }
+.sh-how { text-align: left; margin: 6px 0; padding-left: 20px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.sh-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sh-tb { flex: 1 1 160px; height: 12px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; }
+.sh-tb i { display: block; height: 100%; background: var(--river); border-radius: 99px; }
+.sh-rush { font-size: 12px; font-weight: 700; color: var(--on-bad); background: var(--bad); border-radius: 8px; padding: 2px 8px; animation: pro-blink 1s ease-in-out infinite; }
+.sh-sc { display: flex; gap: 10px; font-size: 13px; align-items: center; }
+.sh-sc b { font-family: var(--f-mono); }
+.sh-queue { display: flex; gap: 10px; align-items: flex-end; min-height: 76px; padding: 10px 12px; background: var(--district); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.sh-g { --pat: 100; position: relative; width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--good) calc(var(--pat) * 1%), var(--paper-2) 0); flex: none; transition: transform .2s; animation: pro-walk .35s ease; }
+.sh-g.angry { background: conic-gradient(var(--bad) calc(var(--pat) * 1%), var(--paper-2) 0); animation: pro-shake .5s ease infinite; }
+.sh-g .sh-f { width: 42px; height: 42px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-size: 26px; }
+.sh-g.front { width: 62px; height: 62px; } .sh-g.front .sh-f { width: 54px; height: 54px; font-size: 32px; }
+@keyframes pro-walk { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pro-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+.sh-empty { font-size: 13px; color: var(--ink-3); align-self: center; }
+.sh-order { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 84px; }
+.sh-bub { position: relative; background: var(--surface); border: 2px solid var(--ink); border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sh-bub::before { content: ''; position: absolute; left: 22px; top: -9px; width: 14px; height: 14px; background: var(--surface); border-left: 2px solid var(--ink); border-top: 2px solid var(--ink); transform: rotate(45deg); }
+.sh-note { font-size: 12.5px; color: var(--ink-2); font-style: italic; }
+.sh-ol { display: flex; gap: 10px; }
+.sh-oi { display: flex; flex-direction: column; align-items: center; font-size: 30px; line-height: 1.1; }
+.sh-oi small { font-size: 11px; color: var(--ink-2); }
+.sh-oi.up { animation: pro-bump .5s ease; } .sh-oi.up small { color: var(--good-t); font-weight: 700; }
+.sh-upb { min-height: 44px; border-radius: 12px; }
+.sh-msg { position: absolute; right: 0; top: 0; font-family: var(--f-display); font-weight: 700; font-size: 15px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.sh-msg.show { opacity: 1; animation: pro-up 1.1s ease-out forwards; }
+.sh-msg.up { color: var(--good-t); } .sh-msg.dn { color: var(--bad-t); }
+.sh-tray { display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 8px 10px; background: var(--surface); border: 1.5px dashed var(--line-2); border-radius: 16px; flex-wrap: wrap; }
+.sh-ti { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); font-size: 26px; cursor: pointer; display: grid; place-items: center; animation: pro-pop .2s ease; }
+.sh-serve { margin-left: auto; min-height: 48px; padding: 10px 16px; font-size: 15px; font-weight: 600; }
+.sh-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.sh-it { position: relative; font: inherit; color: var(--ink); min-height: 76px; border-radius: 16px; border: 1.5px solid var(--line-2); background: var(--surface); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 30px; line-height: 1.1; touch-action: manipulation; }
+.sh-it small { font-size: 12px; color: var(--ink-2); }
+.sh-it.coffee { background: color-mix(in srgb, var(--rye) 10%, var(--surface)); }
+.sh-it.bake { background: color-mix(in srgb, var(--crust-2) 12%, var(--surface)); }
+.sh-it kbd { position: absolute; top: 5px; left: 7px; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); }
+.sh-it:hover { border-color: var(--crust); }
+.sh-stars { font-size: 42px; display: flex; justify-content: center; gap: 4px; }
+.sh-stars i { font-style: normal; color: var(--line-2); animation: pro-pop .4s ease both; }
+.sh-stars i.on { color: #e9a91c; }
+.sh-tipbig { font-family: var(--f-display); font-size: 34px; font-weight: 700; color: var(--good-t); display: flex; flex-direction: column; align-items: center; }
+.sh-tipbig small { font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--ink-2); }
+.sh-rs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.sh-gain { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.sh-gain .chip { font-size: 12.5px; padding: 3px 10px; }
+
+/* --- стартовый экран: «Как начать» --- */
+.pro-pick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 8px; min-width: 0; }
+.pro-pick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.pro-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pro-pk { position: relative; display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line-2); background: var(--surface); border-radius: 14px; padding: 10px 12px; cursor: pointer; min-width: 0; }
+.pro-pk input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.pro-pk .pk-i { font-size: 24px; line-height: 1.1; }
+.pro-pk .pk-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pro-pk b { font-size: 14px; } .pro-pk small { font-size: 12px; color: var(--ink-2); line-height: 1.3; }
+.pro-pk.on { border-color: var(--btn-primary); background: var(--crust-soft); box-shadow: inset 0 0 0 1px var(--btn-primary); }
+.pro-pk.on b { color: var(--crust-t); }
+.pro-pk:focus-within { outline: 2px solid var(--river); outline-offset: 2px; }
+
+/* --- телефон --- */
+@media (max-width: 900px) {
+  .pro-grid { grid-template-columns: minmax(0, 1fr); }
+  .ps-g { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .pro-top { gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+  .pro-bt small { display: none; }
+  .pro-when { order: 3; flex: 1 1 100%; margin-left: 0; }
+  .pro-ctl { margin-left: auto; }
+  .pro-mbar { top: 88px; padding: 6px 12px; }
+  .pro-in { padding: 6px 12px 32px; }
+  .pc { padding: 14px 12px; border-radius: 16px; }
+  .pro-money { grid-template-columns: minmax(0, 1fr); }
+  .pmy { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-rows: auto auto auto; column-gap: 8px; align-items: center; }
+  .pmy-i { grid-row: 1 / span 2; } .pmy-n { grid-column: 2; } .pmy b { grid-column: 2; } .pmy small { grid-column: 2 / -1; min-height: 0; }
+  .pmy > .btn, .pmy-b { grid-column: 3; grid-row: 1 / span 2; margin: 0; }
+  .pmy-b { flex-direction: column; }
+  .pl-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .pl-k { padding-top: 0; }
+  .pl-o { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pro-m { grid-template-columns: 22px 86px minmax(0, 1fr) 24px; font-size: 13px; }
+  .pro-slip { left: 12px; right: 12px; top: auto; bottom: 12px; max-width: none; }
+  .pro-picks { grid-template-columns: minmax(0, 1fr); }
+  .pro-card { padding: 16px 14px 14px; border-radius: 18px; }
+  .pro-ovbg { padding: 10px; }
+  .pf-r { grid-template-columns: 20px minmax(0, 1fr) 60px auto; }
+  .sh-in { padding: 10px 12px 18px; gap: 10px; }
+  .sh-items { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .sh-it { min-height: 68px; font-size: 26px; border-radius: 14px; }
+  .sh-it small { font-size: 11px; }
+  .sh-queue { gap: 6px; padding: 8px; min-height: 70px; }
+  .sh-g { width: 44px; height: 44px; } .sh-g .sh-f { width: 36px; height: 36px; font-size: 22px; }
+  .sh-g.front { width: 56px; height: 56px; } .sh-g.front .sh-f { width: 48px; height: 48px; font-size: 28px; }
+  .sh-sc { gap: 8px; font-size: 12.5px; }
+}
+@media (max-width: 374px) {
+  .pro-speed button { width: 32px; }
+  .pro .iconbtn { width: 32px; }
+  .pro-logo { width: 32px; height: 32px; font-size: 18px; }
+  .pro-bt b { font-size: 15px; }
+  .pg-sc span:nth-child(2) { display: none; }
+  .sh-it { min-height: 62px; font-size: 23px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pro *, .pro-float, .pro-conf { animation: none !important; transition: none !important; }
+}
+
 [hidden]{display:none!important}
 </style>
 <script>
@@ -1982,6 +2323,112 @@ BK.CFG.MANAGERS = {
   PRICE_CUT: 0.08,               // «снизить цену»: −8 п. п. к множителю цены позиции
   MKT: 0.04,                     // «маркетинг»: 4% прибыли
   VERDICT_DAYS: 30,              // через сколько дней после «Сделать» в статистике виден итог (полезно / лишнее)
+};
+
+/* Пролог «Бариста» (стадия 0, docs/vision-plan.md §3.1.1). Логика — src/prologue.js (BK.Prologue), интерфейс — src/ui/prologue.js.
+   Деньги — в рублях «в ценах старта», инфляции в прологе нет (кроме события «подорожала аренда»).
+   Темп проверяют боты: node sim/prologue.js ideal|normal|spender <сидов>. */
+BK.CFG.PROLOGUE = {
+  // --- время: ход = месяц, идёт сам. Длительность месяца на ×1 (мс) по годам: сначала всё ново, потом «годы летят быстрее»
+  // (рутина). На ×3 — втрое быстрее. Окна-решения и «Смена» ставят время на паузу.
+  MONTH_MS: [[2, 15000], [4, 10000], [99, 2500]], // [до конца какого года, мс]: годы 1–2, 3–4, 5+ («годы летят»)
+  AGE0: 21,                       // возраст героя на старте
+  LIFE_MONTHS: 180,               // 15 лет в найме — финал «Вы прожили жизнь, работая в найме»
+  // --- цель ---
+  GOAL: 1500000,                  // накопить на свою точку (островок / мини-кофейня)
+  GOAL_CREDIT: 950000,            // меньше + кредит банка, если есть стаж и репутация
+  CREDIT_STAZH: 18,               // месяцев работы для кредита
+  CREDIT_REP: 70,                 // репутация у начальника для кредита
+  START_CASH: 4300,               // в кармане в первый день (docs/story.md, П0)
+  // --- работа ---
+  JOBS: [
+    { id: 'barista', name: 'Бариста', pay: 42000, tips: 4000 },
+    { id: 'senior', name: 'Старший бариста', pay: 56000, tips: 5500 },
+    { id: 'manager', name: 'Управляющий сменой', pay: 74000, tips: 6500 },
+  ],
+  SKILL_PAY: 120,                 // +₽ к окладу за пункт среднего навыка (0–100)
+  PROMO: [null,
+    { coffee: 35, rep: 60, months: 5 },             // старший: кофе ≥ 35, начальник ≥ 60, 5+ мес. стажа
+    { people: 45, sales: 40, rep: 70, months: 8 },  // управляющий: люди ≥ 45, продажи ≥ 40, начальник ≥ 70, 8+ мес. старшим
+  ],
+  PROMO_STAZH: 48,                // после 4 лет стажа повышают и без высокой оценки начальника
+  EXTRA: { pay: 9000, hp: -8, mood: -3, rep: 1, coffee: 0.4 }, // доп. смены (за месяц): до 2, живя у родителей — 1
+  // --- жизнь: уровни трат (₽/мес) и влияние на здоровье/силы и настроение за месяц ---
+  HOME: {
+    parents: { name: 'У родителей', cost: 5000, transport: 4500, hp: -1, mood: -5, maxExtra: 1 },
+    room: { name: 'Комната', cost: 15000, transport: 2500, hp: 0, mood: 0, maxExtra: 2 },
+    flat: { name: 'Своя квартира', cost: 30000, transport: 2000, hp: 1, mood: 6, maxExtra: 2 },
+  },
+  FOOD: {
+    starve: { name: 'Голодать', cost: 2500, hp: -16, mood: -6 },
+    eco: { name: 'Экономно', cost: 8000, hp: -3, mood: -1 },
+    normal: { name: 'Нормально', cost: 15000, hp: 3, mood: 1 },
+    cafe: { name: 'Кафе и доставка', cost: 28000, hp: 2, mood: 5 },
+  },
+  FUN: {                          // развлечения: кино, бар с друзьями, концерты
+    none: { name: 'Сидеть дома', cost: 0, hp: 0, mood: -3 },
+    some: { name: 'Иногда кино и бар', cost: 4000, hp: 0, mood: 3, people: 0.2 },
+    lots: { name: 'Каждые выходные', cost: 11000, hp: -1, mood: 7, people: 0.4 },
+  },
+  PHONE: 700,                     // связь и интернет
+  HP_REST: 4,                     // восстановление сил за месяц
+  MOOD_BASE: 55, MOOD_PULL: 0.18, // настроение тянется к базе: покупки радуют ненадолго
+  REP_BASE: 55, REP_PULL: 0.1,    // мнение начальника тоже тянется к «нормально»: высокое держится доп. сменами и хорошими «Сменами»
+  SAVE_RATES: [0, 0.1, 0.25, 0.5],// «откладывать с зарплаты в копилку»
+  DEP_RATE: 0.12,                 // вклад, годовых; проценты копятся и прибавляются раз в год, при досрочном снятии сгорают
+  // --- учёба (оплата помесячно, пока идёт курс) ---
+  COURSES: {
+    coffee: { name: 'Школа бариста', who: 'обжарщик из кофейного цеха', month: 9000, months: 2, skill: 'coffee', add: 14 },
+    sales: { name: 'Тренер по продажам', who: 'тренер-практик из сети кофеен', month: 12000, months: 2, skill: 'sales', add: 16 },
+    lead: { name: 'Школа управляющих', who: 'бывший управляющий сети кофеен', month: 15000, months: 3, skill: 'people', add: 18 },
+  },
+  STUDY_HP: -2, STUDY_MOOD: -2,
+  // --- желания и соблазны: цена, радость, перерыв до следующей покупки (мес.) ---
+  WANTS: {
+    clothes: { name: 'Одежда', icon: '👕', cost: 7000, mood: 8, cd: 3 },
+    gifts: { name: 'Подарки близким', icon: '🎁', cost: 5000, mood: 7, cd: 3, people: 1 },
+    sneakers: { name: 'Кроссовки', icon: '👟', cost: 14000, mood: 14, cd: 8 },
+    console: { name: 'Игровая приставка', icon: '🎮', cost: 42000, mood: 18, cd: 36 },
+    phone: { name: 'Новый телефон', icon: '📱', cost: 48000, mood: 18, cd: 24 },
+    trip: { name: 'Отпуск на море', icon: '🏖️', cost: 70000, mood: 30, cd: 12, hp: 25 },
+    car: { name: 'Машина в кредит', icon: '🚗', cost: 60000, mood: 24, cd: 60, monthly: 17000, months: 48, job: 1 }, // первый взнос, дальше платёж каждый месяц
+  },
+  DEBT_RATE: 0.02,                // минус в кошельке — кредитка: 2 % в месяц
+  // --- состояния ---
+  SICK_HP: 30,                    // ниже — растёт шанс заболеть (больничный: половина оклада)
+  ERR_HP: 12,                     // ниже — ошибки на смене (начальник недоволен)
+  SPLURGE_MOOD: 25,               // ниже — срывы на покупки (только из кошелька: копилка и вклад защищают)
+  SPLURGE_P: 0.45,
+  REP_WARN: 25, REP_FIRE: 12,     // предупреждение / увольнение
+  // --- события ---
+  EV_P1: 0.8, EV_P2: 0.3,         // шанс первого и второго случайного события за месяц
+  EV_NEG: 0.7,                    // 70 % — неприятности (мягче основной игры)
+  EV_LATE: [5, 0.4],              // с 5-го года жизнь — рутина: случайные события реже
+  // --- мини-игра «Смена» ---
+  SHIFT_SEC: 40,                  // длина смены, с
+  SHIFT_TIP: 90,                  // ₽ чаевых за обслуженного гостя (× навык продаж)
+  SHIFT_UPSELL: 160,              // ₽ за удачную допродажу
+  // --- переход в основную игру (стадия 2): в пределах ±10–15 % ---
+  CARRY: {
+    SKILL_MIN: 55,                // навык пролога ≥ 55 → уровень 1 в системе тренеров (не больше 2 областей)
+    SKILL_MAP: { sales: 'sales', people: 'staff', coffee: 'prod' },
+    BONUS_MULT: 2,                // накопления сверх цели × 2 (партнёры добавляют) → к стартовому капиталу
+    BONUS_MAX: 0.15,              // но не больше +15 %
+    BAKER_REL: 10,                // при уходе «со скандалом» Гуля идёт с вами, если отношения ≥ 10 (шкала сюжета −100…100)
+    BAKER_L3: 20,                 // Гуля с вами: уровень 3 при отношениях ≥ 20, иначе 2
+    MACHINE: 0.08,                // Рашид-друг: старая кофемашина — оборудование первой точки на 8 % дешевле
+    DVOR_FOODCOST: 0.03,          // стажировка у Олега: «Школа Двора» — себестоимость −3 % навсегда
+    REGULARS_TRAFFIC: 0.12,       // уход со скандалом: постоянные гости — гости первой точки +12 % на 6 мес. (× гостей/3, не больше ×1)
+    THRIFT: 0.35,                 // «Бережливый»: отложено ≥ 35 % заработанного и соблазны < 6 %
+    THRIFT_WANTS: 0.06,
+    SPENDER: 0.15,                // «Транжира»: соблазны ≥ 15 % заработанного
+    THRIFT_OPEN: 0.03,            // Бережливый: открытие точек на 3 % дешевле
+    SPENDER_MOOD: 2,              // Транжира: +2 к настроению команды каждый месяц, если платятся премии
+  },
+  // --- боты (sim/prologue.js): модель реального времени игрока ---
+  BOT_CARD_SEC: 5,                // чтение окна-решения с выбором
+  BOT_INFO_SEC: 2,                // окно с одной кнопкой
+  BOT_SET_SEC: 1.5,               // изменение настройки или покупка
 };
 
 /* data/world.js */
@@ -10021,6 +10468,847 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freshJson, freeStorage, forget, status, take, strip, _games: games };
 })();
 
+/* prologue.js */
+/* =====================================================================
+   ПРОЛОГ «БАРИСТА» — стадия 0 (docs/vision-plan.md §3.1, §3.1.1). Чистая логика без DOM (как engine.js).
+   Вы — бариста в пекарне-кофейне «Калач» Рашида Хайруллина на ул. Пушкина в Уфе (герои и сцены П1–П8 — docs/story.md). Цель — накопить на свою точку и стать управляющим сменой.
+   Ход = месяц, идёт сам (интерфейс зовёт advance(S, мс × скорость)); решения — карточки (S.prologue.cards), пока карточка
+   открыта, время стоит. Деньги: кошелёк (cash) → копилка (box, 0 %) → вклад (dep, проценты раз в год, досрочно сгорают).
+   Состояние — S.prologue (в сохранении вместе с обычной игрой; старые сохранения без поля — пролога не было):
+     { v, status: 'run'|'won'|'life'|'done'|'skipped', seed, rng, m (месяцев прошло), t (доля текущего месяца 0..1),
+       job 0..2, jobM, stazh, rep, hp, mood, sk: {sales, coffee, people}, cash, box, dep, depInt,
+       home, food, extra, saveRate, study, done{}, payK, rentK, cut, sickNow, fired, wantsCd{}, sale, loans[], inv[],
+       rel: {rashid, gulya, oleg, elvira, family, semyon} (−100…100, как S.story.rel), sf (флаги сюжета, как S.story.f), sm (стили),
+       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift, earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+   Сюжетные решения пролога копируются в S.story по схеме docs/story.md §4.5 (syncStory) — их прочитает будущий сюжетный модуль.
+   Свой ГСЧ (S.prologue.rng, от зерна игры): основной поток случайностей игры не сдвигается.
+   Переход в основную игру — finish()/applyCarry(): бонус к капиталу (≤ +15 %), навыки игрока (S.player.skills, система тренеров),
+   коллега-пекарь — первый сотрудник первой точки, черта героя. Эффекты в основной игре — обёртки rentStore/tick (как achievements.js),
+   движок не меняется; без S.prologue обёртки ничего не делают (боты первого акта побайтно прежние).
+   Числа — BK.CFG.PROLOGUE. Интерфейс — src/ui/prologue.js. Боты — sim/prologue.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const C = () => BK.CFG.PROLOGUE;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const r100 = (v) => Math.round(v / 100) * 100;
+  const fm = (v) => (BK.fmtMoney ? BK.fmtMoney(v) : Math.round(v) + ' ₽');
+  function rnd(P) { // mulberry32 — как в движке, но на своём зерне
+    let t = (P.rng = (P.rng + 0x6D2B79F5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  const rr = (P, a, b) => a + (b - a) * rnd(P);
+  const ri = (P, a, b) => Math.floor(rr(P, a, b + 1));
+
+  const MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+  const START_MON = 1; // пролог начинается в феврале (docs/story.md, П0)
+  const HEROES = {
+    rashid: { name: 'Рашид Хайруллин', role: 'хозяин пекарни-кофейни «Калач», ваш наставник', ini: 'Р', hue: 28 },
+    gulya: { name: 'Гуля Сафина', role: 'пекарь «Калача», ваша коллега', ini: 'Г', hue: 340 },
+    oleg: { name: 'Олег Кравцов', role: 'владелец сети «Хлебный двор»', ini: 'О', hue: 210 },
+    elvira: { name: 'Эльвира Ахметова', role: 'банк «Семь рек», проспект Октября', ini: 'Э', hue: 185 },
+    family: { name: 'Семья', role: 'мама Фания, брат Ильдар, бабушка Сания', ini: 'С', hue: 150 },
+    semyon: { name: 'Семён Аркадьевич', role: 'постоянный гость, канал «Уфа жуёт»', ini: 'С', hue: 95 },
+    friend: { name: 'Дамир', role: 'друг со школы', ini: 'Д', hue: 260 },
+    life: { name: 'Жизнь', role: 'так бывает', ini: '•', hue: 45 },
+  };
+  const SK_NAME = { sales: 'Продажи', coffee: 'Кофе', people: 'Люди' };
+  const SPENT_NAME = {
+    home: 'Жильё', food: 'Еда', fun: 'Кино, бар, развлечения', transport: 'Транспорт', phone: 'Связь', study: 'Учёба', health: 'Здоровье и лечение', fines: 'Штрафы и потери',
+    cinema: 'Кино', bar: 'Бар с друзьями', clothes: 'Одежда', gifts: 'Подарки', sneakers: 'Кроссовки', console: 'Приставка', phone2: 'Новые телефоны', trip: 'Отпуска',
+    loans: 'Долги друзьям (не вернули)', invest: 'Вложения (прогорели)', car: 'Машина в кредит', debt: 'Проценты по кредитке', other: 'Разное',
+  };
+  const WANT_CAT = { clothes: 'clothes', gifts: 'gifts', sneakers: 'sneakers', console: 'console', phone: 'phone2', trip: 'trip', car: 'car' };
+  const FUN_CATS = ['fun', 'clothes', 'gifts', 'sneakers', 'console', 'phone2', 'trip', 'car'];
+
+  /* ---------------- состояние ---------------- */
+  function create(seed) {
+    const c = C();
+    const P = {
+      v: 1, status: 'run', seed: seed | 0, rng: ((seed | 0) ^ 0x5eed0b) | 0,
+      m: 0, t: 0, job: 0, jobM: 0, stazh: 0, rep: 50, hp: 80, mood: 62,
+      sk: { sales: 10, coffee: 15, people: 10 },
+      cash: c.START_CASH, box: 0, dep: 0, depInt: 0,
+      home: 'parents', food: 'normal', fun: 'some', extra: 0, saveRate: 1, study: null, done: {},
+      payK: 1, rentK: 1, cut: 0, sickNow: false, fired: 0,
+      wantsCd: {}, sale: null, loans: [], inv: [], car: null,
+      rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0 }, sm: { care: 0, risk: 0, honesty: 0, fair: 0 },
+      sf: { mentor: null, gulya: null, kalach: 'alive', olegCard: false, regulars: 0 }, shares: [], seen: {}, slog: [], depBonus: 0, flags: {}, cards: [], evAt: [], shift: { m: -1 },
+      earned: { salary: 0, tips: 0, extra: 0, interest: 0, gifts: 0, other: 0 },
+      spent: {}, mo: null, hist: [], feed: [], fx: [],
+      stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
+      won: null, carry: null,
+    };
+    return P;
+  }
+  function start(S) {
+    const P = S.prologue = create((S.seed || 1) ^ 0x6b2a91);
+    P.cards.push({ id: 'p01', v: {} });
+    schedule(P);
+    feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
+    syncStory(S);
+    return P;
+  }
+  /* ---------- сюжет: запись решений пролога в S.story (схема docs/story.md §4.5) ---------- */
+  function storyDefaults(seed) {
+    return { v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'prologue', rng: ((seed | 0) ^ 0x51a7e) | 0, seen: {}, queue: [], pending: null, inbox: [],
+      lastScene: 0, lastLetter: 0, lastLine: 0, rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0 }, m: { care: 0, risk: 0, honesty: 0, fair: 0 },
+      f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
+      shares: [], ending: null, log: [] };
+  }
+  function syncStory(S) {
+    const P = S && S.prologue; if (!P || !P.rel) return;
+    const st = S.story || (S.story = storyDefaults(S.seed || 1));
+    Object.assign(st.rel, P.rel); Object.assign(st.m, P.sm); Object.assign(st.f, P.sf);
+    st.shares = P.shares.slice(); Object.assign(st.seen, P.seen); st.log = P.slog.slice(-120);
+    if (P.status === 'life') st.ending = 'hired';
+    if (P.status === 'done' || P.status === 'skipped') st.ch = 'own'; // стадии 1 пока нет — сразу своя сеть (глава 1 «Своя точка»)
+  }
+  const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
+  function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info' }); if (P.feed.length > 40) P.feed.shift(); }
+  function fx(P, kind, v, where) { P.fx.push({ kind, v: Math.round(v), where: where || '' }); if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30); }
+
+  /* ---------------- справочные функции ---------------- */
+  const savings = (P) => Math.round(P.cash + P.box + P.dep + P.depInt);
+  const skAvg = (P) => (P.sk.sales + P.sk.coffee + P.sk.people) / 3;
+  const age = (P) => C().AGE0 + Math.floor(P.m / 12);
+  const year = (P) => Math.floor(P.m / 12) + 1;
+  const monName = (P, m) => MONTHS[(START_MON + (m == null ? P.m : m)) % 12];
+  const calMon = (P) => (START_MON + P.m) % 12; // 0 = январь
+  function monthMs(P) { const y = year(P); for (const [to, ms] of C().MONTH_MS) if (y <= to) return ms; return 6000; }
+  function payOf(P) {
+    const c = C(), J = c.JOBS[P.job];
+    return r100((J.pay + skAvg(P) * c.SKILL_PAY) * P.payK);
+  }
+  function homeCost(P) { const h = C().HOME[P.home]; return r100(h.cost * (P.home === 'parents' ? 1 : P.rentK)); }
+  function studyFee(P) { return P.study ? C().COURSES[P.study.id].month : 0; }
+  function monthCost(P) { const c = C(); return homeCost(P) + c.HOME[P.home].transport + c.FOOD[P.food].cost + (c.FUN[P.fun] || c.FUN.some).cost + c.PHONE + studyFee(P) + (P.car ? P.car.pay : 0); }
+  function maxExtra(P) { return C().HOME[P.home].maxExtra; }
+  // можно ли открывать свою точку: должность управляющего + накопления (или меньше + кредит при стаже и репутации)
+  function goal(P) {
+    const c = C(), sav = savings(P);
+    const credit = P.stazh >= c.CREDIT_STAZH && P.rep >= c.CREDIT_REP;
+    const need = credit ? c.GOAL_CREDIT : c.GOAL;
+    const job = P.job >= 2;
+    return { sav, need, full: c.GOAL, credit, job, ok: job && sav >= need, p: clamp(sav / need, 0, 1), creditNeed: c.GOAL_CREDIT };
+  }
+  function promoCheck(P) {
+    const c = C(), n = P.job + 1, q = c.PROMO[n];
+    if (!q) return null;
+    const miss = [];
+    if (q.coffee && P.sk.coffee < q.coffee) miss.push(`кофе ${Math.floor(P.sk.coffee)}/${q.coffee}`);
+    if (q.sales && P.sk.sales < q.sales) miss.push(`продажи ${Math.floor(P.sk.sales)}/${q.sales}`);
+    if (q.people && P.sk.people < q.people) miss.push(`люди ${Math.floor(P.sk.people)}/${q.people}`);
+    if (P.rep < q.rep && P.stazh < C().PROMO_STAZH) miss.push(`начальник ${Math.floor(P.rep)}/${q.rep}`); // с большим стажем повышают и без любви начальника
+    if (P.jobM < q.months) miss.push(`стаж в должности ${P.jobM}/${q.months} мес.`);
+    return { job: n, name: c.JOBS[n].name, q, miss, ok: !miss.length };
+  }
+
+  /* ---------------- деньги ---------------- */
+  function earn(P, v, cat) { v = Math.round(v); P.cash += v; P.earned[cat] = (P.earned[cat] || 0) + v; return v; }
+  function spendRec(P, v, cat) { P.spent[cat] = (P.spent[cat] || 0) + Math.round(v); }
+  // обязательный платёж: из кошелька; не хватает — из копилки, потом со вклада (проценты сгорают); дальше — в минус (долг)
+  function pay(P, v, cat) {
+    v = Math.round(v); if (v <= 0) return;
+    spendRec(P, v, cat);
+    P.cash -= v;
+    if (P.cash < 0 && P.box > 0) { const t = Math.min(P.box, -P.cash); P.box -= t; P.cash += t; }
+    if (P.cash < 0 && P.dep > 0) {
+      const t = Math.min(P.dep, -P.cash); P.dep -= t; P.cash += t;
+      if (P.depInt > 0) { feed(P, `Пришлось снять вклад досрочно — проценты (${fm(P.depInt)}) сгорели.`, 'bad'); P.depInt = 0; }
+    }
+  }
+  const canAfford = (P, v, cashOnly) => (cashOnly ? P.cash : P.cash + P.box + P.dep) >= v;
+
+  /* ---------------- действия игрока ---------------- */
+  function setHome(S, k) { const P = S.prologue; if (!C().HOME[k]) return { ok: false }; P.home = k; P.extra = Math.min(P.extra, maxExtra(P)); return { ok: true }; }
+  function setFood(S, k) { const P = S.prologue; if (!C().FOOD[k]) return { ok: false }; P.food = k; return { ok: true }; }
+  function setFun(S, k) { const P = S.prologue; if (!C().FUN[k]) return { ok: false }; P.fun = k; return { ok: true }; }
+  function setExtra(S, n) { const P = S.prologue; P.extra = clamp(n | 0, 0, maxExtra(P)); return { ok: true }; }
+  function setSaveRate(S, i) { const P = S.prologue; P.saveRate = clamp(i | 0, 0, C().SAVE_RATES.length - 1); return { ok: true }; }
+  function studyWhy(P, id) {
+    const c = C().COURSES[id]; if (!c) return 'Нет такого курса';
+    if (P.study) return 'Уже учитесь — один курс за раз';
+    if (P.done[id]) return 'Уже пройден';
+    if (id === 'lead' && P.job < 1) return 'Для старших бариста';
+    if (!canAfford(P, c.month)) return 'Не хватает денег на первый месяц';
+    return null;
+  }
+  function startStudy(S, id) {
+    const P = S.prologue, why = studyWhy(P, id); if (why) return { ok: false, msg: why };
+    const c = C().COURSES[id];
+    P.study = { id, left: c.months, disc: P.flags.disc && id === 'coffee' ? 0.5 : 0 };
+    feed(P, `Записались: «${c.name}» — ${c.months} мес. по ${fm(c.month)}.`, 'info');
+    return { ok: true };
+  }
+  function wantWhy(P, id) {
+    const w = C().WANTS[id]; if (!w) return 'Нет такого';
+    if ((P.wantsCd[id] || 0) > P.m) return 'Уже есть — пока не хочется';
+    if (w.job && P.job < w.job) return 'Банк даст кредит со старшего бариста';
+    if (w.monthly && P.car) return 'Ещё платите за прошлую';
+    const cost = wantPrice(P, id);
+    if (P.cash < cost) return P.cash + P.box + P.dep >= cost ? 'В кошельке не хватает — достаньте из копилки' : 'Не хватает денег';
+    return null;
+  }
+  function wantPrice(P, id) { const w = C().WANTS[id]; const k = P.sale && P.sale.id === id && P.sale.until >= P.m ? P.sale.k : 1; return r100(w.cost * k); }
+  function buyWant(S, id, forced) {
+    const P = S.prologue, why = forced ? null : wantWhy(P, id); if (why) return { ok: false, msg: why };
+    const w = C().WANTS[id], cost = forced ? r100(w.cost) : wantPrice(P, id);
+    P.cash -= cost; spendRec(P, cost, WANT_CAT[id]);
+    P.mood = clamp(P.mood + w.mood, 0, 100);
+    if (w.hp) P.hp = clamp(P.hp + w.hp, 0, 100);
+    if (w.people) P.sk.people = clamp(P.sk.people + w.people, 0, 100);
+    P.wantsCd[id] = P.m + w.cd;
+    if (w.monthly) P.car = { pay: w.monthly, left: w.months };
+    if (P.sale && P.sale.id === id) P.sale = null;
+    fx(P, 'rub', -cost, 'want'); fx(P, 'mood', w.mood);
+    feed(P, `${w.icon} ${w.name} — ${fm(cost)}.`, 'spend');
+    return { ok: true, cost };
+  }
+  function toBox(S, v) { const P = S.prologue; v = Math.round(Math.min(v, P.cash)); if (v <= 0) return { ok: false, msg: 'В кошельке пусто' }; P.cash -= v; P.box += v; P.stats.boxed += v; fx(P, 'box', v); return { ok: true, v }; }
+  function fromBox(S, v) { const P = S.prologue; v = Math.round(Math.min(v, P.box)); if (v <= 0) return { ok: false, msg: 'В копилке пусто' }; P.box -= v; P.cash += v; return { ok: true, v }; }
+  function toDep(S, v) {
+    const P = S.prologue; v = Math.round(Math.min(v, P.cash + P.box)); if (v <= 0) return { ok: false, msg: 'Нечего положить' };
+    const fromB = Math.min(P.box, v); P.box -= fromB; P.cash -= v - fromB; P.dep += v; fx(P, 'dep', v);
+    feed(P, `На вклад: ${fm(v)} под ${Math.round(C().DEP_RATE * 100)} % годовых.`, 'good');
+    return { ok: true, v };
+  }
+  function fromDep(S) {
+    const P = S.prologue; if (P.dep <= 0) return { ok: false, msg: 'Вклада нет' };
+    const lost = P.depInt; P.cash += P.dep; P.dep = 0; P.depInt = 0;
+    feed(P, lost > 0 ? `Вклад снят досрочно — проценты (${fm(lost)}) сгорели.` : 'Вклад снят.', lost > 0 ? 'bad' : 'info');
+    return { ok: true, lost };
+  }
+
+  /* ---------------- карточки: сцены с героями, события, итоги ----------------
+     Карточка в очереди — { id, v }; определение — CARDS[id]: { kind, who, title(P,v), text(P,v), choices(P,v) }.
+     Вариант: { label, desc, cost, cashOnly (соблазн — только из кошелька), fx: { rub, hp, mood, rep, skill, rel } (−3..3), risk, do(P,v) } */
+  const eff = (P, o) => {
+    if (o.hp) P.hp = clamp(P.hp + o.hp, 0, 100);
+    if (o.mood) { P.mood = clamp(P.mood + o.mood, 0, 100); fx(P, 'mood', o.mood); }
+    if (o.rep) { P.rep = clamp(P.rep + o.rep, 0, 100); fx(P, 'rep', o.rep); }
+    for (const k of ['sales', 'coffee', 'people']) if (o[k]) P.sk[k] = clamp(P.sk[k] + o[k], 0, 100);
+  };
+  const rel = (P, o) => { for (const k of Object.keys(o)) P.rel[k] = clamp((P.rel[k] || 0) + o[k], -100, 100); };
+  const style = (P, k, v) => { P.sm[k] = clamp((P.sm[k] || 0) + v, -100, 100); };
+  const mentor = (P, v) => { P.sf.mentor = v; };
+  const gift = (P, v, cat, t) => { earn(P, v, cat || 'gifts'); fx(P, 'rub', v); if (t) feed(P, t, 'good'); };
+  const ok = (label, desc) => ({ label: label || 'Понятно', desc: desc || '', fx: {}, do() {} });
+
+  const CARDS = {
+    /* ---------- сюжет пролога (docs/story.md §7, сцены П1–П8; числа — механика CFG.PROLOGUE) ---------- */
+    p01: { kind: 'hero', who: 'rashid', title: () => 'Пять утра, улица Пушкина',
+      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду. Правда сегодня в чём? Эчпочмаки вчерашние?»',
+      choices: () => [
+        { label: '«Сегодняшние. Гуля с четырёх утра тут»', desc: 'Семёну нравится, Гуле — тоже', fx: { rel: 2 }, do(P) { rel(P, { semyon: 5, gulya: 5 }); P.sf.regulars++; } },
+        { label: '«Не знаю, я первый день. Сейчас спрошу»', desc: 'Честность — редкость. Рашид услышал', fx: { rel: 1, rep: 1 }, do(P) { rel(P, { semyon: 5, rashid: 5 }); style(P, 'honesty', 5); eff(P, { rep: 2 }); } },
+        { label: '«Вчерашние. Но для вас — минус двадцать процентов»', desc: 'Семён в восторге, Рашид — не очень', fx: { rel: 1, rep: -1 }, do(P) { rel(P, { semyon: 10, rashid: -5 }); P.sf.eveHint = true; eff(P, { rep: -2 }); } },
+      ] },
+    p02: { kind: 'hero', who: 'semyon', title: () => 'Сухой эчпочмак',
+      text: () => 'Семён Аркадьевич: «У меня претензия. Эчпочмак сухой, как отчёт Минфина. Я двадцать лет пишу про еду, я такое чувствую зубами». Гуля шёпотом: «Он прав. Картошку вчера пересушили. Но Рашиду не говори».',
+      choices: () => [
+        { label: '«Извините. Замену — за мой счёт»', desc: 'Постоянный гость это запомнит', cost: 150, fx: { rub: -1, rel: 2 }, do(P) { pay(P, 150, 'other'); rel(P, { semyon: 10 }); P.sf.regulars++; } },
+        { label: '«Гуля, выручай — есть свежие?»', desc: 'Гуля поможет, Семён доволен', fx: { rel: 2 }, do(P) { rel(P, { gulya: 5, semyon: 10 }); } },
+        { label: '«У нас всегда так, это авторская сухость»', desc: 'Семён смеётся: «Запишу. В раздел „юмор“»', fx: { rel: 1 }, do(P) { rel(P, { semyon: -5, gulya: 5 }); } },
+      ] },
+    p03: { kind: 'hero', who: 'family', title: () => 'Конверт от бабушки',
+      text: () => 'Бабушка Сания пришла в «Калач» в выходном платке: «Показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».',
+      choices: () => [
+        { label: '«Положу на вклад, әби. Честно»', desc: '+15 000 ₽ сразу на вклад', fx: { rub: 2, rel: 1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; P.dep += 15000; fx(P, 'dep', 15000); rel(P, { family: 5 }); P.sf.depHint = true; } },
+        { label: '«Отдам маме за квартиру»', desc: 'Дома теплее, настроение лучше', fx: { mood: 1, rel: 2 }, do(P) { rel(P, { family: 10 }); eff(P, { mood: 5 }); P.flags.calmHome = P.m; } },
+        { label: '«Кроссовки со скидкой — тоже мечта!»', desc: 'Настроение до небес, бабушка — не очень', fx: { mood: 3, rel: -1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; spendRec(P, 15000, 'sneakers'); P.wantsCd.sneakers = P.m + C().WANTS.sneakers.cd; eff(P, { mood: 20 }); rel(P, { family: -5 }); feed(P, 'Бабушка видела кроссовки. Сказала: «Красивые. Мечта, видимо, бегает быстро».', 'info'); } },
+      ] },
+    p04: { kind: 'hero', who: 'oleg', title: () => 'Человек в сером пальто',
+      text: () => 'За десять минут до закрытия мужчина в сером пальто берёт весь противень булочек с корицей и платит без сдачи. «Печь всё та же. Ей сорок лет, а температуру держит лучше моих новых. Передай Рашиду: я не ругаться пришёл». Рашид из подсобки, тихо и страшно: «Иди домой. Смена закончилась». У двери мужчина кладёт визитку: «„Хлебный двор“, Олег Кравцов. Надоест варить кофе за копейки — звони. У меня бариста получают на пятнадцать процентов больше».',
+      choices: () => [
+        { label: 'Взять визитку себе', desc: 'Кто знает, пригодится', fx: { rel: 1 }, do(P) { P.sf.olegCard = true; rel(P, { oleg: 5 }); } },
+        { label: 'Отдать визитку Рашиду', desc: '«Когда-то он был лучшим моим пекарем. Больше не спрашивай»', fx: { rel: 1 }, do(P) { rel(P, { rashid: 10, oleg: -5 }); feed(P, 'Рашид: «Спасибо. Когда-то он был лучшим моим пекарем. Больше не спрашивай».', 'hero'); } },
+        { label: 'Выбросить, пока никто не видит', desc: 'Гуля видела', fx: { rel: 1 }, do(P) { rel(P, { gulya: 5 }); feed(P, 'Гуля: «Правильно. Я свою тоже выкинула. Два раза».', 'hero'); } },
+      ] },
+    p05: { kind: 'hero', who: 'rashid', title: () => 'Двести эчпочмаков к утру',
+      text: () => 'Рашид: «Свадьба в Демском. Двести эчпочмаков и три бәлеша к восьми утра. Второй пекарь с температурой. Гуля одна». Гуля: «Я справлюсь». Пауза. «Ну, почти».',
+      choices: () => [
+        { label: '«Остаюсь. Денег не надо»', desc: 'Ночь без сна; Гуля и Рашид этого не забудут', fx: { hp: -2, mood: -1, rel: 3 }, do(P) { eff(P, { hp: -15, mood: -5 }); rel(P, { gulya: 15, rashid: 10 }); style(P, 'care', 5); P.flags.tired = P.m; if (P.rel.gulya >= 25) feed(P, 'На рассвете Гуля: «Когда-нибудь открою пекарню, где тесто будет по моим правилам. Хочешь — возьму тебя кассиром». — «Ещё посмотрим, кто кого возьмёт».', 'hero'); } },
+        { label: '«Остаюсь за двойную ставку»', desc: '+6 000 ₽, но устанете', fx: { rub: 1, hp: -2, rel: 1 }, do(P) { earn(P, 6000, 'extra'); fx(P, 'rub', 6000); eff(P, { hp: -15 }); rel(P, { gulya: 5, rashid: 5 }); } },
+        { label: '«Не могу, у меня утром смена и курсы»', desc: 'Рашид: «Правильно. Себя тоже надо беречь. Иногда»', fx: { rel: -1 }, do(P) { rel(P, { gulya: -5 }); } },
+      ] },
+    p06: { kind: 'hero', who: 'elvira', title: () => 'Третий раз за месяц',
+      text: () => 'Эльвира Ахметова, отделение «Семь рек» на проспекте Октября: «Вы у нас третий раз за месяц. Или копите на что-то, или вам нравится наша очередь. Своя кофейня? Знаете, сколько их закрывается в первый год? Поэтому вот что. Приходите с цифрами — и я приду с деньгами».',
+      choices: () => [
+        { label: 'Открыть «Копилку предпринимателя»', desc: 'Вклад +1 п. п.; снимете раньше срока — проценты сгорят', fx: { rub: 1, rel: 1 }, do(P) { P.depBonus = 0.01; P.sf.bankBox = true; rel(P, { elvira: 10 }); feed(P, `Вклад теперь под ${Math.round((C().DEP_RATE + 0.01) * 100)} % годовых.`, 'good'); } },
+        { label: 'Обычный вклад', desc: 'Без условий', fx: {}, do() {} },
+        { label: '«Спасибо, я без банков»', desc: 'Эльвира запомнит', fx: { rel: -1 }, do(P) { rel(P, { elvira: -5 }); P.sf.noBank = true; } },
+      ] },
+    h_school: { kind: 'hero', who: 'rashid', title: () => 'Рашид предлагает учёбу',
+      text: () => 'Рашид: «Кофе у тебя пока как из автомата на вокзале. Мой старый друг ведёт школу бариста — оплачу половину, если пойдёшь. Не благодари, это я для гостей».',
+      choices: () => [
+        { label: 'Спасибо, пойду', desc: '«Школа бариста» за полцены — в блоке «Учёба»', fx: { skill: 1, rel: 1, rep: 1 }, do(P) { P.flags.disc = 1; rel(P, { rashid: 6 }); eff(P, { rep: 3 }); } },
+        { label: 'Пока не до учёбы', desc: 'Скидка пропадёт', fx: { rel: -1 }, do(P) { rel(P, { rashid: -4 }); } },
+      ] },
+    h_lesson: { kind: 'hero', who: 'rashid', title: () => 'Урок про аренду',
+      text: () => 'Рашид раскладывает на столе счета: «Ты считаешь рубли, а надо считать людей, которые утром идут мимо. Рубли потом сами посчитаются. Останешься после смены — покажу, как не работать на хозяина помещения».',
+      choices: () => [
+        { label: 'Остаться и слушать', desc: 'Продажи и понимание людей', fx: { skill: 2, hp: -1, rel: 1 }, do(P) { eff(P, { sales: 5, people: 4, hp: -3 }); rel(P, { rashid: 6 }); } },
+        { label: 'Спасибо, в другой раз', desc: 'Устали — домой', fx: { hp: 1 }, do(P) { eff(P, { hp: 2 }); } },
+      ] },
+    promo: { kind: 'hero', who: 'rashid', title: (P) => `Повышение: ${C().JOBS[P.job + 1].name.toLowerCase()}`,
+      text: (P) => (P.job === 0 ? 'Рашид: «Кофе у тебя уже лучше моего. Не зазнавайся. Будешь старшим — открываешь смену, учишь новеньких. Оклад выше, спрос тоже».' : 'Рашид: «Смены без тебя разваливаются. Бери управление: график, касса, люди. Это уже почти своё дело. Почти».'),
+      choices: (P) => [
+        { label: 'Согласиться', desc: `Оклад около ${fm(r100((C().JOBS[P.job + 1].pay + skAvg(P) * C().SKILL_PAY) * P.payK))}`, fx: { rub: 2, mood: 1, rep: 1 }, do(P) { P.job++; P.jobM = 0; eff(P, { mood: 8, rep: 3 }); rel(P, { rashid: 4 }); feed(P, `Повышение! Теперь вы — ${C().JOBS[P.job].name.toLowerCase()}.`, 'good'); fx(P, 'promo', P.job); } },
+        { label: 'Пока не готов(а)', desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
+      ] },
+    goal: { kind: 'hero', who: 'elvira', title: () => 'Можно открывать своё!',
+      text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. Эльвира из «Семи рек»: «Стаж есть, отзыв от Рашида есть, цифры сходятся. Остальное банк даст в кредит. Поздравляю — теперь у нас с вами отношения. Серьёзные».` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте без кредита. Эльвира из «Семи рек»: «Люблю, когда ко мне приходят с цифрами. Ещё больше люблю, когда цифры сходятся».`),
+      choices: () => [
+        { label: 'Открыть свою точку', desc: 'Разговор с Рашидом неизбежен', fx: { rub: 3 }, do(P) { P.cards.push({ id: 'p07', v: {} }); } },
+        { label: 'Ещё поработать и подкопить', desc: 'Сверх 1,5 млн — бонус к старту. Кнопка «Открыть своё» останется', fx: { rub: 1 }, do(P) { P.flags.goalLater = 1; } },
+      ] },
+    p07: { kind: 'hero', who: 'rashid', title: () => 'Рашид знает',
+      text: () => 'Семён Аркадьевич на весь зал: «Слышал, вы своё открываете? Я первый в очереди!» Вечером Рашид наливает два чая. «Семён — хороший человек и ужасный секретарь. Садись. Чай чёрный, разговор тоже. Я не сержусь. Я в двадцать шесть тоже ушёл от хозяина. Скажи мне одно: ты будешь печь хлеб или деньги?»',
+      choices: (P) => {
+        const r = P.rel.rashid, trust = 'Рашид вам пока не настолько доверяет';
+        return [
+          { label: '«И то и другое. Научите, как не выбирать»', desc: 'Рашид — друг: старая кофемашина (−8 % на оборудование первой точки) и советы', dis: r >= 0 ? null : trust, fx: { rel: 2, rub: 1 }, do(P) { mentor(P, 'friend'); rel(P, { rashid: 15 }); } },
+          { label: '«Деньги. Хлеб у вас получается лучше»', desc: 'Честно и холодно: без бонусов', fx: { rel: -1 }, do(P) { mentor(P, 'cold'); rel(P, { oleg: 5 }); } },
+          { label: '«Я забираю своих гостей. И Гулю, если она захочет»', desc: 'Со скандалом: гости и Гуля — с вами, Рашид — враг', fx: { rel: -3, rub: 1 }, do(P) { mentor(P, 'enemy'); rel(P, { rashid: -40 }); style(P, 'fair', -10); P.sf.kalach = 'dvor'; P.sf.gulya = P.rel.gulya >= C().CARRY.BAKER_REL ? 'with' : 'rashid'; } },
+          { label: '«Давайте вместе. Вывеска ваша, работа моя»', desc: 'Партнёрство: точка №1 под вывеской «Калач»', dis: r >= 40 ? null : trust, fx: { rel: 3 }, do(P) { mentor(P, 'partner'); rel(P, { rashid: 25, oleg: -10 }); P.sf.gulya = 'with'; P.shares.push({ who: 'rashid', what: 'store1', pct: 0.3 }); } },
+          { label: '«Мне предложили стажировку у Олега. На три месяца»', desc: '3 месяца в «Хлебном дворе» (+15 % к окладу), навсегда себестоимость −3 %', dis: P.sf.olegCard ? null : 'Нужна визитка Олега', fx: { rub: 1, rel: -2 }, do(P) { mentor(P, 'intern'); rel(P, { oleg: 20, rashid: -25, gulya: -10 }); P.flags.intern = P.m + 3; P.payK *= 1.15; feed(P, 'Три месяца в «Хлебном дворе». Смены быстрее, но «без души».', 'info'); } },
+        ];
+      } },
+    p08: { kind: 'hero', who: 'gulya', title: () => 'Гуля',
+      text: (P) => (P.sf.mentor === 'intern' && P.rel.gulya <= 0 ? 'Гуля на заднем крыльце, с булочкой: «Меня Олег тоже звал. Я не пошла. Вот и ты — иди».' : 'Гуля на заднем крыльце, с булочкой: «Слышала. Стены тут тонкие, а Семён громкий. Ну? Будешь звать или мне самой напрашиваться?»'),
+      choices: (P) => {
+        const no = P.sf.mentor === 'intern' && P.rel.gulya <= 0 ? 'Гуля не пойдёт' : null;
+        return [
+          { label: '«Пойдёшь со мной? Зарплата на 20 % выше, чем тут»', desc: 'Гуля — первый сотрудник первой точки (уровень 3)', dis: no, fx: { rel: 1, skill: 1 }, do(P) { P.sf.gulya = 'with'; rel(P, { gulya: 5, rashid: P.sf.mentor === 'friend' ? -5 : -10 }); } },
+          { label: '«Пойдёшь партнёром? Десять процентов прибыли точки — твои»', desc: 'Гуля с вами и совладелица точки №1', dis: no, fx: { rel: 2, skill: 1 }, do(P) { P.sf.gulya = 'share'; P.shares.push({ who: 'gulya', what: 'store1', pct: 0.1 }); rel(P, { gulya: 20 }); } },
+          { label: '«Останься с Рашидом. Ему ты сейчас нужнее»', desc: 'Гуля остаётся в «Калаче»', fx: { rel: 1 }, do(P) { P.sf.gulya = 'rashid'; rel(P, { gulya: P.sf.mentor === 'cold' ? -5 : 10, rashid: 10 }); } },
+        ];
+      } },
+    /* ---------- рабочие ситуации ---------- */
+    warn: { kind: 'neg', who: 'rashid', title: () => 'Разговор с начальником',
+      text: () => 'Рашид закрывает дверь: «Опоздания, ошибки в заказах, Семён жалуется. Я молчу громко. Ещё немного — и нам придётся попрощаться».',
+      choices: () => [
+        { label: 'Исправлюсь', desc: 'Меньше подработок, больше сна — и выйти на «Смену»', fx: { rep: 1 }, do(P) { eff(P, { rep: 4, mood: -3 }); } },
+      ] },
+    fired: { kind: 'neg', who: 'rashid', title: () => 'Вас уволили',
+      text: () => 'Рашид: «Прости, балам, но так дальше нельзя». Месяц уйдёт на поиски — без оклада. В новой кофейне возьмут на ступень ниже, а Рашид когда-нибудь остынет.',
+      choices: () => [ok('Начать заново', 'Новая кофейня, тот же вы')] },
+    sick: { kind: 'neg', who: 'life', title: () => 'Вы заболели',
+      text: () => 'Температура, ломит всё тело. Организм напомнил, что силы не бесконечны.',
+      choices: () => [
+        { label: 'Больничный', desc: 'Половина оклада в этом месяце, силы восстановятся', fx: { rub: -2, hp: 2 }, do(P) { P.sickNow = true; eff(P, { hp: 25, rep: -2 }); P.stats.sick++; } },
+        { label: 'Лекарства и работать', desc: 'Лекарства 4 000 ₽, сил мало, начальник оценит', cost: 4000, fx: { rub: -1, hp: -1, rep: 1 }, do(P) { pay(P, 4000, 'health'); eff(P, { hp: 6, rep: 2, mood: -4 }); } },
+      ] },
+    err: { kind: 'neg', who: 'rashid', title: () => 'Ошибки на смене',
+      text: () => 'От усталости вы перепутали три заказа и пролили молоко на кассу. Рашид молчит громко.',
+      choices: () => [ok('Понятно', 'Нужно больше есть и спать')] },
+    splurge: { kind: 'neg', who: 'life', title: (P, v) => `Срыв: ${C().WANTS[v.id].name.toLowerCase()}`,
+      text: (P, v) => `Настроение на нуле, а в витрине — ${C().WANTS[v.id].name.toLowerCase()}. Рука сама достала карту: −${fm(v.cost)}. Копилка и вклад такие срывы не пускают — там деньги целее.`,
+      choices: () => [ok('Эх…', 'Поднимите настроение заранее: кино, отдых, нормальная еда')] },
+    /* ---------- случайные события: хорошие ---------- */
+    e_grandma: { kind: 'pos', who: 'family', title: () => 'Бабушка передала конверт',
+      text: (P, v) => `Мама Фания: «Бабушка Сания просила передать. Сказала — на мечту, а не на кроссовки». В конверте ${fm(v.a)}.`,
+      choices: (P, v) => [
+        { label: 'В копилку', desc: 'На свою точку', fx: { rub: 2 }, do(P) { earn(P, v.a, 'gifts'); P.cash -= v.a; P.box += v.a; P.stats.boxed += v.a; fx(P, 'box', v.a); } },
+        { label: 'Порадовать себя', desc: 'Бабушка бы одобрила', fx: { mood: 2 }, do(P) { earn(P, v.a, 'gifts'); spendRec(P, v.a, 'other'); P.cash -= v.a; eff(P, { mood: 10 }); } },
+      ] },
+    e_lottery: { kind: 'pos', who: 'life', title: () => 'Выигрыш в лотерею',
+      text: (P, v) => `Билет со сдачи оказался счастливым: ${fm(v.a)}!`, choices: (P, v) => [{ label: 'Ура!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'gifts'); eff(P, { mood: 5 }); } }] },
+    e_bonus: { kind: 'pos', who: 'rashid', title: () => 'Премия от Рашида',
+      text: (P, v) => `Рашид протягивает конверт: «Месяц был сильный. Не зазнавайся». Премия ${fm(v.a)}.`, choices: (P, v) => [{ label: 'Спасибо!', desc: '', fx: { rub: 2, mood: 1 }, do(P) { gift(P, v.a, 'other'); eff(P, { mood: 6 }); rel(P, { rashid: 3 }); } }] },
+    e_guest: { kind: 'pos', who: 'life', title: () => 'Щедрый постоянный гость',
+      text: (P, v) => `Женщина, которая каждое утро берёт раф на кокосовом, оставила ${fm(v.a)} чаевых: «За то, что помните, как я люблю».`,
+      choices: (P, v) => [{ label: 'Приятно!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'tips'); eff(P, { mood: 5, people: 1 }); } }] },
+    e_praise: { kind: 'pos', who: 'semyon', title: () => 'Пост в «Уфа жуёт»',
+      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
+      choices: () => [{ label: 'Приятно', desc: '', fx: { rep: 2, mood: 1 }, do(P) { eff(P, { rep: 7, mood: 5 }); rel(P, { semyon: 3 }); } }] },
+    e_fest: { kind: 'pos', who: 'rashid', title: () => 'Выездная точка на празднике',
+      text: () => 'На Сабантуй «Калач» ставит палатку с кофе и эчпочмаками. Рашид ищет, кто выйдет в выходные.',
+      choices: () => [
+        { label: 'Выйти на праздник', desc: '+12 000 ₽, но устанете', fx: { rub: 2, hp: -1, rep: 1 }, do(P) { gift(P, 12000, 'extra'); eff(P, { hp: -8, rep: 3, sales: 2 }); } },
+        { label: 'Отдохнуть', desc: 'Праздник — для себя', fx: { mood: 1, hp: 1 }, do(P) { eff(P, { mood: 6, hp: 4 }); } },
+      ] },
+    e_cashback: { kind: 'pos', who: 'life', title: () => 'Банк вернул кешбэк',
+      text: (P, v) => `За год покупок по карте набежало ${fm(v.a)} кешбэка.`, choices: (P, v) => [{ label: 'Отлично', desc: '', fx: { rub: 1 }, do(P) { gift(P, v.a, 'other'); } }] },
+    e_newyear: { kind: 'pos', who: 'rashid', title: () => 'Новогодняя премия',
+      text: (P, v) => `Декабрь — самый денежный месяц в кофейне. Рашид раздаёт конверты: вам ${fm(v.a)}.`, choices: (P, v) => [{ label: 'С Новым годом!', desc: '', fx: { rub: 2, mood: 1 }, do(P) { gift(P, v.a, 'other'); eff(P, { mood: 6 }); } }] },
+    /* ---------- случайные события: неприятности ---------- */
+    e_phone: { kind: 'neg', who: 'life', title: () => 'Разбился телефон',
+      text: () => 'Телефон выскользнул из кармана фартука прямо на кафель. Экран — паутина.',
+      choices: () => [
+        { label: 'Починить экран', desc: '6 000 ₽', cost: 6000, fx: { rub: -1 }, do(P) { pay(P, 6000, 'other'); } },
+        { label: 'Купить новый', desc: 'Раз уж так вышло — хороший', cost: 38000, cashOnly: true, fx: { rub: -3, mood: 2 }, do(P) { P.cash -= 38000; spendRec(P, 38000, 'phone2'); eff(P, { mood: 12 }); P.wantsCd.phone = P.m + 24; } },
+        { label: 'Ходить с разбитым', desc: 'Бесплатно, но раздражает', fx: { mood: -1 }, do(P) { eff(P, { mood: -8 }); } },
+      ] },
+    e_fine: { kind: 'neg', who: 'life', title: () => 'Штраф',
+      text: (P, v) => `Контролёр в автобусе оказался быстрее, чем оплата по карте. Штраф ${fm(v.a)}.`, choices: (P, v) => [{ label: 'Оплатить', desc: '', fx: { rub: -1 }, do(P) { pay(P, v.a, 'fines'); fx(P, 'rub', -v.a); } }] },
+    e_rent: { kind: 'neg', who: 'life', title: () => 'Хозяйка поднимает аренду',
+      text: (P) => `«Всё дорожает, сами понимаете». Аренда — +10 % (${fm(r100(homeCost(P) * 0.1))} в месяц).`,
+      choices: (P) => [
+        { label: 'Согласиться', desc: 'Жильё дороже навсегда', fx: { rub: -1 }, do(P) { P.rentK *= 1.1; } },
+        { label: 'Переехать', desc: 'Переезд 6 000 ₽ и суета, зато цена прежняя', cost: 6000, fx: { rub: -1, mood: -1 }, do(P) { pay(P, 6000, 'home'); eff(P, { mood: -6, hp: -3 }); } },
+      ] },
+    e_cut: { kind: 'neg', who: 'rashid', title: () => 'Урезали смены',
+      text: () => 'Рашид: «Гостей мало, на Пушкина ремонт дороги. Два месяца работаем в сокращённом графике». Оклад — минус 20 %.',
+      choices: () => [ok('Переживём', 'Можно взять доп. смены в другом месте — в «Как живу»')] },
+    e_loan: { kind: 'neg', who: 'friend', title: () => 'Друг просит в долг',
+      text: (P, v) => `Дамир: «Выручай, ${fm(v.a)} до зарплаты. Честное слово, верну!»`,
+      choices: (P, v) => [
+        { label: 'Дать в долг', desc: 'Может, вернёт. А может, и нет', cost: v.a, fx: { rub: -2, rel: 1 }, risk: true, do(P) { pay(P, v.a, 'loans'); P.spent.loans -= v.a; P.loans.push({ v: v.a, back: P.m + ri(P, 2, 4), p: 0.6 }); eff(P, { people: 1 }); } },
+        { label: 'Отказать', desc: 'Дамир обидится', fx: { mood: -1 }, do(P) { eff(P, { mood: -4 }); } },
+      ] },
+    e_sneakers: { kind: 'neg', who: 'life', title: () => 'Распродажа кроссовок −30 %',
+      text: () => 'Те самые кроссовки, о которых вы думали полгода, — со скидкой. Только до воскресенья.',
+      choices: () => [
+        { label: 'Купить', desc: `${fm(r100(C().WANTS.sneakers.cost * 0.7))} вместо ${fm(C().WANTS.sneakers.cost)}`, cost: r100(C().WANTS.sneakers.cost * 0.7), cashOnly: true, fx: { rub: -2, mood: 2 }, do(P) { P.sale = { id: 'sneakers', k: 0.7, until: P.m }; buyWant({ prologue: P }, 'sneakers', false); } },
+        { label: 'Пройти мимо', desc: 'Цель важнее', fx: { mood: -1 }, do(P) { eff(P, { mood: -2 }); } },
+      ] },
+    e_sea: { kind: 'neg', who: 'friend', title: () => 'Друзья зовут на море',
+      text: () => 'Дамир: «Горящий тур, неделя в Турции, летим вчетвером! Ты с нами?»',
+      choices: () => [
+        { label: 'Лететь', desc: '55 000 ₽ — лучшая неделя года', cost: 55000, cashOnly: true, fx: { rub: -3, mood: 3, hp: 2 }, do(P) { P.cash -= 55000; spendRec(P, 55000, 'trip'); eff(P, { mood: 30, hp: 20 }); P.wantsCd.trip = P.m + 12; } },
+        { label: 'Остаться', desc: 'Фото в соцсетях будут колоть глаз', fx: { mood: -2 }, do(P) { eff(P, { mood: -7 }); } },
+      ] },
+    e_bday: { kind: 'neg', who: 'friend', title: () => 'День рождения друга',
+      text: () => 'Дамиру 22! Собираются в кафе на Ленина, скидываются на подарок.',
+      choices: () => [
+        { label: 'Пойти с подарком', desc: '4 500 ₽', cost: 4500, cashOnly: true, fx: { rub: -1, mood: 1 }, do(P) { P.cash -= 4500; spendRec(P, 4500, 'gifts'); eff(P, { mood: 7, people: 1 }); } },
+        { label: 'Поздравить в сообщении', desc: 'Бесплатно', fx: { mood: -1 }, do(P) { eff(P, { mood: -3 }); } },
+      ] },
+    e_short: { kind: 'neg', who: 'rashid', title: () => 'Недостача в кассе',
+      text: (P, v) => `В конце смены в кассе не хватило ${fm(v.a)}. Рашид: «Смена твоя — недостача твоя».`,
+      choices: (P, v) => [{ label: 'Возместить', desc: '', fx: { rub: -1, rep: -1 }, do(P) { pay(P, v.a, 'fines'); eff(P, { rep: -3 }); fx(P, 'rub', -v.a); } }] },
+    e_parents: { kind: 'neg', who: 'family', title: () => 'Дома напряжённо',
+      text: () => 'Мама Фания: «Приходишь в полночь, уходишь в пять, ешь на бегу. Ильдар уже забыл, как ты выглядишь. Покушай хотя бы».',
+      choices: () => [
+        { label: 'Помочь по дому в выходные', desc: 'Меньше отдыха, дома теплее', fx: { hp: -1, mood: 1 }, do(P) { eff(P, { hp: -4, mood: 4 }); rel(P, { family: 3 }); } },
+        { label: 'Огрызнуться', desc: 'Все останутся при своём', fx: { mood: -2 }, do(P) { eff(P, { mood: -9 }); rel(P, { family: -3 }); } },
+      ] },
+    e_tooth: { kind: 'neg', who: 'life', title: () => 'Заболел зуб',
+      text: () => 'Холодное молоко, горячий эспрессо — и зуб напомнил о себе.',
+      choices: () => [
+        { label: 'К стоматологу', desc: '9 000 ₽', cost: 9000, fx: { rub: -2 }, do(P) { pay(P, 9000, 'health'); } },
+        { label: 'Потерпеть', desc: 'Может, само пройдёт…', fx: { hp: -2, mood: -1 }, do(P) { eff(P, { hp: -10, mood: -5 }); } },
+      ] },
+    e_wallet: { kind: 'neg', who: 'life', title: () => 'Украли кошелёк',
+      text: (P, v) => `В час пик в автобусе кто-то оказался ловчее вас. Пропало ${fm(v.a)} наличными. Хорошо, что копилка дома.`,
+      choices: (P, v) => [{ label: 'Обидно', desc: '', fx: { rub: -1, mood: -1 }, do(P) { P.cash -= v.a; spendRec(P, v.a, 'fines'); eff(P, { mood: -5 }); fx(P, 'rub', -v.a); } }] },
+    e_invest: { kind: 'neg', who: 'friend', title: () => 'Знакомый зовёт вложиться',
+      text: (P, v) => `Приятель Дамира: «${v.what}. Вложи ${fm(v.a)} — через полгода вернёшь вдвое!»`,
+      choices: (P, v) => [
+        { label: 'Вложить', desc: 'Иногда везёт. Чаще — нет', cost: v.a, fx: { rub: -2 }, risk: true, do(P) { pay(P, v.a, 'invest'); P.spent.invest -= v.a; P.inv.push({ v: v.a, at: P.m + ri(P, 3, 6), what: v.what }); } },
+        { label: 'Отказаться', desc: 'Деньги целее', fx: {}, do() {} },
+      ] },
+    e_flood: { kind: 'neg', who: 'life', title: () => 'Затопили соседи',
+      text: () => 'Сверху прорвало трубу. Хозяйка просит скинуться на ремонт потолка.',
+      choices: () => [
+        { label: 'Скинуться', desc: '6 000 ₽', cost: 6000, fx: { rub: -1 }, do(P) { pay(P, 6000, 'home'); } },
+        { label: 'Отказаться', desc: 'Хозяйка запомнит — жди подорожания', fx: { mood: -1 }, risk: true, do(P) { eff(P, { mood: -3 }); if (rnd(P) < 0.5) { P.rentK *= 1.08; feed(P, 'Хозяйка обиделась и подняла аренду на 8 %.', 'bad'); } } },
+      ] },
+    e_blackfri: { kind: 'neg', who: 'life', title: () => 'Чёрная пятница',
+      text: () => 'Скидки везде: одежда, наушники, кофемолка для дома. Корзина собирается сама.',
+      choices: () => [
+        { label: 'Набрать корзину', desc: '12 000 ₽', cost: 12000, cashOnly: true, fx: { rub: -2, mood: 2 }, do(P) { P.cash -= 12000; spendRec(P, 12000, 'clothes'); eff(P, { mood: 11 }); } },
+        { label: 'Закрыть приложение', desc: '', fx: { mood: -1 }, do(P) { eff(P, { mood: -2 }); } },
+      ] },
+    e_quit: { kind: 'neg', who: 'rashid', title: () => 'Уволился коллега',
+      text: () => 'Второй бариста ушёл без предупреждения. Месяц работаете за двоих.',
+      choices: () => [ok('Справимся', 'Сил меньше, опыта больше')] },
+    e_check: { kind: 'neg', who: 'rashid', title: () => 'Проверка в кофейне',
+      text: (P) => (P.sk.coffee >= 40 ? 'Пришла санитарная проверка. У вашей стойки — идеальный порядок, проверяющая даже взяла визитку.' : 'Пришла санитарная проверка. У вашей стойки нашли просроченные сливки. Рашид красный, как бәлеш из печи.'),
+      choices: (P) => [ok(P.sk.coffee >= 40 ? 'Отлично' : 'Больше не повторится')] },
+  };
+
+  // пул случайных событий: вес, условие, параметры
+  const POOL = [
+    { id: 'e_grandma', kind: 'pos', w: 1, init: (P) => ({ a: 1000 * ri(P, 4, 10) }) },
+    { id: 'e_lottery', kind: 'pos', w: 0.6, init: (P) => ({ a: 500 * ri(P, 4, 30) }) },
+    { id: 'e_bonus', kind: 'pos', w: 1, cond: (P) => P.rep >= 60 && !P.flags.gromov, init: (P) => ({ a: 1000 * ri(P, 6, 14) }) },
+    { id: 'e_guest', kind: 'pos', w: 1.2, init: (P) => ({ a: 500 * ri(P, 3, 10) }) },
+    { id: 'e_praise', kind: 'pos', w: 1, cond: (P) => P.sk.people >= 25 },
+    { id: 'e_fest', kind: 'pos', w: 1.4, cond: (P) => calMon(P) === 5 || calMon(P) === 6, once: 'y' },
+    { id: 'e_cashback', kind: 'pos', w: 0.5, init: (P) => ({ a: 500 * ri(P, 3, 8) }) },
+    { id: 'e_newyear', kind: 'pos', w: 3, cond: (P) => calMon(P) === 11 && P.rep >= 55, once: 'y', init: (P) => ({ a: 1000 * ri(P, 8, 15) }) },
+    { id: 'e_phone', kind: 'neg', w: 0.8 },
+    { id: 'e_fine', kind: 'neg', w: 1, init: (P) => ({ a: 500 * ri(P, 3, 6) }) },
+    { id: 'e_rent', kind: 'neg', w: 0.8, cond: (P) => P.home !== 'parents' },
+    { id: 'e_cut', kind: 'neg', w: 0.6, cond: (P) => !P.cut && P.fired === 0 },
+    { id: 'e_loan', kind: 'neg', w: 1, cond: (P) => !P.loans.length, init: (P) => ({ a: 5000 * ri(P, 2, 4) }) },
+    { id: 'e_sneakers', kind: 'neg', w: 1, cond: (P) => (P.wantsCd.sneakers || 0) <= P.m },
+    { id: 'e_sea', kind: 'neg', w: 1.6, cond: (P) => (calMon(P) >= 5 && calMon(P) <= 7) && (P.wantsCd.trip || 0) <= P.m, once: 'y' },
+    { id: 'e_bday', kind: 'neg', w: 1 },
+    { id: 'e_short', kind: 'neg', w: 0.8, cond: (P) => rnd(P) > (P.sk.coffee + P.sk.people) / 200, init: (P) => ({ a: 500 * ri(P, 3, 8) }) },
+    { id: 'e_parents', kind: 'neg', w: 1.6, cond: (P) => P.home === 'parents' },
+    { id: 'e_tooth', kind: 'neg', w: 0.6 },
+    { id: 'e_wallet', kind: 'neg', w: 0.5, cond: (P) => P.cash > 3000, init: (P) => ({ a: Math.min(Math.round(P.cash * 0.5 / 100) * 100, 500 * ri(P, 4, 12)) }) },
+    { id: 'e_invest', kind: 'neg', w: 0.8, cond: (P) => !P.inv.length, init: (P) => ({ a: 10000 * ri(P, 3, 8), what: ['Перепродаём айфоны из Дубая', 'Криптоферма в гараже у Азата', 'Кофе-фудтрак у Конгресс-холла', 'Ставки на хоккей, «Салават» точно выиграет'][ri(P, 0, 3)] }) },
+    { id: 'e_flood', kind: 'neg', w: 0.5, cond: (P) => P.home !== 'parents' },
+    { id: 'e_blackfri', kind: 'neg', w: 3, cond: (P) => calMon(P) === 10, once: 'y' },
+    { id: 'e_quit', kind: 'neg', w: 0.6, cond: (P) => P.fired === 0 },
+    { id: 'e_check', kind: 'neg', w: 0.5, cond: (P) => P.fired === 0 },
+  ];
+  // неприятности без выбора, которые срабатывают сразу при появлении (последствия описаны в тексте)
+  const ON_SHOW = {
+    e_cut: (P) => { P.cut = 2; },
+    e_quit: (P) => { eff(P, { hp: -8, rep: 3, coffee: 2 }); },
+    e_check: (P) => { eff(P, P.sk.coffee >= 40 ? { rep: 5 } : { rep: -5 }); },
+  };
+
+  function rollEvent(P) {
+    const c = C(), neg = rnd(P) < c.EV_NEG;
+    const yearKey = Math.floor(P.m / 12);
+    const avail = (kind) => POOL.filter((e) => e.kind === kind && (!e.cond || e.cond(P)) && !(e.once === 'y' && P.flags['y_' + e.id] === yearKey) && P.flags.lastEv !== e.id);
+    let list = avail(neg ? 'neg' : 'pos'); if (!list.length) list = avail(neg ? 'pos' : 'neg');
+    if (!list.length) return null;
+    let tw = 0; for (const e of list) tw += e.w;
+    let x = rnd(P) * tw, e = list[0];
+    for (const it of list) { x -= it.w; if (x <= 0) { e = it; break; } }
+    if (e.once === 'y') P.flags['y_' + e.id] = yearKey;
+    P.flags.lastEv = e.id;
+    const v = e.init ? e.init(P) : {};
+    if (ON_SHOW[e.id]) ON_SHOW[e.id](P, v);
+    P.cards.push({ id: e.id, v });
+    return e.id;
+  }
+  // сцены с героями: одна за месяц, по условиям
+  function heroScene(P) {
+    const f = P.flags;
+    // сцены П2–П6 (docs/story.md §7) — по одной в месяц, по условиям; П7–П8 — при достижении цели
+    if (!f.h_school && P.m >= 1 && !P.done.coffee && !P.study) return 'h_school';
+    if (!f.p02 && (P.m >= 3 || (P.m >= 2 && P.shift.errors > 0))) return 'p02';
+    if (!f.p03 && (P.m >= 3 || P.cash < 5000)) return 'p03';
+    if (!f.p04 && P.m >= 4) return 'p04';
+    if (!f.p05 && ((P.m >= 5 && P.m <= 7 && P.hp >= 40) || P.m >= 8)) return 'p05';
+    if (!f.p06 && (P.m >= 6 || savings(P) >= 0.4 * C().GOAL_CREDIT)) return 'p06';
+    if (!f.h_lesson && P.m >= 12 && P.rel.rashid >= 15 && P.sf.mentor == null) return 'h_lesson';
+    return null;
+  }
+  function schedule(P) {
+    const c = C(); P.evAt = [];
+    const h = P.m > 0 ? heroScene(P) : null;
+    if (h) { P.flags[h] = 1; P.evAt.push({ t: 0.15 + rnd(P) * 0.15, hero: h }); }
+    const k = year(P) >= c.EV_LATE[0] ? c.EV_LATE[1] : 1;
+    if (rnd(P) < c.EV_P1 * k) P.evAt.push({ t: 0.35 + rnd(P) * 0.25 });
+    if (rnd(P) < c.EV_P2 * k) P.evAt.push({ t: 0.65 + rnd(P) * 0.25 });
+    P.evAt.sort((a, b) => a.t - b.t);
+  }
+
+  /* ---------------- ход времени ---------------- */
+  // dtMs — реальные миллисекунды × скорость. Возвращает 'card' (появилось решение), 'month' (месяц закрыт) или null.
+  function advance(S, dtMs) {
+    const P = S.prologue; if (!P || P.status !== 'run' || P.cards.length) return null;
+    P.t += dtMs / monthMs(P);
+    while (P.evAt.length && P.t >= P.evAt[0].t) {
+      const e = P.evAt.shift();
+      if (e.hero) P.cards.push({ id: e.hero, v: {} }); else rollEvent(P);
+      if (P.cards.length) { P.t = Math.min(P.t, 0.999); return 'card'; }
+    }
+    if (P.t >= 1) { P.t = 0; endMonth(S); return 'month'; }
+    return null;
+  }
+  // карточка сверху очереди: определение и варианты (для интерфейса и ботов)
+  function card(S) {
+    const P = S.prologue; if (!P || !P.cards.length) return null;
+    const q = P.cards[0], d = CARDS[q.id]; if (!d) { P.cards.shift(); return card(S); }
+    const ch = d.choices(P, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || canAfford(P, c.cost, c.cashOnly)), why: c.dis || (c.cost && !canAfford(P, c.cost, c.cashOnly) ? (c.cashOnly && canAfford(P, c.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '') }));
+    // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
+    if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
+    return { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: HEROES[d.who] || HEROES.life, title: d.title(P, q.v), text: d.text(P, q.v), choices: ch };
+  }
+  function choose(S, i) {
+    const P = S.prologue, cv = card(S); if (!cv) return { ok: false };
+    const c = cv.choices[i | 0] || cv.choices[0];
+    if (!c.can) return { ok: false, msg: c.why || 'Недоступно' };
+    P.cards.shift();
+    c.do(P, cv.v);
+    const q = /^«/.test(c.label) ? c.label : `«${c.label}»`;
+    if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: ${q}.`, cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero');
+    if (cv.kind === 'hero') { P.seen[cv.id] = P.m * 30; P.slog.push({ day: null, pm: P.m, id: cv.id, choice: cv.choices.indexOf(c), line: c.label }); if (P.slog.length > 120) P.slog.shift(); }
+    // развилка П7 → П8 «Гуля» (кроме скандала и партнёрства, где исход ясен) → финал; стажировка у Олега — ещё 3 месяца
+    if (cv.id === 'p07') { if (P.sf.mentor === 'enemy' || P.sf.mentor === 'partner') finish(P); else P.cards.unshift({ id: 'p08', v: {} }); }
+    else if (cv.id === 'p08' && P.sf.mentor !== 'intern') finish(P);
+    syncStory(S);
+    return { ok: true };
+  }
+
+  function endMonth(S) {
+    const c = C(), P = S.prologue, J = c.JOBS[P.job], H = c.HOME[P.home], F = c.FOOD[P.food], FN = c.FUN[P.fun] || c.FUN.some;
+    const mo = { m: P.m, inc: {}, out: {}, notes: [] };
+    const cash0 = savings(P);
+    // --- доходы ---
+    let salary = payOf(P);
+    if (P.fired > 0) { salary = 0; P.fired--; mo.notes.push('Месяц без работы — ищете новое место'); }
+    else {
+      if (P.cut > 0) { salary *= 0.8; P.cut--; mo.notes.push('Смены урезаны: −20 % оклада'); }
+      if (P.sickNow) { salary *= 0.5; mo.notes.push('Больничный: половина оклада'); }
+    }
+    salary = r100(salary);
+    const moodK = P.mood < 30 ? 0.7 : P.mood > 70 ? 1.1 : 1;
+    const tips = P.fired > 0 || !salary ? 0 : r100(J.tips * (0.6 + P.sk.sales / 100) * moodK);
+    const extraN = P.fired > 0 ? 0 : P.extra;
+    const extra = r100(extraN * c.EXTRA.pay * (1 + P.job * 0.15));
+    mo.inc.salary = earn(P, salary, 'salary');
+    mo.inc.tips = earn(P, tips, 'tips');
+    if (extra) mo.inc.extra = earn(P, extra, 'extra');
+    // копилка: процент от оклада и подработок — сразу, пока деньги не разошлись
+    const rate = c.SAVE_RATES[P.saveRate] || 0;
+    if (rate > 0) { const v = r100(Math.max(0, Math.min(P.cash, (salary + extra) * rate))); if (v > 0) { P.cash -= v; P.box += v; P.stats.boxed += v; mo.boxed = v; } }
+    // вклад: проценты копятся помесячно, прибавляются к вкладу раз в год (каждый 12-й месяц)
+    if (P.dep > 0) { const i = Math.round(P.dep * (c.DEP_RATE + (P.depBonus || 0)) / 12); P.depInt += i; mo.inc.interest = i; P.earned.interest += i; }
+    if ((P.m + 1) % 12 === 0 && P.depInt > 0) { P.dep += P.depInt; mo.notes.push(`Проценты по вкладу за год: +${fm(P.depInt)}`); P.depInt = 0; }
+    // --- обязательные траты ---
+    const out = { home: homeCost(P), transport: H.transport, food: F.cost, fun: FN.cost, phone: c.PHONE, study: 0 };
+    if (P.study) { const cs = c.COURSES[P.study.id]; out.study = r100(cs.month * (1 - (P.study.disc || 0))); }
+    if (P.car) { out.car = P.car.pay; if (--P.car.left <= 0) { P.car = null; mo.notes.push('Кредит за машину выплачен'); } }
+    if (P.cash < 0) out.debt = r100(-P.cash * c.DEBT_RATE); // минус — это кредитка под проценты
+    for (const k of Object.keys(out)) { if (out[k] > 0) pay(P, out[k], k); }
+    mo.out = out;
+    // --- силы, настроение, начальник, навыки ---
+    const st = P.study ? c.COURSES[P.study.id] : null;
+    let dhp = F.hp + H.hp + FN.hp + extraN * c.EXTRA.hp + c.HP_REST + (st ? c.STUDY_HP : 0);
+    if (P.sickNow) { P.sickNow = false; }
+    P.hp = clamp(P.hp + dhp, 0, 100);
+    let dm = (c.MOOD_BASE - P.mood) * c.MOOD_PULL + H.mood + F.mood + FN.mood + extraN * c.EXTRA.mood + (st ? c.STUDY_MOOD : 0);
+    if (P.cash < 0) { dm -= 6; mo.notes.push('Не хватило до зарплаты — заняли у родителей'); }
+    P.mood = clamp(P.mood + dm, 0, 100);
+    if (P.fired === 0) {
+      let dr = (c.REP_BASE - P.rep) * c.REP_PULL + extraN * c.EXTRA.rep;
+      if (P.mood < 30) dr -= 3;
+      if (P.hp < c.SICK_HP) dr -= 3;
+      P.rep = clamp(P.rep + dr, 0, 100);
+      P.sk.coffee = clamp(P.sk.coffee + 1.2 + extraN * c.EXTRA.coffee, 0, 100);
+      P.sk.sales = clamp(P.sk.sales + 0.6, 0, 100);
+      P.sk.people = clamp(P.sk.people + 0.6 + (P.job >= 1 ? 0.4 : 0) + (FN.people || 0), 0, 100);
+      P.stazh++; P.jobM++;
+    }
+    if (P.study) {
+      P.study.left--;
+      if (P.study.left <= 0) { P.sk[st.skill] = clamp(P.sk[st.skill] + st.add, 0, 100); P.done[P.study.id] = 1; mo.notes.push(`Курс «${st.name}» пройден: ${SK_NAME[st.skill].toLowerCase()} +${st.add}`); feed(P, `Курс «${st.name}» пройден!`, 'good'); fx(P, 'skill', st.add); P.study = null; }
+    }
+    // --- долги друзьям и вложения ---
+    for (const L of P.loans.slice()) {
+      if (L.back > P.m) continue;
+      P.loans.splice(P.loans.indexOf(L), 1);
+      if (rnd(P) < L.p) { P.cash += L.v; mo.notes.push(`Дамир вернул долг: +${fm(L.v)}`); feed(P, `Дамир вернул ${fm(L.v)}.`, 'good'); }
+      else { spendRec(P, L.v, 'loans'); mo.notes.push('Дамир так и не вернул долг'); feed(P, `Дамир не вернул ${fm(L.v)}. Дружба дороже… наверное.`, 'bad'); }
+    }
+    for (const I of P.inv.slice()) {
+      if (I.at > P.m) continue;
+      P.inv.splice(P.inv.indexOf(I), 1);
+      const x = rnd(P);
+      if (x < 0.22) { const v = r100(I.v * 2.2); P.cash += v; P.earned.other += v - I.v; mo.notes.push(`Вложение выстрелило: +${fm(v)}`); feed(P, `«${I.what}» — выгорело! Вернули ${fm(v)}.`, 'good'); }
+      else if (x < 0.38) { const v = r100(I.v * 1.05); P.cash += v; mo.notes.push(`Вложение вернули: ${fm(v)}`); feed(P, `«${I.what}» — еле вернули свои ${fm(v)}.`, 'info'); }
+      else { spendRec(P, I.v, 'invest'); mo.notes.push('Вложение прогорело'); feed(P, `«${I.what}» — всё прогорело, −${fm(I.v)}.`, 'bad'); }
+    }
+    // --- последствия: болезнь, ошибки, срывы, предупреждения, повышения ---
+    if (P.hp < c.SICK_HP && rnd(P) < (c.SICK_HP - P.hp) / c.SICK_HP * 0.8 + 0.1) P.cards.push({ id: 'sick', v: {} });
+    else if (P.hp < c.ERR_HP && P.fired === 0) { P.rep = clamp(P.rep - 8, 0, 100); P.cards.push({ id: 'err', v: {} }); }
+    if (P.mood < c.SPLURGE_MOOD && rnd(P) < c.SPLURGE_P) {
+      const ids = Object.keys(c.WANTS).filter((id) => (P.wantsCd[id] || 0) <= P.m && c.WANTS[id].cost <= Math.max(P.cash, 0));
+      if (ids.length) { const id = ids[Math.floor(rnd(P) * ids.length)]; const cost = c.WANTS[id].cost; buyWant(S, id, true); P.stats.splurge++; P.cards.push({ id: 'splurge', v: { id, cost } }); }
+    }
+    if (P.fired === 0 && P.rep < c.REP_FIRE) {
+      P.fired = 1; P.stats.fired++; P.job = Math.max(0, P.job - 1); P.jobM = 0; P.rep = 45; P.payK = 1; P.flags.promoLater = P.m + 4;
+      eff(P, { mood: -15 }); rel(P, { rashid: -20 }); P.cards.push({ id: 'fired', v: {} }); feed(P, 'Вас уволили. Месяц на поиски работы.', 'bad');
+    } else if (P.fired === 0 && P.rep < c.REP_WARN && (P.flags.warnM == null || P.m - P.flags.warnM >= 4)) { P.flags.warnM = P.m; P.stats.warn++; P.cards.push({ id: 'warn', v: {} }); }
+    const pr = promoCheck(P);
+    if (pr && pr.ok && P.fired === 0 && (P.flags.promoLater == null || P.m >= P.flags.promoLater) && !P.cards.some((x) => x.id === 'promo')) P.cards.push({ id: 'promo', v: {} });
+    // --- итог месяца ---
+    mo.net = savings(P) - cash0;
+    P.mo = mo;
+    fx(P, 'month', mo.net);
+    P.m++;
+    if (P.sale && P.sale.until < P.m) P.sale = null;
+    P.hist.push([P.m, savings(P), Math.round(P.hp), Math.round(P.mood), Math.round(P.rep), P.job, Math.round(skAvg(P))]);
+    if (P.flags.intern && P.m >= P.flags.intern && P.status === 'run') { P.cards = []; finish(P); syncStory(S); return mo; } // стажировка у Олега окончена
+    // --- цель и конец жизни в найме ---
+    const g = goal(P);
+    if (g.ok && !P.flags.goalShown) { P.flags.goalShown = 1; P.cards.push({ id: 'goal', v: { credit: g.credit && g.sav < g.full } }); }
+    if (P.m >= c.LIFE_MONTHS && P.status === 'run' && !g.ok) { P.status = 'life'; P.cards = []; P.won = null; feed(P, 'Годы прошли. Своей точки так и не случилось.', 'bad'); syncStory(S); return mo; }
+    schedule(P);
+    syncStory(S);
+    return mo;
+  }
+  // «Открыть своё» по кнопке (после «Ещё поработать»)
+  function openOwn(S) { const P = S.prologue; if (!goal(P).ok || P.cards.length || P.sf.mentor) return { ok: false }; P.cards.push({ id: 'p07', v: {} }); return { ok: true }; }
+
+  /* ---------------- мини-игра «Смена» ---------------- */
+  function shiftWhy(P) {
+    if (!P || P.status !== 'run') return 'Пролог окончен';
+    if (P.fired > 0) return 'Сейчас вы без работы';
+    if (P.shift.m === P.m) return 'Смена в этом месяце уже была';
+    if (P.cards.length) return 'Сначала решите, что делать';
+    return null;
+  }
+  // меню стойки: чем выше должность и навык кофе, тем больше позиций
+  const ITEMS = [
+    { id: 'esp', name: 'Американо', icon: '☕', cat: 'coffee' },
+    { id: 'cap', name: 'Капучино', icon: '🥛', cat: 'coffee' },
+    { id: 'lat', name: 'Латте', icon: '🍶', cat: 'coffee' },
+    { id: 'tea', name: 'Чай', icon: '🍵', cat: 'coffee' },
+    { id: 'cro', name: 'Круассан', icon: '🥐', cat: 'bake' },
+    { id: 'bun', name: 'Булочка', icon: '🥯', cat: 'bake' },
+    { id: 'ech', name: 'Эчпочмак', icon: '🥟', cat: 'bake' },
+    { id: 'chk', name: 'Чак-чак', icon: '🍯', cat: 'bake' },
+  ];
+  function shiftPlan(P) {
+    const c = C(), n = P.job >= 1 || P.sk.coffee >= 30 ? 8 : 6;
+    const items = ITEMS.slice(0, 4).slice(0, n >= 8 ? 4 : 3).concat(ITEMS.slice(4, n >= 8 ? 8 : 7));
+    return { sec: c.SHIFT_SEC, items, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: 11 + P.sk.people / 12, upsell: 0.35 + P.sk.sales / 250 };
+  }
+  // итог смены: stats = { served, errors, upsells, lost, total }
+  function shiftResult(S, st) {
+    const c = C(), P = S.prologue;
+    const served = Math.max(0, st.served | 0), errors = Math.max(0, st.errors | 0), ups = Math.max(0, st.upsells | 0), lost = Math.max(0, st.lost | 0);
+    const tot = Math.max(1, served + lost);
+    const acc = served / Math.max(1, served + errors), rate = served / tot;
+    const score = acc * 0.45 + rate * 0.4 + Math.min(1, ups / 4) * 0.15;
+    const stars = clamp(Math.round(score * 5 + (served >= 12 ? 0.3 : -0.3)), 1, 5);
+    const tips = r100(served * c.SHIFT_TIP * (0.7 + P.sk.sales / 100) + ups * c.SHIFT_UPSELL);
+    const add = { sales: Math.min(4, ups * 0.8 + 0.5), coffee: Math.min(3, served * 0.12), people: Math.min(2.5, (served - lost * 0.5) * 0.08) };
+    for (const k of Object.keys(add)) { add[k] = Math.max(0, Math.round(add[k] * 10) / 10); P.sk[k] = clamp(P.sk[k] + add[k], 0, 100); }
+    const rep = Math.round((stars - 3) * 2.5);
+    P.rep = clamp(P.rep + rep, 0, 100);
+    const mood = stars >= 4 ? 4 : stars <= 2 ? -3 : 1;
+    P.mood = clamp(P.mood + mood, 0, 100);
+    P.hp = clamp(P.hp - 2, 0, 100);
+    earn(P, tips, 'tips');
+    P.shift = { m: P.m, stars, tips, served, errors, ups, lost };
+    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
+    fx(P, 'rub', tips, 'shift');
+    feed(P, `Смена: ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}, чаевые ${fm(tips)}.`, stars >= 4 ? 'good' : stars <= 2 ? 'bad' : 'info');
+    return { tips, stars, add, rep, mood };
+  }
+  // для ботов: смена с качеством q (0..1) без интерфейса
+  function simShift(P, q) {
+    const n = 14 + Math.round(10 * q + rr(P, -2, 2));
+    const lost = Math.max(0, Math.round((1 - q) * 6 + rr(P, -1, 1)));
+    return { served: Math.max(0, n - lost), errors: Math.max(0, Math.round((1 - q) * 5 + rr(P, -1, 1))), upsells: Math.max(0, Math.round(q * 5 + rr(P, -1, 1))), lost, total: n };
+  }
+
+  /* ---------------- финалы и перенос в основную игру ---------------- */
+  function finish(P) {
+    const g = goal(P);
+    P.status = 'won'; P.cards = [];
+    P.won = { m: P.m, credit: g.sav < g.full, sav: g.sav, mentor: P.sf.mentor, gulya: P.sf.gulya };
+    feed(P, 'Своя точка! Пролог окончен.', 'good');
+  }
+  // крючок пролога — СМС ночью с неизвестного номера (docs/story.md, после П8)
+  function hookSms(P) { return P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'; }
+  const MENTOR = { friend: 'Рашид — друг и советчик', cold: 'С Рашидом — честно и холодно', enemy: 'Рашид — обиженный соперник', partner: 'Рашид — партнёр, точка №1 под вывеской «Калач»', intern: 'Стажировка у Олега — «Школа Двора»' };
+  const PERKS = { machine: 'Старая кофемашина Рашида: оборудование первой точки на 8 % дешевле', dvorSchool: '«Школа Двора»: себестоимость −3 % навсегда', regulars: 'Постоянные гости ушли за вами: +гости первой точки на полгода' };
+  function trait(P) {
+    const k = C().CARRY, earned = Object.values(P.earned).reduce((a, b) => a + b, 0) || 1;
+    let fun = 0; for (const x of FUN_CATS) fun += P.spent[x] || 0;
+    const saved = savings(P);
+    if (fun / earned >= k.SPENDER) return 'spender';
+    if (saved / earned >= k.THRIFT && fun / earned < k.THRIFT_WANTS) return 'thrift';
+    return null;
+  }
+  const TRAITS = {
+    thrift: { name: 'Бережливый', desc: 'Открытие точек на 3 % дешевле: вы умеете торговаться с подрядчиками' },
+    spender: { name: 'Транжира', desc: 'Команда сильнее радуется премиям: +2 к настроению каждый месяц, если премии платятся' },
+  };
+  // что переносится в основную игру (S — состояние основной игры, для размера стартового капитала)
+  function carry(P, S) {
+    const k = C().CARRY, cash = S && S.cash ? S.cash : BK.CFG.START_CASH;
+    const out = { skills: {}, bonus: 0, baker: null, trait: trait(P), mentor: P.sf.mentor, perks: [], sav: savings(P) };
+    const rank = Object.keys(k.SKILL_MAP).filter((s) => P.sk[s] >= k.SKILL_MIN).sort((a, b) => P.sk[b] - P.sk[a]).slice(0, 2);
+    for (const s of rank) out.skills[k.SKILL_MAP[s]] = 1;
+    const over = Math.max(0, savings(P) - C().GOAL);
+    out.bonus = Math.round(Math.min(over * k.BONUS_MULT, cash * k.BONUS_MAX) / 1e4) * 1e4;
+    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: 'Гульнара Сафина', lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
+    if (P.sf.mentor === 'friend') out.perks.push('machine');
+    if (P.sf.mentor === 'intern') out.perks.push('dvorSchool');
+    if (P.sf.mentor === 'enemy' && P.sf.regulars > 0) { out.perks.push('regulars'); out.regulars = P.sf.regulars; }
+    return out;
+  }
+  // применить перенос к основной игре (стадия 2) и закрыть пролог
+  function applyCarry(S) {
+    const P = S.prologue; if (!P || P.status !== 'won') return null;
+    const cr = carry(P, S);
+    if (cr.bonus > 0) { S.cash += cr.bonus; }
+    if (Object.keys(cr.skills).length) {
+      if (BK.Trainers) BK.Trainers.ensure(S); else S.player = S.player || { skills: {}, study: [], log: [], spent: 0 };
+      for (const a of Object.keys(cr.skills)) S.player.skills[a] = Math.max(S.player.skills[a] | 0, cr.skills[a]);
+    }
+    if (cr.perks.includes('dvorSchool')) S.mods.push({ t: 'foodcost', m: 1 - k2().DVOR_FOODCOST, until: 1e9, scope: 'global', target: null, src: 'prologue' });
+    P.carry = cr; P.status = 'done';
+    syncStory(S);
+    const E = BK.Engine, I = E && E._int;
+    if (I) {
+      const parts = [];
+      if (cr.bonus) parts.push(`накопления сверх цели +${fm(cr.bonus)} к капиталу`);
+      const skn = Object.keys(cr.skills).map((a) => (BK.Trainers ? BK.Trainers.AREA[a].short : a));
+      if (skn.length) parts.push(`навыки: ${skn.join(', ')} 1`);
+      if (cr.baker) parts.push(`${cr.baker.name} придёт в первую точку (уровень ${cr.baker.lvl})`);
+      if (cr.trait) parts.push(`черта «${TRAITS[cr.trait].name}»`);
+      for (const x of cr.perks) parts.push(PERKS[x].split(':')[0]);
+      I.log(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`, 'good');
+    }
+    return cr;
+  }
+  function skip(S) { const P = S.prologue; if (P) { P.status = 'skipped'; P.cards = []; syncStory(S); } }
+  const k2 = () => C().CARRY;
+  // итог «жизни в найме» и финала: сколько заработано, куда ушло
+  function summary(P) {
+    const earned = Object.values(P.earned).reduce((a, b) => a + b, 0);
+    const rows = Object.keys(P.spent).filter((k) => P.spent[k] > 0).map((k) => ({ k, name: SPENT_NAME[k] || k, v: P.spent[k], fun: FUN_CATS.includes(k) })).sort((a, b) => b.v - a.v);
+    let fun = 0; for (const r of rows) if (r.fun) fun += r.v;
+    return { earned, spent: rows.reduce((a, r) => a + r.v, 0), fun, rows, sav: savings(P), months: P.m, age: age(P), job: C().JOBS[P.job].name, stats: P.stats };
+  }
+
+  /* ---------------- эффекты переноса в основной игре (обёртки движка, как achievements.js) ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__pro) return;
+    Eng.__pro = true;
+    const w = (name, fn) => { const orig = Eng[name]; if (orig) Eng[name] = fn(orig); };
+    w('rentStore', (o) => function (S) {
+      const r = o.apply(this, arguments);
+      const cr = S && S.prologue && S.prologue.carry;
+      if (!cr || !r || !r.ok || !r.store) return r;
+      const k = C().CARRY, st = r.store;
+      if (cr.baker && !cr.bakerDone && st.incoming && st.incoming.length) { // Гуля из «Калача» — первый сотрудник первой точки
+        const e = st.incoming[0].p; e.name = cr.baker.name; e.lvl = cr.baker.lvl; e.mood = 78; e.trait = Math.max(e.trait, 4); e.patience = 10; e.fromPrologue = 1;
+        cr.bakerDone = st.id;
+        if (Eng._int) Eng._int.log(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`, 'good');
+      }
+      if (!cr.store1) { // первая точка: кофемашина Рашида, постоянные гости
+        cr.store1 = st.id;
+        const pl = (S.macro && S.macro.priceLevel) || 1;
+        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`, 'good'); }
+        if (cr.perks.includes('regulars')) S.mods.push({ t: 'traffic', m: 1 + k.REGULARS_TRAFFIC * Math.min(1, (cr.regulars || 0) / 3), until: (st.openDay || S.day) + 180, scope: 'store', target: st.id, src: 'prologue' });
+      }
+      if (cr.trait === 'thrift') { // Бережливый: 3 % от отделки и оборудования возвращаются
+        const v = Math.round((st.capex || 0) * k.THRIFT_OPEN / 1000) * 1000;
+        if (v > 0) { S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.saved = (cr.saved || 0) + v; }
+      }
+      return r;
+    });
+    w('tick', (o) => function (S) {
+      const r = o.apply(this, arguments);
+      const cr = r && S && S.prologue && S.prologue.carry;
+      if (cr && cr.trait === 'spender' && S.alloc && S.alloc.bonus > 0 && Eng.dateOf(S.day).d === 1) { // Транжира: премии радуют сильнее
+        const add = C().CARRY.SPENDER_MOOD;
+        for (const st of S.stores) for (const e of st.staff) e.mood = Math.min(100, e.mood + add);
+      }
+      return r;
+    });
+  }
+  wrap();
+
+  BK.Prologue = {
+    HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
+    create, start, on, advance, card, choose, endMonth, openOwn, schedule,
+    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
+    setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
+    shiftWhy, shiftPlan, shiftResult, simShift, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
+  };
+})();
+
 /* ui/map.js */
 /* Карта Уфы — «градплан на миллиметровке»: статичный слой (районы, сетка, реки, подписи),
    динамические маркеры с кластерами при отдалении, слои «Прибыль / Настроение / Штат / Доставка»,
@@ -11827,7 +13115,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!st || !Array.isArray(st.stores) || st.day == null) return { broken: true };
     let rev12 = 0; for (const h of (st.history || []).slice(-12)) rev12 += h.rev || 0;
     let ach = 0; if (st.achievements && A()) for (const a of A().LIST) if (st.achievements[a.id] != null) ach++;
-    return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024) };
+    const pr = st.prologue && ['run', 'won', 'life'].includes(st.prologue.status) ? st.prologue : null; // игра ещё в прологе «Бариста»
+    return { company: st.company || 'Без названия', day: st.day, stores: st.stores.length, rev12, won: !!st.won, lost: !!st.lost, difficulty: st.difficulty, ach, kb: Math.round(r.length / 1024),
+      pro: pr ? { m: pr.m | 0, sav: Math.round((pr.cash || 0) + (pr.box || 0) + (pr.dep || 0) + (pr.depInt || 0)), age: (BK.CFG.PROLOGUE ? BK.CFG.PROLOGUE.AGE0 : 21) + Math.floor((pr.m | 0) / 12), st: pr.status } : null };
   }
   // куда пойдёт новая игра: активный слот, если он пуст или там банкротство, иначе первый свободный
   function target() {
@@ -11859,7 +13149,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.won) chips.push('<span class="chip good">победа</span>');
     if (s.lost) chips.push('<span class="chip bad">банкротство</span>');
     if (s.difficulty) chips.push(`<span class="chip crust">${esc(DIFF[s.difficulty] || s.difficulty)}</span>`);
-    const meta = [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    const meta = s.pro ? ['пролог «Бариста»', `${s.pro.age} ${plural(s.pro.age, 'год', 'года', 'лет')}`, `накоплено ${fm(s.pro.sav)}`] : [E().fmtDate(s.day), `${s.stores} ${plural(s.stores, 'точка', 'точки', 'точек')}`, `оборот 12 мес ${fm(s.rev12)}`];
+    if (s.pro) chips.push(`<span class="chip river">${s.pro.st === 'won' ? 'своя точка!' : s.pro.st === 'life' ? 'жизнь в найме' : 'бариста'}</span>`);
     if (s.ach) meta.push(`🏆 ${s.ach}`);
     let btns;
     if (ask === 'del') btns = confirmDel(n, qn(s.company));
@@ -11885,7 +13176,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (k === 'del') { remove(n); ui.ask = null; APP().toast('Игра удалена', `Слот ${n} свободен.`, 'good'); }
       else if (k === 'new') {
         ui.ask = null; setActive(n);
-        const inp = $('#companyName'); APP().newGame((inp && inp.value.trim()) || 'Пекарня «Каравай»');
+        const inp = $('#companyName'), nm = (inp && inp.value.trim()) || 'Пекарня «Каравай»'; if (APP().startNew) APP().startNew(nm); else APP().newGame(nm);
         return;
       }
       const box = $('#slots', el); if (box) box.outerHTML = startHtml();
@@ -13730,6 +15021,608 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation };
 })();
 
+/* ui/prologue.js */
+/* =====================================================================
+   ИНТЕРФЕЙС ПРОЛОГА «БАРИСТА» (BK.PrologueUI). Логика — src/prologue.js (BK.Prologue), числа — CFG.PROLOGUE.
+   Полноэкранный слой #prologue поверх основной игры: пока пролог идёт, основной цикл app.js стоит (хук active()).
+   В духе Nintendo (docs/vision-plan.md §4): крупно, живо, отклик на каждое действие (монетки, всплывающие +/−),
+   мало цифр (силы/настроение/начальник — полосками и лицами), решения — карточками со значками последствий.
+   Связь с ядром: BK.App (state, newGame, save, toStart, refresh, toast, ACT.theme); в app.js только хуки:
+   выбор на стартовом экране (startOpt/bindStart/picked/begin), resume() при загрузке, active() в игровом цикле.
+   Мини-игра «Смена» — здесь же (shift*): гости, заказ, поднос, допродажа, час пик; итог считает BK.Prologue.shiftResult.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const PR = () => BK.Prologue, C = () => BK.CFG.PROLOGUE, APP = () => BK.App;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const fm = (v) => BK.fmtMoney(Math.round(v));
+  const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const S = () => (APP() ? APP().state : null);
+  const Pp = () => { const s = S(); return s && s.prologue; };
+  const PREF = 'bk-ufa-start';
+  const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
+
+  /* ---------------- стартовый экран: «Как начать» ---------------- */
+  function pref() { try { return localStorage.getItem(PREF) === 'prologue' ? 'prologue' : 'net'; } catch (e) { return 'net'; } }
+  function startOpt() {
+    const v = pref();
+    const opt = (k, ic, t, d) => `<label class="pro-pk${v === k ? ' on' : ''}"><input type="radio" name="startmode" value="${k}"${v === k ? ' checked' : ''}><span class="pk-i" aria-hidden="true">${ic}</span><span class="pk-t"><b>${t}</b><small>${d}</small></span></label>`;
+    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', '15–30 мин · вы за стойкой у Рашида и копите на свою точку')}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
+  }
+  function bindStart(el) {
+    const btn = () => el.querySelector('#startForm button[type=submit]');
+    const upd = () => { const v = picked(); el.querySelectorAll('.pro-pk').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)); const b = btn(); if (b) b.textContent = v === 'prologue' ? 'Начать пролог' : 'Новая игра'; };
+    el.querySelectorAll('input[name=startmode]').forEach((r) => r.addEventListener('change', () => { try { localStorage.setItem(PREF, picked()); } catch (e) {} upd(); }));
+    upd();
+  }
+  function picked() { const r = document.querySelector('#start input[name=startmode]:checked'); return r ? r.value : 'net'; }
+  // новая игра с прологом: обычная новая игра (тот же слот, сложность, соперник) + S.prologue; обучение основной игры ждёт конца пролога
+  function begin(name, difficulty, opts) {
+    APP().newGame(name, difficulty, opts);
+    const s = S(); if (!s) return;
+    PR().start(s);
+    s.prologue.tutOn = !!(s.tutorial && s.tutorial.on);
+    if (s.tutorial) s.tutorial.on = false;
+    ui.speed = 1; ui.mode = null;
+    open(); APP().save();
+  }
+
+  /* ---------------- открыть / закрыть слой ---------------- */
+  function active() { return ui.open; }
+  function resume() { const p = Pp(); if (p && (p.status === 'run' || p.status === 'won' || p.status === 'life')) { ui.speed = 1; ui.mode = null; open(); } else close(); }
+  function open() {
+    let root = $('#prologue');
+    if (!root) {
+      document.body.insertAdjacentHTML('beforeend', `<div id="prologue" class="pro" aria-label="Пролог «Бариста»">
+        <header class="pro-top" id="proTop"></header>
+        <div class="pro-mbar"><div class="pro-mb" id="proMb"><i id="proMbI"></i></div><span class="pro-ml" id="proMl"></span></div>
+        <main class="pro-in"><div class="pro-grid"><div class="pro-col" id="proColA"></div><div class="pro-col" id="proColB"></div></div></main>
+        <div class="pro-slip" id="proSlip" aria-live="polite" hidden></div>
+        <div id="proOv"></div><div class="pro-fly" id="proFly" aria-hidden="true"></div></div>`);
+      root = $('#prologue');
+      root.addEventListener('click', onClick);
+      root.addEventListener('pointerdown', () => { ui.pressing = true; }, true);
+      const up = () => { if (ui.pressing) { ui.pressing = false; ui.dirty = true; } };
+      root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
+    }
+    ui.open = true; ui.parts = {}; ui.dirty = true;
+    document.documentElement.classList.add('pro-on');
+    render(true);
+    if (!ui.loop) { ui.loop = true; requestAnimationFrame(loop); }
+  }
+  function close() {
+    const root = $('#prologue'); if (root) root.remove();
+    ui.open = false; ui.mode = null; ui.menu = false; ui.sh = null;
+    document.documentElement.classList.remove('pro-on');
+  }
+
+  /* ---------------- цикл ---------------- */
+  function loop(t) {
+    requestAnimationFrame(loop);
+    if (!ui.open) { ui.lastT = t; return; }
+    const dt = Math.min(250, t - (ui.lastT || t)); ui.lastT = t;
+    const s = S(), p = Pp();
+    if (!s || !p) { close(); return; }
+    if (ui.mode === 'shift') { shiftTick(dt / 1000); return; }
+    if (ui.menu) { bar(); return; }
+    if (p.status !== 'run') { if (ui.mode !== 'final' && ui.mode !== 'card') showFinal(); }
+    else if (p.cards.length) { if (ui.mode !== 'card') showCard(); }
+    else if (!ui.mode && ui.speed > 0 && !ui.menu && !document.hidden) {
+      const r = PR().advance(s, dt * ui.speed);
+      if (r === 'month') onMonth();
+      if (p.cards.length) showCard();
+    }
+    drainFx();
+    bar();
+    if (ui.slipT && t > ui.slipT) { ui.slipT = 0; const sl = $('#proSlip'); if (sl) sl.hidden = true; }
+    if (ui.dirty && !ui.pressing && t - ui.lastRender > 200) render();
+  }
+  function bar() {
+    const p = Pp(); if (!p) return;
+    const i = $('#proMbI'); if (i) i.style.width = (p.status === 'run' ? p.t * 100 : 100).toFixed(1) + '%';
+    const l = $('#proMl');
+    if (l) { const txt = `${cap(PR().monName(p))}${ui.speed === 0 ? ' · пауза' : ''}`; if (l.textContent !== txt) l.textContent = txt; }
+  }
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function onMonth() {
+    const p = Pp(), mo = p.mo; ui.dirty = true;
+    render(true);
+    if (p.status !== 'run') { APP().save(); return; } // финал — без монеток и итога месяца поверх окна
+    if (mo) {
+      const g = $('#proSav');
+      coins($('#proMb'), g, mo.net >= 0 ? 7 : 3, mo.net < 0);
+      float(g, fmS(mo.net), mo.net >= 0 ? 'up' : 'dn', true);
+      const inc = (mo.inc.salary || 0) + (mo.inc.tips || 0) + (mo.inc.extra || 0) + (mo.inc.interest || 0);
+      let out = 0; for (const k of Object.keys(mo.out)) out += mo.out[k] || 0;
+      const sl = $('#proSlip');
+      if (sl) {
+        sl.innerHTML = `<b>Итог месяца: <span class="${mo.net >= 0 ? 'up' : 'dn'}">${fmS(mo.net)}</span></b><span>Заработано ${fm(inc)} · жизнь ${fm(out)}${mo.boxed ? ` · в копилку ${fm(mo.boxed)}` : ''}</span>${mo.notes.slice(0, 2).map((n) => `<span class="nt">${esc(n)}</span>`).join('')}`;
+        sl.hidden = false; ui.slipT = performance.now() + 4200;
+      }
+    }
+    APP().save();
+  }
+
+  /* ---------------- отклик: монетки и всплывающие числа ---------------- */
+  function float(el, text, cls, big) {
+    const fly = $('#proFly'); if (!fly || !el) return;
+    const r = el.getBoundingClientRect(); if (!r.width) return;
+    const f = document.createElement('span');
+    f.className = `pro-float ${cls || ''}${big ? ' big' : ''}`; f.textContent = text;
+    f.style.left = Math.round(Math.min(innerWidth - 90, Math.max(8, r.left + r.width / 2 - 40))) + 'px'; f.style.top = Math.round(r.top + 4) + 'px';
+    fly.appendChild(f); setTimeout(() => f.remove(), 1300);
+  }
+  function coins(from, to, n, lose) {
+    const fly = $('#proFly'); if (!fly || !from || !to) return;
+    const a = from.getBoundingClientRect(), b = to.getBoundingClientRect(); if (!a.width || !b.width) return;
+    const reduce = globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('span'); c.className = 'pro-coin' + (lose ? ' lose' : ''); c.textContent = '₽';
+      const x0 = lose ? b.left + b.width / 2 : a.left + a.width * (0.2 + 0.6 * Math.random()), y0 = lose ? b.top + 10 : a.top;
+      const x1 = lose ? b.left + b.width / 2 + (Math.random() - 0.5) * 120 : b.left + b.width / 2 + (Math.random() - 0.5) * 40, y1 = lose ? b.top + 90 : b.top + b.height / 2;
+      c.style.left = x0 + 'px'; c.style.top = y0 + 'px';
+      fly.appendChild(c);
+      requestAnimationFrame(() => requestAnimationFrame(() => { c.style.transitionDelay = (i * 60) + 'ms'; c.style.transform = `translate(${x1 - x0}px, ${y1 - y0}px) scale(.8)`; c.style.opacity = lose ? '0' : '.2'; }));
+      setTimeout(() => c.remove(), 1100 + i * 60);
+    }
+    setTimeout(() => { if (to && !lose) { to.classList.remove('bump'); void to.offsetWidth; to.classList.add('bump'); } }, 650);
+  }
+  const FXWHERE = { mood: '#proMood', rep: '#proRep', hp: '#proHp', skill: '#proSk', box: '#proBox', dep: '#proDep', rub: '#proSav' };
+  function drainFx() {
+    const p = Pp(); if (!p || !p.fx.length) return;
+    const list = p.fx.splice(0, p.fx.length);
+    for (const f of list) {
+      if (f.kind === 'month') continue; // итог месяца — в onMonth
+      if (f.kind === 'promo') { confetti(); continue; }
+      const el = $(FXWHERE[f.kind] || '#proSav');
+      if (f.kind === 'mood') float(el, f.v > 0 ? '🙂 +' : '🙁 −', f.v > 0 ? 'up' : 'dn');
+      else if (f.kind === 'rep') float(el, f.v > 0 ? '👍' : '👎', f.v > 0 ? 'up' : 'dn');
+      else if (f.kind === 'skill') float(el, '⭐ +' + f.v, 'up');
+      else if (f.kind === 'box' || f.kind === 'dep') { float(el, '+' + fm(f.v), 'up'); }
+      else if (f.kind === 'rub') { float(el, fmS(f.v), f.v >= 0 ? 'up' : 'dn'); if (f.v > 0) coins($('#proMb'), el, 4); }
+    }
+    ui.dirty = true;
+  }
+  function confetti() {
+    const fly = $('#proFly'); if (!fly) return;
+    if (globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (let i = 0; i < 26; i++) {
+      const c = document.createElement('span'); c.className = 'pro-conf'; c.style.left = (10 + Math.random() * 80) + 'vw'; c.style.setProperty('--hue', String(Math.floor(Math.random() * 360)));
+      c.style.animationDelay = (Math.random() * 0.4) + 's'; fly.appendChild(c); setTimeout(() => c.remove(), 2400);
+    }
+  }
+
+  /* ---------------- разметка ---------------- */
+  const ICON = {
+    pause: '<svg viewBox="0 0 16 14" aria-hidden="true"><rect x="3" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
+    p1: '<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M4 1 L13 7 L4 13 Z" fill="currentColor"/></svg>',
+    p3: '<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M1 1 L8 7 L1 13 Z M8 1 L15 7 L8 13 Z" fill="currentColor"/></svg>',
+    theme: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4Z" fill="currentColor"/></svg>',
+    menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.6" fill="currentColor"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="13" cy="8" r="1.6" fill="currentColor"/></svg>',
+  };
+  function top(p) {
+    const age = PR().age(p), job = C().JOBS[p.job].name;
+    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>пролог · «Калач» на Пушкина</small></span></div>
+      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
+      <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
+        <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
+        <button type="button" data-pa="speed" data-v="1" aria-label="Скорость 1" title="Обычная скорость" aria-pressed="${ui.speed === 1}">${ICON.p1}</button>
+        <button type="button" data-pa="speed" data-v="3" aria-label="Скорость 3" title="Втрое быстрее" aria-pressed="${ui.speed === 3}">${ICON.p3}</button></div>
+        <button type="button" class="iconbtn" data-pa="theme" aria-label="Сменить тему" title="Тема">${ICON.theme}</button>
+        <button type="button" class="iconbtn" data-pa="menu" aria-label="Меню пролога" title="Меню">${ICON.menu}</button></div>`;
+  }
+  const FACE = (v) => (v >= 70 ? '😄' : v >= 45 ? '🙂' : v >= 25 ? '😐' : '😣');
+  const lvlCls = (v) => (v >= 60 ? 'ok' : v >= 30 ? 'mid' : 'low');
+  function meter(id, icon, name, v, hint) {
+    return `<div class="pro-m ${lvlCls(v)}" id="${id}" title="${esc(hint)}"><span class="pm-i" aria-hidden="true">${icon}</span><span class="pm-n">${name}</span><span class="pm-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v)}" aria-label="${name}"><i style="width:${Math.max(3, Math.round(v))}%"></i></span><span class="pm-f" aria-hidden="true">${FACE(v)}</span></div>`;
+  }
+  function hpHint(p) { return p.hp < C().SICK_HP ? 'Силы на исходе: можно заболеть, начальник замечает ошибки. Ешьте нормально, меньше подработок.' : p.hp < 50 ? 'Устаёте. Нормальная еда и меньше подработок вернут силы.' : 'Силы в порядке.'; }
+  function moodHint(p) { return p.mood < C().SPLURGE_MOOD ? 'Настроение на нуле — легко сорваться на покупку. Деньги в копилке и на вкладе целее.' : p.mood < 45 ? 'Грустно. Развлечения, отдых и удачные смены поднимут настроение.' : 'Настроение хорошее.'; }
+  function repHint(p) { return p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'; }
+  const beans = (v) => { const n = Math.min(5, 1 + Math.floor(v / 20)); return `<span class="pro-beans" aria-label="уровень ${n} из 5">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`; };
+
+  function scene(p) {
+    // стойка «Калача»: витрина, кофемашина, бариста; лицо — настроение
+    const face = p.mood >= 45 ? 'M-5 3 q5 4 10 0' : p.mood >= 25 ? 'M-5 4 h10' : 'M-5 5 q5 -4 10 0';
+    const cap = ['#c46f17', '#3b8796', '#6b4a2e'][p.job] || '#c46f17';
+    return `<svg class="pro-scene" viewBox="0 0 360 150" role="img" aria-label="Стойка пекарни «Калач»">
+      <rect x="0" y="0" width="360" height="150" rx="14" class="sc-wall"/>
+      <rect x="18" y="16" width="120" height="44" rx="6" class="sc-board"/><text x="78" y="34" text-anchor="middle" class="sc-bt">КАЛАЧ</text><text x="78" y="50" text-anchor="middle" class="sc-bs">хлеб · кофе · эчпочмак</text>
+      <g transform="translate(248 38)"><rect x="0" y="0" width="70" height="56" rx="6" class="sc-mach"/><rect x="10" y="10" width="50" height="14" rx="3" class="sc-machp"/><rect x="26" y="30" width="18" height="8" rx="2" class="sc-machp"/>
+        <path class="sc-steam" d="M26 -6 q4 -6 0 -12 M36 -4 q4 -6 0 -12 M46 -6 q4 -6 0 -12"/></g>
+      <g transform="translate(176 58)"><circle r="17" class="sc-head"/><path d="M-6 -3 h0.1 M6 -3 h0.1" class="sc-eye"/><path d="${face}" class="sc-mouth"/><path d="M-19 -8 q19 -22 38 0" fill="${cap}"/>
+        <path d="M-26 44 q0 -24 26 -24 q26 0 26 24 z" class="sc-body"/><path d="M-12 22 h24 v22 h-24 z" fill="${cap}" opacity=".85"/></g>
+      <rect x="0" y="98" width="360" height="52" class="sc-counter"/><rect x="0" y="96" width="360" height="6" class="sc-top"/>
+      <g class="sc-case"><rect x="22" y="104" width="120" height="36" rx="6"/><text x="44" y="130" font-size="18">🥐</text><text x="70" y="130" font-size="18">🥟</text><text x="96" y="130" font-size="18">🥯</text></g>
+      <text x="296" y="132" font-size="22">☕</text></svg>`;
+  }
+  function jobLadder(p) {
+    const J = C().JOBS, pc = PR().promoCheck(p);
+    let s = `<ol class="pro-ladder">${J.map((j, i) => `<li class="${i < p.job ? 'done' : i === p.job ? 'cur' : ''}"><span class="lb">${i < p.job ? '✓' : i + 1}</span><span class="lt">${esc(j.name)}</span></li>`).join('')}</ol>`;
+    if (pc && p.status === 'run') {
+      const q = pc.q, rows = [];
+      const row = (name, v, need) => rows.push(`<span class="pro-req${v >= need ? ' ok' : ''}" title="${name}: ${Math.floor(v)} из ${need}"><span>${name}</span><span class="rb"><i style="width:${Math.min(100, v / need * 100).toFixed(0)}%"></i></span></span>`);
+      if (q.coffee) row('Кофе', p.sk.coffee, q.coffee);
+      if (q.sales) row('Продажи', p.sk.sales, q.sales);
+      if (q.people) row('Люди', p.sk.people, q.people);
+      if (p.stazh < C().PROMO_STAZH) row('Начальник', p.rep, q.rep);
+      row('Стаж', p.jobM, q.months);
+      s += `<div class="pro-next"><span class="nk">До должности «${esc(pc.name.toLowerCase())}»</span>${rows.join('')}</div>`;
+    }
+    return s;
+  }
+  function colA(p) {
+    const g = PR().goal(p), c = C();
+    const sav = g.sav, credMark = (c.GOAL_CREDIT / c.GOAL * 100).toFixed(1), pct = Math.min(100, sav / c.GOAL * 100);
+    let s = `<section class="pc pro-goal"><div class="pg-h"><span class="pg-e">Цель · своя точка</span><span class="pg-ic" aria-hidden="true">🏪</span></div>
+      <div class="pg-v" id="proSav">${fm(sav)}</div>
+      <div class="pg-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Накоплено на свою точку"><i style="width:${pct.toFixed(1)}%"></i><b class="pg-mk" style="left:${credMark}%" title="С кредитом хватит ${fm(c.GOAL_CREDIT)}"></b></div>
+      <div class="pg-sc"><span>0</span><span style="left:${credMark}%">${fm(c.GOAL_CREDIT)} + кредит</span><span>${fm(c.GOAL)}</span></div>
+      <ul class="pg-list">
+        <li class="${g.job ? 'ok' : ''}"><span class="ck" aria-hidden="true">${g.job ? '✓' : ''}</span>Должность «управляющий сменой»</li>
+        <li class="${sav >= c.GOAL ? 'ok' : ''}"><span class="ck" aria-hidden="true">${sav >= c.GOAL ? '✓' : ''}</span>Накопить ${fm(c.GOAL)} — или ${fm(c.GOAL_CREDIT)} и кредит</li>
+        <li class="${g.credit ? 'ok' : ''}"><span class="ck" aria-hidden="true">${g.credit ? '✓' : ''}</span>Для кредита: стаж ${Math.min(p.stazh, c.CREDIT_STAZH)} из ${c.CREDIT_STAZH} мес., начальник доволен</li></ul>`;
+    if (g.ok && p.status === 'run' && !p.sf.mentor && !p.cards.length) s += `<button type="button" class="btn primary block pro-big" data-pa="openOwn">Открыть свою точку</button>`;
+    if (p.sf.mentor === 'intern' && p.status === 'run') s += `<p class="pro-note">Стажировка в «Хлебном дворе» — ещё ${Math.max(0, p.flags.intern - p.m)} мес.</p>`;
+    // деньги: кошелёк → копилка → вклад
+    const rate = C().DEP_RATE + (p.depBonus || 0);
+    s += `<div class="pro-money">
+      <div class="pmy" id="proCash"><span class="pmy-i" aria-hidden="true">👛</span><span class="pmy-n">Кошелёк</span><b class="${p.cash < 0 ? 'neg' : ''}">${fm(p.cash)}</b><small>${p.cash < 0 ? 'минус под 2 % в месяц' : 'на жизнь и покупки'}</small><button type="button" class="btn sm" data-pa="toBox">В копилку</button></div>
+      <div class="pmy" id="proBox"><span class="pmy-i" aria-hidden="true">🐷</span><span class="pmy-n">Копилка</span><b>${fm(p.box)}</b><small>срывы её не трогают</small><span class="pmy-b"><button type="button" class="btn sm" data-pa="toDep">На вклад</button><button type="button" class="btn sm" data-pa="fromBox" ${p.box > 0 ? '' : 'disabled'}>Достать</button></span></div>
+      <div class="pmy" id="proDep"><span class="pmy-i" aria-hidden="true">🏦</span><span class="pmy-n">Вклад · ${Math.round(rate * 100)} %</span><b>${fm(p.dep + p.depInt)}</b><small>${p.depInt > 0 ? `проценты ${fm(p.depInt)} — раз в год` : 'проценты раз в год'}</small>${ui.ask === 'dep' ? `<span class="pmy-b"><button type="button" class="btn sm danger" data-pa="fromDepYes">Снять, сгорит ${fm(p.depInt)}</button><button type="button" class="btn sm" data-pa="askNo">Нет</button></span>` : `<button type="button" class="btn sm" data-pa="fromDep" ${p.dep > 0 ? '' : 'disabled'}>Снять</button>`}</div></div>`;
+    s += `</section>`;
+    // герой: стойка, должность, «Смена», состояние, навыки
+    const why = PR().shiftWhy(p);
+    s += `<section class="pc pro-hero">${scene(p)}${jobLadder(p)}
+      <button type="button" class="btn primary block pro-big pro-shiftbtn${!why ? ' ready' : ''}" data-pa="shift" ${why ? 'disabled' : ''}><span aria-hidden="true">☕</span> Выйти на смену<small>${why ? esc(why) : 'чаевые, навык и оценка начальника · 40 с'}</small></button>
+      <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
+      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
+    return s;
+  }
+  // значки последствий: ▲/▼ × сила (как в окне события основной игры)
+  const FXN = { rub: ['₽', 'Деньги'], hp: ['❤️', 'Силы'], mood: ['🙂', 'Настроение'], rep: ['👔', 'Начальник'], skill: ['⭐', 'Навык'], rel: ['🤝', 'Отношения'] };
+  function fxChips(fx, risk) {
+    const out = [];
+    for (const k of Object.keys(FXN)) {
+      const v = fx && fx[k]; if (!v) continue;
+      const up = v > 0, n = Math.min(3, Math.abs(v));
+      out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span class="fxe" aria-hidden="true">${FXN[k][0]}</span><span class="fxn">${FXN[k][1]}</span><span class="ar" aria-label="${up ? 'лучше' : 'хуже'}">${(up ? '▲' : '▼').repeat(n)}</span></span>`);
+    }
+    if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span class="fxe" aria-hidden="true">🎲</span><span class="fxn">Риск</span></span>');
+    return out.join('');
+  }
+  function optBtn(pa, v, on, name, price, fx, dis, title) {
+    return `<button type="button" class="po${on ? ' on' : ''}" data-pa="${pa}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}><b>${esc(name)}</b><span class="pp">${price}</span>${fx ? `<span class="pfx">${fx}</span>` : ''}</button>`;
+  }
+  const mini = (hp, mood) => `${hp ? `<i class="${hp > 0 ? 'up' : 'dn'}">❤️${hp > 0 ? '▲' : '▼'}</i>` : ''}${mood ? `<i class="${mood > 0 ? 'up' : 'dn'}">🙂${mood > 0 ? '▲' : '▼'}</i>` : ''}`;
+  const sgn = (v, big) => (Math.abs(v) >= big ? Math.sign(v) * 2 : Math.sign(v));
+  function colB(p) {
+    const c = C(), H = c.HOME, F = c.FOOD, FN = c.FUN;
+    const cost = PR().monthCost(p), pay = PR().payOf(p);
+    let s = `<section class="pc pro-life"><h3>Как живу <small>решения действуют каждый месяц</small></h3>
+      <div class="pl-row"><span class="pl-k">🏠 Жильё</span><div class="pl-o">${Object.keys(H).map((k) => optBtn('home', k, p.home === k, H[k].name, fm(H[k].cost + H[k].transport) + '/мес', mini(H[k].hp, H[k].mood), false, k === 'parents' ? 'Дёшево, но далеко от работы (не больше 1 доп. смены) и дома бывает напряжённо' : '')).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🍲 Еда</span><div class="pl-o">${Object.keys(F).map((k) => optBtn('food', k, p.food === k, F[k].name, fm(F[k].cost) + '/мес', mini(sgn(F[k].hp, 10), F[k].mood))).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🎬 Развлечения</span><div class="pl-o">${Object.keys(FN).map((k) => optBtn('fun', k, p.fun === k, FN[k].name, FN[k].cost ? fm(FN[k].cost) + '/мес' : 'бесплатно', mini(FN[k].hp, FN[k].mood))).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">💪 Доп. смены</span><div class="pl-o">${[0, 1, 2].map((n) => optBtn('extra', n, p.extra === n, n ? `${n} в неделю` : 'Нет', n ? '+' + fm(n * c.EXTRA.pay * (1 + p.job * 0.15)) : '—', n ? mini(-1, -1) : '', n > PR().maxExtra(p), n > PR().maxExtra(p) ? 'От родителей далеко ехать — только одна доп. смена' : '')).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🐷 С зарплаты в копилку</span><div class="pl-o">${c.SAVE_RATES.map((r, i) => optBtn('save', i, p.saveRate === i, r ? Math.round(r * 100) + ' %' : 'Ничего', r ? 'сразу в день зарплаты' : '—', '')).join('')}</div></div>
+      <div class="pl-sum"><span>Жизнь стоит <b>${fm(cost)}</b> в месяц</span><span>Оклад <b>${fm(pay)}</b> + чаевые${p.extra ? ' + подработки' : ''}</span></div></section>`;
+    // учёба
+    const CS = c.COURSES, ic = { coffee: '☕', sales: '📈', lead: '👥' };
+    s += `<section class="pc pro-study"><h3>Учёба <small>один курс за раз</small></h3><div class="ps-g">${Object.keys(CS).map((id) => {
+      const x = CS[id], why = PR().studyWhy(p, id), cur = p.study && p.study.id === id, done = p.done[id];
+      const price = id === 'coffee' && p.flags.disc && !done ? `<s>${fm(x.month)}</s> ${fm(x.month / 2)}` : fm(x.month);
+      return `<div class="psc${cur ? ' cur' : ''}${done ? ' done' : ''}"><span class="psc-i" aria-hidden="true">${ic[id]}</span><b>${esc(x.name)}</b><small>${esc(x.who)}</small><span class="psc-m">${x.months} мес. × ${price} · ${PR().SK_NAME[x.skill].toLowerCase()} +${x.add}</span>${done ? '<span class="chip good">пройден</span>' : cur ? `<span class="chip river">идёт · ещё ${p.study.left} мес.</span>` : `<button type="button" class="btn sm" data-pa="study" data-v="${id}" ${why ? `disabled title="${esc(why)}"` : ''}>Записаться</button>${why && why !== 'Уже учитесь — один курс за раз' ? `<span class="psc-w">${esc(why)}</span>` : ''}`}</div>`;
+    }).join('')}</div></section>`;
+    // хочется
+    const W = c.WANTS;
+    s += `<section class="pc pro-wants"><h3>Хочется <small>радует, но уносит деньги из кошелька</small></h3><div class="pw-g">${Object.keys(W).map((id) => {
+      const w = W[id], why = PR().wantWhy(p, id), price = PR().wantPrice(p, id), sale = price < w.cost, has = (p.wantsCd[id] || 0) > p.m;
+      return `<button type="button" class="pw${has ? ' has' : ''}${sale ? ' sale' : ''}" data-pa="want" data-v="${id}" ${why ? `disabled title="${esc(why)}"` : ''}><span class="pw-i" aria-hidden="true">${w.icon}</span><b>${esc(w.name)}</b><span class="pw-p">${sale ? `<s>${fm(w.cost)}</s> ` : ''}${fm(price)}${w.monthly ? ` + ${fm(w.monthly)}/мес` : ''}</span><span class="pw-f">🙂${'▲'.repeat(w.mood >= 20 ? 3 : w.mood >= 10 ? 2 : 1)}</span>${has ? '<span class="pw-has">есть</span>' : why ? `<span class="pw-why">${esc(why)}</span>` : ''}</button>`;
+    }).join('')}</div></section>`;
+    // лента
+    const F2 = p.feed.slice(-7).reverse();
+    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(f.t)}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
+    return s;
+  }
+  function setPart(id, html) { if (ui.parts[id] === html) return; ui.parts[id] = html; const el = document.getElementById(id); if (el) el.innerHTML = html; }
+  function render(force) {
+    const p = Pp(); if (!p || !ui.open) return;
+    if (!force && ui.pressing) return;
+    ui.dirty = false; ui.lastRender = performance.now();
+    setPart('proTop', top(p)); setPart('proColA', colA(p)); setPart('proColB', colB(p));
+    if (ui.menu) menu(); bar();
+  }
+
+  /* ---------------- карточки-решения ---------------- */
+  function avatar(h, big) { return `<span class="pro-av${big ? ' big' : ''}" style="--h:${h.hue}" aria-hidden="true">${esc(h.ini)}</span>`; }
+  function showCard() {
+    const s = S(), cv = PR().card(s); if (!cv) { hideOv(); return; }
+    ui.mode = 'card';
+    const LET = 'АБВГДЕ', kind = cv.kind === 'pos' ? 'pos' : cv.kind === 'neg' ? 'neg' : 'hero';
+    const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
+    let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
+      <div class="pcd-h">${avatar(cv.hero, true)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
+      <h2 id="proCardT">${esc(cv.title)}</h2><p class="pcd-t">${esc(cv.text)}</p><div class="pcd-c">`;
+    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    cv.choices.forEach((c, i) => {
+      const fx = fxChips(c.fx, c.risk);
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="pcd-d">${esc(c.desc)}</p>` : ''}`; return; }
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+    });
+    h += `</div></div></div>`;
+    $('#proOv').innerHTML = h;
+    const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
+  }
+  function hideOv() { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
+  function choose(i) {
+    const s = S(), r = PR().choose(s, i);
+    if (!r.ok) { APP().toast('Не получится', r.msg || '', 'warn'); return; }
+    hideOv(); ui.dirty = true; render(true); drainFx();
+    const p = Pp();
+    if (p.status !== 'run') { APP().save(); showFinal(); return; }
+    if (p.cards.length) showCard();
+    else if (p.m === 0 && p.stats.shifts === 0 && !ui.firstShift) { ui.firstShift = true; shiftOpen(true); } // после сцены П1 — первая «Смена»
+    APP().save();
+  }
+
+  /* ---------------- финалы ---------------- */
+  const SPENT_IC = { home: '🏠', food: '🍲', fun: '🎬', transport: '🚌', phone: '📶', study: '🎓', health: '💊', fines: '🧾', clothes: '👕', gifts: '🎁', sneakers: '👟', console: '🎮', phone2: '📱', trip: '🏖️', car: '🚗', debt: '💳', loans: '🤝', invest: '🎲', other: '•' };
+  function showFinal() {
+    const s = S(), p = Pp(); if (!p) return;
+    ui.mode = 'final';
+    const sm = PR().summary(p), c = C();
+    const rows = sm.rows.slice(0, 9), max = Math.max(1, ...rows.map((r) => r.v));
+    const where = `<div class="pf-rows">${rows.map((r) => `<div class="pf-r${r.fun ? ' fun' : ''}"><span class="pf-i" aria-hidden="true">${SPENT_IC[r.k] || '•'}</span><span class="pf-n">${esc(r.name)}</span><span class="pf-b"><i style="width:${(r.v / max * 100).toFixed(1)}%"></i></span><b>${fm(r.v)}</b></div>`).join('')}</div>`;
+    let h;
+    if (p.status === 'won' || p.status === 'done') {
+      const cr = PR().carry(p, s), T = PR().TRAITS, M = PR().MENTOR, PK = PR().PERKS, TA = BK.Trainers ? BK.Trainers.AREA : {};
+      const gains = [];
+      gains.push(`<li><span aria-hidden="true">💰</span><span>${cr.bonus ? `Накопления сверх цели: <b>+${fm(cr.bonus)}</b> к стартовому капиталу` : `Накопления ушли в точку${p.won && p.won.credit ? ' (и кредит банка)' : ''} — капитал сети как обычно`}</span></li>`);
+      const sk = Object.keys(cr.skills).map((a) => (TA[a] ? TA[a].short : a));
+      if (sk.length) gains.push(`<li><span aria-hidden="true">⭐</span><span>Навыки: <b>${esc(sk.join(', '))}</b> — уровень 1 (подсказки в «Требует внимания»)</span></li>`);
+      if (cr.baker) gains.push(`<li><span aria-hidden="true">👩‍🍳</span><span><b>${esc(cr.baker.name)}</b> — первый сотрудник первой точки, уровень ${cr.baker.lvl}</span></li>`);
+      if (cr.trait) gains.push(`<li><span aria-hidden="true">${cr.trait === 'thrift' ? '🐷' : '🛍️'}</span><span>Черта «<b>${T[cr.trait].name}</b>»: ${esc(T[cr.trait].desc.charAt(0).toLowerCase() + T[cr.trait].desc.slice(1))}</span></li>`);
+      for (const k of cr.perks) gains.push(`<li><span aria-hidden="true">🎁</span><span>${esc(PK[k])}</span></li>`);
+      if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
+      h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
+        <div class="pf-hero" aria-hidden="true">🏪</div><span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
+        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. Дальше — своя сеть: цех, первая точка и весь город на карте.</p>
+        <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
+        <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
+        <details class="pf-det"><summary>Куда уходили деньги</summary><p class="pro-note">Заработано ${fm(sm.earned)}, отложено ${fm(sm.sav)}.</p>${where}</details>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="finalMain">Открыть свою сеть</button></div></div></div>`;
+    } else {
+      const tips = [];
+      if (sm.fun > sm.earned * 0.12) tips.push(`На желания ушло ${fm(sm.fun)} — почти ${Math.round(sm.fun / Math.max(1, sm.earned) * 100)} % заработанного.`);
+      if ((p.spent.car || 0) > 0) tips.push('Машина в кредит съедала деньги каждый месяц.');
+      if ((p.spent.debt || 0) > 0) tips.push(`Проценты по кредитке: ${fm(p.spent.debt)}.`);
+      if (p.food === 'cafe') tips.push('Кафе и доставка каждый день — дорогая привычка.');
+      if (p.job < 2) tips.push('До управляющего сменой вы так и не дошли — без этого своё дело не открыть.');
+      if (!tips.length) tips.push('Копилка и вклад защищают деньги от срывов, а «Смена» и учёба быстрее ведут к повышению.');
+      h = `<div class="pro-ovbg"><div class="pro-card pro-final life" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
+        <div class="pf-hero" aria-hidden="true">🕰️</div><span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
+        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, а Семён Аркадьевич всё так же берёт американо и правду. Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
+        <h3>Куда ушли деньги</h3>${where}
+        <ul class="pf-tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="retry">Попробовать заново</button><button type="button" class="btn block pro-big2" data-pa="skipMain">Начать сразу со своей сети</button></div></div></div>`;
+    }
+    $('#proOv').innerHTML = h;
+    const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
+    if (p.status === 'won') confetti();
+  }
+  // переход в основную игру (стадия 2) с переносом бонусов
+  function toMain(skipped) {
+    const s = S(), p = Pp(); if (!s || !p) return;
+    let cr = null;
+    if (!skipped && p.status === 'won') cr = PR().applyCarry(s); else PR().skip(s);
+    if (s.tutorial) s.tutorial.on = !!p.tutOn;
+    close();
+    APP().refresh(); APP().save();
+    if (cr) APP().toast('Своя сеть!', cr.bonus ? `Бонус пролога: +${fm(cr.bonus)} к капиталу.` : 'Пролог пройден — выберите помещение под цех.', 'good');
+  }
+  function retry() {
+    const s = S(); if (!s) return;
+    const name = s.company, diff = s.difficulty, rival = !!(s.rival && s.rival.enabled), tut = !!(s.prologue && s.prologue.tutOn);
+    close();
+    begin(name, diff, { rival });
+    const s2 = S(); if (s2 && s2.prologue) s2.prologue.tutOn = tut;
+  }
+
+  /* ---------------- меню пролога ---------------- */
+  function menu() {
+    let o = $('#proMenu');
+    const h = `<div class="pro-ovbg" data-pa="menuClose"><div class="pro-card pro-menu" role="dialog" aria-modal="true" aria-labelledby="proMenuT" tabindex="-1">
+      <h2 id="proMenuT">Пролог «Бариста»</h2>
+      <p class="pcd-t">Вы — бариста у Рашида в «Калаче». Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
+      <ul class="pf-tips"><li>«Как живу» — жильё, еда, развлечения, подработки: чем дешевле, тем быстрее копится, но силы и настроение не бесконечны.</li><li>Копилка и вклад защищают деньги от срывов на покупки.</li><li>«Смена» раз в месяц — чаевые, навык и мнение начальника.</li></ul>
+      ${ui.ask === 'skip' ? `<div class="confirm">Пролог закончится без бонусов, начнётся обычная игра. <button type="button" class="btn sm danger" data-pa="skipYes">Пропустить</button><button type="button" class="btn sm" data-pa="askNo">Отмена</button></div>` : ''}
+      <div class="pf-btns"><button type="button" class="btn primary block" data-pa="menuClose">Вернуться</button>${ui.ask === 'skip' ? '' : '<button type="button" class="btn block" data-pa="skipAsk">Пропустить пролог — сразу своя сеть</button>'}<button type="button" class="btn block" data-pa="toStart">К списку игр</button></div></div></div>`;
+    if (!o) { $('#proOv').insertAdjacentHTML('beforeend', `<div id="proMenu"></div>`); o = $('#proMenu'); }
+    if (o.dataset.h !== h) { o.innerHTML = h; o.dataset.h = h; }
+  }
+
+  /* ---------------- мини-игра «Смена» ---------------- */
+  function mul(seed) { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const FACES = ['🧔', '👩', '👨‍🦳', '👧', '🧑‍💼', '👵', '🧑‍🎓', '👩‍🦰', '👨', '👱‍♀️'];
+  function shiftOpen(first) {
+    const p = Pp(), why = PR().shiftWhy(p); if (why) { APP().toast('Смена', why, 'warn'); return; }
+    const plan = PR().shiftPlan(p);
+    ui.mode = 'shift';
+    ui.sh = { plan, rnd: mul(plan.seed), state: 'intro', t: 0, guests: [], next: 0, tray: [], served: 0, errors: 0, upsells: 0, lost: 0, total: 0, tips: 0, id: 0, first, msg: null, tired: p.flags.tired === p.m - 1 || p.flags.tired === p.m };
+    shiftRender();
+  }
+  const itemById = (id) => PR().ITEMS.find((x) => x.id === id);
+  function newGuest(sh) {
+    const R = sh.rnd, items = sh.plan.items, coffee = items.filter((x) => x.cat === 'coffee'), bake = items.filter((x) => x.cat === 'bake');
+    const order = [];
+    const n = 1 + (R() < 0.55 ? 1 : 0) + (sh.plan.maxItems >= 3 && R() < 0.25 ? 1 : 0);
+    for (let i = 0; i < n; i++) { const pool = i === 0 ? (R() < 0.75 ? coffee : bake) : (R() < 0.6 ? bake : coffee); order.push(pool[Math.floor(R() * pool.length)].id); }
+    const rush = sh.t / sh.plan.sec > 0.35 && sh.t / sh.plan.sec < 0.75;
+    const pat = (sh.plan.patience - (sh.tired ? 3 : 0)) * (rush ? 0.85 : 1);
+    sh.total++;
+    const sem = sh.total === 1 && sh.first; // первый гость первой смены — Семён Аркадьевич: «Американо и правду!»
+    return { id: ++sh.id, face: sem ? '👴' : FACES[Math.floor(R() * FACES.length)], order: sem ? ['esp'] : order, pat: sem ? pat + 6 : pat, max: sem ? pat + 6 : pat, asked: false, up: null, note: sh.total === 1 && sh.first ? 'Американо и правду!' : '' };
+  }
+  function shiftTick(dt) {
+    const sh = ui.sh; if (!sh || sh.state !== 'play') return;
+    sh.t += dt;
+    const rush = sh.t / sh.plan.sec > 0.35 && sh.t / sh.plan.sec < 0.75;
+    sh.next -= dt;
+    let changed = false;
+    if (sh.next <= 0 && sh.guests.length < 5) { sh.guests.push(newGuest(sh)); sh.next = (rush ? 1.7 : 3.4) * (0.75 + sh.rnd() * 0.5); changed = true; }
+    for (const g of sh.guests.slice()) {
+      g.pat -= dt;
+      if (g.pat <= 0) { sh.guests.splice(sh.guests.indexOf(g), 1); sh.lost++; changed = true; if (sh.guests.length && g === sh.guests[0]) sh.tray = []; flash('Гость ушёл 😠', 'dn'); }
+    }
+    if (sh.t >= sh.plan.sec) { shiftEnd(); return; }
+    // полоски терпения и таймер — без перерисовки
+    const tb = $('#shTime'); if (tb) tb.style.width = (100 - sh.t / sh.plan.sec * 100).toFixed(1) + '%';
+    const rz = $('#shRush'); if (rz) rz.hidden = !rush;
+    for (const g of sh.guests) { const el = document.getElementById('shg' + g.id); if (el) { const v = Math.max(0, g.pat / g.max); el.style.setProperty('--pat', (v * 100).toFixed(0)); el.classList.toggle('angry', v < 0.3); } }
+    if (changed) shiftRender();
+  }
+  function flash(t, cls) { const sh = ui.sh; if (!sh) return; sh.msg = { t, cls, until: performance.now() + 1100 }; const m = $('#shMsg'); if (m) { m.textContent = t; m.className = 'sh-msg show ' + (cls || ''); clearTimeout(ui.flashT); ui.flashT = setTimeout(() => { const mm = $('#shMsg'); if (mm) mm.className = 'sh-msg'; }, 1000); } }
+  function shiftRender() {
+    const sh = ui.sh, p = Pp(); if (!sh) return;
+    let h;
+    if (sh.state === 'intro') {
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro"><span class="sh-big" aria-hidden="true">☕</span><h2 id="shT">${sh.first ? 'Первая смена' : 'Смена в «Калаче»'}</h2>
+        <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
+        ${sh.tired ? '<p class="pro-note">Вы не выспались после ночной смены — гости покажутся нетерпеливее.</p>' : ''}
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftGo">Начать смену · ${sh.plan.sec} с</button><button type="button" class="btn block" data-pa="shiftCancel">Не сейчас</button></div></div></div>`;
+    } else if (sh.state === 'play') {
+      const g = sh.guests[0];
+      const q = sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" style="--pat:${(x.pat / x.max * 100).toFixed(0)}"><span class="sh-f" aria-hidden="true">${x.face}</span></span>`).join('');
+      const order = g ? g.order.map((id, i) => `<span class="sh-oi${g.up === i ? ' up' : ''}"><span aria-hidden="true">${itemById(id).icon}</span><small>${esc(itemById(id).name)}</small></span>`).join('') : '';
+      const canUp = g && !g.asked;
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-label="Смена"><div class="sh-in">
+        <div class="sh-top"><div class="sh-tb"><i id="shTime" style="width:${(100 - sh.t / sh.plan.sec * 100).toFixed(1)}%"></i></div><span class="sh-rush" id="shRush" hidden>Час пик!</span>
+          <span class="sh-sc"><span title="Обслужено">✅ ${sh.served}</span><span title="Ошибки">❌ ${sh.errors}</span><span title="Ушли">😠 ${sh.lost}</span><b title="Чаевые (примерно)">${fm(sh.tips)}</b></span><button type="button" class="btn sm" data-pa="shiftEnd">Закончить</button></div>
+        <div class="sh-queue" aria-label="Очередь: ${sh.guests.length}">${q || '<span class="sh-empty">Пока никого — протрите стойку</span>'}</div>
+        <div class="sh-order">${g ? `<div class="sh-bub">${g.note ? `<span class="sh-note">${esc(g.note)}</span>` : ''}<span class="sh-ol">${order}</span></div>${canUp ? `<button type="button" class="btn sh-upb" data-pa="shiftUp">🥐 Предложить к заказу</button>` : ''}` : ''}<span class="sh-msg" id="shMsg" aria-live="polite"></span></div>
+        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itemById(id).icon}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ</button></div>
+        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}"><span aria-hidden="true">${x.icon}</span><small>${esc(x.name)}</small><kbd>${i + 1}</kbd></button>`).join('')}</div></div></div>`;
+    } else {
+      const r = sh.result, st = r.stars;
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-res"><span class="sh-stars" aria-label="Оценка ${st} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= st ? 'on' : ''}" style="animation-delay:${i * 0.12}s">★</i>`).join('')}</span>
+        <h2 id="shT">${st >= 5 ? 'Лучшая смена!' : st >= 4 ? 'Отличная смена' : st >= 3 ? 'Нормальная смена' : 'Тяжёлая смена'}</h2>
+        <div class="sh-tipbig" id="shTip">+${fm(r.tips)}<small>чаевые</small></div>
+        <div class="sh-rs"><span>✅ Обслужено: <b>${sh.served}</b></span><span>❌ Ошибки: <b>${sh.errors}</b></span><span>🥐 Допродажи: <b>${sh.upsells}</b></span><span>😠 Ушли: <b>${sh.lost}</b></span></div>
+        <div class="sh-gain">${Object.keys(r.add).filter((k) => r.add[k] > 0).map((k) => `<span class="chip good">${PR().SK_NAME[k]} +${String(r.add[k]).replace('.', ',')}</span>`).join('')}<span class="chip ${r.rep >= 0 ? 'good' : 'bad'}">Начальник ${r.rep >= 0 ? '👍' : '👎'}</span></div>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftDone">Готово</button></div></div></div>`;
+    }
+    let el = $('#proSh'); if (!el) { $('#proOv').insertAdjacentHTML('beforeend', '<div id="proSh"></div>'); el = $('#proSh'); }
+    el.innerHTML = h;
+  }
+  function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); return; } sh.tray.push(id); shiftRender(); }
+  function shiftServe() {
+    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || !sh.tray.length) return;
+    const a = sh.tray.slice().sort().join(), b = g.order.slice().sort().join();
+    if (a === b) {
+      sh.served++; if (g.up != null) sh.upsells++;
+      const p = Pp(), tip = Math.round(C().SHIFT_TIP * (0.7 + p.sk.sales / 100) + (g.up != null ? C().SHIFT_UPSELL : 0));
+      sh.tips += tip; sh.guests.shift(); sh.tray = [];
+      flash(`Спасибо! +${tip} ₽`, 'up');
+    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); flash('Не тот заказ! 😬', 'dn'); }
+    shiftRender();
+  }
+  function shiftUp() {
+    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || g.asked) return;
+    g.asked = true;
+    if (sh.rnd() < sh.plan.upsell) {
+      const bake = sh.plan.items.filter((x) => x.cat === 'bake' && !g.order.includes(x.id));
+      const it = (bake.length ? bake : sh.plan.items)[Math.floor(sh.rnd() * (bake.length || sh.plan.items.length))];
+      g.order.push(it.id); g.up = g.order.length - 1; flash(`Давайте! ${it.icon}`, 'up');
+    } else { g.pat = Math.max(1, g.pat - 1); flash('Нет, спасибо', 'dn'); }
+    shiftRender();
+  }
+  function shiftEnd() {
+    const sh = ui.sh; if (!sh || sh.state !== 'play') return;
+    sh.state = 'res';
+    sh.result = PR().shiftResult(S(), { served: sh.served, errors: sh.errors, upsells: sh.upsells, lost: sh.lost, total: sh.total });
+    Pp().fx = Pp().fx.filter((f) => f.where !== 'shift'); // монетки — на экране итога, не второй раз
+    shiftRender();
+    setTimeout(() => { const t = $('#shTip'); if (t) { t.classList.add('bump'); } }, 300);
+  }
+  function shiftClose() {
+    const el = $('#proSh'); if (el) el.remove();
+    const tips = ui.sh && ui.sh.result ? ui.sh.result.tips : 0;
+    ui.sh = null; ui.mode = null; ui.dirty = true; render(true);
+    if (tips) { coins($('#proShiftAnchor') || $('.pro-shiftbtn'), $('#proSav'), 6); float($('#proSav'), '+' + fm(tips), 'up', true); }
+    APP().save();
+  }
+
+  /* ---------------- действия ---------------- */
+  function res(r, okMsg) { if (r && r.ok === false && r.msg) APP().toast('Не получится', r.msg, 'warn'); ui.dirty = true; render(true); drainFx(); if (r && r.ok) APP().save(); return r; }
+  function onClick(e) {
+    const b = e.target.closest('[data-pa]'); if (!b) return;
+    if (b.disabled) return;
+    const a = b.dataset.pa, v = b.dataset.v, s = S(), p = Pp(); if (!s || !p) return;
+    if (a === 'menuClose' && b.classList.contains('pro-ovbg') && e.target !== b) return; // клик внутри меню — не закрывать
+    e.preventDefault();
+    switch (a) {
+      case 'speed': ui.speed = +v; ui.dirty = true; render(true); break;
+      case 'theme': if (APP().ACT && APP().ACT.theme) APP().ACT.theme({}); break;
+      case 'menu': ui.menu = true; ui.ask = null; menu(); break;
+      case 'menuClose': ui.menu = false; ui.ask = null; { const m = $('#proMenu'); if (m) m.remove(); } break;
+      case 'skipAsk': ui.ask = 'skip'; menu(); break;
+      case 'askNo': ui.ask = null; if (ui.menu) menu(); ui.dirty = true; render(true); break;
+      case 'skipYes': ui.menu = false; ui.ask = null; toMain(true); break;
+      case 'toStart': ui.menu = false; close(); APP().toStart(); break;
+      case 'home': res(PR().setHome(s, v)); break;
+      case 'food': res(PR().setFood(s, v)); break;
+      case 'fun': res(PR().setFun(s, v)); break;
+      case 'extra': res(PR().setExtra(s, +v)); break;
+      case 'save': res(PR().setSaveRate(s, +v)); break;
+      case 'study': res(PR().startStudy(s, v)); break;
+      case 'want': { const r = res(PR().buyWant(s, v)); if (r && r.ok) float(document.querySelector(`#prologue [data-pa=want][data-v=${v}]`), '−' + fm(r.cost), 'dn'); break; }
+      case 'toBox': { const keep = Math.max(0, PR().monthCost(p) - 0), amt = Math.max(0, p.cash - keep); if (amt <= 0) APP().toast('Копилка', `Оставьте в кошельке запас на месяц жизни (${fm(PR().monthCost(p))}).`, 'warn'); else { res(PR().toBox(s, amt)); coins($('#proCash'), $('#proBox'), 4); } break; }
+      case 'fromBox': res(PR().fromBox(s, Math.min(p.box, 10000))); break;
+      case 'toDep': { const r = res(PR().toDep(s, p.box)); if (r && r.ok) coins($('#proBox'), $('#proDep'), 4); break; }
+      case 'fromDep': if (p.depInt > 0) { ui.ask = 'dep'; ui.dirty = true; render(true); } else res(PR().fromDep(s)); break;
+      case 'fromDepYes': ui.ask = null; res(PR().fromDep(s)); break;
+      case 'openOwn': { const r = PR().openOwn(s); if (r.ok) showCard(); break; }
+      case 'choose': choose(+v); break;
+      case 'shift': shiftOpen(false); break;
+      case 'shiftGo': if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; shiftRender(); } break;
+      case 'shiftCancel': { const el = $('#proSh'); if (el) el.remove(); ui.sh = null; ui.mode = null; break; }
+      case 'shiftItem': shiftItem(v); break;
+      case 'shiftTray': if (ui.sh) { ui.sh.tray.splice(+v, 1); shiftRender(); } break;
+      case 'shiftServe': shiftServe(); break;
+      case 'shiftUp': shiftUp(); break;
+      case 'shiftEnd': shiftEnd(); break;
+      case 'shiftDone': shiftClose(); break;
+      case 'finalMain': toMain(false); break;
+      case 'retry': retry(); break;
+      case 'skipMain': toMain(true); break;
+      default: break;
+    }
+  }
+  // клавиатура: пробел — пауза, 1/2 — скорость; в «Смене» 1–8 — позиции, Enter — отдать, Backspace — убрать
+  window.addEventListener('keydown', (e) => {
+    if (!ui.open) return;
+    const tg = e.target && e.target.tagName;
+    if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT' || e.ctrlKey || e.metaKey || e.altKey) return;
+    e.stopPropagation(); // основной игре эти клавиши сейчас не нужны
+    const sh = ui.sh;
+    if (ui.mode === 'shift' && sh && sh.state === 'play') {
+      const n = +e.key; if (n >= 1 && n <= sh.plan.items.length) { shiftItem(sh.plan.items[n - 1].id); e.preventDefault(); return; }
+      if (e.key === 'Enter') { shiftServe(); e.preventDefault(); return; }
+      if (e.key === 'Backspace') { sh.tray.pop(); shiftRender(); e.preventDefault(); return; }
+      return;
+    }
+    if (e.code === 'Space' && !ui.mode) { e.preventDefault(); if (ui.speed) { ui.prev = ui.speed; ui.speed = 0; } else ui.speed = ui.prev || 1; ui.dirty = true; render(true); }
+    else if (e.key === '1' && !ui.mode) { ui.speed = 1; render(true); } else if ((e.key === '2' || e.key === '3') && !ui.mode) { ui.speed = 3; render(true); }
+    else if (e.key === 'Escape' && ui.menu) { ui.menu = false; const m = $('#proMenu'); if (m) m.remove(); }
+  }, true);
+
+  BK.PrologueUI = { startOpt, bindStart, picked, begin, active, resume, open, close, toMain, render, get ui() { return ui; }, shiftOpen };
+})();
+
 /* ui/app.js */
 /* Ядро интерфейса: цикл игры, HUD, вкладки, модальные окна, уведомления, сохранения. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -13895,7 +15788,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -13907,7 +15800,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) newGame($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
+    if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -13916,8 +15810,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
-  function newGame(name, difficulty) {
-    S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
+  // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
+  function startNew(name, difficulty) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty); else newGame(name, difficulty); }
+  function newGame(name, difficulty, opts) {
+    if (BK.PrologueUI) BK.PrologueUI.close();
+    S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
@@ -13927,6 +15824,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
+    if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
   }
 
   /* ---------------- цикл ---------------- */
@@ -13935,6 +15833,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     requestAnimationFrame(frame);
     if (!S) return;
     const dt = Math.min(250, t - (lastT || t)); lastT = t;
+    if (BK.PrologueUI && BK.PrologueUI.active()) return; // идёт пролог — у него свой цикл (src/ui/prologue.js)
     const running = S.phase === 'play' && ui.speed > 0 && !ui.modal && !S.ev.pending && !S.chef.pending && !S.lost;
     if (running) {
       acc += dt;
@@ -14593,7 +16492,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
 
-  function toStart() { save(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
+  function toStart() { save(); if (BK.PrologueUI) BK.PrologueUI.close(); closeModal(); cityView(); S = null; startScreen(); } // к списку игр: текущая остаётся в своём слоте
 
   /* ---------------- запуск ---------------- */
   function boot(hot) {
@@ -14607,7 +16506,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, continueGame, toStart, openRussia, cityView, refresh };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, startNew, continueGame, toStart, openRussia, cityView, refresh };
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();

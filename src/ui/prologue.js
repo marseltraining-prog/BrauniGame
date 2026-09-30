@@ -1,0 +1,600 @@
+/* =====================================================================
+   ИНТЕРФЕЙС ПРОЛОГА «БАРИСТА» (BK.PrologueUI). Логика — src/prologue.js (BK.Prologue), числа — CFG.PROLOGUE.
+   Полноэкранный слой #prologue поверх основной игры: пока пролог идёт, основной цикл app.js стоит (хук active()).
+   В духе Nintendo (docs/vision-plan.md §4): крупно, живо, отклик на каждое действие (монетки, всплывающие +/−),
+   мало цифр (силы/настроение/начальник — полосками и лицами), решения — карточками со значками последствий.
+   Связь с ядром: BK.App (state, newGame, save, toStart, refresh, toast, ACT.theme); в app.js только хуки:
+   выбор на стартовом экране (startOpt/bindStart/picked/begin), resume() при загрузке, active() в игровом цикле.
+   Мини-игра «Смена» — здесь же (shift*): гости, заказ, поднос, допродажа, час пик; итог считает BK.Prologue.shiftResult.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const PR = () => BK.Prologue, C = () => BK.CFG.PROLOGUE, APP = () => BK.App;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const fm = (v) => BK.fmtMoney(Math.round(v));
+  const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const S = () => (APP() ? APP().state : null);
+  const Pp = () => { const s = S(); return s && s.prologue; };
+  const PREF = 'bk-ufa-start';
+  const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
+
+  /* ---------------- стартовый экран: «Как начать» ---------------- */
+  function pref() { try { return localStorage.getItem(PREF) === 'prologue' ? 'prologue' : 'net'; } catch (e) { return 'net'; } }
+  function startOpt() {
+    const v = pref();
+    const opt = (k, ic, t, d) => `<label class="pro-pk${v === k ? ' on' : ''}"><input type="radio" name="startmode" value="${k}"${v === k ? ' checked' : ''}><span class="pk-i" aria-hidden="true">${ic}</span><span class="pk-t"><b>${t}</b><small>${d}</small></span></label>`;
+    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', '15–30 мин · вы за стойкой у Рашида и копите на свою точку')}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
+  }
+  function bindStart(el) {
+    const btn = () => el.querySelector('#startForm button[type=submit]');
+    const upd = () => { const v = picked(); el.querySelectorAll('.pro-pk').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)); const b = btn(); if (b) b.textContent = v === 'prologue' ? 'Начать пролог' : 'Новая игра'; };
+    el.querySelectorAll('input[name=startmode]').forEach((r) => r.addEventListener('change', () => { try { localStorage.setItem(PREF, picked()); } catch (e) {} upd(); }));
+    upd();
+  }
+  function picked() { const r = document.querySelector('#start input[name=startmode]:checked'); return r ? r.value : 'net'; }
+  // новая игра с прологом: обычная новая игра (тот же слот, сложность, соперник) + S.prologue; обучение основной игры ждёт конца пролога
+  function begin(name, difficulty, opts) {
+    APP().newGame(name, difficulty, opts);
+    const s = S(); if (!s) return;
+    PR().start(s);
+    s.prologue.tutOn = !!(s.tutorial && s.tutorial.on);
+    if (s.tutorial) s.tutorial.on = false;
+    ui.speed = 1; ui.mode = null;
+    open(); APP().save();
+  }
+
+  /* ---------------- открыть / закрыть слой ---------------- */
+  function active() { return ui.open; }
+  function resume() { const p = Pp(); if (p && (p.status === 'run' || p.status === 'won' || p.status === 'life')) { ui.speed = 1; ui.mode = null; open(); } else close(); }
+  function open() {
+    let root = $('#prologue');
+    if (!root) {
+      document.body.insertAdjacentHTML('beforeend', `<div id="prologue" class="pro" aria-label="Пролог «Бариста»">
+        <header class="pro-top" id="proTop"></header>
+        <div class="pro-mbar"><div class="pro-mb" id="proMb"><i id="proMbI"></i></div><span class="pro-ml" id="proMl"></span></div>
+        <main class="pro-in"><div class="pro-grid"><div class="pro-col" id="proColA"></div><div class="pro-col" id="proColB"></div></div></main>
+        <div class="pro-slip" id="proSlip" aria-live="polite" hidden></div>
+        <div id="proOv"></div><div class="pro-fly" id="proFly" aria-hidden="true"></div></div>`);
+      root = $('#prologue');
+      root.addEventListener('click', onClick);
+      root.addEventListener('pointerdown', () => { ui.pressing = true; }, true);
+      const up = () => { if (ui.pressing) { ui.pressing = false; ui.dirty = true; } };
+      root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
+    }
+    ui.open = true; ui.parts = {}; ui.dirty = true;
+    document.documentElement.classList.add('pro-on');
+    render(true);
+    if (!ui.loop) { ui.loop = true; requestAnimationFrame(loop); }
+  }
+  function close() {
+    const root = $('#prologue'); if (root) root.remove();
+    ui.open = false; ui.mode = null; ui.menu = false; ui.sh = null;
+    document.documentElement.classList.remove('pro-on');
+  }
+
+  /* ---------------- цикл ---------------- */
+  function loop(t) {
+    requestAnimationFrame(loop);
+    if (!ui.open) { ui.lastT = t; return; }
+    const dt = Math.min(250, t - (ui.lastT || t)); ui.lastT = t;
+    const s = S(), p = Pp();
+    if (!s || !p) { close(); return; }
+    if (ui.mode === 'shift') { shiftTick(dt / 1000); return; }
+    if (ui.menu) { bar(); return; }
+    if (p.status !== 'run') { if (ui.mode !== 'final' && ui.mode !== 'card') showFinal(); }
+    else if (p.cards.length) { if (ui.mode !== 'card') showCard(); }
+    else if (!ui.mode && ui.speed > 0 && !ui.menu && !document.hidden) {
+      const r = PR().advance(s, dt * ui.speed);
+      if (r === 'month') onMonth();
+      if (p.cards.length) showCard();
+    }
+    drainFx();
+    bar();
+    if (ui.slipT && t > ui.slipT) { ui.slipT = 0; const sl = $('#proSlip'); if (sl) sl.hidden = true; }
+    if (ui.dirty && !ui.pressing && t - ui.lastRender > 200) render();
+  }
+  function bar() {
+    const p = Pp(); if (!p) return;
+    const i = $('#proMbI'); if (i) i.style.width = (p.status === 'run' ? p.t * 100 : 100).toFixed(1) + '%';
+    const l = $('#proMl');
+    if (l) { const txt = `${cap(PR().monName(p))}${ui.speed === 0 ? ' · пауза' : ''}`; if (l.textContent !== txt) l.textContent = txt; }
+  }
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function onMonth() {
+    const p = Pp(), mo = p.mo; ui.dirty = true;
+    render(true);
+    if (p.status !== 'run') { APP().save(); return; } // финал — без монеток и итога месяца поверх окна
+    if (mo) {
+      const g = $('#proSav');
+      coins($('#proMb'), g, mo.net >= 0 ? 7 : 3, mo.net < 0);
+      float(g, fmS(mo.net), mo.net >= 0 ? 'up' : 'dn', true);
+      const inc = (mo.inc.salary || 0) + (mo.inc.tips || 0) + (mo.inc.extra || 0) + (mo.inc.interest || 0);
+      let out = 0; for (const k of Object.keys(mo.out)) out += mo.out[k] || 0;
+      const sl = $('#proSlip');
+      if (sl) {
+        sl.innerHTML = `<b>Итог месяца: <span class="${mo.net >= 0 ? 'up' : 'dn'}">${fmS(mo.net)}</span></b><span>Заработано ${fm(inc)} · жизнь ${fm(out)}${mo.boxed ? ` · в копилку ${fm(mo.boxed)}` : ''}</span>${mo.notes.slice(0, 2).map((n) => `<span class="nt">${esc(n)}</span>`).join('')}`;
+        sl.hidden = false; ui.slipT = performance.now() + 4200;
+      }
+    }
+    APP().save();
+  }
+
+  /* ---------------- отклик: монетки и всплывающие числа ---------------- */
+  function float(el, text, cls, big) {
+    const fly = $('#proFly'); if (!fly || !el) return;
+    const r = el.getBoundingClientRect(); if (!r.width) return;
+    const f = document.createElement('span');
+    f.className = `pro-float ${cls || ''}${big ? ' big' : ''}`; f.textContent = text;
+    f.style.left = Math.round(Math.min(innerWidth - 90, Math.max(8, r.left + r.width / 2 - 40))) + 'px'; f.style.top = Math.round(r.top + 4) + 'px';
+    fly.appendChild(f); setTimeout(() => f.remove(), 1300);
+  }
+  function coins(from, to, n, lose) {
+    const fly = $('#proFly'); if (!fly || !from || !to) return;
+    const a = from.getBoundingClientRect(), b = to.getBoundingClientRect(); if (!a.width || !b.width) return;
+    const reduce = globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('span'); c.className = 'pro-coin' + (lose ? ' lose' : ''); c.textContent = '₽';
+      const x0 = lose ? b.left + b.width / 2 : a.left + a.width * (0.2 + 0.6 * Math.random()), y0 = lose ? b.top + 10 : a.top;
+      const x1 = lose ? b.left + b.width / 2 + (Math.random() - 0.5) * 120 : b.left + b.width / 2 + (Math.random() - 0.5) * 40, y1 = lose ? b.top + 90 : b.top + b.height / 2;
+      c.style.left = x0 + 'px'; c.style.top = y0 + 'px';
+      fly.appendChild(c);
+      requestAnimationFrame(() => requestAnimationFrame(() => { c.style.transitionDelay = (i * 60) + 'ms'; c.style.transform = `translate(${x1 - x0}px, ${y1 - y0}px) scale(.8)`; c.style.opacity = lose ? '0' : '.2'; }));
+      setTimeout(() => c.remove(), 1100 + i * 60);
+    }
+    setTimeout(() => { if (to && !lose) { to.classList.remove('bump'); void to.offsetWidth; to.classList.add('bump'); } }, 650);
+  }
+  const FXWHERE = { mood: '#proMood', rep: '#proRep', hp: '#proHp', skill: '#proSk', box: '#proBox', dep: '#proDep', rub: '#proSav' };
+  function drainFx() {
+    const p = Pp(); if (!p || !p.fx.length) return;
+    const list = p.fx.splice(0, p.fx.length);
+    for (const f of list) {
+      if (f.kind === 'month') continue; // итог месяца — в onMonth
+      if (f.kind === 'promo') { confetti(); continue; }
+      const el = $(FXWHERE[f.kind] || '#proSav');
+      if (f.kind === 'mood') float(el, f.v > 0 ? '🙂 +' : '🙁 −', f.v > 0 ? 'up' : 'dn');
+      else if (f.kind === 'rep') float(el, f.v > 0 ? '👍' : '👎', f.v > 0 ? 'up' : 'dn');
+      else if (f.kind === 'skill') float(el, '⭐ +' + f.v, 'up');
+      else if (f.kind === 'box' || f.kind === 'dep') { float(el, '+' + fm(f.v), 'up'); }
+      else if (f.kind === 'rub') { float(el, fmS(f.v), f.v >= 0 ? 'up' : 'dn'); if (f.v > 0) coins($('#proMb'), el, 4); }
+    }
+    ui.dirty = true;
+  }
+  function confetti() {
+    const fly = $('#proFly'); if (!fly) return;
+    if (globalThis.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (let i = 0; i < 26; i++) {
+      const c = document.createElement('span'); c.className = 'pro-conf'; c.style.left = (10 + Math.random() * 80) + 'vw'; c.style.setProperty('--hue', String(Math.floor(Math.random() * 360)));
+      c.style.animationDelay = (Math.random() * 0.4) + 's'; fly.appendChild(c); setTimeout(() => c.remove(), 2400);
+    }
+  }
+
+  /* ---------------- разметка ---------------- */
+  const ICON = {
+    pause: '<svg viewBox="0 0 16 14" aria-hidden="true"><rect x="3" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
+    p1: '<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M4 1 L13 7 L4 13 Z" fill="currentColor"/></svg>',
+    p3: '<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M1 1 L8 7 L1 13 Z M8 1 L15 7 L8 13 Z" fill="currentColor"/></svg>',
+    theme: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4Z" fill="currentColor"/></svg>',
+    menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.6" fill="currentColor"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="13" cy="8" r="1.6" fill="currentColor"/></svg>',
+  };
+  function top(p) {
+    const age = PR().age(p), job = C().JOBS[p.job].name;
+    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>пролог · «Калач» на Пушкина</small></span></div>
+      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
+      <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
+        <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
+        <button type="button" data-pa="speed" data-v="1" aria-label="Скорость 1" title="Обычная скорость" aria-pressed="${ui.speed === 1}">${ICON.p1}</button>
+        <button type="button" data-pa="speed" data-v="3" aria-label="Скорость 3" title="Втрое быстрее" aria-pressed="${ui.speed === 3}">${ICON.p3}</button></div>
+        <button type="button" class="iconbtn" data-pa="theme" aria-label="Сменить тему" title="Тема">${ICON.theme}</button>
+        <button type="button" class="iconbtn" data-pa="menu" aria-label="Меню пролога" title="Меню">${ICON.menu}</button></div>`;
+  }
+  const FACE = (v) => (v >= 70 ? '😄' : v >= 45 ? '🙂' : v >= 25 ? '😐' : '😣');
+  const lvlCls = (v) => (v >= 60 ? 'ok' : v >= 30 ? 'mid' : 'low');
+  function meter(id, icon, name, v, hint) {
+    return `<div class="pro-m ${lvlCls(v)}" id="${id}" title="${esc(hint)}"><span class="pm-i" aria-hidden="true">${icon}</span><span class="pm-n">${name}</span><span class="pm-bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v)}" aria-label="${name}"><i style="width:${Math.max(3, Math.round(v))}%"></i></span><span class="pm-f" aria-hidden="true">${FACE(v)}</span></div>`;
+  }
+  function hpHint(p) { return p.hp < C().SICK_HP ? 'Силы на исходе: можно заболеть, начальник замечает ошибки. Ешьте нормально, меньше подработок.' : p.hp < 50 ? 'Устаёте. Нормальная еда и меньше подработок вернут силы.' : 'Силы в порядке.'; }
+  function moodHint(p) { return p.mood < C().SPLURGE_MOOD ? 'Настроение на нуле — легко сорваться на покупку. Деньги в копилке и на вкладе целее.' : p.mood < 45 ? 'Грустно. Развлечения, отдых и удачные смены поднимут настроение.' : 'Настроение хорошее.'; }
+  function repHint(p) { return p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'; }
+  const beans = (v) => { const n = Math.min(5, 1 + Math.floor(v / 20)); return `<span class="pro-beans" aria-label="уровень ${n} из 5">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`; };
+
+  function scene(p) {
+    // стойка «Калача»: витрина, кофемашина, бариста; лицо — настроение
+    const face = p.mood >= 45 ? 'M-5 3 q5 4 10 0' : p.mood >= 25 ? 'M-5 4 h10' : 'M-5 5 q5 -4 10 0';
+    const cap = ['#c46f17', '#3b8796', '#6b4a2e'][p.job] || '#c46f17';
+    return `<svg class="pro-scene" viewBox="0 0 360 150" role="img" aria-label="Стойка пекарни «Калач»">
+      <rect x="0" y="0" width="360" height="150" rx="14" class="sc-wall"/>
+      <rect x="18" y="16" width="120" height="44" rx="6" class="sc-board"/><text x="78" y="34" text-anchor="middle" class="sc-bt">КАЛАЧ</text><text x="78" y="50" text-anchor="middle" class="sc-bs">хлеб · кофе · эчпочмак</text>
+      <g transform="translate(248 38)"><rect x="0" y="0" width="70" height="56" rx="6" class="sc-mach"/><rect x="10" y="10" width="50" height="14" rx="3" class="sc-machp"/><rect x="26" y="30" width="18" height="8" rx="2" class="sc-machp"/>
+        <path class="sc-steam" d="M26 -6 q4 -6 0 -12 M36 -4 q4 -6 0 -12 M46 -6 q4 -6 0 -12"/></g>
+      <g transform="translate(176 58)"><circle r="17" class="sc-head"/><path d="M-6 -3 h0.1 M6 -3 h0.1" class="sc-eye"/><path d="${face}" class="sc-mouth"/><path d="M-19 -8 q19 -22 38 0" fill="${cap}"/>
+        <path d="M-26 44 q0 -24 26 -24 q26 0 26 24 z" class="sc-body"/><path d="M-12 22 h24 v22 h-24 z" fill="${cap}" opacity=".85"/></g>
+      <rect x="0" y="98" width="360" height="52" class="sc-counter"/><rect x="0" y="96" width="360" height="6" class="sc-top"/>
+      <g class="sc-case"><rect x="22" y="104" width="120" height="36" rx="6"/><text x="44" y="130" font-size="18">🥐</text><text x="70" y="130" font-size="18">🥟</text><text x="96" y="130" font-size="18">🥯</text></g>
+      <text x="296" y="132" font-size="22">☕</text></svg>`;
+  }
+  function jobLadder(p) {
+    const J = C().JOBS, pc = PR().promoCheck(p);
+    let s = `<ol class="pro-ladder">${J.map((j, i) => `<li class="${i < p.job ? 'done' : i === p.job ? 'cur' : ''}"><span class="lb">${i < p.job ? '✓' : i + 1}</span><span class="lt">${esc(j.name)}</span></li>`).join('')}</ol>`;
+    if (pc && p.status === 'run') {
+      const q = pc.q, rows = [];
+      const row = (name, v, need) => rows.push(`<span class="pro-req${v >= need ? ' ok' : ''}" title="${name}: ${Math.floor(v)} из ${need}"><span>${name}</span><span class="rb"><i style="width:${Math.min(100, v / need * 100).toFixed(0)}%"></i></span></span>`);
+      if (q.coffee) row('Кофе', p.sk.coffee, q.coffee);
+      if (q.sales) row('Продажи', p.sk.sales, q.sales);
+      if (q.people) row('Люди', p.sk.people, q.people);
+      if (p.stazh < C().PROMO_STAZH) row('Начальник', p.rep, q.rep);
+      row('Стаж', p.jobM, q.months);
+      s += `<div class="pro-next"><span class="nk">До должности «${esc(pc.name.toLowerCase())}»</span>${rows.join('')}</div>`;
+    }
+    return s;
+  }
+  function colA(p) {
+    const g = PR().goal(p), c = C();
+    const sav = g.sav, credMark = (c.GOAL_CREDIT / c.GOAL * 100).toFixed(1), pct = Math.min(100, sav / c.GOAL * 100);
+    let s = `<section class="pc pro-goal"><div class="pg-h"><span class="pg-e">Цель · своя точка</span><span class="pg-ic" aria-hidden="true">🏪</span></div>
+      <div class="pg-v" id="proSav">${fm(sav)}</div>
+      <div class="pg-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Накоплено на свою точку"><i style="width:${pct.toFixed(1)}%"></i><b class="pg-mk" style="left:${credMark}%" title="С кредитом хватит ${fm(c.GOAL_CREDIT)}"></b></div>
+      <div class="pg-sc"><span>0</span><span style="left:${credMark}%">${fm(c.GOAL_CREDIT)} + кредит</span><span>${fm(c.GOAL)}</span></div>
+      <ul class="pg-list">
+        <li class="${g.job ? 'ok' : ''}"><span class="ck" aria-hidden="true">${g.job ? '✓' : ''}</span>Должность «управляющий сменой»</li>
+        <li class="${sav >= c.GOAL ? 'ok' : ''}"><span class="ck" aria-hidden="true">${sav >= c.GOAL ? '✓' : ''}</span>Накопить ${fm(c.GOAL)} — или ${fm(c.GOAL_CREDIT)} и кредит</li>
+        <li class="${g.credit ? 'ok' : ''}"><span class="ck" aria-hidden="true">${g.credit ? '✓' : ''}</span>Для кредита: стаж ${Math.min(p.stazh, c.CREDIT_STAZH)} из ${c.CREDIT_STAZH} мес., начальник доволен</li></ul>`;
+    if (g.ok && p.status === 'run' && !p.sf.mentor && !p.cards.length) s += `<button type="button" class="btn primary block pro-big" data-pa="openOwn">Открыть свою точку</button>`;
+    if (p.sf.mentor === 'intern' && p.status === 'run') s += `<p class="pro-note">Стажировка в «Хлебном дворе» — ещё ${Math.max(0, p.flags.intern - p.m)} мес.</p>`;
+    // деньги: кошелёк → копилка → вклад
+    const rate = C().DEP_RATE + (p.depBonus || 0);
+    s += `<div class="pro-money">
+      <div class="pmy" id="proCash"><span class="pmy-i" aria-hidden="true">👛</span><span class="pmy-n">Кошелёк</span><b class="${p.cash < 0 ? 'neg' : ''}">${fm(p.cash)}</b><small>${p.cash < 0 ? 'минус под 2 % в месяц' : 'на жизнь и покупки'}</small><button type="button" class="btn sm" data-pa="toBox">В копилку</button></div>
+      <div class="pmy" id="proBox"><span class="pmy-i" aria-hidden="true">🐷</span><span class="pmy-n">Копилка</span><b>${fm(p.box)}</b><small>срывы её не трогают</small><span class="pmy-b"><button type="button" class="btn sm" data-pa="toDep">На вклад</button><button type="button" class="btn sm" data-pa="fromBox" ${p.box > 0 ? '' : 'disabled'}>Достать</button></span></div>
+      <div class="pmy" id="proDep"><span class="pmy-i" aria-hidden="true">🏦</span><span class="pmy-n">Вклад · ${Math.round(rate * 100)} %</span><b>${fm(p.dep + p.depInt)}</b><small>${p.depInt > 0 ? `проценты ${fm(p.depInt)} — раз в год` : 'проценты раз в год'}</small>${ui.ask === 'dep' ? `<span class="pmy-b"><button type="button" class="btn sm danger" data-pa="fromDepYes">Снять, сгорит ${fm(p.depInt)}</button><button type="button" class="btn sm" data-pa="askNo">Нет</button></span>` : `<button type="button" class="btn sm" data-pa="fromDep" ${p.dep > 0 ? '' : 'disabled'}>Снять</button>`}</div></div>`;
+    s += `</section>`;
+    // герой: стойка, должность, «Смена», состояние, навыки
+    const why = PR().shiftWhy(p);
+    s += `<section class="pc pro-hero">${scene(p)}${jobLadder(p)}
+      <button type="button" class="btn primary block pro-big pro-shiftbtn${!why ? ' ready' : ''}" data-pa="shift" ${why ? 'disabled' : ''}><span aria-hidden="true">☕</span> Выйти на смену<small>${why ? esc(why) : 'чаевые, навык и оценка начальника · 40 с'}</small></button>
+      <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
+      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
+    return s;
+  }
+  // значки последствий: ▲/▼ × сила (как в окне события основной игры)
+  const FXN = { rub: ['₽', 'Деньги'], hp: ['❤️', 'Силы'], mood: ['🙂', 'Настроение'], rep: ['👔', 'Начальник'], skill: ['⭐', 'Навык'], rel: ['🤝', 'Отношения'] };
+  function fxChips(fx, risk) {
+    const out = [];
+    for (const k of Object.keys(FXN)) {
+      const v = fx && fx[k]; if (!v) continue;
+      const up = v > 0, n = Math.min(3, Math.abs(v));
+      out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span class="fxe" aria-hidden="true">${FXN[k][0]}</span><span class="fxn">${FXN[k][1]}</span><span class="ar" aria-label="${up ? 'лучше' : 'хуже'}">${(up ? '▲' : '▼').repeat(n)}</span></span>`);
+    }
+    if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span class="fxe" aria-hidden="true">🎲</span><span class="fxn">Риск</span></span>');
+    return out.join('');
+  }
+  function optBtn(pa, v, on, name, price, fx, dis, title) {
+    return `<button type="button" class="po${on ? ' on' : ''}" data-pa="${pa}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}><b>${esc(name)}</b><span class="pp">${price}</span>${fx ? `<span class="pfx">${fx}</span>` : ''}</button>`;
+  }
+  const mini = (hp, mood) => `${hp ? `<i class="${hp > 0 ? 'up' : 'dn'}">❤️${hp > 0 ? '▲' : '▼'}</i>` : ''}${mood ? `<i class="${mood > 0 ? 'up' : 'dn'}">🙂${mood > 0 ? '▲' : '▼'}</i>` : ''}`;
+  const sgn = (v, big) => (Math.abs(v) >= big ? Math.sign(v) * 2 : Math.sign(v));
+  function colB(p) {
+    const c = C(), H = c.HOME, F = c.FOOD, FN = c.FUN;
+    const cost = PR().monthCost(p), pay = PR().payOf(p);
+    let s = `<section class="pc pro-life"><h3>Как живу <small>решения действуют каждый месяц</small></h3>
+      <div class="pl-row"><span class="pl-k">🏠 Жильё</span><div class="pl-o">${Object.keys(H).map((k) => optBtn('home', k, p.home === k, H[k].name, fm(H[k].cost + H[k].transport) + '/мес', mini(H[k].hp, H[k].mood), false, k === 'parents' ? 'Дёшево, но далеко от работы (не больше 1 доп. смены) и дома бывает напряжённо' : '')).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🍲 Еда</span><div class="pl-o">${Object.keys(F).map((k) => optBtn('food', k, p.food === k, F[k].name, fm(F[k].cost) + '/мес', mini(sgn(F[k].hp, 10), F[k].mood))).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🎬 Развлечения</span><div class="pl-o">${Object.keys(FN).map((k) => optBtn('fun', k, p.fun === k, FN[k].name, FN[k].cost ? fm(FN[k].cost) + '/мес' : 'бесплатно', mini(FN[k].hp, FN[k].mood))).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">💪 Доп. смены</span><div class="pl-o">${[0, 1, 2].map((n) => optBtn('extra', n, p.extra === n, n ? `${n} в неделю` : 'Нет', n ? '+' + fm(n * c.EXTRA.pay * (1 + p.job * 0.15)) : '—', n ? mini(-1, -1) : '', n > PR().maxExtra(p), n > PR().maxExtra(p) ? 'От родителей далеко ехать — только одна доп. смена' : '')).join('')}</div></div>
+      <div class="pl-row"><span class="pl-k">🐷 С зарплаты в копилку</span><div class="pl-o">${c.SAVE_RATES.map((r, i) => optBtn('save', i, p.saveRate === i, r ? Math.round(r * 100) + ' %' : 'Ничего', r ? 'сразу в день зарплаты' : '—', '')).join('')}</div></div>
+      <div class="pl-sum"><span>Жизнь стоит <b>${fm(cost)}</b> в месяц</span><span>Оклад <b>${fm(pay)}</b> + чаевые${p.extra ? ' + подработки' : ''}</span></div></section>`;
+    // учёба
+    const CS = c.COURSES, ic = { coffee: '☕', sales: '📈', lead: '👥' };
+    s += `<section class="pc pro-study"><h3>Учёба <small>один курс за раз</small></h3><div class="ps-g">${Object.keys(CS).map((id) => {
+      const x = CS[id], why = PR().studyWhy(p, id), cur = p.study && p.study.id === id, done = p.done[id];
+      const price = id === 'coffee' && p.flags.disc && !done ? `<s>${fm(x.month)}</s> ${fm(x.month / 2)}` : fm(x.month);
+      return `<div class="psc${cur ? ' cur' : ''}${done ? ' done' : ''}"><span class="psc-i" aria-hidden="true">${ic[id]}</span><b>${esc(x.name)}</b><small>${esc(x.who)}</small><span class="psc-m">${x.months} мес. × ${price} · ${PR().SK_NAME[x.skill].toLowerCase()} +${x.add}</span>${done ? '<span class="chip good">пройден</span>' : cur ? `<span class="chip river">идёт · ещё ${p.study.left} мес.</span>` : `<button type="button" class="btn sm" data-pa="study" data-v="${id}" ${why ? `disabled title="${esc(why)}"` : ''}>Записаться</button>${why && why !== 'Уже учитесь — один курс за раз' ? `<span class="psc-w">${esc(why)}</span>` : ''}`}</div>`;
+    }).join('')}</div></section>`;
+    // хочется
+    const W = c.WANTS;
+    s += `<section class="pc pro-wants"><h3>Хочется <small>радует, но уносит деньги из кошелька</small></h3><div class="pw-g">${Object.keys(W).map((id) => {
+      const w = W[id], why = PR().wantWhy(p, id), price = PR().wantPrice(p, id), sale = price < w.cost, has = (p.wantsCd[id] || 0) > p.m;
+      return `<button type="button" class="pw${has ? ' has' : ''}${sale ? ' sale' : ''}" data-pa="want" data-v="${id}" ${why ? `disabled title="${esc(why)}"` : ''}><span class="pw-i" aria-hidden="true">${w.icon}</span><b>${esc(w.name)}</b><span class="pw-p">${sale ? `<s>${fm(w.cost)}</s> ` : ''}${fm(price)}${w.monthly ? ` + ${fm(w.monthly)}/мес` : ''}</span><span class="pw-f">🙂${'▲'.repeat(w.mood >= 20 ? 3 : w.mood >= 10 ? 2 : 1)}</span>${has ? '<span class="pw-has">есть</span>' : why ? `<span class="pw-why">${esc(why)}</span>` : ''}</button>`;
+    }).join('')}</div></section>`;
+    // лента
+    const F2 = p.feed.slice(-7).reverse();
+    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(f.t)}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
+    return s;
+  }
+  function setPart(id, html) { if (ui.parts[id] === html) return; ui.parts[id] = html; const el = document.getElementById(id); if (el) el.innerHTML = html; }
+  function render(force) {
+    const p = Pp(); if (!p || !ui.open) return;
+    if (!force && ui.pressing) return;
+    ui.dirty = false; ui.lastRender = performance.now();
+    setPart('proTop', top(p)); setPart('proColA', colA(p)); setPart('proColB', colB(p));
+    if (ui.menu) menu(); bar();
+  }
+
+  /* ---------------- карточки-решения ---------------- */
+  function avatar(h, big) { return `<span class="pro-av${big ? ' big' : ''}" style="--h:${h.hue}" aria-hidden="true">${esc(h.ini)}</span>`; }
+  function showCard() {
+    const s = S(), cv = PR().card(s); if (!cv) { hideOv(); return; }
+    ui.mode = 'card';
+    const LET = 'АБВГДЕ', kind = cv.kind === 'pos' ? 'pos' : cv.kind === 'neg' ? 'neg' : 'hero';
+    const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
+    let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
+      <div class="pcd-h">${avatar(cv.hero, true)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
+      <h2 id="proCardT">${esc(cv.title)}</h2><p class="pcd-t">${esc(cv.text)}</p><div class="pcd-c">`;
+    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    cv.choices.forEach((c, i) => {
+      const fx = fxChips(c.fx, c.risk);
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="pcd-d">${esc(c.desc)}</p>` : ''}`; return; }
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+    });
+    h += `</div></div></div>`;
+    $('#proOv').innerHTML = h;
+    const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
+  }
+  function hideOv() { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
+  function choose(i) {
+    const s = S(), r = PR().choose(s, i);
+    if (!r.ok) { APP().toast('Не получится', r.msg || '', 'warn'); return; }
+    hideOv(); ui.dirty = true; render(true); drainFx();
+    const p = Pp();
+    if (p.status !== 'run') { APP().save(); showFinal(); return; }
+    if (p.cards.length) showCard();
+    else if (p.m === 0 && p.stats.shifts === 0 && !ui.firstShift) { ui.firstShift = true; shiftOpen(true); } // после сцены П1 — первая «Смена»
+    APP().save();
+  }
+
+  /* ---------------- финалы ---------------- */
+  const SPENT_IC = { home: '🏠', food: '🍲', fun: '🎬', transport: '🚌', phone: '📶', study: '🎓', health: '💊', fines: '🧾', clothes: '👕', gifts: '🎁', sneakers: '👟', console: '🎮', phone2: '📱', trip: '🏖️', car: '🚗', debt: '💳', loans: '🤝', invest: '🎲', other: '•' };
+  function showFinal() {
+    const s = S(), p = Pp(); if (!p) return;
+    ui.mode = 'final';
+    const sm = PR().summary(p), c = C();
+    const rows = sm.rows.slice(0, 9), max = Math.max(1, ...rows.map((r) => r.v));
+    const where = `<div class="pf-rows">${rows.map((r) => `<div class="pf-r${r.fun ? ' fun' : ''}"><span class="pf-i" aria-hidden="true">${SPENT_IC[r.k] || '•'}</span><span class="pf-n">${esc(r.name)}</span><span class="pf-b"><i style="width:${(r.v / max * 100).toFixed(1)}%"></i></span><b>${fm(r.v)}</b></div>`).join('')}</div>`;
+    let h;
+    if (p.status === 'won' || p.status === 'done') {
+      const cr = PR().carry(p, s), T = PR().TRAITS, M = PR().MENTOR, PK = PR().PERKS, TA = BK.Trainers ? BK.Trainers.AREA : {};
+      const gains = [];
+      gains.push(`<li><span aria-hidden="true">💰</span><span>${cr.bonus ? `Накопления сверх цели: <b>+${fm(cr.bonus)}</b> к стартовому капиталу` : `Накопления ушли в точку${p.won && p.won.credit ? ' (и кредит банка)' : ''} — капитал сети как обычно`}</span></li>`);
+      const sk = Object.keys(cr.skills).map((a) => (TA[a] ? TA[a].short : a));
+      if (sk.length) gains.push(`<li><span aria-hidden="true">⭐</span><span>Навыки: <b>${esc(sk.join(', '))}</b> — уровень 1 (подсказки в «Требует внимания»)</span></li>`);
+      if (cr.baker) gains.push(`<li><span aria-hidden="true">👩‍🍳</span><span><b>${esc(cr.baker.name)}</b> — первый сотрудник первой точки, уровень ${cr.baker.lvl}</span></li>`);
+      if (cr.trait) gains.push(`<li><span aria-hidden="true">${cr.trait === 'thrift' ? '🐷' : '🛍️'}</span><span>Черта «<b>${T[cr.trait].name}</b>»: ${esc(T[cr.trait].desc.charAt(0).toLowerCase() + T[cr.trait].desc.slice(1))}</span></li>`);
+      for (const k of cr.perks) gains.push(`<li><span aria-hidden="true">🎁</span><span>${esc(PK[k])}</span></li>`);
+      if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
+      h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
+        <div class="pf-hero" aria-hidden="true">🏪</div><span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
+        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. Дальше — своя сеть: цех, первая точка и весь город на карте.</p>
+        <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
+        <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
+        <details class="pf-det"><summary>Куда уходили деньги</summary><p class="pro-note">Заработано ${fm(sm.earned)}, отложено ${fm(sm.sav)}.</p>${where}</details>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="finalMain">Открыть свою сеть</button></div></div></div>`;
+    } else {
+      const tips = [];
+      if (sm.fun > sm.earned * 0.12) tips.push(`На желания ушло ${fm(sm.fun)} — почти ${Math.round(sm.fun / Math.max(1, sm.earned) * 100)} % заработанного.`);
+      if ((p.spent.car || 0) > 0) tips.push('Машина в кредит съедала деньги каждый месяц.');
+      if ((p.spent.debt || 0) > 0) tips.push(`Проценты по кредитке: ${fm(p.spent.debt)}.`);
+      if (p.food === 'cafe') tips.push('Кафе и доставка каждый день — дорогая привычка.');
+      if (p.job < 2) tips.push('До управляющего сменой вы так и не дошли — без этого своё дело не открыть.');
+      if (!tips.length) tips.push('Копилка и вклад защищают деньги от срывов, а «Смена» и учёба быстрее ведут к повышению.');
+      h = `<div class="pro-ovbg"><div class="pro-card pro-final life" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
+        <div class="pf-hero" aria-hidden="true">🕰️</div><span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
+        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, а Семён Аркадьевич всё так же берёт американо и правду. Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
+        <h3>Куда ушли деньги</h3>${where}
+        <ul class="pf-tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="retry">Попробовать заново</button><button type="button" class="btn block pro-big2" data-pa="skipMain">Начать сразу со своей сети</button></div></div></div>`;
+    }
+    $('#proOv').innerHTML = h;
+    const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
+    if (p.status === 'won') confetti();
+  }
+  // переход в основную игру (стадия 2) с переносом бонусов
+  function toMain(skipped) {
+    const s = S(), p = Pp(); if (!s || !p) return;
+    let cr = null;
+    if (!skipped && p.status === 'won') cr = PR().applyCarry(s); else PR().skip(s);
+    if (s.tutorial) s.tutorial.on = !!p.tutOn;
+    close();
+    APP().refresh(); APP().save();
+    if (cr) APP().toast('Своя сеть!', cr.bonus ? `Бонус пролога: +${fm(cr.bonus)} к капиталу.` : 'Пролог пройден — выберите помещение под цех.', 'good');
+  }
+  function retry() {
+    const s = S(); if (!s) return;
+    const name = s.company, diff = s.difficulty, rival = !!(s.rival && s.rival.enabled), tut = !!(s.prologue && s.prologue.tutOn);
+    close();
+    begin(name, diff, { rival });
+    const s2 = S(); if (s2 && s2.prologue) s2.prologue.tutOn = tut;
+  }
+
+  /* ---------------- меню пролога ---------------- */
+  function menu() {
+    let o = $('#proMenu');
+    const h = `<div class="pro-ovbg" data-pa="menuClose"><div class="pro-card pro-menu" role="dialog" aria-modal="true" aria-labelledby="proMenuT" tabindex="-1">
+      <h2 id="proMenuT">Пролог «Бариста»</h2>
+      <p class="pcd-t">Вы — бариста у Рашида в «Калаче». Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
+      <ul class="pf-tips"><li>«Как живу» — жильё, еда, развлечения, подработки: чем дешевле, тем быстрее копится, но силы и настроение не бесконечны.</li><li>Копилка и вклад защищают деньги от срывов на покупки.</li><li>«Смена» раз в месяц — чаевые, навык и мнение начальника.</li></ul>
+      ${ui.ask === 'skip' ? `<div class="confirm">Пролог закончится без бонусов, начнётся обычная игра. <button type="button" class="btn sm danger" data-pa="skipYes">Пропустить</button><button type="button" class="btn sm" data-pa="askNo">Отмена</button></div>` : ''}
+      <div class="pf-btns"><button type="button" class="btn primary block" data-pa="menuClose">Вернуться</button>${ui.ask === 'skip' ? '' : '<button type="button" class="btn block" data-pa="skipAsk">Пропустить пролог — сразу своя сеть</button>'}<button type="button" class="btn block" data-pa="toStart">К списку игр</button></div></div></div>`;
+    if (!o) { $('#proOv').insertAdjacentHTML('beforeend', `<div id="proMenu"></div>`); o = $('#proMenu'); }
+    if (o.dataset.h !== h) { o.innerHTML = h; o.dataset.h = h; }
+  }
+
+  /* ---------------- мини-игра «Смена» ---------------- */
+  function mul(seed) { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const FACES = ['🧔', '👩', '👨‍🦳', '👧', '🧑‍💼', '👵', '🧑‍🎓', '👩‍🦰', '👨', '👱‍♀️'];
+  function shiftOpen(first) {
+    const p = Pp(), why = PR().shiftWhy(p); if (why) { APP().toast('Смена', why, 'warn'); return; }
+    const plan = PR().shiftPlan(p);
+    ui.mode = 'shift';
+    ui.sh = { plan, rnd: mul(plan.seed), state: 'intro', t: 0, guests: [], next: 0, tray: [], served: 0, errors: 0, upsells: 0, lost: 0, total: 0, tips: 0, id: 0, first, msg: null, tired: p.flags.tired === p.m - 1 || p.flags.tired === p.m };
+    shiftRender();
+  }
+  const itemById = (id) => PR().ITEMS.find((x) => x.id === id);
+  function newGuest(sh) {
+    const R = sh.rnd, items = sh.plan.items, coffee = items.filter((x) => x.cat === 'coffee'), bake = items.filter((x) => x.cat === 'bake');
+    const order = [];
+    const n = 1 + (R() < 0.55 ? 1 : 0) + (sh.plan.maxItems >= 3 && R() < 0.25 ? 1 : 0);
+    for (let i = 0; i < n; i++) { const pool = i === 0 ? (R() < 0.75 ? coffee : bake) : (R() < 0.6 ? bake : coffee); order.push(pool[Math.floor(R() * pool.length)].id); }
+    const rush = sh.t / sh.plan.sec > 0.35 && sh.t / sh.plan.sec < 0.75;
+    const pat = (sh.plan.patience - (sh.tired ? 3 : 0)) * (rush ? 0.85 : 1);
+    sh.total++;
+    const sem = sh.total === 1 && sh.first; // первый гость первой смены — Семён Аркадьевич: «Американо и правду!»
+    return { id: ++sh.id, face: sem ? '👴' : FACES[Math.floor(R() * FACES.length)], order: sem ? ['esp'] : order, pat: sem ? pat + 6 : pat, max: sem ? pat + 6 : pat, asked: false, up: null, note: sh.total === 1 && sh.first ? 'Американо и правду!' : '' };
+  }
+  function shiftTick(dt) {
+    const sh = ui.sh; if (!sh || sh.state !== 'play') return;
+    sh.t += dt;
+    const rush = sh.t / sh.plan.sec > 0.35 && sh.t / sh.plan.sec < 0.75;
+    sh.next -= dt;
+    let changed = false;
+    if (sh.next <= 0 && sh.guests.length < 5) { sh.guests.push(newGuest(sh)); sh.next = (rush ? 1.7 : 3.4) * (0.75 + sh.rnd() * 0.5); changed = true; }
+    for (const g of sh.guests.slice()) {
+      g.pat -= dt;
+      if (g.pat <= 0) { sh.guests.splice(sh.guests.indexOf(g), 1); sh.lost++; changed = true; if (sh.guests.length && g === sh.guests[0]) sh.tray = []; flash('Гость ушёл 😠', 'dn'); }
+    }
+    if (sh.t >= sh.plan.sec) { shiftEnd(); return; }
+    // полоски терпения и таймер — без перерисовки
+    const tb = $('#shTime'); if (tb) tb.style.width = (100 - sh.t / sh.plan.sec * 100).toFixed(1) + '%';
+    const rz = $('#shRush'); if (rz) rz.hidden = !rush;
+    for (const g of sh.guests) { const el = document.getElementById('shg' + g.id); if (el) { const v = Math.max(0, g.pat / g.max); el.style.setProperty('--pat', (v * 100).toFixed(0)); el.classList.toggle('angry', v < 0.3); } }
+    if (changed) shiftRender();
+  }
+  function flash(t, cls) { const sh = ui.sh; if (!sh) return; sh.msg = { t, cls, until: performance.now() + 1100 }; const m = $('#shMsg'); if (m) { m.textContent = t; m.className = 'sh-msg show ' + (cls || ''); clearTimeout(ui.flashT); ui.flashT = setTimeout(() => { const mm = $('#shMsg'); if (mm) mm.className = 'sh-msg'; }, 1000); } }
+  function shiftRender() {
+    const sh = ui.sh, p = Pp(); if (!sh) return;
+    let h;
+    if (sh.state === 'intro') {
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro"><span class="sh-big" aria-hidden="true">☕</span><h2 id="shT">${sh.first ? 'Первая смена' : 'Смена в «Калаче»'}</h2>
+        <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
+        ${sh.tired ? '<p class="pro-note">Вы не выспались после ночной смены — гости покажутся нетерпеливее.</p>' : ''}
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftGo">Начать смену · ${sh.plan.sec} с</button><button type="button" class="btn block" data-pa="shiftCancel">Не сейчас</button></div></div></div>`;
+    } else if (sh.state === 'play') {
+      const g = sh.guests[0];
+      const q = sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" style="--pat:${(x.pat / x.max * 100).toFixed(0)}"><span class="sh-f" aria-hidden="true">${x.face}</span></span>`).join('');
+      const order = g ? g.order.map((id, i) => `<span class="sh-oi${g.up === i ? ' up' : ''}"><span aria-hidden="true">${itemById(id).icon}</span><small>${esc(itemById(id).name)}</small></span>`).join('') : '';
+      const canUp = g && !g.asked;
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-label="Смена"><div class="sh-in">
+        <div class="sh-top"><div class="sh-tb"><i id="shTime" style="width:${(100 - sh.t / sh.plan.sec * 100).toFixed(1)}%"></i></div><span class="sh-rush" id="shRush" hidden>Час пик!</span>
+          <span class="sh-sc"><span title="Обслужено">✅ ${sh.served}</span><span title="Ошибки">❌ ${sh.errors}</span><span title="Ушли">😠 ${sh.lost}</span><b title="Чаевые (примерно)">${fm(sh.tips)}</b></span><button type="button" class="btn sm" data-pa="shiftEnd">Закончить</button></div>
+        <div class="sh-queue" aria-label="Очередь: ${sh.guests.length}">${q || '<span class="sh-empty">Пока никого — протрите стойку</span>'}</div>
+        <div class="sh-order">${g ? `<div class="sh-bub">${g.note ? `<span class="sh-note">${esc(g.note)}</span>` : ''}<span class="sh-ol">${order}</span></div>${canUp ? `<button type="button" class="btn sh-upb" data-pa="shiftUp">🥐 Предложить к заказу</button>` : ''}` : ''}<span class="sh-msg" id="shMsg" aria-live="polite"></span></div>
+        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itemById(id).icon}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ</button></div>
+        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}"><span aria-hidden="true">${x.icon}</span><small>${esc(x.name)}</small><kbd>${i + 1}</kbd></button>`).join('')}</div></div></div>`;
+    } else {
+      const r = sh.result, st = r.stars;
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-res"><span class="sh-stars" aria-label="Оценка ${st} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= st ? 'on' : ''}" style="animation-delay:${i * 0.12}s">★</i>`).join('')}</span>
+        <h2 id="shT">${st >= 5 ? 'Лучшая смена!' : st >= 4 ? 'Отличная смена' : st >= 3 ? 'Нормальная смена' : 'Тяжёлая смена'}</h2>
+        <div class="sh-tipbig" id="shTip">+${fm(r.tips)}<small>чаевые</small></div>
+        <div class="sh-rs"><span>✅ Обслужено: <b>${sh.served}</b></span><span>❌ Ошибки: <b>${sh.errors}</b></span><span>🥐 Допродажи: <b>${sh.upsells}</b></span><span>😠 Ушли: <b>${sh.lost}</b></span></div>
+        <div class="sh-gain">${Object.keys(r.add).filter((k) => r.add[k] > 0).map((k) => `<span class="chip good">${PR().SK_NAME[k]} +${String(r.add[k]).replace('.', ',')}</span>`).join('')}<span class="chip ${r.rep >= 0 ? 'good' : 'bad'}">Начальник ${r.rep >= 0 ? '👍' : '👎'}</span></div>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftDone">Готово</button></div></div></div>`;
+    }
+    let el = $('#proSh'); if (!el) { $('#proOv').insertAdjacentHTML('beforeend', '<div id="proSh"></div>'); el = $('#proSh'); }
+    el.innerHTML = h;
+  }
+  function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); return; } sh.tray.push(id); shiftRender(); }
+  function shiftServe() {
+    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || !sh.tray.length) return;
+    const a = sh.tray.slice().sort().join(), b = g.order.slice().sort().join();
+    if (a === b) {
+      sh.served++; if (g.up != null) sh.upsells++;
+      const p = Pp(), tip = Math.round(C().SHIFT_TIP * (0.7 + p.sk.sales / 100) + (g.up != null ? C().SHIFT_UPSELL : 0));
+      sh.tips += tip; sh.guests.shift(); sh.tray = [];
+      flash(`Спасибо! +${tip} ₽`, 'up');
+    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); flash('Не тот заказ! 😬', 'dn'); }
+    shiftRender();
+  }
+  function shiftUp() {
+    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || g.asked) return;
+    g.asked = true;
+    if (sh.rnd() < sh.plan.upsell) {
+      const bake = sh.plan.items.filter((x) => x.cat === 'bake' && !g.order.includes(x.id));
+      const it = (bake.length ? bake : sh.plan.items)[Math.floor(sh.rnd() * (bake.length || sh.plan.items.length))];
+      g.order.push(it.id); g.up = g.order.length - 1; flash(`Давайте! ${it.icon}`, 'up');
+    } else { g.pat = Math.max(1, g.pat - 1); flash('Нет, спасибо', 'dn'); }
+    shiftRender();
+  }
+  function shiftEnd() {
+    const sh = ui.sh; if (!sh || sh.state !== 'play') return;
+    sh.state = 'res';
+    sh.result = PR().shiftResult(S(), { served: sh.served, errors: sh.errors, upsells: sh.upsells, lost: sh.lost, total: sh.total });
+    Pp().fx = Pp().fx.filter((f) => f.where !== 'shift'); // монетки — на экране итога, не второй раз
+    shiftRender();
+    setTimeout(() => { const t = $('#shTip'); if (t) { t.classList.add('bump'); } }, 300);
+  }
+  function shiftClose() {
+    const el = $('#proSh'); if (el) el.remove();
+    const tips = ui.sh && ui.sh.result ? ui.sh.result.tips : 0;
+    ui.sh = null; ui.mode = null; ui.dirty = true; render(true);
+    if (tips) { coins($('#proShiftAnchor') || $('.pro-shiftbtn'), $('#proSav'), 6); float($('#proSav'), '+' + fm(tips), 'up', true); }
+    APP().save();
+  }
+
+  /* ---------------- действия ---------------- */
+  function res(r, okMsg) { if (r && r.ok === false && r.msg) APP().toast('Не получится', r.msg, 'warn'); ui.dirty = true; render(true); drainFx(); if (r && r.ok) APP().save(); return r; }
+  function onClick(e) {
+    const b = e.target.closest('[data-pa]'); if (!b) return;
+    if (b.disabled) return;
+    const a = b.dataset.pa, v = b.dataset.v, s = S(), p = Pp(); if (!s || !p) return;
+    if (a === 'menuClose' && b.classList.contains('pro-ovbg') && e.target !== b) return; // клик внутри меню — не закрывать
+    e.preventDefault();
+    switch (a) {
+      case 'speed': ui.speed = +v; ui.dirty = true; render(true); break;
+      case 'theme': if (APP().ACT && APP().ACT.theme) APP().ACT.theme({}); break;
+      case 'menu': ui.menu = true; ui.ask = null; menu(); break;
+      case 'menuClose': ui.menu = false; ui.ask = null; { const m = $('#proMenu'); if (m) m.remove(); } break;
+      case 'skipAsk': ui.ask = 'skip'; menu(); break;
+      case 'askNo': ui.ask = null; if (ui.menu) menu(); ui.dirty = true; render(true); break;
+      case 'skipYes': ui.menu = false; ui.ask = null; toMain(true); break;
+      case 'toStart': ui.menu = false; close(); APP().toStart(); break;
+      case 'home': res(PR().setHome(s, v)); break;
+      case 'food': res(PR().setFood(s, v)); break;
+      case 'fun': res(PR().setFun(s, v)); break;
+      case 'extra': res(PR().setExtra(s, +v)); break;
+      case 'save': res(PR().setSaveRate(s, +v)); break;
+      case 'study': res(PR().startStudy(s, v)); break;
+      case 'want': { const r = res(PR().buyWant(s, v)); if (r && r.ok) float(document.querySelector(`#prologue [data-pa=want][data-v=${v}]`), '−' + fm(r.cost), 'dn'); break; }
+      case 'toBox': { const keep = Math.max(0, PR().monthCost(p) - 0), amt = Math.max(0, p.cash - keep); if (amt <= 0) APP().toast('Копилка', `Оставьте в кошельке запас на месяц жизни (${fm(PR().monthCost(p))}).`, 'warn'); else { res(PR().toBox(s, amt)); coins($('#proCash'), $('#proBox'), 4); } break; }
+      case 'fromBox': res(PR().fromBox(s, Math.min(p.box, 10000))); break;
+      case 'toDep': { const r = res(PR().toDep(s, p.box)); if (r && r.ok) coins($('#proBox'), $('#proDep'), 4); break; }
+      case 'fromDep': if (p.depInt > 0) { ui.ask = 'dep'; ui.dirty = true; render(true); } else res(PR().fromDep(s)); break;
+      case 'fromDepYes': ui.ask = null; res(PR().fromDep(s)); break;
+      case 'openOwn': { const r = PR().openOwn(s); if (r.ok) showCard(); break; }
+      case 'choose': choose(+v); break;
+      case 'shift': shiftOpen(false); break;
+      case 'shiftGo': if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; shiftRender(); } break;
+      case 'shiftCancel': { const el = $('#proSh'); if (el) el.remove(); ui.sh = null; ui.mode = null; break; }
+      case 'shiftItem': shiftItem(v); break;
+      case 'shiftTray': if (ui.sh) { ui.sh.tray.splice(+v, 1); shiftRender(); } break;
+      case 'shiftServe': shiftServe(); break;
+      case 'shiftUp': shiftUp(); break;
+      case 'shiftEnd': shiftEnd(); break;
+      case 'shiftDone': shiftClose(); break;
+      case 'finalMain': toMain(false); break;
+      case 'retry': retry(); break;
+      case 'skipMain': toMain(true); break;
+      default: break;
+    }
+  }
+  // клавиатура: пробел — пауза, 1/2 — скорость; в «Смене» 1–8 — позиции, Enter — отдать, Backspace — убрать
+  window.addEventListener('keydown', (e) => {
+    if (!ui.open) return;
+    const tg = e.target && e.target.tagName;
+    if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT' || e.ctrlKey || e.metaKey || e.altKey) return;
+    e.stopPropagation(); // основной игре эти клавиши сейчас не нужны
+    const sh = ui.sh;
+    if (ui.mode === 'shift' && sh && sh.state === 'play') {
+      const n = +e.key; if (n >= 1 && n <= sh.plan.items.length) { shiftItem(sh.plan.items[n - 1].id); e.preventDefault(); return; }
+      if (e.key === 'Enter') { shiftServe(); e.preventDefault(); return; }
+      if (e.key === 'Backspace') { sh.tray.pop(); shiftRender(); e.preventDefault(); return; }
+      return;
+    }
+    if (e.code === 'Space' && !ui.mode) { e.preventDefault(); if (ui.speed) { ui.prev = ui.speed; ui.speed = 0; } else ui.speed = ui.prev || 1; ui.dirty = true; render(true); }
+    else if (e.key === '1' && !ui.mode) { ui.speed = 1; render(true); } else if ((e.key === '2' || e.key === '3') && !ui.mode) { ui.speed = 3; render(true); }
+    else if (e.key === 'Escape' && ui.menu) { ui.menu = false; const m = $('#proMenu'); if (m) m.remove(); }
+  }, true);
+
+  BK.PrologueUI = { startOpt, bindStart, picked, begin, active, resume, open, close, toMain, render, get ui() { return ui; }, shiftOpen };
+})();
