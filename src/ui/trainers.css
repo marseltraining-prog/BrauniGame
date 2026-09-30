@@ -1,8 +1,8 @@
 /* Личные тренеры игрока (src/ui/trainers-ui.js) — WIP: базовые стили */
-.trn-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font: 600 10px var(--f-body); background: var(--crust-soft); color: var(--crust-t); vertical-align: middle; }
+.trn-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font: 600 11px var(--f-body); background: var(--crust-soft); color: var(--crust-t); vertical-align: middle; }
 .trn-dots { display: inline-flex; gap: 3px; } .trn-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .trn-dots i.on { background: var(--crust); }
-.trn-skills { display: flex; flex-wrap: wrap; gap: 6px; } .trn-chip svg, .trn-store h3 svg { width: 13px; height: 13px; }
-.trn-prog { display: flex; flex-direction: column; gap: 4px; } .trn-pl { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.trn-skills { display: flex; flex-wrap: wrap; gap: 6px; } .trn-chip svg, .trn-store h3 svg { width: 13px; height: 13px; } .trn-h { display: inline-flex; align-items: center; gap: 6px; }
+.trn-prog { display: flex; flex-direction: column; gap: 4px; } .trn-pl { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; } .trn-pl small { font-size: 11px; color: var(--ink-3); }
 .trn-area { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; } .trn-area.locked { opacity: .75; }
 .trn-ah { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .trn-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -16,3 +16,4 @@
 .trn-hint .tt { font-weight: 600; font-size: 13px; } .trn-hint .ds { font-size: 12px; color: var(--ink-2); } .trn-more { color: var(--ink-3); }
 .m-bdg.trn rect { fill: var(--crust); } .m-bdg-l { fill: none; stroke: #fff; stroke-width: 1.2; stroke-linecap: round; }
 @media (max-width: 560px) { .trn-tiers { grid-template-columns: 1fr; } .trn-hint { grid-template-columns: auto minmax(0, 1fr); } .trn-hint .btn { grid-column: 2; justify-self: start; } }
+.att .ic.trn { background: var(--crust-soft); color: var(--crust-t); }

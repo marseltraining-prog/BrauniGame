@@ -380,7 +380,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const st = E.byId(S.stores, id); if (!st) return '';
       const mood = BK.storeMood(st);
       const rt = st.status !== 'opening' && H.rating ? ` · ${H.rating.r1(E.storeRating(S, st))}★` : '';
-      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}`;
+      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}${BK.TrainersUI ? BK.TrainersUI.tip(S, st) : ''}`;
     }
     if (kind === 'offer') {
       const o = E.byId(S.offers, id); if (!o) return '';

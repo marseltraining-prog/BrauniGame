@@ -57,9 +57,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const list = TR.forStore(S, st.id);
     if (!list.length) {
       const top = TR.AREAS.filter((a) => a !== 'corp').map((a) => TR.skill(S, a)).reduce((a, b) => Math.max(a, b), 0);
-      return top >= 2 ? `<div class="sec trn-store"><h3>${LAMP}Взгляд тренера</h3><div class="hint">По вашим навыкам проблем у этой точки не видно.</div></div>` : '';
+      return top >= 2 ? `<div class="sec trn-store"><h3><span class="trn-h">${LAMP}Взгляд тренера</span></h3><div class="hint">По вашим навыкам проблем у этой точки не видно.</div></div>` : '';
     }
-    return `<div class="sec trn-store"><h3>${LAMP}Взгляд тренера</h3>${list.map((h) => { const v = view(h); return `<div class="trn-hint lv${h.lvl}"><div class="tx"><div class="tt">${esc(cap(h.cause))}${tag(h)}</div><div class="ds">${h.lvl >= 3 ? `${esc(cap(h.detail))}. <b>Что сделать:</b> ${esc(h.todo)}.` : '<span class="trn-more">Цифры и что сделать — навык 3-го уровня.</span>'}</div></div>${h.lvl >= 3 && h.go && h.go.act !== 'openStore' ? btnHtml(h.go, 'sm') : ''}</div>`; }).join('')}</div>`;
+    return `<div class="sec trn-store"><h3><span class="trn-h">${LAMP}Взгляд тренера</span></h3>${list.map((h) => { const v = view(h); return `<div class="trn-hint lv${h.lvl}"><div class="tx"><div class="tt">${esc(cap(h.cause))}${tag(h)}</div><div class="ds">${h.lvl >= 3 ? `${esc(cap(h.detail))}. <b>Что сделать:</b> ${esc(h.todo)}.` : '<span class="trn-more">Цифры и что сделать — навык 3-го уровня.</span>'}</div></div>${h.lvl >= 3 && h.go && h.go.act !== 'openStore' ? btnHtml(h.go, 'sm') : ''}</div>`; }).join('')}</div>`;
   }
 
   // карта: лампочка у точки (подсказка уровня 2+) и у кластера, если в нём есть такая точка
