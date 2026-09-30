@@ -411,7 +411,7 @@ async function r42(p, tag, shot) {
       const h = E.dirHire(S, S.corp.dirCand[0].id, null); if (!h.ok) break;
       if (E.enterCity(S, id, { director: h.d.id }).ok) got.push(id);
     }
-    const L = BK.HQ.load(S);
+    const L = BK.HQ.load(S); BK.Russia.render(S, true);
     return { got, L };
   });
   if (!(t2.L.over > 0)) issues.push(`[${tag}] перегрузка штаба не наступила: ${JSON.stringify(t2)}`);
