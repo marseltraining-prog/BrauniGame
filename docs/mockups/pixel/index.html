@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Хлебная карта: пиксельный стиль</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efe9df; --surface: #fbf9f5; --ink: #18223a; --ink-2: #4a5570; --ink-3: #5d6576;
+    --line: #e0d7c9; --crust: #c46f17; --crust-t: #94500b; --crust-soft: #f4dfc2;
+    --shadow: 0 1px 2px rgba(60, 44, 24, .08), 0 6px 20px rgba(60, 44, 24, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f141c; --surface: #1a202b; --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0;
+      --line: #2d3645; --crust: #e8963d; --crust-t: #efa555; --crust-soft: #3a2a18;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f141c; --surface: #1a202b; --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0;
+    --line: #2d3645; --crust: #e8963d; --crust-t: #efa555; --crust-soft: #3a2a18;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Golos Text', system-ui, sans-serif; font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 40px 24px 64px; }
+  .kick { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--crust-t); }
+  h1 { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: clamp(26px, 5vw, 40px); line-height: 1.15; margin: 8px 0 14px; letter-spacing: -.01em; }
+  .lead { font-size: 17px; color: var(--ink-2); max-width: 760px; }
+  .lead b { color: var(--ink); font-weight: 600; }
+  .rule { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 36px; }
+  .rule span { font-size: 13.5px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); }
+  .rule span b { color: var(--crust-t); font-weight: 600; }
+  figure { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 28px; }
+  figure a { display: block; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { padding: 16px 20px 18px; display: grid; gap: 4px; }
+  figcaption .n { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-3); }
+  figcaption b { font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 16px; }
+  figcaption p { font-size: 14.5px; color: var(--ink-2); }
+  .notes { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; margin-top: 8px; }
+  .notes h2 { font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 17px; margin-bottom: 10px; }
+  .notes ul { padding-left: 20px; display: grid; gap: 6px; color: var(--ink-2); font-size: 15px; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: var(--crust-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  @media (max-width: 600px) { .wrap { padding: 28px 16px 48px; } .lead { font-size: 15.5px; } figcaption { padding: 14px 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Хлебная карта · проба стиля</div>
+  <h1>Хлебная карта: пиксельный стиль</h1>
+  <p class="lead"><b>Карты остаются векторными, пиксели — для людей и важных моментов.</b> Генплан Уфы и России не трогаем. В пикселях — герои, очередь в пекарне, эмоции и сюжетные сцены. Панели, цифры и тексты диалогов — обычным шрифтом игры, чтобы всё читалось.</p>
+  <div class="rule">
+    <span><b>День</b> — тёплая палитра, как Stardew Valley</span>
+    <span><b>Ночь</b> — свет, лучи и дымка, как To the Moon</span>
+    <span><b>Холст</b> 480×300 × 3, без сглаживания</span>
+    <span><b>Всё кодом</b>, ни одной чужой картинки</span>
+  </div>
+
+  <figure>
+    <a href="img/1-shift.png"><img src="img/1-shift.png" alt="Пиксельная пекарня «Калач»: очередь гостей с пузырями заказов, бариста за стойкой, Рашид у печи, Гуля с противнем, поверх — интерфейс смены" loading="lazy"></a>
+    <figcaption><span class="n">1 · пролог «Бариста»</span><b>Смена за стойкой «Калача»</b>
+      <p>Утро на улице Пушкина: трамвай в окне, солнечный луч с пылинками, печь с огнём. Рашид у печи с лопатой, Гуля выносит круассаны, Семён Аркадьевич у кассы. У гостей в очереди пузыри заказов и шкала терпения. Поверх — таймер, чаевые, серия без ошибок, «Предложить круассан?» и станции-«инвентарь».</p></figcaption>
+  </figure>
+
+  <figure>
+    <a href="img/2-inheritance.png"><img src="img/2-inheritance.png" alt="Ночь в старой пекарне «Бәлеш»: герой читает тетрадь рецептов у тёплой печи, из окна падает лунный луч; внизу — письмо бабушки и варианты выбора" loading="lazy"></a>
+    <figcaption><span class="n">2 · сценарий «Наследство»</span><b>После нотариуса: у дедовой печи</b>
+      <p>Два источника света: тёплые угли в печи и холодный лунный луч с пылинками. На стене — фото бабушки с дедом у той же печи, у стены — старая вывеска «БӘЛЕШ». Внизу — письмо әби на бумаге и три варианта со значками последствий, как в окне события.</p></figcaption>
+  </figure>
+
+  <figure>
+    <a href="img/3-belaya.png"><img src="img/3-belaya.png" alt="Ночь на реке Белой: герой и Олег сидят спиной к зрителю на краю мостков, между ними лунная дорожка, на том берегу огни города; внизу — реплика Олега и варианты ответа" loading="lazy"></a>
+    <figcaption><span class="n">3 · финал «Лодочная станция»</span><b>Встреча на Белой</b>
+      <p>Двое на краю мостков, между ними — лунная дорожка и пакет из «Калача». Фонарь, светящееся окно лодочной станции, на том берегу — огни города, минареты «Ляля-Тюльпан» и памятник Салавату на обрыве. Реплика Олега, три ответа и закрытый секретный вариант «Позвонить Рашиду».</p></figcaption>
+  </figure>
+
+  <figure>
+    <a href="img/4-portraits.png"><img src="img/4-portraits.png" alt="Лист героев: пиксельные портреты 48×48 с эмоциями и маленькие фигуры для сцен, палитры дня и ночи, пузыри эмоций" loading="lazy"></a>
+    <figcaption><span class="n">4 · лист героев</span><b>Портреты и фигуры</b>
+      <p>Восемь героев: портреты 48×48 (у главных по три эмоции, у остальных по две) и фигуры 16×30 спереди, с эмоцией и спиной. Ниже — палитры дня и ночи и набор пузырей над людьми.</p></figcaption>
+  </figure>
+
+  <div class="notes">
+    <h2>Как это сделано</h2>
+    <ul>
+      <li>Сцены рисуются кодом в буфер 480×300 (<code>px.js</code>): примитивы, выборочный контур (sel-out), байеровский дизеринг, пиксельный шрифт 5×7 с кириллицей и «ә».</li>
+      <li>Ночной свет — попиксельное переосвещение: фон × (окружение + печь / луна / фонарь). Каждый источник разбит на ступени с узкой полосой дизеринга.</li>
+      <li>Герои (<code>cast.js</code>) — один набор параметров для портрета и фигуры. Эмоции меняют брови, глаза и рот.</li>
+      <li>Снимки 1440×900 ×2: <code>node docs/mockups/pixel/shoot.js</code>.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

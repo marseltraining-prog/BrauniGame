@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Пролог «Бариста» — смена в «Калаче» (пиксели)</title>
+<link rel="stylesheet" href="pixel.css">
+<style>
+  body { background: #2a1a1c; }
+  /* HUD — две плашки по краям, центр свободен для вывески */
+  .hudp { position: absolute; top: 12px; height: 54px; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 9px; }
+  .hudp.l { left: 12px; }
+  .hudp.r { right: 12px; padding: 0 9px 0 16px; gap: 8px; }
+  .hudp .who b { font-family: var(--f-display); font-size: 13px; font-weight: 600; display: block; white-space: nowrap; }
+  .hudp .who small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+  .hudp .pp canvas { display: block; image-rendering: pixelated; }
+  .st { display: flex; flex-direction: column; align-items: center; min-width: 74px; padding: 3px 10px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+  .st .caps { font-size: 8px; }
+  .st b { font-family: var(--f-mono); font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .st.tip { background: var(--good-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 35%, transparent); } .st.tip b { color: var(--good-t); }
+  .st.err b { color: var(--bad-t); }
+  .timer { display: flex; align-items: center; gap: 8px; padding-right: 8px; margin-right: 2px; border-right: 1px dashed var(--line-2); }
+  .timer .t { font-family: var(--f-mono); font-size: 22px; font-weight: 700; line-height: 1; }
+  .timer small { display: block; font-size: 9.5px; color: var(--warn-t); font-weight: 600; font-family: var(--f-display); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 2px; }
+  .timer canvas { image-rendering: pixelated; display: block; }
+  .ibtn { width: 34px; height: 34px; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-family: var(--f-mono); font-weight: 700; color: var(--ink-2); }
+
+  /* Карточка заказа и допродажи */
+  .side { position: absolute; right: 12px; bottom: 12px; width: 372px; display: flex; flex-direction: column; gap: 8px; }
+  .ord { padding: 13px 16px 12px; }
+  .ord .hd { display: flex; gap: 10px; align-items: center; }
+  .ord .hd canvas { image-rendering: pixelated; display: block; }
+  .ord .hd b { font-size: 14px; display: block; }
+  .ord .hd small { font-size: 11.5px; color: var(--ink-3); }
+  .ord .q { font-size: 13px; font-style: italic; color: var(--ink-2); margin: 9px 0 6px; background: var(--surface-2); padding: 7px 11px; }
+  .it { display: grid; grid-template-columns: 26px 1fr auto; gap: 9px; align-items: center; padding: 5px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+  .it canvas { image-rendering: pixelated; display: block; }
+  .it .num { font-weight: 600; }
+  .ok { color: var(--good-t); font-weight: 700; }
+  .upsell { padding: 14px 16px 13px; --pxb: #fff1da; --pxi: #f2b066; }
+  .upsell h3 { font-family: var(--f-display); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .upsell h3 canvas { image-rendering: pixelated; }
+  .upsell p { font-size: 12.5px; color: var(--ink-2); margin: 6px 0 10px; }
+  .ub { display: grid; grid-template-columns: 1.35fr 1fr; gap: 8px; }
+  .pbtn { height: 38px; display: grid; place-items: center; font-size: 13.5px; font-weight: 600; font-family: var(--f-body); border: 0; }
+  .pbtn.main { background: var(--btn-primary); color: #fff; box-shadow: inset 0 -3px 0 rgba(0,0,0,.22), inset 0 0 0 1.5px #6b3a08; }
+  .pbtn.sec { background: var(--surface); color: var(--ink); box-shadow: inset 0 -3px 0 var(--line), inset 0 0 0 1.5px var(--line-2); }
+  .upsell .fx { margin-top: 9px; }
+  .fxc { border-radius: 0; }
+
+  /* Панель станций — как «инвентарь» */
+  .hotbar { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; padding: 8px; }
+  .slot { width: 82px; height: 74px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 7px; gap: 3px; background: #fbf3e3; box-shadow: inset 0 0 0 2px #c9ab82, inset 0 -5px 0 #eadbc1; }
+  .slot canvas { image-rendering: pixelated; display: block; }
+  .slot b { font-size: 11.5px; font-weight: 600; color: var(--ink); }
+  .slot kbd { position: absolute; top: 4px; left: 5px; font-family: var(--f-mono); font-size: 9.5px; color: var(--ink-3); }
+  .slot.done { opacity: .55; }
+  .slot.done::after { content: '✓'; position: absolute; top: 3px; right: 6px; color: var(--good-t); font-weight: 700; font-size: 12px; }
+  .slot.hot { background: #fff1da; box-shadow: inset 0 0 0 3px var(--crust), inset 0 -5px 0 #f2d3a4; transform: translateY(-4px); }
+
+  .pop { position: absolute; font-size: 17px; -webkit-text-stroke: 5px #2a1a1c; color: #9ee2b1; }
+  .pop.gold { color: #ffd46b; }
+  .tag { position: absolute; font-size: 11px; font-weight: 600; color: #fff; background: rgba(42,26,28,.82); padding: 2px 7px; white-space: nowrap; }
+  .combo { position: absolute; left: 14px; top: 80px; padding: 8px 12px 9px; display: flex; gap: 10px; align-items: center; }
+  .combo .x { font-family: var(--f-display); font-size: 22px; font-weight: 700; color: var(--crust-t); }
+  .combo small { font-size: 11px; color: var(--ink-2); display: block; }
+  .combo .dots { display: flex; gap: 3px; margin-top: 4px; }
+  .combo .dots i { width: 16px; height: 5px; background: var(--crust); }
+  .combo .dots i.o { background: var(--surface-3); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <canvas class="scene" id="cv"></canvas>
+
+  <div class="hudp l pxbox pxshadow">
+    <div class="pp" id="heroP"></div>
+    <div class="who"><b>Смена в «Калаче»</b><small>пн, 5 октября · утро · ул. Пушкина</small></div>
+  </div>
+
+  <div class="hudp r pxbox pxshadow">
+    <div class="timer"><canvas id="clk"></canvas><div><small>час пик</small><div class="t">0:48</div></div></div>
+    <div class="st"><span class="caps">гостей</span><b>14</b></div>
+    <div class="st err"><span class="caps">ошибки</span><b>1</b></div>
+    <div class="st"><span class="caps">допродажи</span><b>3</b></div>
+    <div class="st tip"><span class="caps">чаевые</span><b>640 ₽</b></div>
+    <div class="ibtn">II</div>
+  </div>
+
+  <div class="combo pxbox pxshadow">
+    <div class="x">×4</div>
+    <div><small><b>Серия без ошибок</b> · ещё 1 — чаевые ×1,5</small><div class="dots"><i></i><i></i><i></i><i></i><i class="o"></i></div></div>
+  </div>
+
+  <div class="pop gold" style="left: 560px; top: 226px;">+50 ₽ чаевые</div>
+  <div class="tag" style="left: 612px; top: 486px;">Семён Аркадьевич · 7:02</div>
+
+  <div class="hotbar pxbox pxshadow" id="bar"></div>
+
+  <div class="side">
+    <div class="ord pxbox pxshadow">
+      <div class="hd"><div id="semP"></div><div><b>Заказ №15 · Семён Аркадьевич</b><small>постоянный гость · любит правду</small></div></div>
+      <div class="q">«Капучино и правду. Эчпочмак сегодняшний?»</div>
+      <div class="it"><canvas data-i="latte"></canvas><span>Капучино 0,3 <small class="muted">· пенка…</small></span><span class="num">170 ₽</span></div>
+      <div class="it"><canvas data-i="echpochmak"></canvas><span>Эчпочмак <span class="ok">✓</span></span><span class="num">85 ₽</span></div>
+    </div>
+    <div class="upsell pxbox pxshadow">
+      <h3><canvas data-i="croissant" data-s="4"></canvas>Предложить круассан?</h3>
+      <p>Семён берёт сладкое по понедельникам. Угадаешь — чаевые больше, промахнёшься — он поворчит.</p>
+      <div class="ub"><div class="pbtn main">Предложить · +120 ₽</div><div class="pbtn sec">Не сейчас <kbd class="k" style="margin-left:6px">N</kbd></div></div>
+      <div class="fx"><span class="fxc up">Чаевые <span class="ar">▲▲</span></span><span class="fxc up">Рашид <span class="ar">▲</span></span><span class="fxc dn">Время <span class="ar">▼</span></span></div>
+    </div>
+  </div>
+</div>
+<script src="px.js"></script>
+<script src="cast.js"></script>
+<script>
+const { Buf, mix, bay, rng, text, textW, figure, bubble, icon, patience } = PX;
+const W = 480, H = 300, b = new Buf(W, H);
+
+// ---------- палитра дня ----------
+const P = {
+  ol: '#2a1a1c',
+  beam: ['#4a2e22', '#3a2219', '#6a4430'],
+  wall: ['#f1dcb4', '#e6c998', '#d4b07c', '#f8e9c9'],
+  brick: ['#b0603f', '#8f4a31', '#c97a55'],
+  wood: ['#5a3522', '#7a4a2c', '#9c6338', '#c0844a', '#d9a566', '#ecc38a'],
+  floor: ['#b98450', '#a8743f', '#c99560', '#94653a', '#d8a870'],
+  navy: ['#1f2a44', '#16203a', '#2e3d60'],
+  crust: ['#c46f17', '#e59a3e', '#f4c27a', '#94500b'],
+  green: ['#3f6b3a', '#5d8c46', '#8cb35a', '#2d4e2a'],
+  sky: ['#bfe3ef', '#a4d3e6', '#dff1f4'],
+  facade: ['#ecd29a', '#d6b574', '#f6e4b8'],
+  grey: ['#6b6a73', '#8f8d94', '#b5b2b2', '#d8d4cc', '#4a4a55'],
+  red: ['#c0412d', '#8f2c20', '#e2705a'],
+  cream: ['#fbf6ec', '#efe4d0', '#d9ccb5'],
+  glass: '#dff3f6', fire: ['#ffe9a8', '#ffc45a', '#ff9a2e', '#e2601c'],
+};
+
+// ---------- стена ----------
+b.rect(0, 0, W, 112, P.wall[0]);
+// лёгкая фактура штукатурки
+const R = rng(7);
+for (let i = 0; i < 900; i++) { const x = R() * W | 0, y = 6 + R() * 84 | 0; b.set(x, y, R() > .5 ? P.wall[1] : P.wall[3]); }
+// открытый кирпич пятнами
+function bricks(x0, y0, w, h) {
+  for (let y = y0; y < y0 + h; y += 4) for (let x = x0 - ((y / 4) % 2) * 4; x < x0 + w; x += 8) {
+    const bx = Math.max(x, x0), bw = Math.min(x + 7, x0 + w) - bx; if (bw <= 0) continue;
+    b.rect(bx, y, bw, 3, P.brick[0]); b.hl(bx, y, bw, P.brick[2]); b.set(bx + bw - 1, y + 2, P.brick[1]);
+  }
+}
+bricks(126, 8, 30, 20); bricks(454, 88, 22, 16); bricks(300, 92, 18, 12);
+// потолочная балка
+b.rect(0, 0, W, 7, P.beam[0]); b.hl(0, 6, W, P.beam[1]); b.hl(0, 0, W, P.beam[2]);
+for (let x = 30; x < W; x += 90) { b.rect(x, 0, 6, 9, P.beam[1]); b.hl(x, 0, 6, P.beam[2]); }
+// лампы-подвесы
+[[200, 18], [300, 18]].forEach(([x, y]) => { b.vl(x, 7, y - 7, P.ol); b.rect(x - 4, y, 9, 3, P.navy[0]); b.hl(x - 5, y + 3, 11, P.navy[1]); b.rect(x - 1, y + 4, 3, 2, '#fff3c0'); });
+// панели снизу стены
+b.rect(0, 92, W, 20, P.wood[2]); b.hl(0, 92, W, P.wood[4]); b.hl(0, 93, W, P.wood[3]); b.hl(0, 111, W, P.wood[0]);
+for (let x = 4; x < W; x += 24) { b.rect(x, 96, 20, 12, P.wood[1]); b.hl(x, 96, 20, P.wood[0]); b.vl(x + 19, 96, 12, P.wood[3]); b.hl(x, 107, 20, P.wood[3]); }
+
+// ---------- окно на улицу Пушкина ----------
+const WX = 14, WY = 22, WW = 104, WH = 72;
+function street() {
+  // небо
+  for (let y = WY; y < WY + WH; y++) b.hl(WX, y, WW, bay(0, y) < (y - WY) / 30 ? P.sky[0] : P.sky[2]);
+  // здание напротив
+  b.rect(WX, WY + 10, WW, WH - 10, P.facade[0]);
+  b.hl(WX, WY + 10, WW, P.facade[2]); b.rect(WX, WY + 8, WW, 2, '#b86a4a'); b.hl(WX, WY + 7, WW, '#d98a64');
+  for (let i = 0; i < 6; i++) { const x = WX + 4 + i * 17; b.rect(x, WY + 14, 9, 13, '#6f8fa6'); b.rect(x + 1, WY + 15, 7, 11, '#8fb3c8'); b.rect(x + 1, WY + 15, 3, 5, '#c9e2ec'); b.hl(x - 1, WY + 27, 11, P.facade[2]); b.hl(x - 1, WY + 13, 11, P.facade[1]); }
+  b.hl(WX, WY + 32, WW, P.facade[1]);
+  // табличка «ПУШКИНА»
+  b.rect(WX + 3, WY + 35, 46, 11, '#f5efe3'); b.rect(WX + 4, WY + 36, 44, 9, '#1f4f8a');
+  text(b, WX + 5, WY + 37, 'ПУШКИНА', '#ffffff');
+  // тротуар и дорога
+  b.rect(WX, WY + 50, WW, 4, P.grey[2]); b.hl(WX, WY + 50, WW, P.grey[3]);
+  b.rect(WX, WY + 54, WW, WH - 54, P.grey[0]);
+  // трамвай
+  const tx = WX + 18; b.rect(tx, WY + 44, 70, 16, P.red[0]); b.hl(tx, WY + 44, 70, P.red[2]); b.rect(tx, WY + 56, 70, 4, P.red[1]);
+  for (let i = 0; i < 6; i++) b.rect(tx + 4 + i * 11, WY + 47, 8, 6, '#cfe8f0');
+  b.hl(tx, WY + 54, 70, '#f5efe3'); b.vl(tx + 64, WY + 38, 6, P.ol); b.line(tx + 64, WY + 38, tx + 70, WY + 33, P.ol); b.hl(WX, WY + 32, WW, P.ol);
+  b.rect(tx + 8, WY + 60, 6, 3, P.ol); b.rect(tx + 56, WY + 60, 6, 3, P.ol);
+  // дерево и фонарь
+  b.ellipse(WX + 94, WY + 22, 14, 16, P.green[1]); b.ellipse(WX + 90, WY + 18, 9, 9, P.green[2]); b.ellipse(WX + 100, WY + 30, 8, 7, P.green[0]); b.rect(WX + 93, WY + 34, 3, 20, P.wood[1]);
+  b.vl(WX + 78, WY + 18, 36, P.navy[0]); b.rect(WX + 75, WY + 15, 7, 4, P.navy[0]); b.rect(WX + 76, WY + 18, 5, 2, '#fff3c0');
+}
+street();
+// рама
+b.rect(WX - 4, WY - 4, WW + 8, 4, P.wood[1]); b.hl(WX - 4, WY - 4, WW + 8, P.wood[3]);
+b.rect(WX - 4, WY + WH, WW + 8, 5, P.wood[3]); b.hl(WX - 5, WY + WH, WW + 10, P.wood[5]); b.hl(WX - 5, WY + WH + 4, WW + 10, P.wood[0]);
+b.rect(WX - 4, WY, 4, WH, P.wood[1]); b.rect(WX + WW, WY, 4, WH, P.wood[1]); b.vl(WX - 4, WY, WH, P.wood[3]);
+b.rect(WX + WW / 2 - 1, WY, 3, WH, P.wood[1]); b.vl(WX + WW / 2 - 1, WY, WH, P.wood[3]);
+b.rect(WX, WY + 26, WW, 3, P.wood[1]); b.hl(WX, WY + 26, WW, P.wood[3]);
+// блики на стекле
+[[WX + 6, WY + 4], [WX + 58, WY + 34]].forEach(([x, y]) => { for (let i = 0; i < 14; i++) { b.set(x + i, y + 14 - i, '#ffffff', .45); b.set(x + i + 3, y + 14 - i, '#ffffff', .25); } });
+// горшок с цветком на подоконнике
+b.rect(WX + 6, WY + WH - 6, 9, 6, '#b0603f'); b.hl(WX + 6, WY + WH - 6, 9, '#c97a55');
+b.ellipse(WX + 10, WY + WH - 10, 7, 5, P.green[1]); b.set(WX + 8, WY + WH - 13, '#e2705a'); b.set(WX + 13, WY + WH - 11, '#e2705a'); b.set(WX + 10, WY + WH - 14, P.green[2]);
+b.rect(WX + 84, WY + WH - 5, 12, 5, P.cream[1]); b.hl(WX + 84, WY + WH - 5, 12, P.cream[0]); b.rect(WX + 86, WY + WH - 8, 8, 3, '#e59a3e');
+
+// ---------- дверь в цех ----------
+b.rect(124, 36, 30, 76, P.wood[0]); b.rect(127, 39, 24, 73, '#3a2219');
+b.rect(128, 40, 22, 72, '#5a3a28'); // тёплый свет из цеха
+b.glow(139, 70, 22, '#ffb04a', .35, { ry: 40 });
+b.rect(124, 36, 30, 3, P.wood[3]); b.vl(124, 36, 76, P.wood[2]); b.vl(153, 36, 76, P.wood[1]);
+text(b, 127, 29, 'ЦЕХ', P.wood[0]);
+
+// ---------- вывеска ----------
+b.rect(176, 13, 110, 26, P.navy[1]); b.rect(177, 14, 108, 24, P.navy[0]); b.hl(177, 14, 108, P.navy[2]);
+b.vl(190, 7, 6, P.ol); b.vl(272, 7, 6, P.ol);
+text(b, 202, 17, 'КАЛАЧ', P.crust[3], 2); text(b, 201, 16, 'КАЛАЧ', P.crust[1], 2);
+b.hl(186, 33, 90, '#3a4a70');
+// под вывеской мелко: «с 1994»
+text(b, 262, 42, '1994', P.wood[1], 1, { small: true });
+
+// ---------- полки с хлебом ----------
+function loaf(x, y, w = 9) { b.ellipse(x + w / 2, y + 3, w / 2, 3.2, P.crust[0]); b.ellipse(x + w / 2 - 1, y + 2, w / 2 - 2, 1.6, P.crust[1]); b.set(x + 2, y + 1, P.crust[2]); b.line(x + 3, y + 3, x + 4, y + 2, P.crust[3]); b.line(x + 6, y + 3, x + 7, y + 2, P.crust[3]); }
+function baguette(x, y) { b.rect(x, y, 3, 14, P.crust[0]); b.vl(x, y, 14, P.crust[1]); b.set(x + 2, y + 3, P.crust[3]); b.set(x + 2, y + 7, P.crust[3]); b.set(x + 2, y + 11, P.crust[3]); }
+[[160, 58], [160, 76]].forEach(([x, y]) => { b.rect(x, y, 140, 4, P.wood[3]); b.hl(x, y, 140, P.wood[5]); b.hl(x, y + 3, 140, P.wood[1]); b.rect(x + 4, y + 4, 3, 3, P.wood[1]); b.rect(x + 133, y + 4, 3, 3, P.wood[1]); });
+for (let i = 0; i < 7; i++) loaf(163 + i * 13 + (i > 3 ? 36 : 0), 52);
+// банки: сахар — синяя, соль — белая
+b.rect(214, 47, 9, 11, '#3a73b8'); b.rect(215, 45, 7, 2, '#1f4f8a'); b.vl(215, 48, 8, '#6fa0d8'); text(b, 216, 50, '', '#fff');
+b.rect(226, 47, 9, 11, '#f5efe3'); b.rect(227, 45, 7, 2, '#b5b2b2'); b.vl(233, 48, 9, '#d8d4cc');
+// корзина с багетами
+b.rect(168, 68, 22, 8, P.wood[2]); for (let i = 0; i < 5; i++) baguette(169 + i * 4, 58 - (i % 2) * 2); b.rect(167, 70, 24, 6, P.wood[3]); for (let x = 168; x < 190; x += 3) b.vl(x, 70, 6, P.wood[2]);
+for (let i = 0; i < 6; i++) loaf(196 + i * 16, 70, 11);
+
+// ---------- меловая доска ----------
+b.rect(306, 42, 44, 46, P.wood[1]); b.rect(308, 44, 40, 42, '#2e3a30'); b.rect(308, 44, 40, 1, '#3e4c40');
+text(b, 311, 47, 'МЕНЮ', '#f5efe3');
+for (let i = 0; i < 5; i++) { const y = 57 + i * 6; b.hl(311, y + 1, 12 + (i * 7) % 11, '#c9d1c4'); text(b, 335, y - 1, ['150', '170', '120', '85', '95'][i], '#f4c27a', 1, { small: true }); }
+b.set(318, 45, '#e2705a'); b.hl(340, 47, 5, '#e2705a');
+
+// ---------- печь ----------
+const OX = 356;
+b.rect(OX + 18, 7, 70, 12, P.grey[0]); b.hl(OX + 18, 7, 70, P.grey[1]); b.rect(OX + 12, 19, 82, 8, P.grey[1]); b.hl(OX + 12, 19, 82, P.grey[2]); b.hl(OX + 12, 26, 82, P.grey[4]);
+b.rect(OX + 6, 27, 106, 85, P.brick[1]);
+bricks(OX + 8, 28, 102, 82);
+// побелённый свод
+b.rect(OX + 30, 52, 58, 44, P.cream[1]); b.ellipse(OX + 59, 52, 29, 14, P.cream[1]);
+b.hl(OX + 30, 95, 58, P.cream[2]);
+// жерло
+b.rect(OX + 40, 62, 38, 30, '#3a1a10'); b.ellipse(OX + 59, 62, 19, 10, '#3a1a10');
+b.rect(OX + 42, 64, 34, 28, P.fire[3]); b.ellipse(OX + 59, 64, 17, 9, P.fire[3]);
+b.ellipse(OX + 59, 80, 15, 10, P.fire[2]); b.ellipse(OX + 59, 84, 11, 7, P.fire[1]); b.ellipse(OX + 59, 87, 7, 4, P.fire[0]);
+// хлеб в печи
+loaf(OX + 46, 84, 10); loaf(OX + 60, 85, 10);
+b.rect(OX + 38, 92, 42, 3, P.grey[4]); b.hl(OX + 38, 92, 42, P.grey[1]);
+// сажа над жерлом
+b.ellipse(OX + 59, 50, 22, 7, '#6a5a50', .22); b.ellipse(OX + 59, 51, 15, 4, '#4a3a30', .22);
+b.glow(OX + 59, 80, 50, '#ffb04a', .45, { ry: 38 });
+// пар/жар над трубой
+function steam(x, y, h, seed) { const r = rng(seed); for (let i = 0; i < h; i++) { const xx = x + Math.round(Math.sin(i / 3 + seed) * 2); b.set(xx, y - i, '#ffffff', .55 * (1 - i / h)); if (r() > .5) b.set(xx + 1, y - i, '#ffffff', .35 * (1 - i / h)); } }
+
+// ---------- стеллаж с остывающим хлебом ----------
+b.rect(440, 70, 2, 44, P.grey[4]); b.rect(472, 70, 2, 44, P.grey[4]);
+[76, 88, 100].forEach((y) => { b.rect(438, y, 38, 2, P.grey[1]); b.hl(438, y, 38, P.grey[3]); });
+loaf(441, 70, 10); loaf(453, 70, 10); loaf(464, 71, 9); loaf(441, 82); loaf(452, 82); loaf(463, 82); baguette(446, 88); b.rect(444, 97, 26, 3, P.crust[0]);
+steam(448, 69, 12, 1); steam(460, 69, 10, 2); steam(453, 81, 8, 3);
+
+// ---------- пол ----------
+for (let y = 112; y < H; y++) {
+  const row = Math.floor((y - 112) / 7), c = [P.floor[0], P.floor[1], P.floor[2]][row % 3];
+  b.hl(0, y, W, c);
+  if ((y - 112) % 7 === 0) b.hl(0, y, W, P.floor[3]);
+  if ((y - 112) % 7 === 1) b.hl(0, y, W, P.floor[4], .35);
+}
+const Rf = rng(3);
+for (let row = 0; row < 27; row++) { const y = 112 + row * 7; for (let x = (row * 37) % 60; x < W; x += 50 + Rf() * 40 | 0) { b.vl(x, y + 1, 6, P.floor[3]); } for (let i = 0; i < 6; i++) b.hl(Rf() * W | 0, y + 3 + (Rf() * 3 | 0), 4, P.floor[3], .4); }
+// тень от стены на пол
+b.dith(0, 112, W, 5, P.floor[3], (x, y) => .6 - (y - 112) * .12);
+
+// ковёр (татарский орнамент)
+function rug(x, y, w, h) {
+  b.rect(x, y, w, h, '#8f2c20'); b.rect(x + 2, y + 2, w - 4, h - 4, '#b0402c'); b.rect(x + 5, y + 5, w - 10, h - 10, '#8f2c20');
+  for (let i = x + 4; i < x + w - 4; i += 6) { b.set(i, y + 3, '#e3b341'); b.set(i + 3, y + h - 4, '#e3b341'); }
+  for (let k = 0; k < 3; k++) { const cx = x + w / 2 + (k - 1) * 38, cy = y + h / 2; for (let d = 0; d < 7; d++) { b.set(cx - d, cy - (6 - d) * .5, '#e3b341'); b.set(cx + d, cy - (6 - d) * .5, '#e3b341'); b.set(cx - d, cy + (6 - d) * .5, '#e3b341'); b.set(cx + d, cy + (6 - d) * .5, '#e3b341'); } b.rect(cx - 1, cy - 1, 3, 3, '#3f7d5a'); }
+  for (let i = x; i < x + w; i += 3) { b.vl(i, y - 2, 2, '#f1dcb4'); b.vl(i, y + h, 2, '#f1dcb4'); }
+}
+rug(40, 196, 170, 34);
+
+// ---------- прилавок ----------
+const CX = 120, CY = 118, CW = 234;
+function counter() {
+  b.rect(CX, CY + 6, CW, 40, P.wood[1]);
+  for (let x = CX + 3; x < CX + CW - 10; x += 26) { b.rect(x, CY + 11, 22, 30, P.wood[2]); b.hl(x, CY + 11, 22, P.wood[0]); b.vl(x, CY + 11, 30, P.wood[0]); b.hl(x + 1, CY + 40, 21, P.wood[3]); b.vl(x + 21, CY + 12, 29, P.wood[3]); }
+  b.rect(CX - 3, CY, CW + 6, 6, P.wood[4]); b.hl(CX - 3, CY, CW + 6, P.wood[5]); b.hl(CX - 3, CY + 5, CW + 6, P.wood[0]); b.hl(CX - 3, CY + 6, CW + 6, P.wood[0]);
+  b.rect(CX, CY + 46, CW, 3, P.wood[0]);
+  // тень от прилавка
+  b.dith(CX, CY + 49, CW, 5, '#5a3a22', (x, y) => .55 - (y - CY - 49) * .1);
+}
+
+// ---------- люди за прилавком (рисуем до прилавка) ----------
+const C = CAST;
+function put(f, x, y, shadow = true) { if (shadow) { b.ellipse(x + 8, y + 28, 7, 2, '#3a2219', .35); } b.blit(f, x, y); }
+// Гуля в двери цеха с противнем
+put(figure(C.gulya, { emo: 'happy' }), 131, 82, false);
+b.rect(127, 103, 24, 3, P.grey[2]); b.hl(127, 103, 24, P.grey[3]); b.hl(127, 106, 24, P.grey[4]);
+for (let i = 0; i < 3; i++) icon(b, 128 + i * 8, 97, 'croissant', false);
+steam(131, 96, 9, 5); steam(147, 95, 10, 6);
+// Рашид у печи с лопатой
+put(figure(C.rashid, { emo: 'neutral' }), 376, 84);
+b.line(396, 90, 420, 70, P.wood[3]); b.line(397, 90, 421, 70, P.wood[1]); b.rect(418, 64, 8, 7, P.wood[4]); b.hl(418, 64, 8, P.wood[5]);
+// герой-бариста
+put(figure(C.hero, { emo: 'smile' }), 262, 90, false);
+counter();
+// ---------- на прилавке ----------
+// касса
+b.rect(130, 104, 28, 14, P.grey[0]); b.hl(130, 104, 28, P.grey[1]); b.rect(133, 100, 22, 6, P.ol); b.rect(134, 101, 20, 4, '#9fe0b5'); text(b, 136, 101, '275', '#1e6b41', 1, { small: true });
+b.rect(131, 110, 26, 7, P.grey[4]); for (let i = 0; i < 4; i++) b.rect(133 + i * 6, 112, 4, 2, P.grey[2]);
+// банка для чаевых
+b.rect(162, 107, 10, 11, '#cfe8f0'); b.vl(162, 107, 11, '#ffffff'); b.rect(163, 112, 8, 6, '#f2c14e'); b.set(165, 111, '#f2c14e'); b.hl(161, 106, 12, P.wood[1]);
+// летят монетки
+[[170, 96], [178, 88], [186, 84]].forEach(([x, y], i) => icon(b, x, y, 'coin', false));
+// витрина
+const VX = 180, VW = 80;
+b.rect(VX, 96, VW, 22, '#cfe8f0', .45);
+b.rect(VX, 95, VW, 1, '#ffffff'); b.vl(VX, 95, 23, '#ffffff'); b.vl(VX + VW - 1, 95, 23, '#a8c8d0'); b.hl(VX, 106, VW, '#a8c8d0');
+for (let i = 0; i < 9; i++) icon(b, VX + 2 + i * 9, 98, ['croissant', 'croissant', 'bun', 'croissant', 'bun', 'bun', 'croissant', 'bun', 'croissant'][i], false);
+for (let i = 0; i < 9; i++) if (i !== 4 && i !== 7) icon(b, VX + 2 + i * 9, 109, 'echpochmak', false);
+for (let i = 0; i < 18; i++) b.set(VX + 4 + i, 114 - i, '#ffffff', .5);
+b.rect(VX - 1, 117, VW + 2, 2, P.wood[0]);
+// кофемашина
+b.rect(296, 96, 40, 22, P.grey[1]); b.rect(296, 96, 40, 3, P.grey[3]); b.vl(296, 96, 22, P.grey[2]); b.vl(335, 96, 22, P.grey[0]);
+b.rect(300, 101, 32, 6, P.grey[4]); b.set(304, 103, '#e2553f'); b.set(308, 103, '#52b67f');
+b.rect(304, 108, 3, 4, P.ol); b.rect(322, 108, 3, 4, P.ol); b.rect(302, 112, 7, 5, '#f5efe3'); b.hl(302, 112, 7, '#ffffff'); b.rect(320, 112, 7, 5, '#f5efe3');
+for (let i = 0; i < 4; i++) b.rect(298 + i * 9, 91, 7, 5, i % 2 ? '#f5efe3' : P.crust[0]);
+steam(305, 111, 10, 9); steam(324, 111, 8, 11);
+// мельница для кофе и чашки справа
+b.rect(340, 104, 9, 14, P.ol); b.rect(341, 98, 7, 7, '#c9e2ec'); b.rect(342, 101, 5, 4, '#6a4028');
+
+// ---------- столик у окна с гостьей ----------
+function stool(x, y) { b.ellipse(x, y, 5, 2, P.wood[3]); b.hl(x - 4, y, 9, P.wood[4]); b.vl(x - 3, y + 1, 7, P.wood[0]); b.vl(x + 3, y + 1, 7, P.wood[0]); b.hl(x - 3, y + 5, 7, P.wood[1]); }
+b.ellipse(300, 236, 22, 4, '#3a2219', .3);
+put(figure(C.elvira, { emo: 'happy', upper: true }), 283, 199, false);
+b.ellipse(296, 222, 18, 5, P.wood[3]); b.ellipse(296, 221, 17, 4, P.wood[4]); b.hl(284, 219, 10, P.wood[5]);
+b.rect(294, 225, 4, 12, P.wood[0]); b.hl(288, 236, 16, P.wood[1]);
+b.rect(288, 216, 6, 4, '#f5efe3'); b.hl(288, 216, 6, '#ffffff'); b.set(294, 217, '#f5efe3'); icon(b, 297, 213, 'croissant', false);
+stool(318, 226);
+// фикус в кадке
+b.rect(452, 152, 14, 12, '#b0603f'); b.hl(452, 152, 14, '#c97a55'); b.vl(465, 153, 11, '#8f4a31'); b.ellipse(459, 166, 8, 2, '#3a2219', .3);
+[[459, 136, 8, 9, 1], [452, 144, 6, 6, 0], [466, 142, 6, 7, 0], [458, 128, 5, 6, 2], [462, 148, 5, 4, 1]].forEach(([x, y, rx, ry, k]) => b.ellipse(x, y, rx, ry, P.green[k]));
+b.vl(459, 140, 12, P.wood[0]);
+
+// ---------- гости ----------
+// Семён у прилавка (спиной)
+put(figure(C.semyon, { view: 'back' }), 214, 132);
+// очередь
+const Q = [
+  { c: C.g2, x: 168, y: 150, emo: 'neutral', bub: ['latte', 'bun'], t: .8 },
+  { c: C.g1, x: 124, y: 162, emo: 'happy', bub: ['heart'], t: .7 },
+  { c: C.g3, x: 80, y: 172, emo: 'angry', bub: ['clock', 'angry'], t: .22, tone: 'bad' },
+  { c: C.g4, x: 38, y: 180, emo: 'neutral', bub: ['dots'], t: .9 },
+];
+Q.slice().reverse().forEach((q) => put(figure(q.c, { emo: q.emo }), q.x, q.y));
+
+// ---------- свет ----------
+// луч из окна на пол (объём + пятно)
+b.beam([[WX + 4, WY + 6], [WX + WW - 4, WY + 6], [WX + WW + 70, 240], [WX + 30, 240]], '#fff1c4', (x, y) => {
+  const t = (y - WY) / 220; let a = .22 * (1 - t) ; a = Math.floor((a + bay(x, y) * .06) * 20) / 20; return a;
+});
+b.beam([[WX + 6, 112], [WX + WW, 112], [WX + WW + 60, 200], [WX + 24, 200]], '#ffe7a8', (x, y) => ((x + y) % 5 === 0 ? 0 : .12));
+PX.motes(b, [WX, WY + 10, WW + 70, 200], 60, 12, '#fff8e0', (x, y) => y > WY + 10 && x > WX + (y - WY) * .1 && x < WX + WW + (y - WY) * .3);
+// лампы
+b.glow(200, 30, 40, '#fff0c0', .25, { ry: 30 }); b.glow(300, 30, 40, '#fff0c0', .25, { ry: 30 });
+// тёплая виньетка
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const dx = (x - W / 2) / (W / 2), dy = (y - H * .45) / (H * .7), d = dx * dx + dy * dy;
+  if (d > .55) b.shade(x, y, '#6a3a20', Math.min(.35, (d - .55) * .5));
+}
+
+// ---------- пузыри (поверх света) ----------
+bubble(b, 211, 110, ['latte', 'echpochmak'], 'hot');
+Q.forEach((q) => { bubble(b, q.x + 8 - (q.bub.length * 8 + 4) / 2, q.y - 16, q.bub, q.tone || 'norm'); patience(b, q.x + 2, q.y - 20, 12, q.t); });
+bubble(b, 386, 68, ['dots']);
+bubble(b, 150, 70, ['note']);
+bubble(b, 285, 186, ['heart']);
+
+PX.show(b, document.getElementById('cv'), 3);
+
+// ---------- мелкие пиксельные элементы интерфейса ----------
+PX.show(PX.portrait(C.hero.p, 'smile'), document.getElementById('heroP'), 1);
+PX.show(PX.portrait(C.semyon.p, 'neutral'), document.getElementById('semP'), 1);
+document.querySelectorAll('canvas[data-i]').forEach((cv) => { const ib = new Buf(9, 9); icon(ib, 1, 1, cv.dataset.i); PX.show(ib, cv, +(cv.dataset.s || 3)); });
+// часы-кольцо
+(() => { const cb = new Buf(13, 13); cb.ellipse(6.5, 6.5, 6.5, 6.5, '#2a1a1c'); cb.ellipse(6.5, 6.5, 5, 5, '#f4dfc2');
+  for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) { const a = Math.atan2(x - 6.5, -(y - 6.5)); const d = Math.hypot(x - 6.5, y - 6.5); if (d < 5.2 && d > 2.2 && (a < 0 ? a + 2 * Math.PI : a) < 5.2) cb.set(x, y, '#c46f17'); }
+  cb.ellipse(6.5, 6.5, 2.2, 2.2, '#fbf6ec'); PX.show(cb, document.getElementById('clk'), 3); })();
+// станции
+const ST = [['1', 'Эспрессо', 'cup', 'done'], ['2', 'Молоко', 'milk', 'done'], ['3', 'Пенка', 'latte', 'hot'], ['4', 'Сироп', 'syrup', ''], ['Q', 'Круассан', 'croissant', ''], ['W', 'Эчпочмак', 'echpochmak', 'done'], ['E', 'Булочка', 'bun', ''], ['R', 'Чай', 'tea', '']];
+PX.ICON.milk = { rows: ['..ww...', '.wwww..', '.wbbw..', 'wwwwww.', 'wbbbbw.', 'wbbbbw.', 'wwwwww.'], pal: { w: '#f5efe3', b: '#8fb3c8' } };
+PX.ICON.syrup = { rows: ['..k....', '.kkk...', '.ccc...', 'cCccc..', 'cCccc..', 'cCccc..', '.ccc...'], pal: { k: '#2a1a1c', c: '#e59a3e', C: '#fff1da' } };
+PX.ICON.tea = { rows: ['...g...', '..g....', 'ccccc..', 'cttcc.c', 'cttcc.c', 'ccccc..', '.ccc...'], pal: { g: '#5d8c46', c: '#f5efe3', t: '#b8741c' } };
+const bar = document.getElementById('bar');
+ST.forEach(([k, n, ic, st]) => { const s = document.createElement('div'); s.className = 'slot ' + st; s.innerHTML = `<kbd>${k}</kbd><canvas></canvas><b>${n}</b>`; const ib = new Buf(9, 9); icon(ib, 1, 1, ic); PX.show(ib, s.querySelector('canvas'), 5); bar.appendChild(s); });
+</script>
+</body>
+</html>
