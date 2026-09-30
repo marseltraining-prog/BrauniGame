@@ -170,7 +170,7 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 @keyframes pro-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 /* --- всплывающие числа, монетки, конфетти --- */
-.pro-fly { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+.pro-fly { position: fixed; inset: 0; pointer-events: none; z-index: 15; overflow: hidden; }
 .pro-float { position: fixed; font-family: var(--f-display); font-weight: 700; font-size: 15px; padding: 2px 8px; border-radius: 99px; background: var(--surface); box-shadow: var(--shadow); animation: pro-up 1.25s ease-out forwards; white-space: nowrap; }
 .pro-float.big { font-size: 20px; }
 .pro-float.up { color: var(--good-t); } .pro-float.dn { color: var(--bad-t); }
