@@ -127,7 +127,7 @@ function approxCost(S, c, share, n) {
 function chooseEvent(S, P) {
   const inst = S.ev.pending, ch = inst.choices;
   if (!ch) return 0;
-  if (inst.corp) return BK.CorpEv.botChoice(S, inst, P.corpLevel || P.level || 'good'); // корпоративные события (e201–e218) — профиль корпоративного бота
+  if (inst.corp) return BK.CorpEv.botChoice(S, inst, P.corpLevel === 'badfix' ? 'bad' : P.corpLevel || P.level || 'good'); // корпоративные события (e201–e218) — профиль корпоративного бота
   if (P.events === 'random') return Math.floor(rand(S) * ch.length);
   if (P.events === 'free') { const i = ch.findIndex((c) => !c.cost); return i < 0 ? 0 : i; }
   const def = E.byId(BK.EVENTS, inst.id);

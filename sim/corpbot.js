@@ -40,7 +40,8 @@ function tryHq(S, key, reserve) { const lv = hq(S, key), cost = BK.HQ.openCost(S
 function corpMonth(S, P, mem, opt) {
   const cr = S.corp, pl = S.macro.priceLevel;
   opt = opt || {};
-  const lv = opt.level || 'good';
+  const fix = opt.level === 'badfix'; // bad, который через год учит или меняет слабых директоров (Р4)
+  const lv = fix ? 'bad' : opt.level || 'good';
   const st = mem.corp || (mem.corp = { rows: [], fedYear: null, legendYear: null, unlockY: null, entered: [], dev: {}, audits: 0 });
   if (st.unlockY == null) st.unlockY = +(S.day / 365).toFixed(1);
   const nC = Object.keys(cr.cities).length, dirs = cr.directors.filter((d) => d.city);
@@ -104,6 +105,8 @@ function corpMonth(S, P, mem, opt) {
       if (!d.kpi.keys.length) E.dirKpi(S, d.id, { keys: ['rev'], bonus: 0.3 });
     }
   }
+  // 5б. денежный риск (Р4): реакция на утечку слабого директора — good сразу, avg с опозданием, badfix через год, bad никак
+  leakFix(S, mem, st, lv, fix, buf);
   if (lv === 'good') { // совет директоров: трое самых лояльных
     const top = cr.directors.filter((d) => d.city && !d.board).sort((a, b) => b.loyalty - a.loyalty);
     if (cr.directors.filter((d) => d.board).length < 3 && top[0] && top[0].months >= 12) E.dirBoard(S, top[0].id, true);
@@ -135,6 +138,47 @@ function corpMonth(S, P, mem, opt) {
     if (lv === 'good' && c.budget.train < 4) E.citySetBudget(S, id, { train: 4 });
   }
   if (lv === 'bad' && S.cash < 0) E.takeLoan(S, -S.cash + 30e6 * pl);
+}
+const FIX_PROGS = ['ops', 'econ', 'people', 'growth', 'mba'];
+function enrollFix(S, d, evening) { // программа навыков (не «Бренд») — снижает нужный уровень
+  if (d.study) return true;
+  for (const p of FIX_PROGS) if (!BK.HQ.progLock(S, d, p) && S.cash > BK.HQ.progCost(S, p) * 3) return E.uniEnroll(S, d.id, p, evening).ok;
+  return false;
+}
+function replaceDir(S, cityId, d, mem) { // сменить на кандидата заметно сильнее; старого — уволить
+  const avg = (x) => (x.seen.ops + x.seen.econ + x.seen.growth + x.seen.people) / 4, cur = (d.skills.ops + d.skills.econ + d.skills.growth + d.skills.people) / 4;
+  let c = S.corp.dirCand.filter((x) => x.grade > d.grade || avg(x) > cur + 8).sort((a, b) => avg(b) - avg(a))[0];
+  if (!c && S.cash > 50e6 * S.macro.priceLevel) { E.dirRefresh(S, true); c = S.corp.dirCand.filter((x) => x.grade > d.grade || avg(x) > cur + 8).sort((a, b) => avg(b) - avg(a))[0]; }
+  if (!c) return false;
+  const r = E.dirHire(S, c.id, cityId); if (!r.ok) return false;
+  E.dirFire(S, d.id);
+  mem.corp.repl = mem.corp.repl || {}; mem.corp.repl[cityId] = S.day; mem.corp.fixes = (mem.corp.fixes || 0) + 1;
+  return true;
+}
+function leakFix(S, mem, st, lv, fix, buf) {
+  const cr = S.corp, pl = S.macro.priceLevel;
+  for (const id in cr.cities) {
+    const c = cr.cities[id]; if (id === cr.active || !c.directorId) continue;
+    const d = BK.Dir.dirOf(S, c); if (!d || d.city !== id) continue;
+    const L = c.leak || 0, lm = BK.Dir.lossMonths(c), since = (st.repl || {})[id];
+    const canRepl = since == null || S.day - since > 365;
+    if (lv === 'good') {
+      if (L < 0.02) continue;
+      if (!hq(S, 'uni')) tryHq(S, 'uni', buf + 50e6 * pl);
+      const li = BK.Dir.leakInfo(S, c, d);
+      if (L >= 0.08 && d.cityMonths >= 12 && canRepl && li.gap > 12 && replaceDir(S, id, d, mem)) continue;
+      enrollFix(S, d, true);
+    } else if (lv === 'avg') { // средний игрок замечает красную строку «теряет деньги» не сразу
+      if (lm < 4 || brnd(mem) > 0.35) continue;
+      if (!hq(S, 'uni')) tryHq(S, 'uni', buf + 100e6 * pl);
+      if (!(hq(S, 'uni') && enrollFix(S, d, false)) && canRepl) replaceDir(S, id, d, mem);
+    } else if (fix) { // badfix: через год в городе — учить; не помогает — сменить
+      if (d.cityMonths < 12 || L < 0.02) continue;
+      if (!hq(S, 'uni')) tryHq(S, 'uni', 0);
+      if ((L >= 0.1 || !hq(S, 'uni')) && canRepl && replaceDir(S, id, d, mem)) continue;
+      enrollFix(S, d, false);
+    }
+  }
 }
 // ежегодная строка сводки
 function corpYear(S, mem) {
