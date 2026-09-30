@@ -1,0 +1,32 @@
+/* Время суток и доставка через агрегаторы (src/ui/delivery.js, слой карты «Время суток») */
+:root { --dp-m: #c99612; --dp-d: #c95a2a; --dp-e: #5a5fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --dp-m: #eec24c; --dp-d: #f08a5a; --dp-e: #9aa0f5; } }
+:root[data-theme="dark"] { --dp-m: #eec24c; --dp-d: #f08a5a; --dp-e: #9aa0f5; }
+
+.dpbox { display: grid; gap: 6px; margin: 4px 0 8px; }
+.dp-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dp-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+.dp-bar i { display: block; height: 100%; }
+.dp-bar i + i { border-left: 2px solid var(--surface); }
+.dp-bar .dp-m, .dp-sw.dp-m { background: var(--dp-m); }
+.dp-bar .dp-d, .dp-sw.dp-d { background: var(--dp-d); }
+.dp-bar .dp-e, .dp-sw.dp-e { background: var(--dp-e); }
+.dp-sw.dp-flat { background: var(--line-2); }
+.dp-lg { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.dp-lg span { display: inline-flex; align-items: center; gap: 5px; }
+.dp-sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.chip.dpc { gap: 6px; cursor: help; }
+.chip.dlv { background: var(--good-soft); color: var(--good-t); }
+.dlvrow { margin: 2px 0 6px; }
+
+.dlvnet .row.sp { flex-wrap: wrap; gap: 8px; }
+
+/* карта: слой «Время суток» */
+.m-store circle.b.t-dp-m { stroke: var(--dp-m); }
+.m-store circle.b.t-dp-d { stroke: var(--dp-d); }
+.m-store circle.b.t-dp-e { stroke: var(--dp-e); }
+.m-store circle.b.t-dp-flat { stroke: var(--line-2); }
+.m-offer.dp-m circle { stroke: var(--dp-m); fill: color-mix(in srgb, var(--dp-m) 16%, transparent); }
+.m-offer.dp-d circle { stroke: var(--dp-d); fill: color-mix(in srgb, var(--dp-d) 16%, transparent); }
+.m-offer.dp-e circle { stroke: var(--dp-e); fill: color-mix(in srgb, var(--dp-e) 16%, transparent); }
+@media (max-width: 900px) { .maplegend .lg-t { font-size: 10.5px; } } /* подпись слоя на телефоне — не мельче 10,5 px */

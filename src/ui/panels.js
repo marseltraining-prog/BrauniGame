@@ -361,6 +361,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += row('Аренда', '−' + fm(p.rent));
     s += row('ФОТ (зарплаты и взносы)', '−' + fm(p.payroll));
     if (p.delivery != null) s += row('Доставка', '−' + fm(p.delivery));
+    if (p.agg) s += row(p.aggRev ? `Агрегаторы доставки <small>(выручка доставки ${fm(p.aggRev)})</small>` : 'Агрегаторы доставки', '−' + fm(p.agg));
     s += row('Коммунальные платежи', '−' + fm(p.util));
     if (full) {
       s += row('Офис, HR, культура, управление', '−' + fm(p.upkeep || 0));
@@ -531,13 +532,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S.stores.length) return `<div class="empty">Точек пока нет. Выберите помещение на вкладке «Рынок».</div>`;
     const sortKey = ui.storeSort || 'rev';
     const list = S.stores.slice().sort((a, b) => sortKey === 'num' ? a.num - b.num : sortKey === 'profit' ? ((b.last && b.last.profit) || 0) - ((a.last && a.last.profit) || 0) : ((b.last && b.last.rev) || 0) - ((a.last && a.last.rev) || 0));
-    let s = `<div class="row sp"><span class="hint">${nw(S.stores.length, 'точка', 'точки', 'точек')} · сортировка</span><div class="seg">${[['rev', 'Выручка'], ['profit', 'Прибыль'], ['num', 'Номер']].map(([k, l]) => `<button data-act="storeSort" data-arg="${k}" aria-pressed="${sortKey === k}">${l}</button>`).join('')}</div></div>`;
+    let s = (BK.DeliveryUI ? BK.DeliveryUI.netBlock(S) : '') + `<div class="row sp"><span class="hint">${nw(S.stores.length, 'точка', 'точки', 'точек')} · сортировка</span><div class="seg">${[['rev', 'Выручка'], ['profit', 'Прибыль'], ['num', 'Номер']].map(([k, l]) => `<button data-act="storeSort" data-arg="${k}" aria-pressed="${sortKey === k}">${l}</button>`).join('')}</div></div>`;
     for (const st of list) {
       const mood = BK.storeMood(st);
       const L = st.last;
       s += `<div class="card click" data-act="openStore" data-arg="${st.id}">
         <div class="card-h"><div><div class="card-t">№${st.num} · ${esc(st.address)}</div><div class="card-s">${dname(st.district)} · ${fmtShort(st.size)}, ${st.area} м² · ремонт ${st.repair}/3</div></div>${mood ? BK.faceIcon(mood) : ''}</div>
-        <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}<span class="chip">Штат ${st.staff.length}/${st.staffTarget}${st.incoming.length ? ` +${st.incoming.length}` : ''}</span>${st.today && !st.today.closed ? `<span class="chip">${n0(st.today.checks)} чеков/день</span>` : ''}</div>
+        <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}<span class="chip">Штат ${st.staff.length}/${st.staffTarget}${st.incoming.length ? ` +${st.incoming.length}` : ''}</span>${st.today && !st.today.closed ? `<span class="chip">${n0(st.today.checks)} чеков/день</span>` : ''}${BK.DeliveryUI ? BK.DeliveryUI.listChip(S, st) : ''}</div>
         <div class="grid2">${kv('Выручка, мес', L ? fm(L.rev) : '—')}${kv('Прибыль, мес', L ? `<span class="${L.profit >= 0 ? 'pos' : 'negc'}">${fm(L.profit)}</span>` : '—')}</div>
       </div>`;
     }
@@ -561,6 +562,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (BK.TrainersUI) s += BK.TrainersUI.storeBlock(S, st); // «Взгляд тренера»
     if (st.status !== 'opening') s += ratingSection(S, st);
+    if (BK.DeliveryUI) s += BK.DeliveryUI.storeSection(S, st); // время суток и доставка через агрегаторы
     s += `<div class="sec"><h3>Помещение</h3><div class="grid2">
       ${kv('Аренда', fm(E_.storeRentMonth(st)) + '/мес')}${kv('Ставка', n0(st.rentM2) + ' ₽/м²')}
       ${kv('Оплата', st.payMode === 'year' ? (st.rentPaidUntil > S.day ? 'оплачено до ' + E_.fmtDate(st.rentPaidUntil) : 'раз в год') : 'помесячно')}${kv('Трафик', n0(st.traffic) + ' чел./день')}
@@ -614,7 +616,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${kv('Аренда', `${n0(o.rentM2)} ₽/м² · ${fm(o.area * o.rentM2)}`)}${kv('Трафик', n0(o.traffic) + ' чел./день')}
         ${kv('Платёжеспособность', n0(o.solv * S.macro.priceLevel) + ' ₽ за визит')}${kv('Конкуренция', o.comp > 0.95 ? 'низкая' : o.comp > 0.89 ? 'средняя' : 'высокая')}
         ${kv('Прогноз выручки', '≈ ' + fm(est.rev) + '/мес')}${kv('Прогноз прибыли', `<span class="${est.profit >= 0 ? 'pos' : 'negc'}">≈ ${fm(est.profit)}/мес</span>`)}
-      </div>
+      </div>${BK.DeliveryUI ? BK.DeliveryUI.offerLine(S, o) : ''}
       <div class="row sp"><span class="hint">Отделка ${fm(c.fit)}, оборудование ${fm(c.eq)}, найм ${fm(c.hire)}, ${o.payMode === 'year' ? 'аренда за год' : 'депозит'} ${fm(c.rent)}. ${S.cash >= c.total ? `После аренды на счёте останется <b class="${S.cash - c.total < 1.5e6 * S.macro.priceLevel ? 'warnc' : ''}">${fm(S.cash - c.total)}</b>.` : `<span class="negc">Не хватает ${fm(c.total - S.cash)}.</span>`} Предложение действует ещё ${nw(Math.max(0, o.expires - S.day), 'день', 'дня', 'дней')}.</span>
       ${btn('rent', 'Арендовать', { cls: 'primary', arg: o.id, cost: c.total, dis: !canPay(S, c.total) })}</div>
     </div>`;

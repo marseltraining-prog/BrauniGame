@@ -381,12 +381,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const st = E.byId(S.stores, id); if (!st) return '';
       const mood = BK.storeMood(st);
       const rt = st.status !== 'opening' && H.rating ? ` · ${H.rating.r1(E.storeRating(S, st))}★` : '';
-      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}${BK.TrainersUI ? BK.TrainersUI.tip(S, st) : ''}`;
+      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}${BK.DeliveryUI ? `<br>${BK.DeliveryUI.tipText(st)}${st.agg ? ' · доставка' : ''}` : ''}${BK.TrainersUI ? BK.TrainersUI.tip(S, st) : ''}`;
     }
     if (kind === 'offer') {
       const o = E.byId(S.offers, id); if (!o) return '';
       const est = BK.estimateOffer(S, o);
-      return `<b>Свободно: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${o.landmarks.map(H.lname).join(', ')}<br>Трафик ${H.n0(o.traffic)} · прогноз ≈ ${H.fm(est.rev)}/мес`;
+      return `<b>Свободно: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${o.landmarks.map(H.lname).join(', ')}<br>Трафик ${H.n0(o.traffic)} · прогноз ≈ ${H.fm(est.rev)}/мес${BK.DeliveryUI ? '<br>' + BK.DeliveryUI.tipText(o) : ''}`;
     }
     if (kind === 'prod') { const p = E.byId(S.productions, id); return p ? `<b>${p.name}</b><br>${e(p.address)}<br>Загрузка ${H.pct(p.load || 0)}` : ''; }
     if (kind === 'prodOffer') { const o = E.byId(S.prodOffers, id); return o ? `<b>Под производство: ${e(o.address)}</b><br>${H.dname(o.district)} · ${o.area} м² · ${H.fm(o.area * o.rentM2)}/мес` : ''; }
@@ -501,6 +501,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ruAudit: (d) => { const r = E.cityAudit(S, d.arg); res(r, r.ok ? (r.found.length ? 'Аудит нашёл нарушения — решение во «Отчётах»' : 'Аудит: касса и отчёты сходятся') : null); if (r.ok && r.found.length) { ui.tab = 'ruinbox'; ui.repFilter = 'need'; refresh(); } },
     caughtDecide: (d) => res(E.caughtDecide(S, d.arg, d.arg2), 'Решение принято'),
     candCheck: (d) => { const r = E.candCheck(S, d.arg); res(r, r.ok ? (r.found.length ? `Проверка: ${r.found.map((t) => (BK.DIRECTOR_TRAITS[t] || {}).name).join(', ')}` : 'Проверка: нарушений не найдено') : null); },
+    aggNet: (d) => { const on = d.arg === '1', r = E.setAggNetwork(S, on); res(r, r.ok ? (on ? `Сеть в агрегаторах доставки: ${E.aggConnected(S)} точек` : 'Сеть отключена от агрегаторов') : null); }, // доставка (delivery.js)
+    aggStore: (d) => { const on = d.arg2 === '1', r = E.setAggStore(S, d.arg, on); res(r, r.ok ? (on ? 'Точка подключена к доставке' : 'Доставка на точке отключена') : null); },
     eveDisc: (d) => { const r = E.setEveDiscount(S, +d.arg); if (r.penalty) toast('Гости раздражены сменой скидки', `Рейтинг точек −${String(C.DISC_PENALTY_RATING).replace('.', ',')}★ на месяц.`, 'warn'); refresh(); },
   };
   function onClick(e) {

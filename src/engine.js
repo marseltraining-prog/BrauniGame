@@ -308,7 +308,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = C(); const sz = cfg.SIZES[o.size];
     const tmp = Object.assign({}, o, { id: '__rec', status: 'open', repair: o.repair || 0, staff: [{ lvl: 1 }] });
     const d = storeDemand(S, tmp, { dow: 2, m: 4 }, menuStats(S));
-    const need = Math.ceil(d.demand / (cfg.CHECKS_PER_STAFF_BASE * 0.8));
+    const A = aggDay(S, tmp, d), work = A ? d.demand - A.cannib + A.orders * cfg.AGG_LOAD : d.demand; // доставка тоже занимает команду
+    const need = Math.ceil(work / (cfg.CHECKS_PER_STAFF_BASE * 0.8 * daypartOf(o).thrK)); // в пиковые часы нужно больше людей
     return { need, target: clamp(need, sz.staffMin, sz.staffMax), over: need > sz.staffMax };
   }
   function prodRentMonth(p) { return p.area * p.rentM2; }
@@ -461,6 +462,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let demand = traffic * conv * hol.dem * ratingMult(S, st) * diffK(S, 'demand'); // рейтинг на картах — небольшая прибавка/потеря новых гостей
     if (S.corp && BK.Corp) { const aw = BK.Corp.demandMult(S); if (aw !== 1) demand *= aw; } // узнаваемость бренда в новом городе (у Уфы — ровно 1)
     let thr = 0; for (const e of st.staff) thr += cfg.CHECKS_PER_STAFF_BASE + cfg.CHECKS_PER_STAFF_LVL * (e.lvl - 1);
+    thr *= daypartOf(st).thrK; // пиковые часы: очередь в утренний/обеденный/вечерний пик
     return { demand, thr, check, traffic, avgLvl };
   }
 
@@ -481,10 +483,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const closed = st.status === 'repair' || (st.closedUntil && st.closedUntil > S.day) || st.staff.length === 0;
       if (closed) { st.today = { checks: 0, rev: 0, load: 0, closed: true, lost: 0 }; rows.push(null); continue; }
       const d = storeDemand(S, st, t, ms);
-      const checks = Math.min(d.demand, d.thr);
-      const load = d.thr > 0 ? d.demand / d.thr : 2;
-      rows.push({ st, d, checks, load });
-      totalUnits += checks * cfg.ITEMS_PER_CHECK;
+      const A = aggDay(S, st, d); // доставка через агрегаторы: заказы делят время команды с гостями зала
+      const hall = A ? Math.max(0, d.demand - A.cannib) : d.demand, work = hall + (A ? A.orders * cfg.AGG_LOAD : 0);
+      const f = work > d.thr ? d.thr / work : 1;
+      const checks = hall * f, ao = A ? A.orders * f : 0;
+      const load = d.thr > 0 ? work / d.thr : 2;
+      rows.push({ st, d, checks, load, hall, ao });
+      totalUnits += (checks + ao) * cfg.ITEMS_PER_CHECK;
     }
     // мощность производства
     let cap = 0; for (const p of S.productions) cap += prodCapacity(S, p);
@@ -503,17 +508,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.cache.fcPct = fcPct;
     const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
     S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
-    let dayRev = 0;
+    let dayRev = 0, dayAgg = 0;
+    const aggK = C().AGG_PACK + aggCommission(S);
     for (const r of rows) {
       if (!r) continue;
       const { st, d } = r;
       const checks = bakeChecks(r.checks * fill, d, wz);
-      const revFull = checks * d.check, rev = revFull * wz.revMult;
-      const lost = (d.demand - checks) * d.check;
-      st.today = { checks, rev, load: r.load, lost, check: d.check, traffic: d.traffic, closed: false };
+      const ws = storeWaste(wz, st); // время суток: у вечерних точек остатки раскупают, у утренних — залёживаются
+      const revFull = checks * d.check, rev = revFull * ws.revMult;
+      const lost = (r.hall - checks) * d.check;
+      const ao = r.ao * fill * Math.min(1, wz.sales), ar = ao * d.check * cfg.AGG_CHECK; // доставка: заказы и выручка (без вечерней скидки)
+      st.today = { checks, rev: rev + ar, load: r.load, lost, check: d.check, traffic: d.traffic, closed: false, agg: ao, aggRev: ar };
       st.cpd = st.cpd != null ? st.cpd * 0.95 + checks * 0.05 : checks; // сглаженные чеки в день (для доставки)
-      st.m.rev += rev; st.m.checks += checks; st.m.fc += revFull * fcPct; st.m.lost += Math.max(0, lost);
-      const wst = revFull * fcRec * wz.waste; st.m.fc += wst; st.m.waste = (st.m.waste || 0) + wst; dayFc += revFull * fcPct + wst;
+      st.m.rev += rev + ar; st.m.checks += checks; st.m.fc += (revFull + ar) * fcPct; st.m.lost += Math.max(0, lost);
+      if (ar) { st.m.aggRev = (st.m.aggRev || 0) + ar; st.m.aggOrders = (st.m.aggOrders || 0) + ao; st.m.agg = (st.m.agg || 0) + ar * aggK; dayAgg += ar; S.month.aggOrders = (S.month.aggOrders || 0) + ao; }
+      dayRev += ar; dayFc += ar * fcPct;
+      const wst = revFull * fcRec * ws.waste; st.m.fc += wst; st.m.waste = (st.m.waste || 0) + wst; dayFc += revFull * fcPct + wst;
       S.month.waste = (S.month.waste || 0) + wst; S.month.lostBake = (S.month.lostBake || 0) + revFull / (1 - wz.lost) * wz.lost;
       dayRev += rev;
       S.month.lost += Math.max(0, lost);
@@ -522,6 +532,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let dayChecks = 0; for (const r of rows) if (r) dayChecks += r.st.today.checks;
     S.month.checks += dayChecks;
     spend(S, dayFc, 'fc');
+    if (dayAgg) { S.month.aggRev = (S.month.aggRev || 0) + dayAgg; spend(S, dayAgg * aggK, 'agg'); } // комиссия агрегатора и упаковка
     S.cache.dayRev = dayRev;
     if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
     // производство: загрузка
@@ -550,7 +561,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const menuF = Math.max(0.5, 1 + cfg.WASTE_MENU_K * (n - cfg.WASTE_MENU_REF));
     const left = cfg.WASTE_BASE * L.waste * menuF * (1 - cfg.WASTE_ERP_CUT * erp); // непроданное без скидки
     const sold = Math.min(left * cfg.EVE_SELL[i], cfg.EVE_CAP[i]); // раскупили вечером со скидкой
-    return { sales: (1 - L.lost) / (1 - lost0), lost: L.lost, revMult: 1 - cfg.EVE_CANNIBAL[i] * d + sold * (1 - d), waste: left - sold, disc: d, erp, menuF };
+    return { sales: (1 - L.lost) / (1 - lost0), lost: L.lost, revMult: 1 - cfg.EVE_CANNIBAL[i] * d + sold * (1 - d), waste: left - sold, disc: d, erp, menuF, left, i };
+  }
+  function storeWaste(wz, st) { // остатки и вечерняя скидка на точке с учётом времени суток (доля вечерних гостей)
+    const cfg = C(), dp = daypartOf(st), i = wz.i;
+    const left = wz.left * dp.wasteK, sold = Math.min(left * cfg.EVE_SELL[i] * dp.eveK, cfg.EVE_CAP[i] * dp.eveK);
+    return { revMult: 1 - cfg.EVE_CANNIBAL[i] * wz.disc * dp.eveK + sold * (1 - wz.disc), waste: left - sold };
   }
   function bakeChecks(c, d, wz) { const x = c * wz.sales; return wz.sales > 1 ? Math.min(x, Math.max(c, d.thr)) : x; } // перерасход не продаст больше, чем успевает команда
   function ratingParts(S, st) {
@@ -567,7 +583,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fresh: bakeLevel(S).fresh,
     };
   }
-  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s; }
+  function ratingTarget(S, st) { const w = C().RATING_W, p = ratingParts(S, st); let s = 0; for (const k in w) s += w[k] * p[k]; return s - aggLatePen(S, st); } // перегруз доставкой — опоздания
   function discPenalty(S) { const W = wasteState(S); return W.penUntil > S.day ? C().DISC_PENALTY_RATING : 0; }
   // рейтинг, который видят гости (с временным штрафом за частую смену скидки)
   function storeRating(S, st) { return clamp((st.rating != null ? st.rating : C().RATING_START) - (st.num != null ? discPenalty(S) : 0), 1, 5); }
@@ -793,7 +809,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const del = deliveryCost(S, st) * mk;
       spend(S, rent, 'rent'); spend(S, pay, 'payroll'); spend(S, util, 'util'); spend(S, del, 'delivery');
       st.m.rent += rent; st.m.payroll = pay; st.m.util = util; st.m.delivery = del;
-      st.m.profit = st.m.rev - st.m.fc - st.m.rent - pay - util - del - st.m.rev * currentTaxRate(S);
+      st.m.profit = st.m.rev - st.m.fc - st.m.rent - pay - util - del - (st.m.agg || 0) - st.m.rev * currentTaxRate(S);
       st.last = st.m;
       st.lossStreak = st.m.profit < 0 ? (st.lossStreak || 0) + 1 : 0; // месяцев подряд в убытке (для «Требует внимания»); в старых сохранениях поля нет → 0
       st.hist = (st.hist || []).concat([Math.round(st.m.rev)]).slice(-12);
@@ -822,7 +838,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // налоги
     const taxRate = currentTaxRate(S);
     let tax = M.rev * taxRate;
-    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other;
+    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0);
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
@@ -945,6 +961,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (months && months.indexOf(t.m) < 0) return false;
     if (e.scope === 'production' && !S.productions.some((p) => p.status === 'open')) return false;
     if (e.scope === 'store' && !openStores.length) return false;
+    if (e.agg != null && (aggConnected(S) > 0) !== e.agg) return false; // события про агрегаторы: agg:true — только если есть подключённые точки, false — если нет
     return true;
   }
   function fireRandomEvent(S, t) {
@@ -1139,6 +1156,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
           S.ev.queue.push({ id: f.id, day: S.day + ri(S, a[0], a[1]), tg: { scope: tg.scope, target: tg.target } });
           break;
         }
+        case 'agg': { // агрегаторы доставки: подключить всю сеть (подключение за счёт агрегатора) или отключить
+          const A = aggState(S); A.on = !!f.on;
+          for (const st of S.stores) { if (f.on && !st.agg) { st.aggPaid = true; st.aggDay = Math.max(S.day, st.status === 'opening' ? st.openDay : S.day); } st.agg = !!f.on; }
+          out.push(f.on ? `все точки подключены к доставке (${S.stores.length})` : 'сеть отключена от агрегаторов доставки'); break;
+        }
+        case 'aggComm': S.mods.push({ t: 'aggComm', add: f.add, until: S.day + (f.d || 120), scope: 'global' }); out.push(`комиссия агрегатора ${f.add > 0 ? '+' : '−'}${Math.round(Math.abs(f.add) * 100)} п.п. на ${f.d || 120} дн.`); break;
+        case 'aggOrders': S.mods.push({ t: 'aggOrders', m: f.m, until: S.day + (f.d || 90), scope: 'global' }); out.push(`заказы доставки ${pct(f.m)} на ${f.d || 90} дн.`); break;
         case 'offer': { // особое помещение на рынке (со скидкой к аренде)
           const o = makeStoreOffer(S, { district: f.district || (tg.scope === 'district' ? tg.target : null), lm: f.lm, size: f.size });
           if (f.rent) o.rentM2 = round(o.rentM2 * f.rent, 10);
@@ -1203,6 +1227,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       staff: [], incoming: [], staffTarget: sz.staffBase, capex: c.total, m: { rev: 0, checks: 0, fc: 0, rent: 0, lost: 0 }, last: null, hist: [],
       num: (S.flags.storeNum = (S.flags.storeNum || 0) + 1),
     };
+    if (S.agg && S.agg.on) { const c = aggConnectCost(S, st); if (S.cash >= c) { spend(S, c, 'agg'); st.aggPaid = true; st.agg = true; st.aggDay = st.openDay; } } // сеть подключена к агрегаторам — новая точка тоже (с открытия)
     st.staffTarget = recStaff(S, st).target;
     for (let i = 0; i < st.staffTarget; i++) { const e = makePerson(S, candLevel(S)); st.incoming.push({ p: e, day: st.openDay }); S.stats.hires++; }
     S.stores.push(st);
@@ -1522,6 +1547,76 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { name: R.name || C().RIVAL_NAME, n, delta: n - y, months: R.hist.length, opened: R.opened, closed: R.closed, grabbed: R.grabbed, stores: R.stores };
   }
   Object.assign(BK.Engine, { rivalState, rivalMult, rivalNear, rivalSummary });
+
+  /* ---------------- время суток и доставка через агрегаторы (ROADMAP, этап 2) ----------------
+     Время суток: у точки/помещения профиль гостей утро/обед/вечер (район + соседство, CFG.DAYPART_*), в состоянии ничего не хранится.
+       Пик — очередь: пропускная способность команды ниже (storeDemand); доля вечера — сколько выпечки залёживается и как работает вечерняя скидка.
+     Агрегаторы: S.agg = { on } — переключатель на сеть (новые точки подключаются сами), st.agg — точка подключена, st.aggDay — с какого дня,
+       st.aggPaid — подключение оплачено. Старые сохранения: полей нет → всё выключено. Числа — AGG_* в config.js. ГСЧ не используется. */
+  const dpCache = {};
+  function daypartOf(o) {
+    const key = o.district + '|' + (o.landmarks || []).join(',');
+    if (dpCache[key] && dpCache[key].map === BK.DISTRICTS) return dpCache[key];
+    const cfg = C(), d = byId(BK.DISTRICTS, o.district) || {};
+    const base = cfg.DAYPART_ARCH[d.arch || cfg.DAYPART_UFA[d.id]] || [1 / 3, 1 / 3, 1 / 3];
+    const lms = (o.landmarks || []).map((id) => cfg.DAYPART_LM[id]).filter(Boolean);
+    const p = [0, 1, 2].map((i) => (lms.length ? 0.5 * base[i] + 0.5 * lms.reduce((a, l) => a + l[i], 0) / lms.length : base[i]));
+    const s = p[0] + p[1] + p[2], m = p[0] / s, dd = p[1] / s, e = p[2] / s, mx = Math.max(m, dd, e);
+    const W = cfg.AGG_DP_W, w0 = (W[0] + W[1] + W[2]) / 3;
+    const r = {
+      m, d: dd, e, peak: mx < cfg.DAYPART_PEAK ? 'flat' : mx === m ? 'm' : mx === dd ? 'd' : 'e',
+      thrK: 1 - cfg.DAYPART_PEAK_K * Math.max(0, mx - cfg.DAYPART_PEAK_FREE),
+      agg: (W[0] * m + W[1] * dd + W[2] * e) / w0,
+      wasteK: clamp(1 + cfg.DAYPART_WASTE_K * (1 - 3 * e), 0.6, 1.5), eveK: clamp(3 * e, 0.4, 1.8),
+      map: BK.DISTRICTS,
+    };
+    dpCache[key] = r;
+    return r;
+  }
+  const DP_NAMES = { m: 'утро', d: 'обед', e: 'вечер', flat: 'ровно' };
+  function aggState(S) { if (!S.agg) S.agg = { on: false }; return S.agg; }
+  function aggConnected(S) { let n = 0; for (const st of S.stores) if (st.agg) n++; return n; }
+  function aggCommission(S) { const n = aggConnected(S); let r = C().AGG_COMMISSION[0][1]; for (const [k, v] of C().AGG_COMMISSION) if (n >= k) r = v; return clamp(r + modAdd(S, 'aggComm'), 0, 0.6); } // + события (e065)
+  // заказы доставки за день (до ограничения командой): null — точка не подключена
+  function aggDay(S, st, d) {
+    if (!st.agg) return null;
+    const cfg = C(), dp = daypartOf(st);
+    const ramp = st.aggDay != null ? clamp(cfg.AGG_RAMP_START + (1 - cfg.AGG_RAMP_START) * (S.day - st.aggDay) / cfg.AGG_RAMP_DAYS, cfg.AGG_RAMP_START, 1) : 1;
+    const rk = clamp(1 + cfg.AGG_RATING_K * (storeRating(S, st) - cfg.RATING_START), 0.4, 1.4); // выдача агрегатора — по рейтингу
+    const orders = d.demand * cfg.AGG_SHARE * dp.agg * rk * ramp * modMult(S, 'aggOrders', st);
+    return { orders, cannib: orders * cfg.AGG_CANNIBAL };
+  }
+  function aggLatePen(S, st) { // перегрузка подключённой точки: опоздания курьеров и плохие отзывы
+    if (!st.agg || !st.today || st.today.closed) return 0;
+    const cfg = C(); return clamp((st.today.load - cfg.AGG_LATE_LOAD) * cfg.AGG_LATE_K, 0, cfg.AGG_LATE_MAX);
+  }
+  function aggConnectCost(S, st) { return st.aggPaid ? 0 : Math.round(C().AGG_CONNECT * S.macro.priceLevel); }
+  function setAggStore(S, storeId, on) {
+    const st = byId(S.stores, storeId); if (!st) return { ok: false, msg: 'Точка не найдена' };
+    on = !!on; if (!!st.agg === on) return { ok: true };
+    if (on) {
+      const c = aggConnectCost(S, st); if (c && S.cash < c) return { ok: false, msg: 'Не хватает денег на подключение' };
+      if (c) { spend(S, c, 'agg'); st.aggPaid = true; }
+      st.aggDay = Math.max(S.day, st.status === 'opening' ? st.openDay : S.day);
+    }
+    st.agg = on;
+    return { ok: true };
+  }
+  function setAggNetwork(S, on) { // один переключатель на сеть: подключить или отключить все точки
+    const A = aggState(S); on = !!on;
+    if (on) { const need = S.stores.reduce((a, st) => a + (st.agg ? 0 : aggConnectCost(S, st)), 0); if (S.cash < need) return { ok: false, msg: `Подключение стоит ${BK.fmtMoney(need)} — не хватает денег` }; }
+    A.on = on;
+    for (const st of S.stores) setAggStore(S, st.id, on);
+    log(S, on ? `Сеть подключена к агрегаторам доставки: ${aggConnected(S)} точек, комиссия ${Math.round(aggCommission(S) * 100)}%.` : 'Сеть отключена от агрегаторов доставки.', on ? 'good' : 'info');
+    return { ok: true };
+  }
+  function aggSummary(S) { // для UI
+    const A = aggState(S), last = S.history[S.history.length - 1], p = last && last.pnl;
+    return { on: !!A.on, n: aggConnected(S), total: S.stores.length, rate: aggCommission(S), pack: C().AGG_PACK,
+      last: p && p.aggRev ? { rev: p.aggRev, orders: p.aggOrders || 0, cost: p.agg || 0 } : null,
+      month: { rev: S.month.aggRev || 0, orders: S.month.aggOrders || 0, cost: S.month.agg || 0 } };
+  }
+  Object.assign(BK.Engine, { daypartOf, DP_NAMES, aggState, aggConnected, aggCommission, aggDay, aggLatePen, aggConnectCost, setAggStore, setAggNetwork, aggSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
   BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects };
 })();
