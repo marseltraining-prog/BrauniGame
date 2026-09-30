@@ -1538,6 +1538,28 @@ table.cmp.uni tr.lock td { color: var(--ink-3); }
 .m-offer.dp-e circle { stroke: var(--dp-e); fill: color-mix(in srgb, var(--dp-e) 16%, transparent); }
 @media (max-width: 900px) { .maplegend .lg-t { font-size: 10.5px; } } /* подпись слоя на телефоне — не мельче 10,5 px */
 
+/* «Переиграть» (rewind-ui.js): блок в «Меню игры» и на итоговом экране банкротства */
+.rwbox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); }
+.rwbox .hint { margin: 0; }
+.rwh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rwh b { font-size: 15px; }
+.rwlim { font-size: 12px; color: var(--ink-3); }
+.rwlist { display: flex; flex-direction: column; gap: 6px; }
+.rwopt { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; min-height: 44px; }
+.rwopt:hover { border-color: var(--line-2); }
+.rwopt:has(input:checked) { border-color: var(--crust); box-shadow: inset 0 0 0 1px var(--crust); }
+.rwopt input { grid-row: span 2; margin: 0; width: 18px; height: 18px; accent-color: var(--crust); }
+.rwt { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.rwt b { font-size: 14px; }
+.rwd { font-size: 12px; color: var(--ink-3); }
+.rwi { font-size: 12px; color: var(--ink-2); font-family: var(--f-mono); overflow-wrap: anywhere; }
+.rwconfirm { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+.rwcb { display: flex; gap: 8px; flex-wrap: wrap; }
+.rwcb .btn { flex: 1 1 140px; min-height: 40px; height: auto; }
+.rwgo { min-height: 44px; }
+.rwbox.hard { background: transparent; }
+.sumrw { margin: 0; }
+
 [hidden]{display:none!important}
 </style>
 <script>
@@ -1872,6 +1894,11 @@ BK.CFG = {
     normal: { name: 'Нормальный', cash: 1,  posAdd: 0,   sev: 1,   cost: 1,    evGap: 1,    crisisGap: 1,    patience: 0,   quit: 1,   mood: 0,  spreadAdd: 0,     rent: 1,    demand: 1,    offerGap: 1,    loanMult: 1 },
     hard:   { name: 'Хардкор',   cash: 0.8, posAdd: -0.08, sev: 1.3, cost: 1.2,  evGap: 0.85, crisisGap: 0.75, patience: -10, quit: 1.4, mood: -3, spreadAdd: 0.02,  rent: 1.1,  demand: 0.9,  offerGap: 1.25, loanMult: 1 },
   },
+
+  // --- «Переиграть» (src/rewind.js): снимок состояния на каждое 1-е число, откат на 1…N месяцев назад ---
+  // по сложности — сколько последних снимков хранить (0 — откат недоступен); STORE_MAX — сколько символов снимков
+  // (все вместе) можно положить в localStorage, остальное живёт только в памяти вкладки; сохранение игры важнее снимков.
+  REWIND: { easy: 6, normal: 3, hard: 0, STORE_MAX: 2400000 },
 
   // --- календарь праздников Уфы (engine.js: holidaysOfYear / holidayMult) ---
   // rev — множитель выручки всей сети (половина через поток гостей, половина через чек: √rev × √rev);
@@ -9834,6 +9861,166 @@ var BK = globalThis.BK || (globalThis.BK = {});
     report, accept, reject, exec, stats, open, forStore, daily, score, _rnd: rnd };
 })();
 
+/* rewind.js */
+/* «Переиграть» — вернуться на 1…N месяцев назад и сыграть иначе (docs/vision-plan.md §4 п. 6).
+   Без DOM (работает и в Node — sim/rewind.js). Интерфейс — src/ui/rewind-ui.js.
+
+   Снимок — состояние игры сразу ПОСЛЕ дневного шага 1-го числа (месячный расчёт уже прошёл, игрок ещё ничего не сделал),
+   в том же виде, что и сохранение (без S.cache, notify = []). Движок пересчитывает S.cache в начале каждого дня,
+   все ГСЧ (основной, соперника, корпорации и городов) лежат в состоянии — поэтому из снимка игра идёт ровно так же,
+   как шла бы без отката (проверка — `node sim/rewind.js`). Глобальные карты активного города (BK.DISTRICTS / BK.MAP)
+   восстанавливаются через BK.Corp.applyGlobals.
+
+   Сколько снимков хранить — CFG.REWIND[difficulty] (лёгкий 6, нормальный 3, хардкор 0 — отката нет).
+   Хранение: в памяти вкладки (для каждой игры — своя очередь) и в одном ключе localStorage 'bk-ufa-rewind' — только для
+   текущей игры и не больше CFG.REWIND.STORE_MAX символов (старые снимки не влезают — остаются только в памяти).
+   Ошибка записи (переполнение, приватный режим) — снимки живут только в памяти, игра не ломается.
+   Сохранение самой игры важнее: снимки пишутся после него (app.js: save() → flush()); если на сохранение не хватило места,
+   app.js зовёт freeStorage() (ключ снимков удаляется, до перезагрузки вкладки снимки только в памяти) и пробует ещё раз.
+
+   Откат честно отмечается: S.rewind = { n, days, list[] } переносится в восстановленное состояние (итоги игры показывают
+   число переигровок), запись в журнале и в летописи (S.chron, t: 'rewind'). Достижения, полученные после снимка,
+   откатываются вместе с состоянием. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG;
+  const KEY = 'bk-ufa-rewind', SEP = '\u0001'; // SEP не встречается в JSON.stringify (управляющие символы экранируются)
+  const games = {}; // id игры → [{ day, info, json }] по возрастанию дня
+  const st = { id: null, storeOk: null, reloadEmpty: false, dirty: false, blocked: false, fresh: null, timer: null };
+
+  const cfgOf = () => Object.assign({ easy: 6, normal: 3, hard: 0, STORE_MAX: 2400000 }, C().REWIND || {});
+  function max(S) { const c = cfgOf(), d = (S && S.difficulty) || 'normal'; return c[d] != null ? c[d] : c.normal; }
+  const gameId = (S, slot) => `${slot || 1}:${S.seed}`;
+  function ls() { try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch (e) { return null; } }
+
+  /* ---------- снимок ---------- */
+  function strip(S) { const c = Object.assign({}, S); delete c.cache; c.notify = []; return c; }
+  function infoOf(S) {
+    const other = S.corp && BK.Corp && BK.Corp.otherStores ? BK.Corp.otherStores(S) : 0;
+    const h = S.history && S.history[S.history.length - 1];
+    return { cash: Math.round(S.cash), reserve: Math.round(S.reserve), loan: Math.round(S.loan || 0), stores: S.stores.length + other, rev: h ? Math.round(h.rev) : 0,
+      city: S.corp && S.corp.active && S.corp.active !== 'ufa' ? S.corp.active : null, ev: !!(S.ev && S.ev.pending) };
+  }
+  function take(S) { return { day: S.day, info: infoOf(S), json: JSON.stringify(strip(S)) }; }
+
+  // после каждого дневного шага (app.js — после E.tick; sim/rewind.js — так же): 1-е число → снимок
+  function record(S) {
+    if (!S || S.phase !== 'play' || S.lost || !st.id) return false;
+    const n = max(S); if (!n) return false;
+    if (E().dateOf(S.day).d !== 1) return false;
+    const q = games[st.id] || (games[st.id] = []);
+    if (q.length && q[q.length - 1].day >= S.day) return false;
+    const snap = take(S);
+    q.push(snap);
+    while (q.length > n) q.shift();
+    st.fresh = { S, day: S.day, json: snap.json, t: Date.now() }; // та же строка пригодится автосохранению месяца в этом же кадре
+    schedulePersist();
+    return true;
+  }
+  // снимки, на которые можно вернуться: раньше сегодняшнего дня, новые — первыми; months — «на сколько месяцев назад»
+  function list(S) {
+    if (!S || !st.id) return [];
+    const q = (games[st.id] || []).filter((x) => x.day < S.day);
+    return q.slice(-max(S)).reverse().map((x, i) => ({ day: x.day, info: x.info, months: i + 1, stored: !!x.stored }));
+  }
+  function can(S) { return max(S) > 0 && !!list(S).length; }
+
+  /* ---------- откат ---------- */
+  // возвращает новое состояние (текущее S не меняется); mark: false — без отметок (проверка детерминизма)
+  function restore(S, day, opts) {
+    const q = games[st.id] || [];
+    const snap = q.find((x) => x.day === day);
+    if (!snap || day >= S.day) return null;
+    const N = JSON.parse(snap.json);
+    N.notify = [];
+    if (!opts || opts.mark !== false) {
+      const R = { n: 0, days: 0, list: [] };
+      if (S.rewind) Object.assign(R, S.rewind, { list: (S.rewind.list || []).slice() });
+      R.n += 1; R.days += S.day - day;
+      R.list.push({ from: S.day, to: day, lost: !!S.lost });
+      if (R.list.length > 40) R.list.splice(0, R.list.length - 40);
+      N.rewind = R;
+      const fd = E().fmtDate;
+      if (N.log) { N.log.unshift({ day: N.day, text: `Переиграли: вернулись с ${fd(S.day)}${S.lost ? ' (банкротство)' : ''} на ${fd(day)}. Всё, что было после, отменено. Переигровок в этой игре: ${R.n}.`, kind: 'info' }); if (N.log.length > 250) N.log.length = 250; }
+      if (N.chron) N.chron.push({ t: 'rewind', from: S.day, lost: !!S.lost, n: R.n, day: N.day });
+    }
+    // будущее, от которого отказались, больше не нужно: оставляем снимки до дня отката включительно
+    games[st.id] = q.filter((x) => x.day <= day);
+    if (BK.Corp && BK.Corp.applyGlobals) BK.Corp.applyGlobals(N); else if (BK.useCity) BK.useCity(null);
+    persist();
+    return N;
+  }
+
+  /* ---------- привязка к игре и хранилище ---------- */
+  // новая игра, загрузка из слота или кода: память этой игры (если была) или снимки из localStorage (если они её)
+  function attach(S, slot) {
+    if (!S) { st.id = null; return; }
+    st.id = gameId(S, slot); st.reloadEmpty = false;
+    let q = games[st.id];
+    if (!q) {
+      q = [];
+      const L = ls();
+      if (L) {
+        try {
+          const raw = L.getItem(KEY);
+          if (raw) {
+            const parts = raw.split(SEP), head = JSON.parse(parts[0]);
+            if (head && head.id === st.id && Array.isArray(head.snaps)) head.snaps.forEach((h, i) => { if (parts[i + 1]) q.push({ day: h.day, info: h.info, json: parts[i + 1], stored: true }); });
+          }
+        } catch (e) { q = []; }
+      }
+      games[st.id] = q;
+      // игра уже шла больше месяца, а снимков нет — после перезагрузки их не удалось взять из браузера
+      if (!q.length && max(S) && S.day > 31 && S.phase === 'play') st.reloadEmpty = true;
+    }
+    games[st.id] = q.filter((x) => x.day <= S.day); // снимки «из будущего» (загрузили более старое сохранение) не нужны
+  }
+  // в браузере запись идёт сразу после автосохранения месяца (app.js: save() → flush()), в Node — сразу
+  function schedulePersist() {
+    if (!ls()) { st.storeOk = false; return; }
+    if (typeof window === 'undefined') persist(); else st.dirty = true;
+  }
+  // запись — отдельной задачей после автосохранения, чтобы кадр 1-го числа не стал «долгой задачей»
+  function flush() {
+    if (!st.dirty) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') { clearTimeout(st.timer); st.timer = null; persist(); return; } // вкладку закрывают — сразу
+    if (!st.timer) st.timer = setTimeout(() => { st.timer = null; persist(); }, 30);
+  }
+  // строка снимка, только что снятого с этого же состояния (в том же кадре), — автосохранению не нужно сериализовать заново
+  function freshJson(S) { const f = st.fresh; st.fresh = null; return f && f.S === S && f.day === S.day && Date.now() - f.t < 100 ? f.json : null; }
+  function persist() {
+    st.dirty = false;
+    const L = ls(); if (!L || !st.id) { st.storeOk = false; return; }
+    if (st.blocked) { st.storeOk = false; mark(null, 0); return; }
+    const q = games[st.id] || [];
+    const lim = cfgOf().STORE_MAX;
+    let k = q.length; // сколько последних снимков пробуем записать
+    while (k > 0) {
+      const part = q.slice(q.length - k);
+      let size = 0; for (const x of part) size += x.json.length;
+      if (size <= lim) {
+        const head = JSON.stringify({ v: 1, id: st.id, snaps: part.map((x) => ({ day: x.day, info: x.info })) });
+        try { L.setItem(KEY, [head].concat(part.map((x) => x.json)).join(SEP)); st.storeOk = true; mark(q, k); return; } catch (e) { /* не влезло — пробуем меньше */ }
+      }
+      k--;
+    }
+    try { L.removeItem(KEY); } catch (e) {}
+    st.storeOk = q.length ? false : st.storeOk; mark(q, 0);
+  }
+  // в ключе — только текущая игра: у остальных снимки теперь лишь в памяти
+  function mark(q, k) { for (const id in games) if (games[id] !== q) for (const x of games[id]) x.stored = false; if (q) q.forEach((x, i) => { x.stored = i >= q.length - k; }); }
+  // сохранению игры не хватило места — освободить ключ снимков (в памяти они остаются)
+  // и больше в этой вкладке снимки в хранилище не писать, чтобы каждый месяц не отнимать место у сохранения
+  function freeStorage() { const L = ls(); if (!L) return false; try { if (L.getItem(KEY) == null) return false; L.removeItem(KEY); st.storeOk = false; st.blocked = true; mark(null, 0); return true; } catch (e) { return false; } }
+  function forget(id) { if (id) delete games[id]; else for (const k in games) delete games[k]; }
+  function status(S) {
+    const q = st.id ? games[st.id] || [] : [];
+    return { max: max(S), total: q.length, persisted: q.filter((x) => x.stored).length, storeOk: st.storeOk, reloadEmpty: st.reloadEmpty && !q.length, storage: !!ls(), chars: q.reduce((a, x) => a + x.json.length, 0) };
+  }
+
+  BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freshJson, freeStorage, forget, status, take, strip, _games: games };
+})();
+
 /* ui/map.js */
 /* Карта Уфы — «градплан на миллиметровке»: статичный слой (районы, сетка, реки, подписи),
    динамические маркеры с кластерами при отдалении, слои «Прибыль / Настроение / Штат / Доставка»,
@@ -11805,6 +11992,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     repay: (c) => ({ ic: '✅', t: `Кредит погашен полностью (${fm(c.v)})` }),
     crisis: (c) => ({ ic: '🌪', t: `Кризис ${qt(c.title)}${c.label ? `: ${qt(c.label)}` : ''}${c.cost ? ` за ${fm(c.cost)}` : ''}` }),
     choice: (c) => ({ ic: c.risky ? '🎲' : '⚖️', t: `${qt(c.title)}: выбрано ${qt(c.label)}${c.cost ? ` за ${fm(c.cost)}` : ''}${c.risky ? ' — с отложенными последствиями' : ''}` }),
+    rewind: (c) => ({ ic: '↩️', t: `Переиграли: вернулись сюда с ${E().fmtDate(c.from)}${c.lost ? ' после банкротства' : ''}` }), // «Переиграть» (rewind.js)
   };
   function storeCard(r, kind) {
     const h = H();
@@ -11826,6 +12014,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Точек (максимум)</span><span class="v">${Math.max(S.stats.peakStores || 0, S.stores.length)}</span></div>
       <div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div>
       <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div></div>`;
+    if (S.rewind && S.rewind.n) s += `<p class="hint sumrw">↩️ Переигровок в этой игре: ${S.rewind.n} (отменено ${S.rewind.days} ${plural(S.rewind.days, 'день', 'дня', 'дней')} игры). Итоги и достижения — по той версии событий, что осталась.</p>`;
     s += `<div class="sec"><h3>Вся игра по месяцам</h3><div class="sumcharts">
       <figure><figcaption>Выручка и прибыль за месяц</figcaption>${lineChart(h, [{ v: (x) => x.rev, cls: 's-rev', label: 'Выручка', area: true }, { v: (x) => x.profit, cls: 's-prof', label: 'Прибыль' }], 'Выручка и прибыль по месяцам')}</figure>
       <figure><figcaption>Точки в сети</figcaption>${lineChart(h, [{ v: (x) => x.stores, cls: 's-stores', label: 'Работающие точки', step: true, area: true, money: false }], 'Число точек по месяцам')}</figure>
@@ -11838,7 +12027,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (R.decisions.length) s += `<div class="sec"><h3>Главные решения</h3><ol class="timeline">${R.decisions.map((c) => { const d = (DEC[c.t] || (() => ({ ic: '•', t: c.t })))(c); return `<li><span class="ti" aria-hidden="true">${d.ic}</span><span class="td">${E().fmtDate(c.day)}</span><span class="tt">${esc(d.t)}</span></li>`; }).join('')}</ol></div>`;
     const on = L.filter((a) => A().isOn(S, a.id)).sort((a, b) => S.achievements[a.id] - S.achievements[b.id]);
     s += `<div class="sec"><h3>Достижения <small>${got} из ${L.length}</small></h3>${on.length ? `<div class="achchips">${on.map((a) => `<span class="achchip rar-${a.rar}" title="${esc(a.desc)}"><span aria-hidden="true">${a.icon}</span>${esc(a.name)}</span>`).join('')}</div>` : '<div class="empty">Пока ни одного.</div>'}<button class="btn" type="button" data-act="achievements">Все достижения</button></div>`;
-    s += `</div><div class="modal-f">${S.lost ? '' : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
+    const rw = S.lost && BK.Rewind && BK.Rewind.can(S); // банкротство: можно вернуться к окну «Переиграть»
+    s += `</div><div class="modal-f">${S.lost ? (rw ? '<button class="btn primary block" type="button" data-act="rewindLost">Переиграть…</button>' : '') : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost && !rw ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
     return s;
   }
   function openSummary() {
@@ -11857,6 +12047,94 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Extras = { achToast, openAchievements, openSummary, settingsHtml, lineChart };
+})();
+
+/* ui/rewind-ui.js */
+/* «Переиграть» — интерфейс (логика и хранилище — src/rewind.js, BK.Rewind).
+   Блок в «Меню игры» (выбор месяца со снимками: дата, счёт, точки) и на итоговом экране банкротства («Переиграть с …»),
+   подтверждение с понятным текстом, после отката — тост «Вернулись в март 2031» и пауза.
+   Связь с ядром — через BK.App (continueGame(st, true) — без миграции, save, toast, setSpeed). */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, RW = () => BK.Rewind, APP = () => BK.App;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const fm = (v) => BK.fmtMoney(v);
+  const DIFF = { easy: 'Лёгкий', normal: 'Нормальный', hard: 'Хардкор' };
+  const monthsW = (n) => `${n} ${n === 1 ? 'месяц' : n < 5 ? 'месяца' : 'месяцев'}`;
+  const monthOf = (day) => { const t = E().dateOf(day); return `${E().MONTHS[t.m]} ${t.y}`; };
+  const cityName = (id) => (id && BK.CITY_BY_ID && BK.CITY_BY_ID[id] ? BK.CITY_BY_ID[id].name : '');
+  function nextFirst(S) { let d = S.day + 1; while (E().dateOf(d).d !== 1) d++; return d; }
+  const snapMeta = (x) => {
+    const i = x.info || {}, p = [`счёт ${fm(i.cash)}`, `${i.stores} ${BK.UIH ? BK.UIH.plural(i.stores, 'точка', 'точки', 'точек') : 'точек'}`];
+    if (i.reserve) p.push(`резерв ${fm(i.reserve)}`);
+    if (i.loan) p.push(`кредит ${fm(i.loan)}`);
+    if (i.city) p.push(cityName(i.city));
+    return p.join(' · ');
+  };
+
+  // пояснения о хранилище (честно: что будет после перезагрузки)
+  function storeNote(S) {
+    const st = RW().status(S);
+    if (!st.total) return '';
+    if (!st.storage || st.storeOk === false) return '<p class="hint rwnote">Браузер не дал сохранить снимки (мало места или приватный режим) — они живут, пока открыта эта вкладка. После перезагрузки вернуться назад будет нельзя.</p>';
+    if (st.persisted < st.total) return `<p class="hint rwnote">В браузере хранятся ${st.persisted ? 'последние ' + st.persisted : 'не все'} снимки из ${st.total} (не хватает места) — остальные пропадут после перезагрузки страницы.</p>`;
+    return '';
+  }
+  function emptyText(S) {
+    const st = RW().status(S);
+    const next = `Снимок игры делается 1-го числа каждого месяца — следующий будет ${E().fmtDate(nextFirst(S))}.`;
+    if (st.reloadEmpty) return `После перезагрузки снимков не нашлось: браузер их не сохранил (мало места или приватный режим). ${next}`;
+    return next;
+  }
+  function listHtml(S, L, sel, lost) {
+    return `<div class="rwlist" role="radiogroup" aria-label="На сколько месяцев вернуться">${L.map((x) => `<label class="rwopt"><input type="radio" name="rwpick" value="${x.day}"${x.day === sel ? ' checked' : ''}><span class="rwt"><b>${lost ? 'С ' + E().fmtDate(x.day) : `${x.months} мес. назад`}</b><span class="rwd">${lost ? `${x.months} мес. назад` : E().fmtDate(x.day)}</span></span><span class="rwi">${esc(snapMeta(x))}</span></label>`).join('')}</div>`;
+  }
+  const goLabel = (x, lost) => (lost ? `Переиграть с ${E().fmtDate(x.day)}` : `Переиграть: вернуться на ${x.months} мес. назад`);
+
+  // блок «Переиграть» — в «Меню игры» (lost: false) и на итоговом экране банкротства (lost: true)
+  function blockHtml(S, lost) {
+    if (!RW() || !S) return '';
+    const mx = RW().max(S), d = S.difficulty || 'normal';
+    const head = `<div class="rwh"><b>Переиграть</b><span class="rwlim">${mx ? `до ${monthsW(mx)} назад · «${DIFF[d] || d}»` : '«Хардкор»'}</span></div>`;
+    if (!mx) return `<div class="rwbox hard" id="rwBox">${head}<p class="hint">На уровне «Хардкор» вернуться назад нельзя — каждое решение окончательное. На «Нормальном» можно переиграть до 3 месяцев, на «Лёгком» — до 6.</p></div>`;
+    const L = RW().list(S);
+    if (!L.length) return `<div class="rwbox" id="rwBox">${head}<p class="hint">${lost ? 'Вернуться не к чему: снимков этой игры нет. ' : ''}${esc(emptyText(S))}</p></div>`;
+    const sel = L[0].day;
+    return `<div class="rwbox${lost ? ' lost' : ''}" id="rwBox">${head}<p class="hint rwlead">${lost ? 'Вернитесь к началу одного из прошлых месяцев и сыграйте иначе.' : 'Вернитесь к 1-му числу одного из прошлых месяцев и сыграйте иначе.'}</p>${listHtml(S, L, sel, lost)}
+      <button class="btn${lost ? ' primary' : ''} block rwgo" type="button" id="rwGo">${esc(goLabel(L[0], lost))}</button><div id="rwAsk"></div>${storeNote(S)}</div>`;
+  }
+  function bind(root, lost) {
+    const box = $('#rwBox', root); if (!box) return;
+    const S = APP().state;
+    const pick = () => { const r = $('input[name=rwpick]:checked', box); return r ? RW().list(S).find((x) => x.day === +r.value) : null; };
+    box.addEventListener('change', (e) => {
+      if (e.target.name !== 'rwpick') return;
+      const x = pick(); if (x) $('#rwGo', box).textContent = goLabel(x, lost);
+      $('#rwAsk', box).innerHTML = '';
+    });
+    const go = $('#rwGo', box); if (!go) return;
+    go.addEventListener('click', () => {
+      const x = pick(); if (!x) return;
+      const days = S.day - x.day;
+      $('#rwAsk', box).innerHTML = `<div class="confirm rwconfirm" role="alertdialog" aria-label="Подтверждение"><span>Вернуться к <b>${E().fmtDate(x.day)}</b>? Всё, что было после (${days} ${BK.UIH ? BK.UIH.plural(days, 'день', 'дня', 'дней') : 'дн.'}: деньги, решения, точки, полученные достижения), отменится.${lost ? ' Банкротство тоже.' : ''} Переигровка отметится в журнале и итогах игры.</span>
+        <span class="rwcb"><button class="btn sm danger" type="button" id="rwYes">Да, вернуться</button><button class="btn sm" type="button" id="rwNo">Отмена</button></span></div>`;
+      $('#rwNo', box).addEventListener('click', () => { $('#rwAsk', box).innerHTML = ''; go.focus(); });
+      $('#rwYes', box).addEventListener('click', () => apply(x.day));
+      $('#rwYes', box).focus();
+    });
+  }
+  function apply(day) {
+    const S = APP().state; if (!S) return;
+    const N = RW().restore(S, day);
+    if (!N) { APP().toast('Не получилось', 'Этого снимка больше нет.', 'warn'); return; }
+    APP().continueGame(N, true);
+    APP().setSpeed(0);
+    APP().save();
+    APP().toast(`Вернулись в ${monthOf(day)}`, `${E().fmtDate(day)} · счёт ${fm(N.cash)}. Игра на паузе — сыграйте иначе.`, 'good');
+  }
+
+  BK.RewindUI = { blockHtml, bind, apply };
 })();
 
 /* ui/tutorial.js */
@@ -13510,7 +13788,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- сохранения ---------------- */
   function save() {
     if (!S) return;
-    try { localStorage.setItem(BK.Slots.key(), JSON.stringify(stripState(S))); lastSave = performance.now(); } catch (e) { /* хранилище недоступно — игра идёт без сохранений */ }
+    const data = (BK.Rewind && BK.Rewind.freshJson(S)) || JSON.stringify(stripState(S)); // 1-го числа — строка снимка «Переиграть»
+    try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
+      // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются)
+      if (BK.Rewind && BK.Rewind.freeStorage()) try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e2) { /* без сохранений */ }
+    }
+    if (BK.Rewind) BK.Rewind.flush(); // снимки «Переиграть» — после сохранения игры
   }
   function stripState(st) { const c = Object.assign({}, st); delete c.cache; c.notify = []; return c; }
   function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
@@ -13636,11 +13919,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(name, difficulty) {
     S = E.newGame({ company: name, difficulty, rival: rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
+    if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
-  function continueGame(st) {
-    S = migrate(st); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+  function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+    S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
   }
@@ -13659,6 +13943,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       while (acc >= ms && n < 4) {
         acc -= ms; n++;
         E.tick(S);
+        if (BK.Rewind) BK.Rewind.record(S); // «Переиграть»: снимок на 1-е число
         handleNotify();
         if (ui.modal || S.ev.pending || S.chef.pending) { acc = 0; break; }
       }
@@ -13905,6 +14190,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     theme: (d) => setTheme(d.arg || { auto: 'light', light: 'dark', dark: 'auto' }[ui.theme || 'auto']),
     continue: (d) => { if (d && d.arg) BK.Slots.setActive(+d.arg); const st = loadSave(); if (st) continueGame(st); },
     achievements: () => BK.Extras.openAchievements(), summary: () => BK.Extras.openSummary(),
+    rewindLost: () => { if (S.lost) openLostModal(); }, // «Переиграть» из итогов после банкротства (rewind-ui.js)
     closeModal: () => closeModal(),
     attAll: () => { ui.attAll = !ui.attAll; refresh(); },
     // второй акт: карта России, выбор города, вход и переезд между городами
@@ -14253,8 +14539,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>
-      </div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+      ${BK.RewindUI ? BK.RewindUI.blockHtml(S, true) : ''}</div><div class="modal-f"><button class="btn${BK.Rewind && BK.Rewind.can(S) ? '' : ' primary'} block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
     $('#newAfter').addEventListener('click', toStart);
+    if (BK.RewindUI) BK.RewindUI.bind($('#modal'), true);
   }
   function openTutorialModal() {
     openModal(`<div class="modal-h"><span class="eyebrow">Время пошло</span><h2>Первая точка откроется через ${H.nw(C.OPEN_DAYS, 'день', 'дня', 'дней')}</h2></div><div class="modal-b">
@@ -14286,11 +14573,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
       ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       ${BK.Tutorial ? BK.Tutorial.settingsHtml(S) : ''}
+      ${BK.RewindUI ? BK.RewindUI.blockHtml(S, false) : ''}
       <p class="hint" style="margin:0">Игра сама сохраняется в этом браузере каждый месяц. Чтобы перенести игру на другое устройство, скопируйте код сохранения и вставьте его там.</p>
       <div class="field"><label for="saveCode">Код сохранения</label><textarea id="saveCode" class="input" rows="3" style="font-family:var(--f-mono);font-size:11px;resize:vertical" placeholder="Вставьте код, чтобы загрузить игру"></textarea></div>
       <div class="row"><button class="btn" id="copyCode">Скопировать код</button><button class="btn" id="loadCode">Загрузить из кода</button></div>
       <div id="newConfirm"></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Вернуться в игру</button><button class="btn danger block" id="newGameBtn">Новая игра</button></div>`, { closable: true });
+    if (BK.RewindUI) BK.RewindUI.bind($('#modal'), false);
     $('#renameOk').addEventListener('click', () => { S.company = $('#renameIn').value.trim() || S.company; hudCache = ''; save(); toast('Название сохранено', S.company, 'good'); });
     $('#copyCode').addEventListener('click', () => {
       const code = exportCode(); const ta = $('#saveCode'); ta.value = code;
