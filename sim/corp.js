@@ -72,7 +72,7 @@ function run(seed) {
       const lhs = W(S) - month0.W, rhs = month0.acc + net(S.month);
       if (Math.abs(lhs - rhs) > 1 + 1e-9 * Math.abs(W(S))) { issues.push(`день ${S.day}: деньги не сходятся на ${Math.round(lhs - rhs)} ₽`); month0.W += lhs - rhs; }
     }
-    if (flags.dirs) { if (S.corp && E.dateOf(S.day).d === 3) require('./corpbot').corpMonth(S, P, mem); } // --dirs: города открывает корпоративный профиль (директора)
+    if (flags.dirs) { if (S.corp && unlockY == null) unlockY = +(S.day / 365).toFixed(1); if (S.corp && E.dateOf(S.day).d === 3) require('./corpbot').corpMonth(S, P, mem); } // --dirs: города открывает корпоративный профиль (директора)
     else onDay(S, P, mem);
     // проверки состояния
     if (!Number.isFinite(S.cash) || !Number.isFinite(S.reserve)) issues.push(`день ${S.day}: NaN в деньгах`);
@@ -83,6 +83,7 @@ function run(seed) {
     }
   } });
   const S = r.S;
+  if (flags.dirs && S.corp) for (const id in S.corp.cities) if (id !== 'ufa') visits.push({ id, day: S.corp.cities[id].enteredDay }); // города, в которые вошёл корпоративный профиль
   return { seed, S, r, issues, cityRows, visits, unlockY, supplied };
 }
 

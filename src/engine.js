@@ -1634,5 +1634,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   Object.assign(BK.Engine, { daypartOf, DP_NAMES, aggState, aggConnected, aggCommission, aggDay, aggLatePen, aggConnectCost, setAggStore, setAggNetwork, aggSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
-  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects };
+  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects, storeWaste };
 })();
