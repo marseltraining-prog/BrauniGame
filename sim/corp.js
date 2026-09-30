@@ -14,7 +14,7 @@ const seeds = +(pos[0] || 2), years = +(pos[1] || 16), plan = (pos[2] || 'kazan,
 const stayMonths = +(flags.stay || 24);
 
 const NET_IN = ['rev', 'income', 'reserveIncome'];
-const NET_OUT = ['fc', 'rent', 'payroll', 'util', 'delivery', 'tax', 'interest', 'upkeep', 'hire', 'train', 'other', 'capex', 'bonus', 'marketing'];
+const NET_OUT = ['fc', 'rent', 'payroll', 'util', 'delivery', 'tax', 'interest', 'upkeep', 'hire', 'train', 'other', 'capex', 'bonus', 'marketing', 'agg'];
 const net = (m) => NET_IN.reduce((a, k) => a + (m[k] || 0), 0) - NET_OUT.reduce((a, k) => a + (m[k] || 0), 0);
 const W = (S) => S.cash + S.reserve - S.loan;
 const f1 = (v) => Math.round(v / 1e6);

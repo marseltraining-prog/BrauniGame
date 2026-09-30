@@ -94,7 +94,7 @@ function effectValue(S, effects, tg, depth) {
       case 'check': v += (f.m - 1) * share * R * 0.7 * d; break;
       case 'foodcost': v -= (f.m - 1) * (pnl.fc || R * 0.3) * (tg && tg.scope === 'production' ? share : 1) * ((f.d || 60) / 30); break;
       case 'delivery': v -= (f.m - 1) * (pnl.delivery || R * 0.03) * share * d; break;
-      case 'capacity': { const cu = S.cache.capUse || 0.5; const after = cu / (1 - (1 - f.m) * share); v -= Math.max(0, Math.max(1, after) - Math.max(1, cu)) / Math.max(1, after) * R * 0.6 * ((f.d || 14) / 30); break; }
+      case 'capacity': { const cu = (S.cache && S.cache.capUse) || 0.5; const after = cu / (1 - (1 - f.m) * share); v -= Math.max(0, Math.max(1, after) - Math.max(1, cu)) / Math.max(1, after) * R * 0.6 * ((f.d || 14) / 30); break; }
       case 'close': v -= share * R * 0.6 * d; break;
       case 'cash': { let x = 0; if (f.v != null) x = f.v * pl; else if (f.perStore != null) x = f.perStore * pl * Math.max(1, Math.round(share * n)); else if (f.revPct != null) x = f.revPct * R; v += x; break; }
       case 'staffQuit': v -= (f.n || 1) * (E.hireCost(S, 1) + 80000 * pl); break;
