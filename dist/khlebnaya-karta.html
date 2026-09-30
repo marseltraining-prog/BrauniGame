@@ -4190,7 +4190,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     genStoreOffers(S, true);
     refreshCandidates(S, true);
     rivalInit(S, opts && opts.rival != null ? opts.rival : cfg.RIVAL_ON); // сеть-соперник (свой ГСЧ — основной поток не сдвигается)
-    log(S, `Компания «${S.company}» зарегистрирована. На счёте ${BK.fmtMoney(S.cash)}.`, 'good');
+    log(S, `Компания ${/[«»"„“]/.test(S.company) ? S.company : `«${S.company}»`} зарегистрирована. На счёте ${BK.fmtMoney(S.cash)}.`, 'good');
     return S;
   }
   function resetMonth(S) {
