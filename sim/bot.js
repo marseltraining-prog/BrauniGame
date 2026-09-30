@@ -660,7 +660,7 @@ if (require.main === module) {
     for (const o of r.out) if (o.year != null && !(r.won && o.year > Math.ceil(r.won.year))) (byY[o.year] || (byY[o.year] = [])).push(o); // --byyear: медианы по годам (до года победы включительно)
     if (!flags.summary) { console.log(`\n=== ${level} seed ${s} ${r.lost ? 'LOST at ' + r.lostYear : ''}`); console.table(r.out); }
     const sm = summarize(r); sm.seed = s; sums.push(sm);
-    if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
+    if (opts.corp && r.mem.corp) { const c = r.mem.corp; console.log(`Россия: выход на ${c.unlockY}-м году; города: ${c.entered.map((x) => x.id + ' ' + x.y).join(', ')}; «Федеральная сеть» — ${c.fedYear != null ? c.fedYear + '-й год (' + (c.fedYear - c.unlockY).toFixed(1) + ' г. после выхода)' : 'нет'}; «Лидер рынка» — ${c.legendYear ?? 'нет'}${c.overM ? `; штаб перегружен ${c.overM} мес. (до +${c.overMax} гор.)` : ''}`); if (!flags.summary) console.table(c.rows); sm.ru = c.unlockY; sm.fed = c.fedYear; sm.leg = c.legendYear; }
   }
   if (flags.byyear) { // медиана по сидам: точки, франчайзи, направлений в работе, выручка сети и направлений (млн за год), доля направлений, уровень цен
     const md = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : null; };

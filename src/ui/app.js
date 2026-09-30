@@ -110,7 +110,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="maptip" hidden></div>
       <div class="setupbanner" id="setupbanner" hidden></div>
     </div>
-    <aside class="panel"><nav class="tabs" role="tablist" id="tabs"></nav><div class="pbody" id="pbody"></div></aside>
+    <aside class="panel"><button type="button" class="sheet-grip" aria-label="Развернуть панель"><i aria-hidden="true"></i></button><nav class="tabs" role="tablist" id="tabs"></nav><div class="pbody" id="pbody"></div></aside>
   </div>
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -118,7 +118,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 <div id="start"></div>`);
     map = new BK.MapView($('#map'), { onClick: mapClick, tipFor });
     map.tip = $('.maptip');
-    if (BK.Russia) BK.Russia.build($('.mapwrap'));
+    if (BK.Russia) { BK.Russia.build($('.mapwrap')); BK.Russia.bindSheet($('.panel')); } // шторка панели на экране России (телефон)
     // высота HUD → CSS-переменная: на телефоне уведомления встают сразу под липкий HUD
     const hud = $('.hud'), setHud = () => document.documentElement.style.setProperty('--hud-h', Math.round(hud.getBoundingClientRect().height) + 'px');
     setHud(); if (globalThis.ResizeObserver) new ResizeObserver(setHud).observe(hud); else window.addEventListener('resize', setHud);
@@ -332,6 +332,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const scroll = body.scrollTop;
     const fn = { dash: P.dash, stores: P.stores, market: P.market, prod: P.production, menu: P.menu, team: P.team, fin: P.finance, log: P.journal, ru: BK.Russia.panel, rucities: BK.Russia.citiesTab, rudirs: BK.CorpUI.dirsTab, ruhq: BK.CorpUI.hqTab, ruinbox: BK.CorpUI.inboxTab, rucmp: BK.CorpUI.cmpTab, grow: BK.GrowthUI ? BK.GrowthUI.panel : P.dash }[ui.tab] || P.dash;
     const wide = ui.view === 'russia' && !!RU_WIDE[ui.tab], main = $('.main');
+    if (main.classList.contains('ru-view') !== (ui.view === 'russia')) main.classList.toggle('ru-view', ui.view === 'russia'); // телефон: панель — шторка поверх карты России
     const finWide = ui.tab === 'fin'; // «Финансы» — широкая панель (водопад и таблица точек), чуть уже корпоративных таблиц
     if (main.classList.contains('ru-wide') !== wide || main.classList.contains('fin-wide') !== finWide) { main.classList.toggle('ru-wide', wide); main.classList.toggle('fin-wide', finWide); if (BK.Russia.isOpen()) requestAnimationFrame(() => BK.Russia.render(S, true)); }
     let html;
@@ -476,8 +477,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // второй акт: карта России, выбор города, вход и переезд между городами
     russia: () => { if (ui.view === 'russia') cityView(true); else openRussia(); },
     ruBack: () => cityView(true),
-    ruSel: (d) => { ui.ruSel = d.arg; BK.Russia.select(d.arg); if (ui.tab !== 'ru' && ui.tab !== 'rucities') ui.tab = 'ru'; BK.Russia.render(S, true); refresh(); },
+    ruSel: (d) => { ui.ruSel = d.arg; BK.Russia.select(d.arg); BK.Russia.sheetShow(); if (ui.tab !== 'ru' && ui.tab !== 'rucities') ui.tab = 'ru'; BK.Russia.render(S, true); refresh(); },
     ruZoom: (d) => BK.Russia.zoom(d.arg),
+    ruLayer: (d) => BK.Russia.setLayer(d.arg), // слои карты России (Р4 ч. 2)
     ruEnter: (d) => openEnterModal(d.arg),
     ruGo: (d) => openGoModal(d.arg),
     // директора (этап Р2)
@@ -764,7 +766,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const was = ui.view === 'russia';
     ui.view = 'city';
     if (isRuTab(ui.tab)) ui.tab = ui.prevTab && !isRuTab(ui.prevTab) ? ui.prevTab : 'dash';
-    const mn = $('.main'); if (mn) mn.classList.remove('ru-wide', 'fin-wide');
+    const mn = $('.main'); if (mn) mn.classList.remove('ru-wide', 'fin-wide', 'ru-view');
     const wrap = $('.mapwrap'); if (!wrap || !BK.Russia) return;
     if (!anim || !was) { if (BK.Russia.isOpen()) { const r = wrap.querySelector('.rumap'); if (r) r.hidden = true; wrap.classList.remove('ru-on'); } $('#map').style.visibility = ''; }
     else BK.Russia.close(S, wrap, $('#map'));

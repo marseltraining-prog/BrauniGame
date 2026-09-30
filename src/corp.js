@@ -679,10 +679,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- вход в город (упрощённо: свой цех + точки, как старт в Уфе) ---------------- */
   function ownCount(S) { return on(S) ? Object.keys(S.corp.cities).length : 0; }
+  // вход в город (Р4 ч. 2, vision-plan §5 п. 2 — без таймера): регистрация + маркетинг × аренда + «штаб нового города»,
+  // всё × ENTER_GROW за каждый наш город кроме Уфы — каждый следующий город дороже; GR и юристы — на 15 % дешевле
+  function enterGrowK(S, n) { return Math.pow(K().ENTER_GROW || 1, Math.max(0, (n != null ? n : ownCount(S)) - 1)); }
   function enterCost(S, id) {
     const d = def(id); if (!d) return 0;
     const pk = on(S) && S.corp.perks && S.corp.perks[id], free = pk && pk.regFree && pk.until >= S.day; // приглашение губернатора (e207): регистрация бесплатно
-    return Math.round(((free ? 0 : K().ENTER_FEE) + K().ENTER_MKT * d.rent) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) * gateK(S, id) / 1e5) * 1e5; // Нижний Новгород — «ворота» к Москве
+    const legal = on(S) && BK.HQ && BK.HQ.lvlOf(S, 'legal') ? K().LEGAL_LAUNCH_K : 1;
+    return Math.round(((free ? 0 : K().ENTER_FEE) + K().ENTER_MKT * d.rent + (K().ENTER_HQ || 0)) * S.macro.priceLevel * (d.far ? K().FAR_K : 1) * gateK(S, id) * legal * enterGrowK(S) / 1e5) * 1e5; // Нижний Новгород — «ворота» к Москве
   }
   function awStart(S, id) {
     const d = def(id);
@@ -697,12 +701,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.corp.cities[id]) return 'Уже ваш город';
     // Москва и Петербург — после 3 городов И финансового департамента (§12 п. 8)
     if (d.big) { const bl = BK.HQ ? BK.HQ.bigLock(S) : ownCount(S) < K().BIG_MIN_CITIES ? `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города` : null; if (bl) return bl; }
-    const LD = BK.HQ ? BK.HQ.launchDays(S) : K().LAUNCH_DAYS; // GR и юристы — запуск следующего города раньше
-    const launching = Object.values(S.corp.cities).filter((c) => c.id !== 'ufa' && S.day - c.enteredDay < LD);
-    if (launching.length >= K().MAX_LAUNCHING) {
-      const left = Math.min(...launching.map((c) => c.enteredDay + LD - S.day)), m = Math.max(1, Math.ceil(left / 30.4));
-      return `Штаб запускает ${K().MAX_LAUNCHING > 1 ? 'не больше ' + K().MAX_LAUNCHING + ' городов' : 'один город'} за раз — следующий можно открыть через ${m} мес.`;
-    }
+    // таймера «один город за раз» больше нет (Р4 ч. 2): темп входа ограничивают цена (enterCost) и мощность штаба (BK.HQ.load — перегрузка даёт утечку)
     return null;
   }
   function enterCity(S, id, opts) { // opts.director — id директора: город запускает он, игрок остаётся, где был (directors.js); opts.supply — 'fresh' | 'frozen' (Р4, §7.2): без своего цеха
@@ -722,6 +721,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let supTxt = '';
     if (sm) { const r = setSupply(S, id, sm); supTxt = ` Выпечку повезут: ${supplyName(S, cr.cities[id])} (${r.km} км).`; }
     if (BK.HQ) BK.HQ.onEnter(S, id); // давление местных сетей и «Хлебного двора», льгота губернатора
+    if (S.chron) S.chron.push({ day: S.day, t: 'city', id, cost, over: BK.HQ && BK.HQ.load && BK.HQ.load(S).over > 0 ? 1 : undefined }); // летопись: вход в город (итоги игры)
     if (dirId) {
       I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.${supTxt}`, 'good');
       const r = BK.Dir.launch(S, id, dirId);
@@ -760,7 +760,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function rollingAll(S) { let s = 0; for (const x of S.history.slice(-12)) s += x.rev; return s; }
 
-  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
+  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
     supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
   Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();

@@ -59,7 +59,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n.dirTrait && !dirsOnCity(S).some((d) => d.traits.indexOf(n.dirTrait) >= 0 && d.months >= (n.dirMonths || 0))) return false;
     if (n.supply === 'intercity' && !(HQ().lvlOf(S, 'logistics') > 0 && supplied(S).length)) return false;
     if (e.target === 'newCity' && !newCities(S).length) return false;
-    if (e.id === 'e208' && !newCities(S).some((id) => !E.enterLock(S, id))) return false; // покупка сети — тоже запуск города: только когда штаб свободен
+    if (e.id === 'e208' && (!newCities(S).some((id) => !E.enterLock(S, id)) || ownIds(S).some((id) => id !== 'ufa' && S.day - cr.cities[id].enteredDay < (K().LAUNCH_DAYS || 510)))) return false; // покупка сети — тоже вход в город: продавцы приходят, когда штаб не занят запуском (нет города моложе ~17 мес., LAUNCH_DAYS)
     if (e.target === 'director' && !dirsOnCity(S).length) return false;
     if (e.target === 'twoDirectors' && dirsOnCity(S).length < 2) return false;
     if (e.id === 'e216' && cr.equitySold >= 0.4) return false;
@@ -329,11 +329,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function shuffle(S, a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = I.ri(S, 0, i); const t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
   function buyChain(S, ctx, f) {
-    const cr = S.corp, id = ctx.city; if (!id || cr.cities[id] || E.enterLock(S, id)) return 'сделка не состоялась: штаб занят запуском другого города';
+    const cr = S.corp, id = ctx.city; if (!id || cr.cities[id] || E.enterLock(S, id)) return 'сделка не состоялась: в этот город сейчас не войти';
     const seed = I.ri(S, 1, 2e9);
     cr.cities[id] = { id, name: cname(id), enteredDay: S.day, status: 'run', bought: true, seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: BK.Corp.awStart(S, id) - K().AW_MKT + 0.1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     HQ().onEnter(S, id);
+    if (S.chron) S.chron.push({ day: S.day, t: 'city', id, bought: true }); // летопись: покупка местной сети (итоги игры)
     const list = D().buyStores(S, id, ctx.n || 8, f.mood || 0);
     const c = cr.cities[id];
     if (f.rebrand) { for (const s of list) s.rating = Math.max(1, (s.rating || 4) + f.rebrand.rating); I.spend(S, f.rebrand.perStore * S.macro.priceLevel * list.length, 'capex'); }
@@ -353,7 +354,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let i = GOOD[inst.id];
     if (inst.id === 'e202') { const d = D().dirById(S, inst.ctx.dir); i = d && d.grade >= 3 ? (HQ().unvested(d) > 0 ? 0 : 1) : d && d.loyalty >= 70 ? 2 : 0; }
     if (inst.id === 'e211') i = ok(1) ? 1 : 0;
-    if (inst.id === 'e208') i = S.cash > (ch[0].cost || 0) * 2.5 ? 0 : 2;
+    if (inst.id === 'e208') i = S.cash > (ch[0].cost || 0) * 2.5 && !(HQ().load && HQ().load(S, 1).over > 0) ? 0 : 2; // Р4 ч. 2: good не покупает сеть, если штаб не потянет ещё город
     if (inst.id === 'e204' && HQ().lvlOf(S, 'legal')) i = 1;
     if (inst.id === 'e215') i = ok(0) ? 0 : 1;
     return ok(i) ? i : valid[0];

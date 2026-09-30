@@ -280,7 +280,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       out.push(c);
     }
     // если решений много — оставить самые весомые (кризисы, цеха, закрытия, крупные кредиты), по датам
-    const w = (c) => ((c.t === 'open' && c.num === 1) || (c.t === 'prod' && c.n === 1) ? 9 : ({ crisis: 5, prod: 4, close: 4, repay: 3, loan: 3, open: 3, choice: c.risky ? 3 : 2 })[c.t] || 1);
+    const w = (c) => ((c.t === 'open' && c.num === 1) || (c.t === 'prod' && c.n === 1) ? 9 : ({ crisis: 5, prod: 4, close: 4, repay: 3, loan: 3, open: 3, city: 4, choice: c.risky ? 3 : 2 })[c.t] || 1);
     const keep = out.map((c, i) => ({ c, i })).sort((a, b) => w(b.c) - w(a.c) || b.i - a.i).slice(0, max || 12).sort((a, b) => a.i - b.i);
     return keep.map((x) => x.c);
   }

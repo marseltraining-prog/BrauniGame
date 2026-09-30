@@ -6,6 +6,8 @@
    корпоративное событие с выбором (и недоступным вариантом), переманивание; сохранение Р2 (без полей Р3).
    Р4: вход в Стерлитамак без своего цеха (свежая выпечка из Уфы), продажи и поставка, линия снабжения на карте России;
    денежный риск — слабый директор: «теряет деньги» в «Требует внимания», «Сравнении», отчёте и карточке города.
+   Р4 ч. 2: вход без таймера и рост цены входа, перегрузка штаба (сигналы, утечка во всех городах, иконки на карте), слои карты
+   России, итоги игры по городам; телефон — шторка (три положения, ручка, перетаскивание, выбор города, возврат в город).
    Экраны 1440 / 390 / 360 в светлой и тёмной теме, цели на телефоне ≥ 40 px.
    Запуск: node qa/russia.js [папка=qa/shots/russia]   Итог — <папка>/issues.txt, код выхода 1 при проблемах. */
 const fs = require('fs'), path = require('path');
@@ -145,6 +147,7 @@ async function flow(b, sv) {
   await directors(p, tag, shot);
   await corpR3(p, tag, shot);
   await r4(p, tag, shot);
+  await r42(p, tag, shot);
   // сохранение и загрузка с двумя городами
   const before = await p.evaluate(() => { BK.App.save(); const S = BK.App.state; return { day: S.day, cash: Math.round(S.cash), cities: Object.keys(S.corp.cities).join(), size: localStorage.getItem('bk-ufa-save-v1').length }; });
   notes.push(`сохранение с двумя городами: ${Math.round(before.size / 1024)} КБ`);
@@ -384,6 +387,131 @@ async function r4(p, tag, shot) {
   await p.evaluate(() => { BK.Engine.switchCity(BK.App.state, 'ufa'); BK.App.cityView(false); }); await p.waitForTimeout(200); // дальше сценарий ждёт игрока в Уфе
 }
 
+// Р4 ч. 2: вход без таймера, цена входа растёт, перегрузка штаба (сигналы, утечка, иконки), слои карты России, итоги по городам
+async function r42(p, tag, shot) {
+  await p.evaluate(() => { const S = BK.App.state; if (S.cash < 20e9) S.cash = 20e9; if (BK.App.ui.view !== 'russia') BK.App.ACT.russia(); }); await p.waitForTimeout(700);
+  // 1. таймера нет: сразу после входа в город можно входить в следующий, цена растёт
+  const t1 = await p.evaluate(() => {
+    const S = BK.App.state, E = BK.Engine, free = BK.CITIES.map((d) => d.id).filter((id) => !S.corp.cities[id] && !BK.CITY_BY_ID[id].big && !E.enterLock(S, id));
+    const a = free[0], b = free[1], costA = E.enterCost(S, a), n0 = Object.keys(S.corp.cities).length;
+    if (!S.corp.dirCand.length) E.dirRefresh(S, true);
+    const h = E.dirHire(S, S.corp.dirCand[0].id, null); const r = E.enterCity(S, a, { director: h.d.id });
+    const lockB = E.enterLock(S, b), costB = E.enterCost(S, b);
+    return { a, b, ok: r.ok, lockB, costA, costB, n0, grow: BK.CFG.CORP.ENTER_GROW };
+  });
+  if (!t1.ok || t1.lockB) issues.push(`[${tag}] вход без таймера: ${JSON.stringify(t1)}`);
+  else if (!(t1.costB > t1.costA * 1.15)) issues.push(`[${tag}] цена входа не растёт: ${JSON.stringify(t1)}`);
+  else notes.push(`без таймера: вошли ${t1.a} и сразу можно ${t1.b}; цена входа ${Math.round(t1.costA / 1e6)} → ${Math.round(t1.costB / 1e6)} млн ₽ (${t1.n0}-й → ${t1.n0 + 1}-й город)`);
+  // 2. «рвёмся вширь»: ещё 4 города под директорами подряд — штаб перегружен
+  const t2 = await p.evaluate(() => {
+    const S = BK.App.state, E = BK.Engine, got = [];
+    for (let i = 0; i < 4; i++) {
+      const id = BK.CITIES.map((d) => d.id).find((x) => !S.corp.cities[x] && !E.enterLock(S, x)); if (!id) break;
+      if (!S.corp.dirCand.length) E.dirRefresh(S, true);
+      const h = E.dirHire(S, S.corp.dirCand[0].id, null); if (!h.ok) break;
+      if (E.enterCity(S, id, { director: h.d.id }).ok) got.push(id);
+    }
+    const L = BK.HQ.load(S); BK.Russia.render(S, true);
+    return { got, L };
+  });
+  if (!(t2.L.over > 0)) issues.push(`[${tag}] перегрузка штаба не наступила: ${JSON.stringify(t2)}`);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ru' })); await p.waitForTimeout(300);
+  const a1 = await p.evaluate(() => { const at = BK.CorpUI.attention(BK.App.state).find((x) => /^Штаб перегружен/.test(x.t)); const el = document.querySelector('#pbody .hqload.over'); return { att: at ? at.t + ' → ' + at.b : null, box: el ? el.querySelector('.hl-h b').textContent : null, ratt: [...document.querySelectorAll('#pbody .ra b')].some((b) => /^Штаб перегружен/.test(b.textContent)) }; });
+  if (!a1.att || !a1.box || !a1.ratt) issues.push(`[${tag}] сигнал перегрузки штаба: ${JSON.stringify(a1)}`);
+  else notes.push(`перегрузка: «${a1.box}»; в «Требует внимания»: ${a1.att}`);
+  await shot('34-overload-corp');
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ruhq' })); await p.waitForTimeout(250);
+  const hq = await p.evaluate(() => ({ box: !!document.querySelector('#pbody .hqload.over .hqparts'), txt: (document.querySelector('#pbody .hqload .hl-h b') || {}).textContent }));
+  if (!hq.box) issues.push(`[${tag}] вкладка «Штаб» без разбора мощности: ${JSON.stringify(hq)}`);
+  await shot('35-overload-hq');
+  // 3. утечка от перегрузки растёт во всех городах директоров; иконки на карте
+  await live(p, 95, false); await realTicks(p, 1); await clear(p);
+  const t3 = await p.evaluate(() => {
+    const S = BK.App.state, cr = S.corp, L = BK.HQ.load(S), rows = [];
+    for (const id in cr.cities) { const c = cr.cities[id]; if (id === cr.active || !c.directorId) continue; rows.push([id, +(c.leak || 0).toFixed(3), (c.leakWhy || []).join('+')]); }
+    return { over: L.over, rows, icons: document.querySelectorAll('.ru-city .ru-prob').length, over1: document.querySelectorAll('.ru-city .ru-prob.p-over').length };
+  });
+  const lk = t3.rows.filter((r) => r[1] > 0 && /overload/.test(r[2]));
+  if (t3.over > 0 && lk.length < Math.max(1, t3.rows.length - 1)) issues.push(`[${tag}] утечка от перегрузки не во всех городах: ${JSON.stringify(t3)}`);
+  else notes.push(`через 3 мес. перегрузки (+${t3.over}): утечка в ${lk.length} из ${t3.rows.length} городов директоров (${lk.slice(0, 4).map((r) => r[0] + ' ' + Math.round(r[1] * 100) + '%').join(', ')}), иконок проблем на карте ${t3.icons}`);
+  await p.evaluate(() => { if (BK.App.ui.view !== 'russia') BK.App.ACT.russia(); }); await p.waitForTimeout(700);
+  await p.evaluate(() => BK.Russia.render(BK.App.state, true)); await p.waitForTimeout(150);
+  const ic = await p.evaluate(() => ({ n: document.querySelectorAll('.ru-city .ru-prob').length, lg: /Проблемы/.test(document.querySelector('.ru-legend').textContent) }));
+  if (!ic.n || !ic.lg) issues.push(`[${tag}] иконки проблем на карте России: ${JSON.stringify(ic)}`);
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ru' })); await shot('36-overload-map');
+  // 4. слои карты России
+  const lays = {};
+  for (const l of ['dirs', 'potential', 'logistics', 'profit']) {
+    await p.click(`.ru-lay[data-arg="${l}"]`); await p.waitForTimeout(200);
+    lays[l] = await p.evaluate(() => ({ layer: document.querySelector('.rusvg').getAttribute('data-layer'), pressed: (document.querySelector('.ru-lay[aria-pressed="true"]') || {}).dataset.arg, lg: document.querySelector('.ru-legend .lg-t').textContent,
+      pot: document.querySelectorAll('.ru-city .free.pot-hi').length, zones: document.querySelectorAll('.ru-zone').length, nodir: document.querySelectorAll('.ru-city .ring.t-nodir, .ru-city .ring.t-good, .ru-city .ring.t-warn, .ru-city .ring.t-bad').length }));
+    if (l !== 'profit') await shot('37-layer-' + l);
+  }
+  if (lays.dirs.layer !== 'dirs' || !/директора/.test(lays.dirs.lg) || !lays.dirs.nodir) issues.push(`[${tag}] слой «Директора»: ${JSON.stringify(lays.dirs)}`);
+  if (lays.potential.layer !== 'potential' || !lays.potential.pot) issues.push(`[${tag}] слой «Потенциал»: ${JSON.stringify(lays.potential)}`);
+  if (lays.logistics.layer !== 'logistics' || !lays.logistics.zones) issues.push(`[${tag}] слой «Логистика»: ${JSON.stringify(lays.logistics)}`);
+  if (lays.profit.pressed !== 'profit') issues.push(`[${tag}] слой «Прибыль» не вернулся: ${JSON.stringify(lays.profit)}`);
+  const kept = await p.evaluate(() => localStorage.getItem('bk-ru-layer'));
+  if (kept !== 'profit') issues.push(`[${tag}] слой не запомнился: ${kept}`);
+  // 5. итоги игры по городам
+  await p.evaluate(() => BK.Extras.openSummary()); await p.waitForTimeout(300);
+  const sm = await p.evaluate(() => { const el = document.querySelector('#modal .sumcities'); return el ? { rows: el.querySelectorAll('.sumctbl tbody tr').length, best: !!el.querySelector('.sumstore.best'), worst: !!el.querySelector('.sumstore.worst'), cities: Object.keys(BK.App.state.corp.cities).length, dec: [...document.querySelectorAll('#modal .timeline .tt')].filter((t) => /^(Вход|Куплена|Штаб:)/.test(t.textContent)).length } : null; });
+  if (!sm || sm.rows !== sm.cities || !sm.best) issues.push(`[${tag}] итоги по городам: ${JSON.stringify(sm)}`);
+  else notes.push(`итоги игры: городов в таблице ${sm.rows}, лучший/худший — ${sm.best && sm.worst ? 'есть' : 'частично'}, решений второго акта в «Главных решениях» ${sm.dec}`);
+  await p.evaluate(() => { const el = document.querySelector('#modal .sumcities'); if (el) el.scrollIntoView(); });
+  await shot('38-summary-cities');
+  await p.evaluate(() => BK.App.ACT.closeModal());
+  await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(200);
+}
+
+// телефон: шторка на экране России — три положения, ручка (нажатие и перетаскивание), карта под шторкой
+async function sheetCheck(p, tag, shot) {
+  await p.evaluate(() => BK.Russia.sheetSet('half', true)); await p.waitForTimeout(350);
+  const g = await p.evaluate(() => {
+    const pn = document.querySelector('.panel'), cs = getComputedStyle(pn), r = pn.getBoundingClientRect(), m = document.querySelector('.rumap').getBoundingClientRect();
+    return { fixed: cs.position === 'fixed', pos: pn.dataset.sheet, top: Math.round(r.top), h: Math.round(r.height), vh: innerHeight, mapH: Math.round(m.height), scroll: document.documentElement.scrollHeight - innerHeight, grip: !!pn.querySelector('.sheet-grip') && getComputedStyle(pn.querySelector('.sheet-grip')).display !== 'none' };
+  });
+  if (!g.fixed || !g.grip || g.pos !== 'half' || g.mapH < g.vh * 0.5) issues.push(`[${tag}] шторка: ${JSON.stringify(g)}`);
+  const hs = {};
+  for (const pos of ['peek', 'half', 'full']) { await p.evaluate((x) => BK.Russia.sheetSet(x, true), pos); await p.waitForTimeout(380); hs[pos] = await p.evaluate(() => Math.round(document.querySelector('.panel').getBoundingClientRect().height)); await shot('40-sheet-' + pos); }
+  if (!(hs.peek < hs.half && hs.half < hs.full)) issues.push(`[${tag}] положения шторки: ${JSON.stringify(hs)}`);
+  const hudB = await p.evaluate(() => Math.round(document.querySelector('.hud').getBoundingClientRect().bottom));
+  const fullTop = await p.evaluate(() => Math.round(document.querySelector('.panel').getBoundingClientRect().top));
+  if (fullTop < hudB - 1) issues.push(`[${tag}] шторка «вся» наезжает на HUD: верх ${fullTop}, HUD до ${hudB}`);
+  // нажатие по ручке: full → peek → half
+  await p.click('.sheet-grip'); await p.waitForTimeout(380);
+  const c1 = await p.evaluate(() => BK.Russia.sheet);
+  await p.click('.sheet-grip'); await p.waitForTimeout(380);
+  const c2 = await p.evaluate(() => BK.Russia.sheet);
+  if (c1 !== 'peek' || c2 !== 'half') issues.push(`[${tag}] нажатие по ручке: ${c1} → ${c2}`);
+  // перетаскивание вверх — до «вся»
+  const gb = await p.evaluate(() => { const r = document.querySelector('.sheet-grip').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await p.mouse.move(gb.x, gb.y); await p.mouse.down(); await p.mouse.move(gb.x, gb.y - 60, { steps: 4 }); await p.mouse.move(gb.x, 90, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(380);
+  const d1 = await p.evaluate(() => BK.Russia.sheet);
+  if (d1 !== 'full') issues.push(`[${tag}] перетаскивание шторки вверх: ${d1}`);
+  // выбор города на карте при свёрнутой шторке — шторка поднимается, карточка видна
+  await p.evaluate(() => BK.Russia.sheetSet('peek', true)); await p.waitForTimeout(350);
+  await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'ufa' })); await p.waitForTimeout(380);
+  const s1 = await p.evaluate(() => BK.Russia.sheet);
+  if (s1 === 'peek') issues.push(`[${tag}] выбор города не поднял шторку`);
+  // вкладки и прокрутка внутри шторки
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'rudirs' })); await p.waitForTimeout(250);
+  const sc = await p.evaluate(() => { const b = document.querySelector('#pbody'); return { can: b.scrollHeight > b.clientHeight, ov: getComputedStyle(b).overflowY }; });
+  if (sc.ov !== 'auto' && sc.ov !== 'scroll') issues.push(`[${tag}] содержимое шторки не прокручивается: ${JSON.stringify(sc)}`);
+  await shot('41-sheet-dirs');
+  await p.evaluate(() => BK.App.ACT.tab({ arg: 'ru' })); await p.evaluate(() => BK.Russia.sheetSet('half', true)); await p.waitForTimeout(350);
+  // слои на телефоне: строка чипов прокручивается и не вылезает за экран
+  const lr = await p.evaluate(() => { const r = document.querySelector('.ru-lays').getBoundingClientRect(); return { r: Math.round(r.right), w: innerWidth, n: document.querySelectorAll('.ru-lay').length }; });
+  if (lr.r > lr.w + 1 || lr.n !== 4) issues.push(`[${tag}] слои на телефоне: ${JSON.stringify(lr)}`);
+  await p.click('.ru-lay[data-arg="dirs"]'); await p.waitForTimeout(200); await shot('42-sheet-layer-dirs');
+  await p.click('.ru-lay[data-arg="profit"]'); await p.waitForTimeout(150);
+  // назад в город — шторки нет, страница как раньше
+  await p.evaluate(() => BK.App.cityView(false)); await p.waitForTimeout(250);
+  const back = await p.evaluate(() => ({ fixed: getComputedStyle(document.querySelector('.panel')).position === 'fixed', grip: getComputedStyle(document.querySelector('.sheet-grip')).display }));
+  if (back.fixed || back.grip !== 'none') issues.push(`[${tag}] после возврата в город панель осталась шторкой: ${JSON.stringify(back)}`);
+  await p.keyboard.press('r'); await p.waitForTimeout(700);
+}
+
 // цели на телефоне: новые кнопки второго акта — не меньше 40 px по высоте
 async function touchTargets(p, label) {
   const bad = await p.evaluate(() => [...document.querySelectorAll('#pbody .fchip, #pbody .btn.stp, #pbody .ra .btn, #pbody .rqb .btn, #pbody .dbtns .btn, #pbody .seg.prio button, #pbody .seg.sm button, #pbody .rfoot .btn, #pbody .nom .btn, #pbody .cmpc .btn, #pbody .dcand .btn, #pbody .hqf .btn, #pbody .mot .btn, #pbody .mot .fchip, #pbody .stud .btn, #modal .choice, #modal .wopt')]
@@ -408,18 +536,18 @@ async function screens(b, vp, theme, st) {
   await p.click('.ml-crumb'); await p.waitForTimeout(700);
   await shot('02-russia');
   const tt = async (n) => { if (mobile) issues.push(...await touchTargets(p, `${tag} ${n}`)); };
-  if (mobile) { await shot('03-russia-full', { full: true }); await tt('03'); }
+  if (mobile) { await sheetCheck(p, tag, shot); await p.evaluate(() => BK.Russia.sheetSet('full', true)); await p.waitForTimeout(350); await shot('03-russia-full'); await tt('03'); await p.evaluate(() => BK.Russia.sheetSet('half', true)); }
   // карточка города под директором
   await p.evaluate(() => BK.App.ACT.ruSel({ arg: 'kazan' })); await p.waitForTimeout(150);
-  if (mobile) await p.evaluate(() => { const c = document.querySelector('.ru-card'); window.scrollTo(0, c.getBoundingClientRect().top + scrollY - document.querySelector('.hud').offsetHeight - 12); });
+  if (mobile) await p.evaluate(() => { BK.Russia.sheetSet('full', true); const c = document.querySelector('.ru-card'); if (c) c.scrollIntoView({ block: 'start' }); }); // телефон: карточка — в шторке
   await shot('04-kazan'); await tt('04');
-  if (mobile) await shot('04b-kazan-full', { full: true });
-  await p.evaluate(() => window.scrollTo(0, 0));
+  if (mobile) await shot('04b-kazan-full', { wait: 400 });
+  await p.evaluate(() => { window.scrollTo(0, 0); document.querySelector('#pbody').scrollTop = 0; });
   for (const [tab, n] of [['rudirs', '05-dirs'], ['ruinbox', '06-inbox'], ['rucmp', '07-cmp'], ['ruhq', '07b-hq']]) {
     await p.evaluate((t) => { BK.App.ACT.tab({ arg: t }); if (t === 'rudirs') { const d = BK.App.state.corp.directors[0]; if (d) { BK.App.ui.dirSel = d.id; BK.App.ACT.tab({ arg: t }); } } }, tab);
     await shot(n); await tt(n);
-    if (mobile) await shot(n + '-full', { full: true });
-    await p.evaluate(() => window.scrollTo(0, 0));
+    if (mobile) { await p.evaluate(() => BK.Russia.sheetSet('full', true)); await shot(n + '-full', { wait: 400 }); await p.evaluate(() => BK.Russia.sheetSet('half', true)); }
+    await p.evaluate(() => { window.scrollTo(0, 0); document.querySelector('#pbody').scrollTop = 0; });
   }
   await p.evaluate(() => BK.App.ACT.ruHireFor({ arg: 'kazan' })); await shot('08-m-hire'); await tt('08');
   await p.evaluate(() => BK.App.ACT.closeModal());

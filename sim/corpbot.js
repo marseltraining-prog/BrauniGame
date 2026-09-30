@@ -3,7 +3,12 @@
 //          служба безопасности и университет с 3 директоров, HR, бренд, закупки, юристы), KPI «выручка + прибыль + рейтинг»,
 //          опционы директорам грейда 3+, учёба, аудит при отклонении от прогноза, «Директор года», вора — в суд;
 //   avg  — города по близости, случайные директора из пула, один KPI (выручка), без опционов и аудитов, на просьбы — случайно;
-//   bad  — сразу крупные города (Москва — как только можно) в кредит, самые дешёвые директора, без KPI и контроля.
+//   bad  — сразу крупные города (Москва — как только можно) в кредит, самые дешёвые директора, без KPI и контроля;
+//   badfix — bad, который через год учит/меняет слабых директоров и не входит в новые города при перегруженном штабе;
+//   wide — «рвётся вширь»: управляет как good, но входит в новый город, как только хватает денег, не глядя на штаб.
+// Р4 ч. 2 (без таймера штаба): когда входить — решают цена входа (E.enterCost) и нагрузка штаба (BK.HQ.load):
+//   good — только если штаб потянет ещё город (иначе сначала отдел или место в совете) и прошлый город «встал на ноги»
+//   (450+ дн., 6+ точек, в плюсе за квартал; BK_MDAYS / BK_MATURE — для экспериментов); avg — раз в ~1,6 года, перегрузка до 1 города терпима.
 // Подключение: play({ …, corp: true, corpOpt: { level } }) в sim/bot.js (флаг --corp[=avg|bad]); без флага бот первого акта не меняется.
 const BK = require('./load');
 const E = BK.Engine, CFG = BK.CFG;
@@ -40,8 +45,8 @@ function tryHq(S, key, reserve) { const lv = hq(S, key), cost = BK.HQ.openCost(S
 function corpMonth(S, P, mem, opt) {
   const cr = S.corp, pl = S.macro.priceLevel;
   opt = opt || {};
-  const fix = opt.level === 'badfix'; // bad, который через год учит или меняет слабых директоров (Р4)
-  const lv = fix ? 'bad' : opt.level || 'good';
+  const fix = opt.level === 'badfix'; // bad, который через год учит или меняет слабых директоров (Р4) и не входит в новые города при перегруженном штабе (Р4 ч. 2)
+  const lv = fix ? 'bad' : opt.level === 'wide' ? 'good' : opt.level || 'good'; // wide — «рвётся вширь»: как good, но входит в города, не глядя на штаб
   const st = mem.corp || (mem.corp = { rows: [], fedYear: null, legendYear: null, unlockY: null, entered: [], dev: {}, audits: 0 });
   if (st.unlockY == null) st.unlockY = +(S.day / 365).toFixed(1);
   const nC = Object.keys(cr.cities).length, dirs = cr.directors.filter((d) => d.city);
@@ -111,24 +116,49 @@ function corpMonth(S, P, mem, opt) {
     const top = cr.directors.filter((d) => d.city && !d.board).sort((a, b) => b.loyalty - a.loyalty);
     if (cr.directors.filter((d) => d.board).length < 3 && top[0] && top[0].months >= 12) E.dirBoard(S, top[0].id, true);
   }
-  // 6. новый город
-  if (S.day - (st.lastEnter || -999) >= (opt.enterGap || (lv === 'avg' ? 600 : 150))) { // средний игрок не держит темп штаба: следующий город — не раньше чем через ~1,6 года
+  // 6. новый город (Р4 ч. 2: таймера штаба больше нет — решают цена входа и нагрузка штаба, BK.HQ.load)
+  //    good — осторожно: не чаще раза в ~10 мес., только если штаб тянет ещё один город (иначе сначала отдел штаба или региональный);
+  //    avg — не спешит (раз в ~1,6 года), на нагрузку смотрит вполглаза (перегрузка до 1 города — терпимо);
+  //    bad — рвётся: как только есть деньги (или кредит), нагрузку не смотрит; badfix — перестаёт, когда штаб перегружен;
+  //    wide — «рвётся вширь»: управляет как good, но входит, как только хватает денег, не глядя на штаб.
+  // 6а. перегрузка штаба: good разгружает сразу (отдел, совет директоров), avg — не сразу, badfix — через год перегрузки, bad и wide — никак
+  { const L0 = BK.HQ.load(S);
+    if (L0.over > 0) {
+      st.overRun = (st.overRun || 0) + 1;
+      if (lv === 'good' && opt.level !== 'wide') raiseCap(S, buf, pl);
+      else if (lv === 'avg' && brnd(mem) < 0.35) raiseCap(S, buf + 200e6 * pl, pl);
+      else if (fix && st.overRun >= 12) raiseCap(S, 0, pl);
+    } else st.overRun = 0; }
+  const wide = opt.level === 'wide';
+  const gap = opt.enterGap || (wide ? 120 : lv === 'avg' ? 600 : lv === 'bad' ? 150 : 300);
+  if (S.day - (st.lastEnter || -999) >= gap) {
+    const L = BK.HQ.load(S, 1); // нагрузка, если войти ещё в один город
+    let ok = true;
+    const last = st.entered.length ? st.entered[st.entered.length - 1].id : null, lastSt = last && cr.cities[last] ? BK.Corp.cityStats(S, last) : null;
+    const mDays = opt.matureDays || +process.env.BK_MDAYS || 450, lastC = last ? cr.cities[last] : null;
+    const mSt = opt.mature != null ? opt.mature : process.env.BK_MATURE != null ? +process.env.BK_MATURE : 6;
+    const proven = !lastSt || (lastSt.open >= mSt && S.day - lastC.enteredDay >= mDays && (mDays <= 1 || lastC.hist.slice(-3).reduce((a, x) => a + x[3], 0) > 0));
+    if (lv === 'good' && !wide && !proven) ok = false; // осторожно: следующий город — когда прошлый встал на ноги (год работы, 6+ точек, в плюсе за квартал)
+    else if (lv === 'good' && !wide && L.over > 0) ok = raiseCap(S, buf, pl) && BK.HQ.load(S, 1).over <= 0;
+    else if (lv === 'avg' && L.over > 1) ok = false;
+    else if (fix && BK.HQ.load(S).over > 0) ok = false;
     let ids = BK.CITIES.map((d) => d.id).filter((id) => !cr.cities[id] && !E.enterLock(S, id));
     if (lv === 'avg') ids = nearestFree(S);
     else if (lv === 'bad') ids.sort((a, b) => BK.CITY_BY_ID[b].pop - BK.CITY_BY_ID[a].pop);
     else ids.sort((a, b) => cityScore(S, b) - cityScore(S, a));
-    const id = ids[0];
+    const id = ok ? ids[0] : null;
     if (id) {
       const cost = E.enterCost(S, id), need = cost + (BK.CITY_BY_ID[id].big ? 150e6 : 60e6) * pl;
       if (lv === 'bad' && S.cash < need) E.takeLoan(S, need - S.cash + 20e6 * pl); // рывок в кредит
-      if (S.cash > need * (lv === 'bad' ? 1 : lv === 'avg' ? 1.8 : 1.3) + (lv === 'bad' ? 0 : buf)) {
+      if (S.cash > need * (lv === 'bad' ? 1 : lv === 'avg' ? 1.8 : wide ? 1.1 : 1.3) + (lv === 'bad' || wide ? 0 : buf)) {
         const d = hireFor(S, null, Object.assign({}, opt, { level: lv }), mem);
         // Р4: good входит без своего цеха, если рядом наш цех (свежая выпечка) — цех директор построит, когда точек станет больше
         const supply = lv === 'good' && BK.Corp.supplyHubs(S, id).fresh ? 'fresh' : null;
-        if (d) { const r = E.enterCity(S, id, { director: d.id, supply }); if (r.ok) { st.entered.push({ id, y: +(S.day / 365).toFixed(1), sup: supply }); st.lastEnter = S.day; } }
+        if (d) { const r = E.enterCity(S, id, { director: d.id, supply }); if (r.ok) { st.entered.push({ id, y: +(S.day / 365).toFixed(1), sup: supply, cost: Math.round(cost / 1e6) }); st.lastEnter = S.day; } }
       }
     }
   }
+  { const L = BK.HQ.load(S); if (L.over > 0) { st.overM = (st.overM || 0) + 1; st.overMax = Math.max(st.overMax || 0, L.over); } }
   // 7. бюджет городов
   const rich = S.cash > 300e6 * pl;
   for (const id in cr.cities) {
@@ -138,6 +168,15 @@ function corpMonth(S, P, mem, opt) {
     if (lv === 'good' && c.budget.train < 4) E.citySetBudget(S, id, { train: 4 });
   }
   if (lv === 'bad' && S.cash < 0) E.takeLoan(S, -S.cash + 30e6 * pl);
+}
+// поднять мощность штаба: следующий отдел (по пользе) или региональный директор из лучших в совете — если хватает денег
+const CAP_ORDER = ['finance', 'hr', 'legal', 'security', 'uni', 'brand', 'logistics', 'purchasing', 'uni', 'logistics', 'uni'];
+function raiseCap(S, reserve, pl) {
+  for (const key of CAP_ORDER) { const lv = hq(S, key); if (lv < (BK.HQ.MAXLV[key] || 1)) { if (tryHq(S, key, reserve + 100e6 * pl)) return true; break; } }
+  const cr = S.corp; // совет директоров: +0,5 мощности за каждого
+  const cand = cr.directors.filter((d) => d.city && !d.board && d.months >= 6).sort((a, b) => b.loyalty - a.loyalty)[0];
+  if (cand && cr.directors.filter((d) => d.board).length < CFG.CORP.BOARD_MAX && E.dirBoard(S, cand.id, true).ok) return true;
+  return false;
 }
 const FIX_PROGS = ['ops', 'econ', 'people', 'growth', 'mba'];
 function enrollFix(S, d, evening) { // программа навыков (не «Бренд») — снижает нужный уровень
@@ -162,6 +201,8 @@ function leakFix(S, mem, st, lv, fix, buf) {
     const d = BK.Dir.dirOf(S, c); if (!d || d.city !== id) continue;
     const L = c.leak || 0, lm = BK.Dir.lossMonths(c), since = (st.repl || {})[id];
     const canRepl = since == null || S.day - since > 365;
+    const li0 = BK.Dir.leakInfo(S, c, d);
+    if (li0.skillT <= 0 && (c.leakWhy || []).every((k) => k === 'overload')) continue; // утечка только от перегрузки штаба — учёба не поможет (разгрузка — в п. 6)
     if (lv === 'good') {
       if (L < 0.02) continue;
       if (!hq(S, 'uni')) tryHq(S, 'uni', buf + 50e6 * pl);
@@ -190,7 +231,8 @@ function corpYear(S, mem) {
     loy: cr.directors.length ? Math.round(cr.directors.reduce((a, d) => a + d.loyalty, 0) / cr.directors.length) : null, hq: cr.hq ? Object.values(cr.hq).reduce((a, x) => a + x, 0) : 0,
     ev: cr.ev ? cr.ev.seen || 0 : 0, 'укр млн': Math.round((s.stolen || 0) / 1e6), пойм: s.caught || 0, ушли: s.left || 0, перем: s.poached || 0, pl: +S.macro.priceLevel.toFixed(2),
     'утечка %': (() => { const cs = Object.values(cr.cities).filter((c) => c.id !== 'ufa'); return cs.length ? +(cs.reduce((a, c) => a + (c.leak || 0), 0) / cs.length * 100).toFixed(1) : 0; })(), // Р4: денежный риск
-    'убыт.гор': sm.cities.filter((c) => c.id !== 'ufa' && c.prof12 < 0).length });
+    'убыт.гор': sm.cities.filter((c) => c.id !== 'ufa' && c.prof12 < 0).length,
+    'штаб': (() => { const L = BK.HQ.load(S), f = (v) => String(Math.round(v * 10) / 10).replace('.', ','); return `${f(L.load)}/${f(L.cap)}`; })() }); // Р4 ч. 2: нагрузка / мощность штаба
   if (cr.fed.goalDay != null && st.fedYear == null) st.fedYear = +(cr.fed.goalDay / 365).toFixed(1);
   if (cr.fed.legendDay != null && st.legendYear == null) st.legendYear = +(cr.fed.legendDay / 365).toFixed(1);
 }
