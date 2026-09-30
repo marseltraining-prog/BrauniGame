@@ -13,6 +13,11 @@ const log = (...a) => console.log(...a);
 function botSave(years, seed) {
   const { play } = require('../sim/bot');
   const r = play({ level: 'good', seed, years });
+  // слабая позиция (кумыс: низкая популярность и маржа) — год в меню, чтобы в окне шефа был «кандидат на вывод»
+  const S = r.S, E = globalThis.BK.Engine;
+  if (!S.menu.some((m) => m.id === 'kumis')) S.menu.push({ id: 'kumis', pm: 1 });
+  for (let i = 0; i < 400 && !S.lost; i++) { if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []); S.notify.length = 0; E.tick(S); }
+  if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []);
   const c = Object.assign({}, r.S); delete c.cache; delete c._botRng; c.notify = [];
   c.stores = c.stores.map((st) => { const x = Object.assign({}, st); delete x._bot; return x; });
   return JSON.parse(JSON.stringify(c));
@@ -77,7 +82,8 @@ async function screens(b, vp, theme, sv) {
   if (ch.cur !== ch.menu) issues.push(`[${tag}] шеф: строк текущего меню ${ch.cur} из ${ch.menu}`);
   if (ch.ifs !== ch.menu) issues.push(`[${tag}] шеф: «если вывести» у ${ch.ifs} из ${ch.menu}`);
   if (ch.note) issues.push(`[${tag}] шеф: «копим статистику» при накопленной истории`);
-  if (vp === 'd1440' && theme === 'light') notes.push(`шеф (история 12+ мес.): новинок ${ch.news}, меню ${ch.cur}, кандидатов на вывод ${ch.cand}, пометок ${ch.flags}, ширина окна ${Math.round(ch.wide)} px`);
+  if (!ch.cand) issues.push(`[${tag}] шеф: в сохранении со слабой позицией нет «кандидата на вывод»`);
+  if (vp === "d1440" && theme === "light") notes.push(`шеф (история 12+ мес.): новинок ${ch.news}, меню ${ch.cur}, кандидатов на вывод ${ch.cand}, пометок ${ch.flags}, ширина окна ${Math.round(ch.wide)} px`);
   if (await modalTo('.ms-cur')) await shot('21-m-chef-menu');
   await p.evaluate(() => { const m = document.querySelector('#modal .modal'); m.scrollTop = m.scrollHeight; }); await shot('22-m-chef-bottom');
   // выбрать новинку и вывести позицию (предпочтительно кандидата)
