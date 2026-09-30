@@ -20,9 +20,9 @@ function pickChoice(S, cv, pf, R) {
   const ch = cv.choices, can = ch.map((c, i) => (c.can ? i : -1)).filter((i) => i >= 0);
   const id = cv.id;
   if (id === 'goal') return 0;
-  if (id === 'leave') return 0;
+  if (id === 'p07') return ch[3] && ch[3].can && pf.hero > 0.9 ? 3 : ch[0].can ? 0 : 1;
+  if (id === 'p08') return ch[0].can ? 0 : ch.length - 1;
   if (id === 'promo') return 0;
-  if (id === 'h_rival') return R() < pf.hero ? 1 : 0;
   if (cv.kind === 'hero') return R() < pf.hero ? 0 : can[can.length - 1];
   const tempt = ch.findIndex((c) => c.cashOnly && c.fx && c.fx.mood > 0);
   if (tempt >= 0) return ch[tempt].can && R() < pf.tempt ? tempt : can.find((i) => i !== tempt) != null ? can.find((i) => i !== tempt) : can[0];
@@ -54,7 +54,7 @@ function run(profile, seed, verbose) {
     // начало месяца (t ≈ 0): настройки, учёба, покупки, «Смена»
     if (P.t === 0) {
       // здоровье: бережливые едят экономно, пока силы есть
-      if (pf.food === 'eco') { if (P.hp < 45 && P.food !== 'normal') set(() => PR.setFood(S, 'normal')); else if (P.hp > 72 && P.food !== 'eco') set(() => PR.setFood(S, 'eco')); }
+      if (pf.food === 'eco') { if (P.hp < 50 && P.food !== 'normal') set(() => PR.setFood(S, 'normal')); else if (P.hp > 72 && P.food !== 'eco') set(() => PR.setFood(S, 'eco')); }
       // «проедает всё», но не в бесконечный минус: в долгах — скромнее, из долгов — обратно к комфорту
       if (profile === 'spender') {
         if (P.cash < -30000 && P.food === 'cafe') set(() => PR.setFood(S, 'normal'));
@@ -64,7 +64,7 @@ function run(profile, seed, verbose) {
       }
       if (pf.extra) { const want = P.hp > 55 ? Math.min(pf.extra, PR.maxExtra(P)) : 0; if (P.extra !== want) set(() => PR.setExtra(S, want)); }
       for (const id of pf.courses) if (!PR.studyWhy(P, id) && (id !== 'coffee' || P.flags.disc || P.m >= 6 || profile !== 'ideal')) { set(() => PR.startStudy(S, id)); break; }
-      if (profile === 'ideal') { const f = P.mood < 38 ? 'some' : P.mood > 50 ? 'none' : P.fun; if (f !== P.fun) set(() => PR.setFun(S, f)); }
+      if (profile === 'ideal') { const f = P.mood < 45 ? 'some' : P.mood > 58 ? 'none' : P.fun; if (f !== P.fun) set(() => PR.setFun(S, f)); }
       let bought = 0;
       for (const [id, p] of Object.entries(pf.wants)) {
         if (P.m >= 48 && bought) break; // поздние годы летят — не больше одной покупки в месяц

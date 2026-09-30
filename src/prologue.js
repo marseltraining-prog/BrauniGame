@@ -1,13 +1,15 @@
 /* =====================================================================
    ПРОЛОГ «БАРИСТА» — стадия 0 (docs/vision-plan.md §3.1, §3.1.1). Чистая логика без DOM (как engine.js).
-   Вы — бариста в чужой пекарне-кофейне «Тёплый угол» в Уфе. Цель — накопить на свою точку и стать управляющим сменой.
+   Вы — бариста в пекарне-кофейне «Калач» Рашида Хайруллина на ул. Пушкина в Уфе (герои и сцены П1–П8 — docs/story.md). Цель — накопить на свою точку и стать управляющим сменой.
    Ход = месяц, идёт сам (интерфейс зовёт advance(S, мс × скорость)); решения — карточки (S.prologue.cards), пока карточка
    открыта, время стоит. Деньги: кошелёк (cash) → копилка (box, 0 %) → вклад (dep, проценты раз в год, досрочно сгорают).
    Состояние — S.prologue (в сохранении вместе с обычной игрой; старые сохранения без поля — пролога не было):
      { v, status: 'run'|'won'|'life'|'done'|'skipped', seed, rng, m (месяцев прошло), t (доля текущего месяца 0..1),
        job 0..2, jobM, stazh, rep, hp, mood, sk: {sales, coffee, people}, cash, box, dep, depInt,
        home, food, extra, saveRate, study, done{}, payK, rentK, cut, sickNow, fired, wantsCd{}, sale, loans[], inv[],
-       rel: {mentor, baker, rival}, flags{}, cards[], evAt[], shift, earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+       rel: {rashid, gulya, oleg, elvira, family, semyon} (−100…100, как S.story.rel), sf (флаги сюжета, как S.story.f), sm (стили),
+       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift, earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+   Сюжетные решения пролога копируются в S.story по схеме docs/story.md §4.5 (syncStory) — их прочитает будущий сюжетный модуль.
    Свой ГСЧ (S.prologue.rng, от зерна игры): основной поток случайностей игры не сдвигается.
    Переход в основную игру — finish()/applyCarry(): бонус к капиталу (≤ +15 %), навыки игрока (S.player.skills, система тренеров),
    коллега-пекарь — первый сотрудник первой точки, черта героя. Эффекты в основной игре — обёртки rentStore/tick (как achievements.js),
@@ -30,13 +32,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const ri = (P, a, b) => Math.floor(rr(P, a, b + 1));
 
   const MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
-  const START_MON = 8; // пролог начинается в сентябре
+  const START_MON = 1; // пролог начинается в феврале (docs/story.md, П0)
   const HEROES = {
-    mentor: { name: 'Рашид Маратович', role: 'хозяин пекарни-кофейни «Тёплый угол»', ini: 'Р', hue: 28 },
-    baker: { name: 'Алсу', role: 'пекарь, ваша коллега', ini: 'А', hue: 340 },
-    rival: { name: 'Вадим Громов', role: 'владелец сети «Хлебный двор»', ini: 'В', hue: 210 },
-    mom: { name: 'Мама', role: 'всегда на связи', ini: 'М', hue: 150 },
-    friend: { name: 'Тимур', role: 'друг со школы', ini: 'Т', hue: 260 },
+    rashid: { name: 'Рашид Хайруллин', role: 'хозяин пекарни-кофейни «Калач», ваш наставник', ini: 'Р', hue: 28 },
+    gulya: { name: 'Гуля Сафина', role: 'пекарь «Калача», ваша коллега', ini: 'Г', hue: 340 },
+    oleg: { name: 'Олег Кравцов', role: 'владелец сети «Хлебный двор»', ini: 'О', hue: 210 },
+    elvira: { name: 'Эльвира Ахметова', role: 'банк «Семь рек», проспект Октября', ini: 'Э', hue: 185 },
+    family: { name: 'Семья', role: 'мама Фания, брат Ильдар, бабушка Сания', ini: 'С', hue: 150 },
+    semyon: { name: 'Семён Аркадьевич', role: 'постоянный гость, канал «Уфа жуёт»', ini: 'С', hue: 95 },
+    friend: { name: 'Дамир', role: 'друг со школы', ini: 'Д', hue: 260 },
     life: { name: 'Жизнь', role: 'так бывает', ini: '•', hue: 45 },
   };
   const SK_NAME = { sales: 'Продажи', coffee: 'Кофе', people: 'Люди' };
@@ -59,7 +63,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       home: 'parents', food: 'normal', fun: 'some', extra: 0, saveRate: 1, study: null, done: {},
       payK: 1, rentK: 1, cut: 0, sickNow: false, fired: 0,
       wantsCd: {}, sale: null, loans: [], inv: [], car: null,
-      rel: { mentor: 50, baker: 40, rival: 0 }, flags: {}, cards: [], evAt: [], shift: { m: -1 },
+      rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0 }, sm: { care: 0, risk: 0, honesty: 0, fair: 0 },
+      sf: { mentor: null, gulya: null, kalach: 'alive', olegCard: false, regulars: 0 }, shares: [], seen: {}, slog: [], depBonus: 0, flags: {}, cards: [], evAt: [], shift: { m: -1 },
       earned: { salary: 0, tips: 0, extra: 0, interest: 0, gifts: 0, other: 0 },
       spent: {}, mo: null, hist: [], feed: [], fx: [],
       stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
@@ -69,10 +74,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function start(S) {
     const P = S.prologue = create((S.seed || 1) ^ 0x6b2a91);
-    P.cards.push({ id: 'h_intro', v: {} });
+    P.cards.push({ id: 'p01', v: {} });
     schedule(P);
-    feed(P, 'Первый день в «Тёплом углу». Фартук, кофемашина и очередь до двери.', 'info');
+    feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
+    syncStory(S);
     return P;
+  }
+  /* ---------- сюжет: запись решений пролога в S.story (схема docs/story.md §4.5) ---------- */
+  function storyDefaults(seed) {
+    return { v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'prologue', rng: ((seed | 0) ^ 0x51a7e) | 0, seen: {}, queue: [], pending: null, inbox: [],
+      lastScene: 0, lastLetter: 0, lastLine: 0, rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0 }, m: { care: 0, risk: 0, honesty: 0, fair: 0 },
+      f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
+      shares: [], ending: null, log: [] };
+  }
+  function syncStory(S) {
+    const P = S && S.prologue; if (!P || !P.rel) return;
+    const st = S.story || (S.story = storyDefaults(S.seed || 1));
+    Object.assign(st.rel, P.rel); Object.assign(st.m, P.sm); Object.assign(st.f, P.sf);
+    st.shares = P.shares.slice(); Object.assign(st.seen, P.seen); st.log = P.slog.slice(-120);
+    if (P.status === 'life') st.ending = 'hired';
+    if (P.status === 'done' || P.status === 'skipped') st.ch = 'own'; // стадии 1 пока нет — сразу своя сеть (глава 1 «Своя точка»)
   }
   const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
   function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info' }); if (P.feed.length > 40) P.feed.shift(); }
@@ -109,7 +130,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (q.coffee && P.sk.coffee < q.coffee) miss.push(`кофе ${Math.floor(P.sk.coffee)}/${q.coffee}`);
     if (q.sales && P.sk.sales < q.sales) miss.push(`продажи ${Math.floor(P.sk.sales)}/${q.sales}`);
     if (q.people && P.sk.people < q.people) miss.push(`люди ${Math.floor(P.sk.people)}/${q.people}`);
-    if (P.rep < q.rep) miss.push(`начальник ${Math.floor(P.rep)}/${q.rep}`);
+    if (P.rep < q.rep && P.stazh < C().PROMO_STAZH) miss.push(`начальник ${Math.floor(P.rep)}/${q.rep}`); // с большим стажем повышают и без любви начальника
     if (P.jobM < q.months) miss.push(`стаж в должности ${P.jobM}/${q.months} мес.`);
     return { job: n, name: c.JOBS[n].name, q, miss, ok: !miss.length };
   }
@@ -198,81 +219,111 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (o.mood) { P.mood = clamp(P.mood + o.mood, 0, 100); fx(P, 'mood', o.mood); }
     if (o.rep) { P.rep = clamp(P.rep + o.rep, 0, 100); fx(P, 'rep', o.rep); }
     for (const k of ['sales', 'coffee', 'people']) if (o[k]) P.sk[k] = clamp(P.sk[k] + o[k], 0, 100);
-    if (o.mentor) P.rel.mentor = clamp(P.rel.mentor + o.mentor, 0, 100);
-    if (o.baker) P.rel.baker = clamp(P.rel.baker + o.baker, 0, 100);
   };
+  const rel = (P, o) => { for (const k of Object.keys(o)) P.rel[k] = clamp((P.rel[k] || 0) + o[k], -100, 100); };
+  const style = (P, k, v) => { P.sm[k] = clamp((P.sm[k] || 0) + v, -100, 100); };
+  const mentor = (P, v) => { P.sf.mentor = v; };
   const gift = (P, v, cat, t) => { earn(P, v, cat || 'gifts'); fx(P, 'rub', v); if (t) feed(P, t, 'good'); };
   const ok = (label, desc) => ({ label: label || 'Понятно', desc: desc || '', fx: {}, do() {} });
 
   const CARDS = {
-    /* ---------- герои ---------- */
-    h_intro: { kind: 'hero', who: 'mentor', title: () => 'Добро пожаловать в «Тёплый угол»',
-      text: () => 'Рашид Маратович вручает фартук: «Я сам начинал за стойкой. Отработаешь честно — научу всему, что знаю. Смены с восьми, чаевые — твои. Вопросы?»',
+    /* ---------- сюжет пролога (docs/story.md §7, сцены П1–П8; числа — механика CFG.PROLOGUE) ---------- */
+    p01: { kind: 'hero', who: 'rashid', title: () => 'Пять утра, улица Пушкина',
+      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду. Правда сегодня в чём? Эчпочмаки вчерашние?»',
       choices: () => [
-        { label: 'Буду стараться!', desc: 'Начальник запомнит настрой', fx: { rep: 1, rel: 1 }, do(P) { eff(P, { rep: 5, mentor: 8 }); } },
-        { label: 'А доп. смены бывают?', desc: 'Сразу про деньги — Рашид хмыкнул', fx: { rub: 1, rep: -1 }, do(P) { eff(P, { rep: -2 }); P.flags.extraHint = 1; feed(P, 'Доп. смены — в блоке «Как живу»: больше денег, меньше сил.', 'info'); } },
+        { label: '«Сегодняшние. Гуля с четырёх утра тут»', desc: 'Семёну нравится, Гуле — тоже', fx: { rel: 2 }, do(P) { rel(P, { semyon: 5, gulya: 5 }); P.sf.regulars++; } },
+        { label: '«Не знаю, я первый день. Сейчас спрошу»', desc: 'Честность — редкость. Рашид услышал', fx: { rel: 1, rep: 1 }, do(P) { rel(P, { semyon: 5, rashid: 5 }); style(P, 'honesty', 5); eff(P, { rep: 2 }); } },
+        { label: '«Вчерашние. Но для вас — минус двадцать процентов»', desc: 'Семён в восторге, Рашид — не очень', fx: { rel: 1, rep: -1 }, do(P) { rel(P, { semyon: 10, rashid: -5 }); P.sf.eveHint = true; eff(P, { rep: -2 }); } },
       ] },
-    h_baker: { kind: 'hero', who: 'baker', title: () => 'Алсу печёт с пяти утра',
-      text: () => 'Пекарь Алсу замешивает тесто для круассанов: «Поможешь завтра в пять? Покажу, как ламинировать. Одной — не успеваю к открытию».',
+    p02: { kind: 'hero', who: 'semyon', title: () => 'Сухой эчпочмак',
+      text: () => 'Семён Аркадьевич: «У меня претензия. Эчпочмак сухой, как отчёт Минфина. Я двадцать лет пишу про еду, я такое чувствую зубами». Гуля шёпотом: «Он прав. Картошку вчера пересушили. Но Рашиду не говори».',
       choices: () => [
-        { label: 'Приду в пять', desc: 'Меньше сна, зато Алсу — союзник', fx: { hp: -1, skill: 1, rel: 2 }, do(P) { eff(P, { hp: -6, coffee: 3, baker: 22 }); } },
-        { label: 'Не могу, прости', desc: 'Выспитесь', fx: { hp: 1, rel: -1 }, do(P) { eff(P, { hp: 3, baker: -5 }); } },
+        { label: '«Извините. Замену — за мой счёт»', desc: 'Постоянный гость это запомнит', cost: 150, fx: { rub: -1, rel: 2 }, do(P) { pay(P, 150, 'other'); rel(P, { semyon: 10 }); P.sf.regulars++; } },
+        { label: '«Гуля, выручай — есть свежие?»', desc: 'Гуля поможет, Семён доволен', fx: { rel: 2 }, do(P) { rel(P, { gulya: 5, semyon: 10 }); } },
+        { label: '«У нас всегда так, это авторская сухость»', desc: 'Семён смеётся: «Запишу. В раздел „юмор“»', fx: { rel: 1 }, do(P) { rel(P, { semyon: -5, gulya: 5 }); } },
       ] },
-    h_school: { kind: 'hero', who: 'mentor', title: () => 'Рашид предлагает учёбу',
-      text: () => 'Рашид Маратович: «Вижу, руки растут откуда надо. Мой друг ведёт школу бариста — оплачу половину курса, если пойдёшь».',
+    p03: { kind: 'hero', who: 'family', title: () => 'Конверт от бабушки',
+      text: () => 'Бабушка Сания пришла в «Калач» в выходном платке: «Показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».',
       choices: () => [
-        { label: 'Спасибо, пойду', desc: '«Школа бариста» за полцены — в блоке «Учёба»', fx: { skill: 1, rel: 1, rep: 1 }, do(P) { P.flags.disc = 1; eff(P, { mentor: 6, rep: 3 }); } },
-        { label: 'Пока не до учёбы', desc: 'Скидка пропадёт', fx: { rel: -1 }, do(P) { eff(P, { mentor: -4 }); } },
+        { label: '«Положу на вклад, әби. Честно»', desc: '+15 000 ₽ сразу на вклад', fx: { rub: 2, rel: 1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; P.dep += 15000; fx(P, 'dep', 15000); rel(P, { family: 5 }); P.sf.depHint = true; } },
+        { label: '«Отдам маме за квартиру»', desc: 'Дома теплее, настроение лучше', fx: { mood: 1, rel: 2 }, do(P) { rel(P, { family: 10 }); eff(P, { mood: 5 }); P.flags.calmHome = P.m; } },
+        { label: '«Кроссовки со скидкой — тоже мечта!»', desc: 'Настроение до небес, бабушка — не очень', fx: { mood: 3, rel: -1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; spendRec(P, 15000, 'sneakers'); P.wantsCd.sneakers = P.m + C().WANTS.sneakers.cd; eff(P, { mood: 20 }); rel(P, { family: -5 }); feed(P, 'Бабушка видела кроссовки. Сказала: «Красивые. Мечта, видимо, бегает быстро».', 'info'); } },
       ] },
-    h_rival: { kind: 'hero', who: 'rival', title: () => 'Гость в дорогом пальто',
-      text: (P) => `Вадим Громов, владелец сети «${(BK.CFG && BK.CFG.RIVAL_NAME) || 'Хлебный двор'}», допивает эспрессо: «Толковых у Рашида видно сразу. Иди ко мне — плюс пятнадцать процентов к окладу. Только у нас не спорят и не болеют».`,
+    p04: { kind: 'hero', who: 'oleg', title: () => 'Человек в сером пальто',
+      text: () => 'За десять минут до закрытия мужчина в сером пальто берёт весь противень булочек с корицей и платит без сдачи. «Печь всё та же. Ей сорок лет, а температуру держит лучше моих новых. Передай Рашиду: я не ругаться пришёл». Рашид из подсобки, тихо и страшно: «Иди домой. Смена закончилась». У двери мужчина кладёт визитку: «„Хлебный двор“, Олег Кравцов. Надоест варить кофе за копейки — звони. У меня бариста получают на пятнадцать процентов больше».',
       choices: () => [
-        { label: 'Перейти к Громову', desc: '+15 % к окладу, но Рашид и Алсу обидятся', fx: { rub: 2, rel: -3, mood: -1 }, do(P) { P.payK *= 1.15; P.flags.gromov = 1; eff(P, { mentor: -40, baker: -20, mood: -4 }); P.rel.rival = 30; feed(P, 'Вы работаете в «Хлебном дворе». Платят больше, но с душой тут туго.', 'info'); } },
-        { label: 'Остаться у Рашида', desc: 'Рашид узнает и оценит', fx: { rep: 2, rel: 2 }, do(P) { eff(P, { mentor: 15, rep: 6, baker: 5 }); P.rel.rival = -10; } },
-        { label: 'Попросить прибавку у Рашида', desc: 'Может сработать, а может — обидеть', risk: true, fx: { rub: 1, rep: -1 }, do(P) {
-          if (rnd(P) < 0.5) { P.payK *= 1.07; eff(P, { rep: -3 }); feed(P, 'Рашид поворчал, но прибавил 7 % к окладу.', 'good'); }
-          else { eff(P, { rep: -8, mentor: -8 }); feed(P, 'Рашид: «Шантажировать меня вздумал?» Прибавки нет.', 'bad'); } } },
+        { label: 'Взять визитку себе', desc: 'Кто знает, пригодится', fx: { rel: 1 }, do(P) { P.sf.olegCard = true; rel(P, { oleg: 5 }); } },
+        { label: 'Отдать визитку Рашиду', desc: '«Когда-то он был лучшим моим пекарем. Больше не спрашивай»', fx: { rel: 1 }, do(P) { rel(P, { rashid: 10, oleg: -5 }); feed(P, 'Рашид: «Спасибо. Когда-то он был лучшим моим пекарем. Больше не спрашивай».', 'hero'); } },
+        { label: 'Выбросить, пока никто не видит', desc: 'Гуля видела', fx: { rel: 1 }, do(P) { rel(P, { gulya: 5 }); feed(P, 'Гуля: «Правильно. Я свою тоже выкинула. Два раза».', 'hero'); } },
       ] },
-    h_promise: { kind: 'hero', who: 'baker', title: () => 'Алсу мечтает о своём',
-      text: () => 'После смены Алсу пьёт чай с чак-чаком: «Если когда-нибудь откроешь своё место — возьмёшь меня? Я бы пекла по-своему, без указаний сверху».',
+    p05: { kind: 'hero', who: 'rashid', title: () => 'Двести эчпочмаков к утру',
+      text: () => 'Рашид: «Свадьба в Демском. Двести эчпочмаков и три бәлеша к восьми утра. Второй пекарь с температурой. Гуля одна». Гуля: «Я справлюсь». Пауза. «Ну, почти».',
       choices: () => [
-        { label: 'Конечно, возьму!', desc: 'Обещание — Алсу придёт с вами', fx: { rel: 2, mood: 1 }, do(P) { P.flags.promised = 1; eff(P, { baker: 18, mood: 4 }); } },
-        { label: 'Не буду обещать', desc: 'Честно, но прохладно', fx: { rel: -1 }, do(P) { eff(P, { baker: -8 }); } },
+        { label: '«Остаюсь. Денег не надо»', desc: 'Ночь без сна; Гуля и Рашид этого не забудут', fx: { hp: -2, mood: -1, rel: 3 }, do(P) { eff(P, { hp: -15, mood: -5 }); rel(P, { gulya: 15, rashid: 10 }); style(P, 'care', 5); P.flags.tired = P.m; if (P.rel.gulya >= 25) feed(P, 'На рассвете Гуля: «Когда-нибудь открою пекарню, где тесто будет по моим правилам. Хочешь — возьму тебя кассиром». — «Ещё посмотрим, кто кого возьмёт».', 'hero'); } },
+        { label: '«Остаюсь за двойную ставку»', desc: '+6 000 ₽, но устанете', fx: { rub: 1, hp: -2, rel: 1 }, do(P) { earn(P, 6000, 'extra'); fx(P, 'rub', 6000); eff(P, { hp: -15 }); rel(P, { gulya: 5, rashid: 5 }); } },
+        { label: '«Не могу, у меня утром смена и курсы»', desc: 'Рашид: «Правильно. Себя тоже надо беречь. Иногда»', fx: { rel: -1 }, do(P) { rel(P, { gulya: -5 }); } },
       ] },
-    h_lesson: { kind: 'hero', who: 'mentor', title: () => 'Урок про аренду',
-      text: () => 'Рашид Маратович раскладывает на столе счета: «Хочешь своё? Смотри: аренда не больше десятой части выручки, иначе работаешь на хозяина помещения. Остаться после смены — покажу, как считать».',
+    p06: { kind: 'hero', who: 'elvira', title: () => 'Третий раз за месяц',
+      text: () => 'Эльвира Ахметова, отделение «Семь рек» на проспекте Октября: «Вы у нас третий раз за месяц. Или копите на что-то, или вам нравится наша очередь. Своя кофейня? Знаете, сколько их закрывается в первый год? Поэтому вот что. Приходите с цифрами — и я приду с деньгами».',
       choices: () => [
-        { label: 'Остаться и слушать', desc: 'Продажи и понимание людей', fx: { skill: 2, hp: -1, rel: 1 }, do(P) { eff(P, { sales: 5, people: 4, hp: -3, mentor: 6 }); } },
+        { label: 'Открыть «Копилку предпринимателя»', desc: 'Вклад +1 п. п.; снимете раньше срока — проценты сгорят', fx: { rub: 1, rel: 1 }, do(P) { P.depBonus = 0.01; P.sf.bankBox = true; rel(P, { elvira: 10 }); feed(P, `Вклад теперь под ${Math.round((C().DEP_RATE + 0.01) * 100)} % годовых.`, 'good'); } },
+        { label: 'Обычный вклад', desc: 'Без условий', fx: {}, do() {} },
+        { label: '«Спасибо, я без банков»', desc: 'Эльвира запомнит', fx: { rel: -1 }, do(P) { rel(P, { elvira: -5 }); P.sf.noBank = true; } },
+      ] },
+    h_school: { kind: 'hero', who: 'rashid', title: () => 'Рашид предлагает учёбу',
+      text: () => 'Рашид: «Кофе у тебя пока как из автомата на вокзале. Мой старый друг ведёт школу бариста — оплачу половину, если пойдёшь. Не благодари, это я для гостей».',
+      choices: () => [
+        { label: 'Спасибо, пойду', desc: '«Школа бариста» за полцены — в блоке «Учёба»', fx: { skill: 1, rel: 1, rep: 1 }, do(P) { P.flags.disc = 1; rel(P, { rashid: 6 }); eff(P, { rep: 3 }); } },
+        { label: 'Пока не до учёбы', desc: 'Скидка пропадёт', fx: { rel: -1 }, do(P) { rel(P, { rashid: -4 }); } },
+      ] },
+    h_lesson: { kind: 'hero', who: 'rashid', title: () => 'Урок про аренду',
+      text: () => 'Рашид раскладывает на столе счета: «Ты считаешь рубли, а надо считать людей, которые утром идут мимо. Рубли потом сами посчитаются. Останешься после смены — покажу, как не работать на хозяина помещения».',
+      choices: () => [
+        { label: 'Остаться и слушать', desc: 'Продажи и понимание людей', fx: { skill: 2, hp: -1, rel: 1 }, do(P) { eff(P, { sales: 5, people: 4, hp: -3 }); rel(P, { rashid: 6 }); } },
         { label: 'Спасибо, в другой раз', desc: 'Устали — домой', fx: { hp: 1 }, do(P) { eff(P, { hp: 2 }); } },
       ] },
-    promo: { kind: 'hero', who: 'mentor', title: (P) => `Повышение: ${C().JOBS[P.job + 1].name.toLowerCase()}`,
-      text: (P) => (P.job === 0 ? 'Рашид Маратович: «Кофе у тебя уже лучше моего. Будешь старшим — открываешь смену, учишь новеньких. Оклад выше, ответственность тоже».' : 'Рашид Маратович: «Смены без тебя разваливаются. Бери управление сменой: график, касса, люди. Это уже почти своё дело».'),
+    promo: { kind: 'hero', who: 'rashid', title: (P) => `Повышение: ${C().JOBS[P.job + 1].name.toLowerCase()}`,
+      text: (P) => (P.job === 0 ? 'Рашид: «Кофе у тебя уже лучше моего. Не зазнавайся. Будешь старшим — открываешь смену, учишь новеньких. Оклад выше, спрос тоже».' : 'Рашид: «Смены без тебя разваливаются. Бери управление: график, касса, люди. Это уже почти своё дело. Почти».'),
       choices: (P) => [
-        { label: 'Согласиться', desc: `Оклад около ${fm(r100((C().JOBS[P.job + 1].pay + skAvg(P) * C().SKILL_PAY) * P.payK))}`, fx: { rub: 2, mood: 1, rep: 1 }, do(P) { P.job++; P.jobM = 0; eff(P, { mood: 8, rep: 3, mentor: 4 }); feed(P, `Повышение! Теперь вы — ${C().JOBS[P.job].name.toLowerCase()}.`, 'good'); fx(P, 'promo', P.job); } },
+        { label: 'Согласиться', desc: `Оклад около ${fm(r100((C().JOBS[P.job + 1].pay + skAvg(P) * C().SKILL_PAY) * P.payK))}`, fx: { rub: 2, mood: 1, rep: 1 }, do(P) { P.job++; P.jobM = 0; eff(P, { mood: 8, rep: 3 }); rel(P, { rashid: 4 }); feed(P, `Повышение! Теперь вы — ${C().JOBS[P.job].name.toLowerCase()}.`, 'good'); fx(P, 'promo', P.job); } },
         { label: 'Пока не готов(а)', desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
       ] },
-    goal: { kind: 'hero', who: 'mentor', title: () => 'Можно открывать своё!',
-      text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. С вашим стажем и отзывом Рашида банк даёт остальное в кредит. Рашид Маратович: «Я знал, что ты не задержишься. Ну что — пора?»` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте. Рашид Маратович: «Я знал, что ты не задержишься. Ну что — пора?»`),
+    goal: { kind: 'hero', who: 'elvira', title: () => 'Можно открывать своё!',
+      text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. Эльвира из «Семи рек»: «Стаж есть, отзыв от Рашида есть, цифры сходятся. Остальное банк даст в кредит. Поздравляю — теперь у нас с вами отношения. Серьёзные».` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте без кредита. Эльвира из «Семи рек»: «Люблю, когда ко мне приходят с цифрами. Ещё больше люблю, когда цифры сходятся».`),
       choices: () => [
-        { label: 'Открыть свою точку', desc: 'Решить, как уйти из «Тёплого угла»', fx: { rub: 3 }, do(P) { P.cards.push({ id: 'leave', v: {} }); } },
-        { label: 'Ещё поработать и подкопить', desc: 'Сверх цели — бонус к старту. Кнопка «Открыть своё» останется', fx: { rub: 1 }, do(P) { P.flags.goalLater = 1; } },
+        { label: 'Открыть свою точку', desc: 'Разговор с Рашидом неизбежен', fx: { rub: 3 }, do(P) { P.cards.push({ id: 'p07', v: {} }); } },
+        { label: 'Ещё поработать и подкопить', desc: 'Сверх 1,5 млн — бонус к старту. Кнопка «Открыть своё» останется', fx: { rub: 1 }, do(P) { P.flags.goalLater = 1; } },
       ] },
-    leave: { kind: 'hero', who: 'mentor', title: () => 'Как уходите?',
-      text: (P) => `Рашид Маратович молчит, протирая стойку. Алсу ${P.flags.promised ? 'уже собирает свои формы для выпечки — вы ведь обещали' : 'поглядывает на вас из пекарни'}.`,
+    p07: { kind: 'hero', who: 'rashid', title: () => 'Рашид знает',
+      text: () => 'Семён Аркадьевич на весь зал: «Слышал, вы своё открываете? Я первый в очереди!» Вечером Рашид наливает два чая. «Семён — хороший человек и ужасный секретарь. Садись. Чай чёрный, разговор тоже. Я не сержусь. Я в двадцать шесть тоже ушёл от хозяина. Скажи мне одно: ты будешь печь хлеб или деньги?»',
       choices: (P) => {
-        const c = C().CARRY, can = P.rel.baker >= c.BAKER_REL;
-        const out = [{ label: 'По-хорошему, с благодарностью', desc: P.flags.promised ? 'Рашид станет партнёром; Алсу идёт с вами — вы обещали' : 'Рашид станет партнёром и советчиком', fx: { rel: 2, mood: 1 }, do(P) { finish(P, { mentor: 'partner', baker: !!P.flags.promised }); } }];
-        if (!P.flags.promised) out.push({ label: 'Уйти и позвать Алсу с собой', desc: can ? 'Лучший пекарь — ваш; Рашид обидится' : 'Алсу не пойдёт: вы не слишком близки', dis: can ? null : 'Отношения с Алсу слишком прохладные', fx: { rel: -2, skill: 1 }, do(P) { finish(P, { mentor: 'hurt', baker: true }); } });
-        return out;
+        const r = P.rel.rashid, trust = 'Рашид вам пока не настолько доверяет';
+        return [
+          { label: '«И то и другое. Научите, как не выбирать»', desc: 'Рашид — друг: старая кофемашина (−8 % на оборудование первой точки) и советы', dis: r >= 0 ? null : trust, fx: { rel: 2, rub: 1 }, do(P) { mentor(P, 'friend'); rel(P, { rashid: 15 }); } },
+          { label: '«Деньги. Хлеб у вас получается лучше»', desc: 'Честно и холодно: без бонусов', fx: { rel: -1 }, do(P) { mentor(P, 'cold'); rel(P, { oleg: 5 }); } },
+          { label: '«Я забираю своих гостей. И Гулю, если она захочет»', desc: 'Со скандалом: гости и Гуля — с вами, Рашид — враг', fx: { rel: -3, rub: 1 }, do(P) { mentor(P, 'enemy'); rel(P, { rashid: -40 }); style(P, 'fair', -10); P.sf.kalach = 'dvor'; P.sf.gulya = P.rel.gulya >= C().CARRY.BAKER_REL ? 'with' : 'rashid'; } },
+          { label: '«Давайте вместе. Вывеска ваша, работа моя»', desc: 'Партнёрство: точка №1 под вывеской «Калач»', dis: r >= 40 ? null : trust, fx: { rel: 3 }, do(P) { mentor(P, 'partner'); rel(P, { rashid: 25, oleg: -10 }); P.sf.gulya = 'with'; P.shares.push({ who: 'rashid', what: 'store1', pct: 0.3 }); } },
+          { label: '«Мне предложили стажировку у Олега. На три месяца»', desc: '3 месяца в «Хлебном дворе» (+15 % к окладу), навсегда себестоимость −3 %', dis: P.sf.olegCard ? null : 'Нужна визитка Олега', fx: { rub: 1, rel: -2 }, do(P) { mentor(P, 'intern'); rel(P, { oleg: 20, rashid: -25, gulya: -10 }); P.flags.intern = P.m + 3; P.payK *= 1.15; feed(P, 'Три месяца в «Хлебном дворе». Смены быстрее, но «без души».', 'info'); } },
+        ];
+      } },
+    p08: { kind: 'hero', who: 'gulya', title: () => 'Гуля',
+      text: (P) => (P.sf.mentor === 'intern' && P.rel.gulya <= 0 ? 'Гуля на заднем крыльце, с булочкой: «Меня Олег тоже звал. Я не пошла. Вот и ты — иди».' : 'Гуля на заднем крыльце, с булочкой: «Слышала. Стены тут тонкие, а Семён громкий. Ну? Будешь звать или мне самой напрашиваться?»'),
+      choices: (P) => {
+        const no = P.sf.mentor === 'intern' && P.rel.gulya <= 0 ? 'Гуля не пойдёт' : null;
+        return [
+          { label: '«Пойдёшь со мной? Зарплата на 20 % выше, чем тут»', desc: 'Гуля — первый сотрудник первой точки (уровень 3)', dis: no, fx: { rel: 1, skill: 1 }, do(P) { P.sf.gulya = 'with'; rel(P, { gulya: 5, rashid: P.sf.mentor === 'friend' ? -5 : -10 }); } },
+          { label: '«Пойдёшь партнёром? Десять процентов прибыли точки — твои»', desc: 'Гуля с вами и совладелица точки №1', dis: no, fx: { rel: 2, skill: 1 }, do(P) { P.sf.gulya = 'share'; P.shares.push({ who: 'gulya', what: 'store1', pct: 0.1 }); rel(P, { gulya: 20 }); } },
+          { label: '«Останься с Рашидом. Ему ты сейчас нужнее»', desc: 'Гуля остаётся в «Калаче»', fx: { rel: 1 }, do(P) { P.sf.gulya = 'rashid'; rel(P, { gulya: P.sf.mentor === 'cold' ? -5 : 10, rashid: 10 }); } },
+        ];
       } },
     /* ---------- рабочие ситуации ---------- */
-    warn: { kind: 'neg', who: 'mentor', title: () => 'Разговор с начальником',
-      text: () => 'Рашид Маратович закрывает дверь: «Опоздания, ошибки в заказах, гости жалуются. Ещё немного — и нам придётся попрощаться».',
+    warn: { kind: 'neg', who: 'rashid', title: () => 'Разговор с начальником',
+      text: () => 'Рашид закрывает дверь: «Опоздания, ошибки в заказах, Семён жалуется. Я молчу громко. Ещё немного — и нам придётся попрощаться».',
       choices: () => [
         { label: 'Исправлюсь', desc: 'Меньше подработок, больше сна — и выйти на «Смену»', fx: { rep: 1 }, do(P) { eff(P, { rep: 4, mood: -3 }); } },
       ] },
-    fired: { kind: 'neg', who: 'mentor', title: () => 'Вас уволили',
-      text: () => 'Рашид Маратович: «Прости, но так дальше нельзя». Месяц уйдёт на поиск новой работы — без оклада. Возьмут на ступень ниже.',
+    fired: { kind: 'neg', who: 'rashid', title: () => 'Вас уволили',
+      text: () => 'Рашид: «Прости, балам, но так дальше нельзя». Месяц уйдёт на поиски — без оклада. В новой кофейне возьмут на ступень ниже, а Рашид когда-нибудь остынет.',
       choices: () => [ok('Начать заново', 'Новая кофейня, тот же вы')] },
     sick: { kind: 'neg', who: 'life', title: () => 'Вы заболели',
       text: () => 'Температура, ломит всё тело. Организм напомнил, что силы не бесконечны.',
@@ -280,38 +331,38 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: 'Больничный', desc: 'Половина оклада в этом месяце, силы восстановятся', fx: { rub: -2, hp: 2 }, do(P) { P.sickNow = true; eff(P, { hp: 25, rep: -2 }); P.stats.sick++; } },
         { label: 'Лекарства и работать', desc: 'Лекарства 4 000 ₽, сил мало, начальник оценит', cost: 4000, fx: { rub: -1, hp: -1, rep: 1 }, do(P) { pay(P, 4000, 'health'); eff(P, { hp: 6, rep: 2, mood: -4 }); } },
       ] },
-    err: { kind: 'neg', who: 'mentor', title: () => 'Ошибки на смене',
-      text: () => 'От усталости вы перепутали три заказа и пролили молоко на кассу. Рашид Маратович нахмурился.',
+    err: { kind: 'neg', who: 'rashid', title: () => 'Ошибки на смене',
+      text: () => 'От усталости вы перепутали три заказа и пролили молоко на кассу. Рашид молчит громко.',
       choices: () => [ok('Понятно', 'Нужно больше есть и спать')] },
     splurge: { kind: 'neg', who: 'life', title: (P, v) => `Срыв: ${C().WANTS[v.id].name.toLowerCase()}`,
       text: (P, v) => `Настроение на нуле, а в витрине — ${C().WANTS[v.id].name.toLowerCase()}. Рука сама достала карту: −${fm(v.cost)}. Копилка и вклад такие срывы не пускают — там деньги целее.`,
       choices: () => [ok('Эх…', 'Поднимите настроение заранее: кино, отдых, нормальная еда')] },
     /* ---------- случайные события: хорошие ---------- */
-    e_grandma: { kind: 'pos', who: 'mom', title: () => 'Бабушка передала конверт',
-      text: (P, v) => `Мама: «Бабушка просила передать — на мечту». В конверте ${fm(v.a)}.`,
+    e_grandma: { kind: 'pos', who: 'family', title: () => 'Бабушка передала конверт',
+      text: (P, v) => `Мама Фания: «Бабушка Сания просила передать. Сказала — на мечту, а не на кроссовки». В конверте ${fm(v.a)}.`,
       choices: (P, v) => [
         { label: 'В копилку', desc: 'На свою точку', fx: { rub: 2 }, do(P) { earn(P, v.a, 'gifts'); P.cash -= v.a; P.box += v.a; P.stats.boxed += v.a; fx(P, 'box', v.a); } },
         { label: 'Порадовать себя', desc: 'Бабушка бы одобрила', fx: { mood: 2 }, do(P) { earn(P, v.a, 'gifts'); spendRec(P, v.a, 'other'); P.cash -= v.a; eff(P, { mood: 10 }); } },
       ] },
     e_lottery: { kind: 'pos', who: 'life', title: () => 'Выигрыш в лотерею',
       text: (P, v) => `Билет со сдачи оказался счастливым: ${fm(v.a)}!`, choices: (P, v) => [{ label: 'Ура!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'gifts'); eff(P, { mood: 5 }); } }] },
-    e_bonus: { kind: 'pos', who: 'mentor', title: () => 'Премия от Рашида',
-      text: (P, v) => `«Месяц был сильный — это твоя заслуга». Премия ${fm(v.a)}.`, choices: (P, v) => [{ label: 'Спасибо!', desc: '', fx: { rub: 2, mood: 1 }, do(P) { gift(P, v.a, 'other'); eff(P, { mood: 6, mentor: 3 }); } }] },
+    e_bonus: { kind: 'pos', who: 'rashid', title: () => 'Премия от Рашида',
+      text: (P, v) => `Рашид протягивает конверт: «Месяц был сильный. Не зазнавайся». Премия ${fm(v.a)}.`, choices: (P, v) => [{ label: 'Спасибо!', desc: '', fx: { rub: 2, mood: 1 }, do(P) { gift(P, v.a, 'other'); eff(P, { mood: 6 }); rel(P, { rashid: 3 }); } }] },
     e_guest: { kind: 'pos', who: 'life', title: () => 'Щедрый постоянный гость',
-      text: (P, v) => `Мужчина, который каждое утро берёт раф, оставил ${fm(v.a)} чаевых: «За то, что помните, как я люблю».`,
+      text: (P, v) => `Женщина, которая каждое утро берёт раф на кокосовом, оставила ${fm(v.a)} чаевых: «За то, что помните, как я люблю».`,
       choices: (P, v) => [{ label: 'Приятно!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'tips'); eff(P, { mood: 5, people: 1 }); } }] },
-    e_praise: { kind: 'pos', who: 'mentor', title: () => 'Гость похвалил вас начальнику',
-      text: () => 'В отзывах на картах написали: «Бариста в «Тёплом углу» — лучший в районе». Рашид Маратович показал отзыв всей смене.',
-      choices: () => [{ label: 'Приятно', desc: '', fx: { rep: 2, mood: 1 }, do(P) { eff(P, { rep: 7, mood: 5 }); } }] },
-    e_fest: { kind: 'pos', who: 'mentor', title: () => 'Выездная точка на празднике',
-      text: () => 'На Сабантуй «Тёплый угол» ставит палатку с кофе и выпечкой. Рашид ищет, кто выйдет в выходные.',
+    e_praise: { kind: 'pos', who: 'semyon', title: () => 'Пост в «Уфа жуёт»',
+      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
+      choices: () => [{ label: 'Приятно', desc: '', fx: { rep: 2, mood: 1 }, do(P) { eff(P, { rep: 7, mood: 5 }); rel(P, { semyon: 3 }); } }] },
+    e_fest: { kind: 'pos', who: 'rashid', title: () => 'Выездная точка на празднике',
+      text: () => 'На Сабантуй «Калач» ставит палатку с кофе и эчпочмаками. Рашид ищет, кто выйдет в выходные.',
       choices: () => [
         { label: 'Выйти на праздник', desc: '+12 000 ₽, но устанете', fx: { rub: 2, hp: -1, rep: 1 }, do(P) { gift(P, 12000, 'extra'); eff(P, { hp: -8, rep: 3, sales: 2 }); } },
         { label: 'Отдохнуть', desc: 'Праздник — для себя', fx: { mood: 1, hp: 1 }, do(P) { eff(P, { mood: 6, hp: 4 }); } },
       ] },
     e_cashback: { kind: 'pos', who: 'life', title: () => 'Банк вернул кешбэк',
       text: (P, v) => `За год покупок по карте набежало ${fm(v.a)} кешбэка.`, choices: (P, v) => [{ label: 'Отлично', desc: '', fx: { rub: 1 }, do(P) { gift(P, v.a, 'other'); } }] },
-    e_newyear: { kind: 'pos', who: 'mentor', title: () => 'Новогодняя премия',
+    e_newyear: { kind: 'pos', who: 'rashid', title: () => 'Новогодняя премия',
       text: (P, v) => `Декабрь — самый денежный месяц в кофейне. Рашид раздаёт конверты: вам ${fm(v.a)}.`, choices: (P, v) => [{ label: 'С Новым годом!', desc: '', fx: { rub: 2, mood: 1 }, do(P) { gift(P, v.a, 'other'); eff(P, { mood: 6 }); } }] },
     /* ---------- случайные события: неприятности ---------- */
     e_phone: { kind: 'neg', who: 'life', title: () => 'Разбился телефон',
@@ -329,14 +380,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: 'Согласиться', desc: 'Жильё дороже навсегда', fx: { rub: -1 }, do(P) { P.rentK *= 1.1; } },
         { label: 'Переехать', desc: 'Переезд 6 000 ₽ и суета, зато цена прежняя', cost: 6000, fx: { rub: -1, mood: -1 }, do(P) { pay(P, 6000, 'home'); eff(P, { mood: -6, hp: -3 }); } },
       ] },
-    e_cut: { kind: 'neg', who: 'mentor', title: () => 'Урезали смены',
-      text: () => 'Рашид Маратович: «Гостей мало, два месяца работаем в сокращённом графике». Оклад — минус 20 %.',
+    e_cut: { kind: 'neg', who: 'rashid', title: () => 'Урезали смены',
+      text: () => 'Рашид: «Гостей мало, на Пушкина ремонт дороги. Два месяца работаем в сокращённом графике». Оклад — минус 20 %.',
       choices: () => [ok('Переживём', 'Можно взять доп. смены в другом месте — в «Как живу»')] },
     e_loan: { kind: 'neg', who: 'friend', title: () => 'Друг просит в долг',
-      text: (P, v) => `Тимур: «Выручай, ${fm(v.a)} до зарплаты. Честное слово, верну!»`,
+      text: (P, v) => `Дамир: «Выручай, ${fm(v.a)} до зарплаты. Честное слово, верну!»`,
       choices: (P, v) => [
         { label: 'Дать в долг', desc: 'Может, вернёт. А может, и нет', cost: v.a, fx: { rub: -2, rel: 1 }, risk: true, do(P) { pay(P, v.a, 'loans'); P.spent.loans -= v.a; P.loans.push({ v: v.a, back: P.m + ri(P, 2, 4), p: 0.6 }); eff(P, { people: 1 }); } },
-        { label: 'Отказать', desc: 'Тимур обидится', fx: { mood: -1 }, do(P) { eff(P, { mood: -4 }); } },
+        { label: 'Отказать', desc: 'Дамир обидится', fx: { mood: -1 }, do(P) { eff(P, { mood: -4 }); } },
       ] },
     e_sneakers: { kind: 'neg', who: 'life', title: () => 'Распродажа кроссовок −30 %',
       text: () => 'Те самые кроссовки, о которых вы думали полгода, — со скидкой. Только до воскресенья.',
@@ -345,25 +396,25 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: 'Пройти мимо', desc: 'Цель важнее', fx: { mood: -1 }, do(P) { eff(P, { mood: -2 }); } },
       ] },
     e_sea: { kind: 'neg', who: 'friend', title: () => 'Друзья зовут на море',
-      text: () => 'Тимур: «Горящий тур, неделя в Турции, летим вчетвером! Ты с нами?»',
+      text: () => 'Дамир: «Горящий тур, неделя в Турции, летим вчетвером! Ты с нами?»',
       choices: () => [
         { label: 'Лететь', desc: '55 000 ₽ — лучшая неделя года', cost: 55000, cashOnly: true, fx: { rub: -3, mood: 3, hp: 2 }, do(P) { P.cash -= 55000; spendRec(P, 55000, 'trip'); eff(P, { mood: 30, hp: 20 }); P.wantsCd.trip = P.m + 12; } },
         { label: 'Остаться', desc: 'Фото в соцсетях будут колоть глаз', fx: { mood: -2 }, do(P) { eff(P, { mood: -7 }); } },
       ] },
     e_bday: { kind: 'neg', who: 'friend', title: () => 'День рождения друга',
-      text: () => 'Тимуру 22! Собираются в кафе на Ленина, скидываются на подарок.',
+      text: () => 'Дамиру 22! Собираются в кафе на Ленина, скидываются на подарок.',
       choices: () => [
         { label: 'Пойти с подарком', desc: '4 500 ₽', cost: 4500, cashOnly: true, fx: { rub: -1, mood: 1 }, do(P) { P.cash -= 4500; spendRec(P, 4500, 'gifts'); eff(P, { mood: 7, people: 1 }); } },
         { label: 'Поздравить в сообщении', desc: 'Бесплатно', fx: { mood: -1 }, do(P) { eff(P, { mood: -3 }); } },
       ] },
-    e_short: { kind: 'neg', who: 'mentor', title: () => 'Недостача в кассе',
-      text: (P, v) => `В конце смены в кассе не хватило ${fm(v.a)}. Рашид Маратович: «Смена твоя — недостача твоя».`,
+    e_short: { kind: 'neg', who: 'rashid', title: () => 'Недостача в кассе',
+      text: (P, v) => `В конце смены в кассе не хватило ${fm(v.a)}. Рашид: «Смена твоя — недостача твоя».`,
       choices: (P, v) => [{ label: 'Возместить', desc: '', fx: { rub: -1, rep: -1 }, do(P) { pay(P, v.a, 'fines'); eff(P, { rep: -3 }); fx(P, 'rub', -v.a); } }] },
-    e_parents: { kind: 'neg', who: 'mom', title: () => 'Дома напряжённо',
-      text: () => 'Мама: «Приходишь в полночь, уходишь в семь, ешь на бегу. Мы тебя вообще видим?»',
+    e_parents: { kind: 'neg', who: 'family', title: () => 'Дома напряжённо',
+      text: () => 'Мама Фания: «Приходишь в полночь, уходишь в пять, ешь на бегу. Ильдар уже забыл, как ты выглядишь. Покушай хотя бы».',
       choices: () => [
-        { label: 'Помочь по дому в выходные', desc: 'Меньше отдыха, дома теплее', fx: { hp: -1, mood: 1 }, do(P) { eff(P, { hp: -4, mood: 4 }); } },
-        { label: 'Огрызнуться', desc: 'Все останутся при своём', fx: { mood: -2 }, do(P) { eff(P, { mood: -9 }); } },
+        { label: 'Помочь по дому в выходные', desc: 'Меньше отдыха, дома теплее', fx: { hp: -1, mood: 1 }, do(P) { eff(P, { hp: -4, mood: 4 }); rel(P, { family: 3 }); } },
+        { label: 'Огрызнуться', desc: 'Все останутся при своём', fx: { mood: -2 }, do(P) { eff(P, { mood: -9 }); rel(P, { family: -3 }); } },
       ] },
     e_tooth: { kind: 'neg', who: 'life', title: () => 'Заболел зуб',
       text: () => 'Холодное молоко, горячий эспрессо — и зуб напомнил о себе.',
@@ -375,7 +426,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: (P, v) => `В час пик в автобусе кто-то оказался ловчее вас. Пропало ${fm(v.a)} наличными. Хорошо, что копилка дома.`,
       choices: (P, v) => [{ label: 'Обидно', desc: '', fx: { rub: -1, mood: -1 }, do(P) { P.cash -= v.a; spendRec(P, v.a, 'fines'); eff(P, { mood: -5 }); fx(P, 'rub', -v.a); } }] },
     e_invest: { kind: 'neg', who: 'friend', title: () => 'Знакомый зовёт вложиться',
-      text: (P, v) => `Приятель Тимура: «${v.what}. Вложи ${fm(v.a)} — через полгода вернёшь вдвое!»`,
+      text: (P, v) => `Приятель Дамира: «${v.what}. Вложи ${fm(v.a)} — через полгода вернёшь вдвое!»`,
       choices: (P, v) => [
         { label: 'Вложить', desc: 'Иногда везёт. Чаще — нет', cost: v.a, fx: { rub: -2 }, risk: true, do(P) { pay(P, v.a, 'invest'); P.spent.invest -= v.a; P.inv.push({ v: v.a, at: P.m + ri(P, 3, 6), what: v.what }); } },
         { label: 'Отказаться', desc: 'Деньги целее', fx: {}, do() {} },
@@ -392,11 +443,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: 'Набрать корзину', desc: '12 000 ₽', cost: 12000, cashOnly: true, fx: { rub: -2, mood: 2 }, do(P) { P.cash -= 12000; spendRec(P, 12000, 'clothes'); eff(P, { mood: 11 }); } },
         { label: 'Закрыть приложение', desc: '', fx: { mood: -1 }, do(P) { eff(P, { mood: -2 }); } },
       ] },
-    e_quit: { kind: 'neg', who: 'mentor', title: () => 'Уволился коллега',
+    e_quit: { kind: 'neg', who: 'rashid', title: () => 'Уволился коллега',
       text: () => 'Второй бариста ушёл без предупреждения. Месяц работаете за двоих.',
       choices: () => [ok('Справимся', 'Сил меньше, опыта больше')] },
-    e_check: { kind: 'neg', who: 'mentor', title: () => 'Проверка в кофейне',
-      text: (P) => (P.sk.coffee >= 40 ? 'Пришла санитарная проверка. У вашей стойки — идеальный порядок, проверяющая даже взяла визитку.' : 'Пришла санитарная проверка. У вашей стойки нашли просроченные сливки. Рашид Маратович красный.'),
+    e_check: { kind: 'neg', who: 'rashid', title: () => 'Проверка в кофейне',
+      text: (P) => (P.sk.coffee >= 40 ? 'Пришла санитарная проверка. У вашей стойки — идеальный порядок, проверяющая даже взяла визитку.' : 'Пришла санитарная проверка. У вашей стойки нашли просроченные сливки. Рашид красный, как бәлеш из печи.'),
       choices: (P) => [ok(P.sk.coffee >= 40 ? 'Отлично' : 'Больше не повторится')] },
   };
 
@@ -454,11 +505,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сцены с героями: одна за месяц, по условиям
   function heroScene(P) {
     const f = P.flags;
-    if (!f.h_baker && P.m >= 1) return 'h_baker';
-    if (!f.h_school && P.m >= 4 && !P.done.coffee && !P.study) return 'h_school';
-    if (!f.h_rival && P.m >= 9 && !f.gromov) return 'h_rival';
-    if (!f.h_promise && P.m >= 15 && P.rel.baker >= 30) return 'h_promise';
-    if (!f.h_lesson && P.m >= 22 && P.rel.mentor >= 55 && !f.gromov) return 'h_lesson';
+    // сцены П2–П6 (docs/story.md §7) — по одной в месяц, по условиям; П7–П8 — при достижении цели
+    if (!f.h_school && P.m >= 1 && !P.done.coffee && !P.study) return 'h_school';
+    if (!f.p02 && (P.m >= 3 || (P.m >= 2 && P.shift.errors > 0))) return 'p02';
+    if (!f.p03 && (P.m >= 3 || P.cash < 5000)) return 'p03';
+    if (!f.p04 && P.m >= 4) return 'p04';
+    if (!f.p05 && ((P.m >= 5 && P.m <= 7 && P.hp >= 40) || P.m >= 8)) return 'p05';
+    if (!f.p06 && (P.m >= 6 || savings(P) >= 0.4 * C().GOAL_CREDIT)) return 'p06';
+    if (!f.h_lesson && P.m >= 12 && P.rel.rashid >= 15 && P.sf.mentor == null) return 'h_lesson';
     return null;
   }
   function schedule(P) {
@@ -499,7 +553,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!c.can) return { ok: false, msg: c.why || 'Недоступно' };
     P.cards.shift();
     c.do(P, cv.v);
-    if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: «${c.label}».`, cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero');
+    const q = /^«/.test(c.label) ? c.label : `«${c.label}»`;
+    if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: ${q}.`, cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero');
+    if (cv.kind === 'hero') { P.seen[cv.id] = P.m * 30; P.slog.push({ day: null, pm: P.m, id: cv.id, choice: cv.choices.indexOf(c), line: c.label }); if (P.slog.length > 120) P.slog.shift(); }
+    // развилка П7 → П8 «Гуля» (кроме скандала и партнёрства, где исход ясен) → финал; стажировка у Олега — ещё 3 месяца
+    if (cv.id === 'p07') { if (P.sf.mentor === 'enemy' || P.sf.mentor === 'partner') finish(P); else P.cards.unshift({ id: 'p08', v: {} }); }
+    else if (cv.id === 'p08' && P.sf.mentor !== 'intern') finish(P);
+    syncStory(S);
     return { ok: true };
   }
 
@@ -526,7 +586,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rate = c.SAVE_RATES[P.saveRate] || 0;
     if (rate > 0) { const v = r100(Math.max(0, Math.min(P.cash, (salary + extra) * rate))); if (v > 0) { P.cash -= v; P.box += v; P.stats.boxed += v; mo.boxed = v; } }
     // вклад: проценты копятся помесячно, прибавляются к вкладу раз в год (каждый 12-й месяц)
-    if (P.dep > 0) { const i = Math.round(P.dep * c.DEP_RATE / 12); P.depInt += i; mo.inc.interest = i; P.earned.interest += i; }
+    if (P.dep > 0) { const i = Math.round(P.dep * (c.DEP_RATE + (P.depBonus || 0)) / 12); P.depInt += i; mo.inc.interest = i; P.earned.interest += i; }
     if ((P.m + 1) % 12 === 0 && P.depInt > 0) { P.dep += P.depInt; mo.notes.push(`Проценты по вкладу за год: +${fm(P.depInt)}`); P.depInt = 0; }
     // --- обязательные траты ---
     const out = { home: homeCost(P), transport: H.transport, food: F.cost, fun: FN.cost, phone: c.PHONE, study: 0 };
@@ -561,8 +621,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const L of P.loans.slice()) {
       if (L.back > P.m) continue;
       P.loans.splice(P.loans.indexOf(L), 1);
-      if (rnd(P) < L.p) { P.cash += L.v; mo.notes.push(`Тимур вернул долг: +${fm(L.v)}`); feed(P, `Тимур вернул ${fm(L.v)}.`, 'good'); }
-      else { spendRec(P, L.v, 'loans'); mo.notes.push('Тимур так и не вернул долг'); feed(P, `Тимур не вернул ${fm(L.v)}. Дружба дороже… наверное.`, 'bad'); }
+      if (rnd(P) < L.p) { P.cash += L.v; mo.notes.push(`Дамир вернул долг: +${fm(L.v)}`); feed(P, `Дамир вернул ${fm(L.v)}.`, 'good'); }
+      else { spendRec(P, L.v, 'loans'); mo.notes.push('Дамир так и не вернул долг'); feed(P, `Дамир не вернул ${fm(L.v)}. Дружба дороже… наверное.`, 'bad'); }
     }
     for (const I of P.inv.slice()) {
       if (I.at > P.m) continue;
@@ -581,7 +641,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (P.fired === 0 && P.rep < c.REP_FIRE) {
       P.fired = 1; P.stats.fired++; P.job = Math.max(0, P.job - 1); P.jobM = 0; P.rep = 45; P.payK = 1; P.flags.promoLater = P.m + 4;
-      eff(P, { mood: -15, mentor: -20 }); P.cards.push({ id: 'fired', v: {} }); feed(P, 'Вас уволили. Месяц на поиски работы.', 'bad');
+      eff(P, { mood: -15 }); rel(P, { rashid: -20 }); P.cards.push({ id: 'fired', v: {} }); feed(P, 'Вас уволили. Месяц на поиски работы.', 'bad');
     } else if (P.fired === 0 && P.rep < c.REP_WARN && (P.flags.warnM == null || P.m - P.flags.warnM >= 4)) { P.flags.warnM = P.m; P.stats.warn++; P.cards.push({ id: 'warn', v: {} }); }
     const pr = promoCheck(P);
     if (pr && pr.ok && P.fired === 0 && (P.flags.promoLater == null || P.m >= P.flags.promoLater) && !P.cards.some((x) => x.id === 'promo')) P.cards.push({ id: 'promo', v: {} });
@@ -592,15 +652,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.m++;
     if (P.sale && P.sale.until < P.m) P.sale = null;
     P.hist.push([P.m, savings(P), Math.round(P.hp), Math.round(P.mood), Math.round(P.rep), P.job, Math.round(skAvg(P))]);
+    if (P.flags.intern && P.m >= P.flags.intern && P.status === 'run') { P.cards = []; finish(P); syncStory(S); return mo; } // стажировка у Олега окончена
     // --- цель и конец жизни в найме ---
     const g = goal(P);
     if (g.ok && !P.flags.goalShown) { P.flags.goalShown = 1; P.cards.push({ id: 'goal', v: { credit: g.credit && g.sav < g.full } }); }
-    if (P.m >= c.LIFE_MONTHS && P.status === 'run' && !g.ok) { P.status = 'life'; P.cards = []; P.won = null; feed(P, 'Годы прошли. Своей точки так и не случилось.', 'bad'); return mo; }
+    if (P.m >= c.LIFE_MONTHS && P.status === 'run' && !g.ok) { P.status = 'life'; P.cards = []; P.won = null; feed(P, 'Годы прошли. Своей точки так и не случилось.', 'bad'); syncStory(S); return mo; }
     schedule(P);
+    syncStory(S);
     return mo;
   }
   // «Открыть своё» по кнопке (после «Ещё поработать»)
-  function openOwn(S) { const P = S.prologue; if (!goal(P).ok || P.cards.length) return { ok: false }; P.cards.push({ id: 'leave', v: {} }); return { ok: true }; }
+  function openOwn(S) { const P = S.prologue; if (!goal(P).ok || P.cards.length || P.sf.mentor) return { ok: false }; P.cards.push({ id: 'p07', v: {} }); return { ok: true }; }
 
   /* ---------------- мини-игра «Смена» ---------------- */
   function shiftWhy(P) {
@@ -657,13 +719,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- финалы и перенос в основную игру ---------------- */
-  function finish(P, how) {
+  function finish(P) {
     const g = goal(P);
     P.status = 'won'; P.cards = [];
-    P.won = { m: P.m, credit: g.sav < g.full, sav: g.sav, mentor: how.mentor, baker: !!how.baker };
-    if (how.mentor === 'hurt') P.rel.mentor = Math.min(P.rel.mentor, 20); else P.rel.mentor = Math.max(P.rel.mentor, 70);
+    P.won = { m: P.m, credit: g.sav < g.full, sav: g.sav, mentor: P.sf.mentor, gulya: P.sf.gulya };
     feed(P, 'Своя точка! Пролог окончен.', 'good');
   }
+  // крючок пролога — СМС ночью с неизвестного номера (docs/story.md, после П8)
+  function hookSms(P) { return P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'; }
+  const MENTOR = { friend: 'Рашид — друг и советчик', cold: 'С Рашидом — честно и холодно', enemy: 'Рашид — обиженный соперник', partner: 'Рашид — партнёр, точка №1 под вывеской «Калач»', intern: 'Стажировка у Олега — «Школа Двора»' };
+  const PERKS = { machine: 'Старая кофемашина Рашида: оборудование первой точки на 8 % дешевле', dvorSchool: '«Школа Двора»: себестоимость −3 % навсегда', regulars: 'Постоянные гости ушли за вами: +гости первой точки на полгода' };
   function trait(P) {
     const k = C().CARRY, earned = Object.values(P.earned).reduce((a, b) => a + b, 0) || 1;
     let fun = 0; for (const x of FUN_CATS) fun += P.spent[x] || 0;
@@ -679,12 +744,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // что переносится в основную игру (S — состояние основной игры, для размера стартового капитала)
   function carry(P, S) {
     const k = C().CARRY, cash = S && S.cash ? S.cash : BK.CFG.START_CASH;
-    const out = { skills: {}, bonus: 0, baker: null, trait: trait(P), mentor: P.won ? P.won.mentor : null, sav: savings(P) };
+    const out = { skills: {}, bonus: 0, baker: null, trait: trait(P), mentor: P.sf.mentor, perks: [], sav: savings(P) };
     const rank = Object.keys(k.SKILL_MAP).filter((s) => P.sk[s] >= k.SKILL_MIN).sort((a, b) => P.sk[b] - P.sk[a]).slice(0, 2);
     for (const s of rank) out.skills[k.SKILL_MAP[s]] = 1;
     const over = Math.max(0, savings(P) - C().GOAL);
     out.bonus = Math.round(Math.min(over * k.BONUS_MULT, cash * k.BONUS_MAX) / 1e4) * 1e4;
-    if (P.won && P.won.baker && P.rel.baker >= k.BAKER_REL) out.baker = { name: 'Алсу Гарипова', lvl: P.flags.promised && P.rel.baker >= 70 ? 3 : 2 };
+    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: 'Гульнара Сафина', lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
+    if (P.sf.mentor === 'friend') out.perks.push('machine');
+    if (P.sf.mentor === 'intern') out.perks.push('dvorSchool');
+    if (P.sf.mentor === 'enemy' && P.sf.regulars > 0) { out.perks.push('regulars'); out.regulars = P.sf.regulars; }
     return out;
   }
   // применить перенос к основной игре (стадия 2) и закрыть пролог
@@ -696,7 +764,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (BK.Trainers) BK.Trainers.ensure(S); else S.player = S.player || { skills: {}, study: [], log: [], spent: 0 };
       for (const a of Object.keys(cr.skills)) S.player.skills[a] = Math.max(S.player.skills[a] | 0, cr.skills[a]);
     }
+    if (cr.perks.includes('dvorSchool')) S.mods.push({ t: 'foodcost', m: 1 - k2().DVOR_FOODCOST, until: 1e9, scope: 'global', target: null, src: 'prologue' });
     P.carry = cr; P.status = 'done';
+    syncStory(S);
     const E = BK.Engine, I = E && E._int;
     if (I) {
       const parts = [];
@@ -705,11 +775,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (skn.length) parts.push(`навыки: ${skn.join(', ')} 1`);
       if (cr.baker) parts.push(`${cr.baker.name} придёт в первую точку (уровень ${cr.baker.lvl})`);
       if (cr.trait) parts.push(`черта «${TRAITS[cr.trait].name}»`);
+      for (const x of cr.perks) parts.push(PERKS[x].split(':')[0]);
       I.log(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`, 'good');
     }
     return cr;
   }
-  function skip(S) { const P = S.prologue; if (P) { P.status = 'skipped'; P.cards = []; } }
+  function skip(S) { const P = S.prologue; if (P) { P.status = 'skipped'; P.cards = []; syncStory(S); } }
+  const k2 = () => C().CARRY;
   // итог «жизни в найме» и финала: сколько заработано, куда ушло
   function summary(P) {
     const earned = Object.values(P.earned).reduce((a, b) => a + b, 0);
@@ -728,10 +800,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const cr = S && S.prologue && S.prologue.carry;
       if (!cr || !r || !r.ok || !r.store) return r;
       const k = C().CARRY, st = r.store;
-      if (cr.baker && !cr.bakerDone && st.incoming && st.incoming.length) { // коллега из пролога — первый сотрудник первой точки
+      if (cr.baker && !cr.bakerDone && st.incoming && st.incoming.length) { // Гуля из «Калача» — первый сотрудник первой точки
         const e = st.incoming[0].p; e.name = cr.baker.name; e.lvl = cr.baker.lvl; e.mood = 78; e.trait = Math.max(e.trait, 4); e.patience = 10; e.fromPrologue = 1;
         cr.bakerDone = st.id;
-        if (Eng._int) Eng._int.log(S, `${cr.baker.name}, коллега из «Тёплого угла», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`, 'good');
+        if (Eng._int) Eng._int.log(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`, 'good');
+      }
+      if (!cr.store1) { // первая точка: кофемашина Рашида, постоянные гости
+        cr.store1 = st.id;
+        const pl = (S.macro && S.macro.priceLevel) || 1;
+        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`, 'good'); }
+        if (cr.perks.includes('regulars')) S.mods.push({ t: 'traffic', m: 1 + k.REGULARS_TRAFFIC * Math.min(1, (cr.regulars || 0) / 3), until: (st.openDay || S.day) + 180, scope: 'store', target: st.id, src: 'prologue' });
       }
       if (cr.trait === 'thrift') { // Бережливый: 3 % от отделки и оборудования возвращаются
         const v = Math.round((st.capex || 0) * k.THRIFT_OPEN / 1000) * 1000;
@@ -756,6 +834,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     create, start, on, advance, card, choose, endMonth, openOwn, schedule,
     savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
-    shiftWhy, shiftPlan, shiftResult, simShift, finish, carry, applyCarry, skip, summary, trait, wrap, _rnd: rnd,
+    shiftWhy, shiftPlan, shiftResult, simShift, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
   };
 })();
