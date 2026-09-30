@@ -456,7 +456,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
           off += len;
         }
         const pr = PROB_ORDER.find((q) => infos.some((i) => i.prob === q));
-        clusters.push(['c' + id, `<g class="m-cl" data-kind="cluster" data-id="${id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${k})"><circle class="bg" r="${(rr + 2.5).toFixed(1)}"/><g transform="rotate(-90)">${ring}</g><circle class="b" r="${rad.toFixed(1)}"/><text style="font-size:${(11.5 + Math.min(cnt, 20) * 0.3).toFixed(1)}px">${cnt}</text>${pr ? badge(pr, rr * 0.74, -rr * 0.74) : ''}</g>`]);
+        clusters.push(['c' + id, `<g class="m-cl" data-kind="cluster" data-id="${id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${k})"><circle class="bg" r="${(rr + 2.5).toFixed(1)}"/><g transform="rotate(-90)">${ring}</g><circle class="b" r="${rad.toFixed(1)}"/><text style="font-size:${(11.5 + Math.min(cnt, 20) * 0.3).toFixed(1)}px">${cnt}</text>${pr ? badge(pr, rr * 0.74, -rr * 0.74) : ''}${BK.TrainersUI ? BK.TrainersUI.clusterBadge(S, n.items, -rr * 0.74, -rr * 0.74) : ''}</g>`]);
       } else {
         const st = n.items[0], inf = infoById[st.id];
         const s1 = isSel('store', st.id);
@@ -467,6 +467,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
         if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
         if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
+        if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85); // лампочка: подсказка личного тренера
         g += `</g>`;
         if (s1) selM = ['s' + st.id, g]; else singles.push(['s' + st.id, g]);
       }

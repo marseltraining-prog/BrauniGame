@@ -199,6 +199,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       add({ lvl: 'info', ic: 'cal', t: h.inDays === 0 ? `${esc(h.name)} — сегодня` : `${esc(h.name)} через ${nw(h.inDays, 'день', 'дня', 'дней')}`, d: esc(h.effect) });
       break;
     }
+    if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -206,7 +207,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   BK.attention = attention;
   BK.billsForecast = (S) => billsForecast(S); // обучение новичка и sim/newbie.js
-  const attRow = (a) => `<div class="it"><span class="ic ${a.lvl}">${ICO[a.ic] || ICO.alert}</span><div class="tx"><div class="tt">${a.t}${a.lvl === 'bad' ? '<span class="new" aria-hidden="true"></span>' : ''}</div><div class="ds">${a.d}</div></div>${a.b ? `<button class="btn${a.b.primary ? ' primary' : ''}" data-act="${a.b.act}"${a.b.arg != null ? ` data-arg="${esc(a.b.arg)}"` : ''}>${a.b.label}</button>` : ''}</div>`;
+  const attRow = (a) => `<div class="it"><span class="ic ${a.lvl}${a.trn ? ' trn' : ''}">${a.icHtml || ICO[a.ic] || ICO.alert}</span><div class="tx"><div class="tt">${a.t}${a.lvl === 'bad' ? '<span class="new" aria-hidden="true"></span>' : ''}</div><div class="ds">${a.d}</div></div>${a.b ? `<button class="btn${a.b.primary ? ' primary' : ''}" data-act="${a.b.act}"${a.b.arg != null ? ` data-arg="${esc(a.b.arg)}"` : ''}>${a.b.label}</button>` : ''}</div>`;
 
   /* ---------- оценка предложения ---------- */
   function estimateOffer(S, o) {
@@ -314,6 +315,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     bills += ((cfg.CULTURE[S.culture] || {}).upkeep || 0) * nEmp * pl + Math.max(0, S.stores.length - (cfg.HQ_FREE_STORES || 0)) * (cfg.HQ_PER_STORE || 0) * pl;
     bills += E_.hrCount(S) * (cfg.HR_SALARY || 0) * tx * pl + E_.trainersCount(S) * (cfg.TRAINER_SALARY || 0) * tx * pl;
     bills += S.loan * E().loanRate(S) / 12;
+    if (BK.Trainers) bills += BK.Trainers.monthFee(S); // личные тренеры — 1-го числа
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -471,6 +473,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const shown = ui.attAll ? items : items.slice(0, MAX);
     s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
       ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
+    if (BK.TrainersUI) s += BK.TrainersUI.dashBlock(S); // личные тренеры
     s += holidaysBlock(S).replace('<div class="sec">', '<div class="sec lazy">');
     const nr = E_.networkRating(S), lp = last && last.pnl;
     s += `<div class="dkpis mini">
@@ -556,6 +559,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="kpi wide"><span class="k">Загрузка персонала${T.load > 1 ? ` — теряем ${fm(T.lost)} в день из-за очередей` : ''}</span><span class="v">${pct(Math.min(T.load, 9.99))}</span>${meter(T.load / 1.1)}</div>
       </div></div>`;
     }
+    if (BK.TrainersUI) s += BK.TrainersUI.storeBlock(S, st); // «Взгляд тренера»
     if (st.status !== 'opening') s += ratingSection(S, st);
     s += `<div class="sec"><h3>Помещение</h3><div class="grid2">
       ${kv('Аренда', fm(E_.storeRentMonth(st)) + '/мес')}${kv('Ставка', n0(st.rentM2) + ' ₽/м²')}
