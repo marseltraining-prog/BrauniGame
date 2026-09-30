@@ -85,7 +85,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     b.rect(0, 0, W, wall, P.wall[0]);
     const R = rng(7);
     for (let i = 0; i < W * wall / 18; i++) { const x = R() * W | 0, y = 6 + R() * (wall - 18) | 0; b.set(x, y, R() > 0.5 ? P.wall[1] : P.wall[3]); }
-    bricks(b, L.dx + 2, 8, 22, 12); if (W > 300) bricks(b, L.ox - 30, wall - 20, 18, 10);
+    if (L.win) bricks(b, L.dx + 2, 8, 22, 12); if (W > 300) bricks(b, L.ox - 30, wall - 20, 18, 10);
     // балка и лампы
     b.rect(0, 0, W, 5, P.beam[0]); b.hl(0, 4, W, P.beam[1]); b.hl(0, 0, W, P.beam[2]);
     for (let x = 20; x < W; x += 80) { b.rect(x, 0, 5, 7, P.beam[1]); b.hl(x, 0, 5, P.beam[2]); }
