@@ -1,7 +1,148 @@
-/* Окно сюжетной сцены — базовые стили (расширяет помощник). */
-.story-m .st-lines { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
-.story-m .st-line { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
-.story-m .st-line b { display: block; font-size: 12px; color: var(--crust-t); margin-bottom: 2px; }
-.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; }
-.story-m .st-ch { text-align: left; }
-.story-m .st-ch small { display: block; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+/* =====================================================================
+   Окно сюжетной сцены (BK.StoryUI, разметка — src/ui/story-ui.js).
+   Реплики по одной: портрет говорящего (пиксельный, Px.portraitTag) + имя + текст + «Дальше».
+   Варианты — как в окне события (.choice): буква, подпись, пояснение, стоимость, причина недоступности.
+   Кульминация — заметнее (акцентная полоса и плашка). Письма и посты — карточка с подписью.
+   Тост о решении — как у остальных механик (colltoast / invtoast / miltoast). Лента в «Сводке» — .sec.
+   Проверять глазами: 1440 / 390 / 360, светлая и тёмная тема (см. отчёт).
+   ===================================================================== */
+
+/* ---------- окно сцены ---------- */
+.story-modal { max-width: 620px; }
+.story-modal .st-h { padding-bottom: 8px; }
+.story-modal .st-h h2 { font-size: 20px; line-height: 1.2; }
+.story-modal.story-climax { border-top: 4px solid var(--crust); }
+.story-modal.story-climax .st-h { padding-top: 14px; background: linear-gradient(180deg, var(--crust-soft), transparent 72%); }
+.story-modal.story-climax .st-h h2 { font-size: 22px; }
+.st-h .st-ey { color: var(--ink-3); }
+.st-h.climax .st-ey { color: var(--crust-t); }
+.st-h .st-ch { font-size: 11.5px; color: var(--ink-3); margin-top: -2px; }
+
+/* реплика: портрет слева, речь справа; текст никогда не выдавливается портретом */
+.story-m .st-stage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.story-m .st-stage[data-next="1"] { cursor: pointer; border-radius: 10px; }
+.story-m .st-stage[data-next="1"]:hover { background: color-mix(in srgb, var(--crust-soft) 45%, transparent); }
+.story-m .st-px { --u: 3px; }
+.story-m .st-stage > .st-px canvas.pxp { width: 96px; height: 96px; }
+.story-m .st-px.sm { --u: 2px; }
+.story-m .st-px.sm canvas.pxp { width: 48px; height: 48px; }
+.st-av { flex: none; width: 96px; height: 96px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-family: var(--f-display); font-size: 36px; }
+.st-av.sm { width: 48px; height: 48px; font-size: 20px; border-radius: 8px; }
+
+.story-m .st-say { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.story-m .st-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.story-m .st-who { font-family: var(--f-display); font-size: 14px; font-weight: 600; color: var(--crust-t); }
+.story-m .st-role { font-size: 11.5px; color: var(--ink-3); }
+.story-m .st-text { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.story-m .st-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.story-m .st-prog { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.story-m .st-prog b { color: var(--ink-2); }
+.story-m .st-dots { display: inline-flex; gap: 4px; }
+.story-m .st-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+.story-m .st-dots i.on { background: var(--crust); }
+.story-m .st-next { margin-top: 4px; min-height: 40px; }
+
+/* вариант выбора: .choice даёт букву/подпись/пояснение и перенос по словам; здесь — ширина и «сразу» */
+.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.story-m .st-choices .st-chq { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.story-m .st-choices .st-chq h4 { font-family: var(--f-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.story-m .st-choices .st-chq span { font-size: 11.5px; color: var(--ink-3); }
+.story-m .st-choice { width: 100%; white-space: normal; }
+.story-m .st-choice b, .story-m .st-choice .cd { overflow-wrap: anywhere; }
+.story-m .st-choices .btn.st-big { white-space: normal; text-align: left; min-height: 44px; justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.35; }
+.story-m .st-choices .btn.st-big .st-desc { font-size: 12.5px; font-weight: 400; opacity: .9; }
+.story-m .st-choices .btn.st-big .st-need { display: inline-flex; align-items: flex-start; gap: 5px; font-size: 12px; font-weight: 500; }
+.story-m .st-need svg { width: 13px; height: 13px; flex: none; margin-top: 2px; }
+.story-m .st-note { margin: 0; font-size: 12px; color: var(--ink-3); }
+
+/* значки последствий варианта */
+.st-fx { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.st-fxc { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; padding: 2px 7px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); }
+.st-fxc i { font-style: normal; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.st-fxc.up { background: var(--good-soft); color: var(--good-t); }
+.st-fxc.up i { color: var(--good-t); opacity: .8; }
+.st-fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+.st-fxc.dn i { color: var(--bad-t); opacity: .8; }
+
+/* ---------- письмо и пост ---------- */
+.story-modal.story-paper { max-width: 560px; }
+.st-paper { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.st-paper.post { border-left: 4px solid var(--crust); background: var(--surface); }
+.st-ph { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.st-ph .st-pw2 { min-width: 0; display: flex; flex-direction: column; }
+.st-ph .st-pw2 b { font-size: 13.5px; }
+.st-ph .st-pw2 small { font-size: 11.5px; color: var(--ink-3); }
+.st-kind { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+.st-paper.post .st-kind { color: var(--good-t); background: var(--good-soft); }
+.st-pb { font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.st-pb p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.st-pb p:last-child { margin-bottom: 0; }
+.st-pw { font-weight: 600; color: var(--ink-2); }
+.st-ps { text-align: right; font-size: 13px; color: var(--ink-3); }
+
+/* ---------- летопись ---------- */
+.story-modal.story-logm .modal-b { gap: 4px; }
+.st-logm .st-ch-h { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 10px 0 2px; }
+.st-logm .st-ch-h small { font-family: var(--f-mono); font-size: 11px; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 9px; padding: 1px 7px; }
+.st-logm .st-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.st-logm .st-log li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.st-logm .st-log li:last-child { border-bottom: 0; }
+.st-logm .st-d { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; padding-top: 2px; }
+.st-logm .st-lb { min-width: 0; display: flex; flex-direction: column; }
+.st-logm .st-lb b { font-size: 13.5px; font-weight: 600; }
+.st-logm .st-c { font-size: 12.5px; color: var(--ink-2); }
+.st-logm .st-end { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--crust-soft); display: flex; flex-direction: column; gap: 3px; }
+.st-logm .st-end b { font-family: var(--f-display); }
+.st-logm .st-end span { font-size: 12.5px; color: var(--ink-2); }
+
+/* ---------- лента «История» в «Сводке» ---------- */
+.sec.storyb .st-h { display: inline-flex; align-items: center; gap: 6px; }
+.sec.storyb .st-h svg { width: 14px; height: 14px; color: var(--crust); }
+.storyb .st-pend, .storyb .st-last { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 8px; }
+.storyb .st-pend { border: 1px dashed var(--crust); border-radius: 10px; padding: 8px 10px; background: color-mix(in srgb, var(--crust-soft) 55%, transparent); }
+.storyb .st-pi { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--crust-t); flex: none; }
+.storyb .st-pi svg { width: 16px; height: 16px; }
+.storyb .st-pt { min-width: 0; display: flex; flex-direction: column; }
+.storyb .st-pt b { font-size: 13px; }
+.storyb .st-pt small { font-size: 11.5px; color: var(--ink-3); }
+.storyb .st-last { grid-template-columns: auto minmax(0, 1fr); }
+.storyb .st-ld { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; padding-top: 2px; }
+.storyb .st-lt { min-width: 0; display: flex; flex-direction: column; }
+.storyb .st-lt b { font-size: 13px; font-weight: 600; }
+.storyb .st-lt small { font-size: 12px; color: var(--ink-2); }
+.storyb .st-lt .st-lc { font-size: 11px; color: var(--ink-3); }
+
+/* ---------- тост о решении (как colltoast / invtoast / miltoast) ---------- */
+.toast.sttoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.sttoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.sttoast .mi svg { width: 18px; height: 18px; }
+.sttoast.warn .mi { background: var(--warn-soft); color: var(--warn-t); }
+.sttoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sttoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.sttoast.warn .ey { color: var(--warn-t); }
+.sttoast b { margin: 0; }
+.sttoast .md { color: var(--ink-2); font-size: 12px; }
+
+/* ---------- телефон 390 / 360: окно не разъезжается, текст читается, кнопки ≥ 34 px ---------- */
+@media (max-width: 480px) {
+  .story-modal .st-h h2, .story-modal.story-climax .st-h h2 { font-size: 18px; }
+  .story-m .st-stage { grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+  .story-m .st-stage > .st-px canvas.pxp { width: 64px; height: 64px; }
+  .story-m .st-px { --u: 2px; }
+  .st-av { width: 64px; height: 64px; font-size: 26px; }
+  .story-m .st-text { font-size: 14.5px; }
+  .story-m .st-next { min-height: 44px; }
+  .story-m .st-choices .btn.st-big { min-height: 44px; }
+  .story-m .st-choice { padding: 10px 11px 11px; }
+  .st-paper { padding: 10px 11px; }
+  .st-pb { font-size: 14px; }
+  .storyb .st-pend { grid-template-columns: auto minmax(0, 1fr); }
+  .storyb .st-pend .btn { grid-column: 2; justify-self: start; min-height: 34px; }
+}
+@media (max-width: 374px) {
+  .story-m .st-stage > .st-px canvas.pxp { width: 56px; height: 56px; }
+  .st-av { width: 56px; height: 56px; font-size: 22px; }
+  .story-m .st-text { font-size: 14px; }
+  .st-ph { grid-template-columns: auto minmax(0, 1fr); }
+  .st-kind { grid-column: 2; justify-self: start; }
+}

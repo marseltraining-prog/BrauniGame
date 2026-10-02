@@ -1384,13 +1384,154 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .inv-acts .btn { width: 100%; }
 }
 
-/* Окно сюжетной сцены — базовые стили (расширяет помощник). */
-.story-m .st-lines { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
-.story-m .st-line { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
-.story-m .st-line b { display: block; font-size: 12px; color: var(--crust-t); margin-bottom: 2px; }
-.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; }
-.story-m .st-ch { text-align: left; }
-.story-m .st-ch small { display: block; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+/* =====================================================================
+   Окно сюжетной сцены (BK.StoryUI, разметка — src/ui/story-ui.js).
+   Реплики по одной: портрет говорящего (пиксельный, Px.portraitTag) + имя + текст + «Дальше».
+   Варианты — как в окне события (.choice): буква, подпись, пояснение, стоимость, причина недоступности.
+   Кульминация — заметнее (акцентная полоса и плашка). Письма и посты — карточка с подписью.
+   Тост о решении — как у остальных механик (colltoast / invtoast / miltoast). Лента в «Сводке» — .sec.
+   Проверять глазами: 1440 / 390 / 360, светлая и тёмная тема (см. отчёт).
+   ===================================================================== */
+
+/* ---------- окно сцены ---------- */
+.story-modal { max-width: 620px; }
+.story-modal .st-h { padding-bottom: 8px; }
+.story-modal .st-h h2 { font-size: 20px; line-height: 1.2; }
+.story-modal.story-climax { border-top: 4px solid var(--crust); }
+.story-modal.story-climax .st-h { padding-top: 14px; background: linear-gradient(180deg, var(--crust-soft), transparent 72%); }
+.story-modal.story-climax .st-h h2 { font-size: 22px; }
+.st-h .st-ey { color: var(--ink-3); }
+.st-h.climax .st-ey { color: var(--crust-t); }
+.st-h .st-ch { font-size: 11.5px; color: var(--ink-3); margin-top: -2px; }
+
+/* реплика: портрет слева, речь справа; текст никогда не выдавливается портретом */
+.story-m .st-stage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.story-m .st-stage[data-next="1"] { cursor: pointer; border-radius: 10px; }
+.story-m .st-stage[data-next="1"]:hover { background: color-mix(in srgb, var(--crust-soft) 45%, transparent); }
+.story-m .st-px { --u: 3px; }
+.story-m .st-stage > .st-px canvas.pxp { width: 96px; height: 96px; }
+.story-m .st-px.sm { --u: 2px; }
+.story-m .st-px.sm canvas.pxp { width: 48px; height: 48px; }
+.st-av { flex: none; width: 96px; height: 96px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-family: var(--f-display); font-size: 36px; }
+.st-av.sm { width: 48px; height: 48px; font-size: 20px; border-radius: 8px; }
+
+.story-m .st-say { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.story-m .st-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.story-m .st-who { font-family: var(--f-display); font-size: 14px; font-weight: 600; color: var(--crust-t); }
+.story-m .st-role { font-size: 11.5px; color: var(--ink-3); }
+.story-m .st-text { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.story-m .st-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.story-m .st-prog { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.story-m .st-prog b { color: var(--ink-2); }
+.story-m .st-dots { display: inline-flex; gap: 4px; }
+.story-m .st-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+.story-m .st-dots i.on { background: var(--crust); }
+.story-m .st-next { margin-top: 4px; min-height: 40px; }
+
+/* вариант выбора: .choice даёт букву/подпись/пояснение и перенос по словам; здесь — ширина и «сразу» */
+.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.story-m .st-choices .st-chq { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.story-m .st-choices .st-chq h4 { font-family: var(--f-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.story-m .st-choices .st-chq span { font-size: 11.5px; color: var(--ink-3); }
+.story-m .st-choice { width: 100%; white-space: normal; }
+.story-m .st-choice b, .story-m .st-choice .cd { overflow-wrap: anywhere; }
+.story-m .st-choices .btn.st-big { white-space: normal; text-align: left; min-height: 44px; justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.35; }
+.story-m .st-choices .btn.st-big .st-desc { font-size: 12.5px; font-weight: 400; opacity: .9; }
+.story-m .st-choices .btn.st-big .st-need { display: inline-flex; align-items: flex-start; gap: 5px; font-size: 12px; font-weight: 500; }
+.story-m .st-need svg { width: 13px; height: 13px; flex: none; margin-top: 2px; }
+.story-m .st-note { margin: 0; font-size: 12px; color: var(--ink-3); }
+
+/* значки последствий варианта */
+.st-fx { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.st-fxc { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; padding: 2px 7px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); }
+.st-fxc i { font-style: normal; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.st-fxc.up { background: var(--good-soft); color: var(--good-t); }
+.st-fxc.up i { color: var(--good-t); opacity: .8; }
+.st-fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+.st-fxc.dn i { color: var(--bad-t); opacity: .8; }
+
+/* ---------- письмо и пост ---------- */
+.story-modal.story-paper { max-width: 560px; }
+.st-paper { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.st-paper.post { border-left: 4px solid var(--crust); background: var(--surface); }
+.st-ph { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.st-ph .st-pw2 { min-width: 0; display: flex; flex-direction: column; }
+.st-ph .st-pw2 b { font-size: 13.5px; }
+.st-ph .st-pw2 small { font-size: 11.5px; color: var(--ink-3); }
+.st-kind { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+.st-paper.post .st-kind { color: var(--good-t); background: var(--good-soft); }
+.st-pb { font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.st-pb p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.st-pb p:last-child { margin-bottom: 0; }
+.st-pw { font-weight: 600; color: var(--ink-2); }
+.st-ps { text-align: right; font-size: 13px; color: var(--ink-3); }
+
+/* ---------- летопись ---------- */
+.story-modal.story-logm .modal-b { gap: 4px; }
+.st-logm .st-ch-h { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 10px 0 2px; }
+.st-logm .st-ch-h small { font-family: var(--f-mono); font-size: 11px; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 9px; padding: 1px 7px; }
+.st-logm .st-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.st-logm .st-log li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.st-logm .st-log li:last-child { border-bottom: 0; }
+.st-logm .st-d { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; padding-top: 2px; }
+.st-logm .st-lb { min-width: 0; display: flex; flex-direction: column; }
+.st-logm .st-lb b { font-size: 13.5px; font-weight: 600; }
+.st-logm .st-c { font-size: 12.5px; color: var(--ink-2); }
+.st-logm .st-end { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--crust-soft); display: flex; flex-direction: column; gap: 3px; }
+.st-logm .st-end b { font-family: var(--f-display); }
+.st-logm .st-end span { font-size: 12.5px; color: var(--ink-2); }
+
+/* ---------- лента «История» в «Сводке» ---------- */
+.sec.storyb .st-h { display: inline-flex; align-items: center; gap: 6px; }
+.sec.storyb .st-h svg { width: 14px; height: 14px; color: var(--crust); }
+.storyb .st-pend, .storyb .st-last { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 8px; }
+.storyb .st-pend { border: 1px dashed var(--crust); border-radius: 10px; padding: 8px 10px; background: color-mix(in srgb, var(--crust-soft) 55%, transparent); }
+.storyb .st-pi { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--crust-t); flex: none; }
+.storyb .st-pi svg { width: 16px; height: 16px; }
+.storyb .st-pt { min-width: 0; display: flex; flex-direction: column; }
+.storyb .st-pt b { font-size: 13px; }
+.storyb .st-pt small { font-size: 11.5px; color: var(--ink-3); }
+.storyb .st-last { grid-template-columns: auto minmax(0, 1fr); }
+.storyb .st-ld { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; padding-top: 2px; }
+.storyb .st-lt { min-width: 0; display: flex; flex-direction: column; }
+.storyb .st-lt b { font-size: 13px; font-weight: 600; }
+.storyb .st-lt small { font-size: 12px; color: var(--ink-2); }
+.storyb .st-lt .st-lc { font-size: 11px; color: var(--ink-3); }
+
+/* ---------- тост о решении (как colltoast / invtoast / miltoast) ---------- */
+.toast.sttoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.sttoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.sttoast .mi svg { width: 18px; height: 18px; }
+.sttoast.warn .mi { background: var(--warn-soft); color: var(--warn-t); }
+.sttoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sttoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.sttoast.warn .ey { color: var(--warn-t); }
+.sttoast b { margin: 0; }
+.sttoast .md { color: var(--ink-2); font-size: 12px; }
+
+/* ---------- телефон 390 / 360: окно не разъезжается, текст читается, кнопки ≥ 34 px ---------- */
+@media (max-width: 480px) {
+  .story-modal .st-h h2, .story-modal.story-climax .st-h h2 { font-size: 18px; }
+  .story-m .st-stage { grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+  .story-m .st-stage > .st-px canvas.pxp { width: 64px; height: 64px; }
+  .story-m .st-px { --u: 2px; }
+  .st-av { width: 64px; height: 64px; font-size: 26px; }
+  .story-m .st-text { font-size: 14.5px; }
+  .story-m .st-next { min-height: 44px; }
+  .story-m .st-choices .btn.st-big { min-height: 44px; }
+  .story-m .st-choice { padding: 10px 11px 11px; }
+  .st-paper { padding: 10px 11px; }
+  .st-pb { font-size: 14px; }
+  .storyb .st-pend { grid-template-columns: auto minmax(0, 1fr); }
+  .storyb .st-pend .btn { grid-column: 2; justify-self: start; min-height: 34px; }
+}
+@media (max-width: 374px) {
+  .story-m .st-stage > .st-px canvas.pxp { width: 56px; height: 56px; }
+  .st-av { width: 56px; height: 56px; font-size: 22px; }
+  .story-m .st-text { font-size: 14px; }
+  .st-ph { grid-template-columns: auto minmax(0, 1fr); }
+  .st-kind { grid-column: 2; justify-self: start; }
+}
 
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
 /* сгенерированные города у воды: море / залив */
@@ -21287,122 +21428,369 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
 /* ui/story-ui.js */
 /* Сюжет — интерфейс (логика — src/story.js, BK.Story; тексты — src/data/story.js).
-   Окно сцены: портреты героев (пиксельные, Px.portraitTag), реплики, варианты выбора
-   с последствиями; тост о случившемся; записи в летопись для итогов игры.
-   В app.js / panels.js — только хуки (BK.StoryUI.*). */
+   Окно сцены: портрет говорящего и реплики ПО ОДНОЙ (кнопка/тап «Дальше», Enter/Space, прогресс «2 из 5»),
+   затем варианты выбора — крупно, с пояснением последствий и честной причиной недоступности;
+   кульминации оформлены заметнее. Письма и посты (form: letter/post) и входящие (S.inbox) — карточкой
+   с одной кнопкой «Прочитано». Тост о решении — как у остальных механик игры, клик открывает летопись.
+   Лента «История» в «Сводке» — строка о последнем решении и кнопка «Вся летопись».
+   В app.js / panels.js — только хуки (BK.StoryUI.*, ACT.story / storyLog / storyNext / storyPick / storyRead).
+
+   Портреты — пиксельные, кодом (Px.portraitTag + Px.hydrate): ключ берётся из BK.STORY.heroes[...].px,
+   если такого героя в Px.CAST нет — ближайший существующий (см. PX_ALIAS и PX_NOTE).
+   Своей игровой логики здесь нет: сцену показывает и закрывает только BK.Story.resolve. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   if (typeof document === 'undefined') return;
   const ST = BK.Story, APP = () => BK.App, E = () => BK.Engine;
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const LET = 'АБВГДЕЖЗИК';
 
-  function portrait(who, emo) {
-    const h = (BK.STORY.heroes || {})[who] || { name: who };
-    if (BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px" title="${esc(h.name)}">${BK.Px.portraitTag(h.px || who, emo || 'calm')}</span>`;
-    return `<span class="st-av" title="${esc(h.name)}">${esc((h.name || '?').slice(0, 1))}</span>`;
+  const BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';
+  const WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>';
+  const CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 15a3 3 0 0 1-3 3H8l-4 3V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/><path d="M8 9h8M8 13h5"/></svg>';
+
+  /* ---------- портреты: ключ Px.CAST для героя BK.STORY ----------
+     fania → mama (мама Фания), babushka → sania (бабушка Сания) — это те же люди.
+     ildar — своего портрета нет: подставляем Дамира (молодой человек, кепка) — ближайший по типажу.
+     Всё, что не найдено, ведёт к «герою», чтобы окно никогда не осталось без лица. */
+  const PX_ALIAS = { fania: 'mama', family: 'mama', mama: 'mama', babushka: 'sania', sania: 'sania', ildar: 'damir' };
+  const PX_NOTE = { ildar: 'damir' };                       // подставленные ключи — в отчёт владельцу
+  const EMO = { neutral: 1, calm: 1, smile: 1, happy: 1, closed: 1, smirk: 1, surprised: 1, sad: 1, tired: 1, angry: 1, worried: 1 };
+  const ui = { scene: null, line: 0, form: 'scene', letter: null };
+
+  const hero = (who) => (BK.STORY && BK.STORY.heroes && BK.STORY.heroes[who]) || { name: who };
+  const whoName = (who) => { const h = hero(who); return h.short || h.name; };
+  const post = (sc) => sc && (sc.form === 'letter' || sc.form === 'post');
+  const isClimax = (sc) => !!(sc && (sc.form === 'climax' || sc.climax));
+
+  function pxKey(who) {
+    const h = hero(who), want = (h && h.px) || who;
+    const CAST = (BK.Px && BK.Px.CAST) || null;
+    if (!CAST) return null;
+    if (CAST[want]) return want;
+    const alt = PX_ALIAS[want] || PX_ALIAS[who];
+    if (alt && CAST[alt]) return alt;
+    return CAST.hero ? 'hero' : null;
   }
-  function linesHtml(sc) {
-    return (sc.lines || []).map((l) => {
-      const h = (BK.STORY.heroes || {})[l.who] || { name: l.who };
-      return `<div class="st-line"><b>${esc(h.short || h.name)}</b>${esc(l.text)}</div>`;
-    }).join('');
+  function portrait(who, emo, cls) {
+    const h = hero(who), key = pxKey(who), name = esc(h.name || who);
+    const e = EMO[emo] ? emo : 'neutral';
+    if (key && BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px${cls ? ' ' + cls : ''}" title="${name}">${BK.Px.portraitTag(key, e)}</span>`;
+    return `<span class="st-av${cls ? ' ' + cls : ''}" title="${name}" aria-hidden="true">${esc((h.name || '?').slice(0, 1))}</span>`;
   }
-  function choicesHtml(sc, S) {
-    return (sc.choices || []).map((c, i) => {
-      const need = needText(S, c.need);
-      return `<button class="btn st-ch" data-act="storyPick" data-arg="${i}"${need.dis ? ' disabled' : ''}>${esc(c.label)}${c.desc ? `<small>${esc(c.desc)}</small>` : ''}${need.dis ? `<small>${esc(need.text)}</small>` : ''}</button>`;
-    }).join('');
-  }
-  // требование к варианту (отношения и скрытые стили) — показываем честно
+  function hydrate(root) { if (BK.Px && BK.Px.hydrate) { try { BK.Px.hydrate(root); } catch (e) { /* без портрета, но окно работает */ } } }
+
+  /* ---------- требование к варианту: честная причина недоступности ---------- */
+  const METER_NAME = { care: 'Забота о людях', risk: 'Готовность рисковать', honesty: 'Честность', fair: 'Справедливость' };
+  const FLAG_NAME = { mentor: 'выбор наставника', gulya: 'решение про Гулю', kalach: 'судьба «Калача»', lenin: 'отношения с «Двором»', hire1: 'первый наём', fund: 'фонд', war: 'война за город', scandal: 'проверка', ufa: 'будущее Уфы', ildar: 'решение про Ильдара', olegCard: 'карта Олега', regulars: 'постоянные гости' };
   function needText(S, need) {
     const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
     const bad = [];
-    if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`${(BK.STORY.heroes[k] || {}).short || k} ≥ ${need.rel[k]}`);
-    if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`стиль «${k}» ≥ ${need.meter[k]}`);
-    if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push('другое решение раньше');
-    return bad.length ? { dis: true, text: 'Требуется: ' + bad.join(', ') } : { dis: false, text: '' };
+    if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
+    if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
+    if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
+    if (!bad.length) return { dis: false, text: '' };
+    return { dis: true, text: 'Пока нельзя: нужно ' + bad.join(', ') };
+  }
+
+  /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
+  function fxChips(fx) {
+    const out = [];
+    for (const f of fx || []) {
+      if (!f || !f.t) continue;
+      if (f.t === 'rel') { const up = f.add > 0; out.push({ t: `${whoName(f.who)} ${up ? '+' : '−'}${Math.abs(f.add)}`, up, k: 'Отношения' }); }
+      else if (f.t === 'perk') { const p = (BK.STORY.perks || {})[f.id]; if (p) out.push({ t: p.name, up: true, k: 'Бонус' }); }
+      else if (f.t === 'ending') { const e = (BK.STORY.endings || {})[f.id]; out.push({ t: 'Финал: ' + (e ? e.name : f.id), up: false, k: 'История' }); }
+      else if (f.t === 'share') out.push({ t: `${whoName(f.who)} — ${Math.round(f.pct * 100)} %`, up: false, k: 'Доля' });
+      else if (f.t === 'rivalMod') out.push(f.agg > 0 ? { t: '«Двор» жёстче', up: false, k: 'Олег' } : { t: '«Двор» мягче', up: true, k: 'Олег' });
+      else if (f.t === 'rivalOpenNear') out.push({ t: '«Двор» откроется рядом', up: false, k: 'Олег' });
+      else if (f.t === 'deferOpen') out.push({ t: `Открытие позже на ${f.days} дн.`, up: false, k: 'Дело' });
+      // meter и flag не показываем: это скрытые решения (docs/story.md §4.3)
+    }
+    return out.length ? `<span class="st-fx">${out.map((c) => `<span class="st-fxc ${c.up ? 'up' : 'dn'}"><i>${esc(c.k)}</i>${esc(c.t)}</span>`).join('')}</span>` : '';
+  }
+
+  /* ---------- варианты выбора ---------- */
+  function choiceHtml(S, c, i, multi) {
+    const need = needText(S, c.need), fx = fxChips(c.effects);
+    const dis = need.dis ? ' disabled' : '';
+    if (!multi) {
+      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(c.label)}${c.desc ? `<small class="st-desc">${esc(c.desc)}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
+    }
+    return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
+      <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
+      <b>${esc(c.label)}</b>
+      ${c.desc ? `<span class="cd">${esc(c.desc)}</span>` : ''}
+      ${c.cost ? `<span class="cc">${esc(c.cost)}</span>` : ''}
+      ${need.dis ? `<span class="cwhy">${WARN}${esc(need.text)}</span>` : ''}
+      ${fx ? `<span class="fx">${fx}</span>` : ''}
+    </button>`;
+  }
+  function choicesHtml(S, sc) {
+    const chs = sc.choices || [];
+    if (!chs.length) return '';
+    if (chs.length === 1) return `<div class="st-choices st-one">${choiceHtml(S, chs[0], 0, false)}</div>`;
+    return `<div class="st-choices"><div class="st-chq"><h4>Что решаем?</h4><span>Выбор останется в летописи</span></div>${chs.map((c, i) => choiceHtml(S, c, i, true)).join('')}</div>`;
+  }
+
+  /* ---------- письмо / пост (одна кнопка «Прочитано») ---------- */
+  function paperHtml(S, sc) {
+    const R = ST.state(S), day = R && R.pending ? R.pending.day : S.day;
+    const lines = sc.lines || [];
+    const who = (sc.who && sc.who[0]) || (lines[0] && lines[0].who) || 'semyon';
+    const h = hero(who), isPost = sc.form === 'post';
+    const body = lines.map((l) => `${lines.length > 1 && l.who && l.who !== who ? `<span class="st-pw">${esc(whoName(l.who))}:</span> ` : ''}${esc(l.text)}`).join('</p><p>');
+    return `<article class="st-paper ${isPost ? 'post' : 'letter'}">
+      <header class="st-ph">${portrait(who, isPost ? 'smirk' : 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
+      <div class="st-pb"><p>${body}</p></div>
+      <div class="st-ps">— ${esc(whoName(who))}</div>
+    </article>`;
+  }
+  function paperActions(S, sc) {
+    const c = (sc.choices || [])[0];
+    if (!c) return '';
+    const need = needText(S, c.need);
+    return `<div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="0"${need.dis ? ' disabled' : ''}>Прочитано${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>${c.desc && !need.dis ? `<p class="st-note">${esc(c.desc)}</p>` : ''}</div>`;
+  }
+
+  /* ---------- тело окна ---------- */
+  function bodyHtml(S, sc) {
+    if (post(sc)) return paperHtml(S, sc) + paperActions(S, sc);
+    const lines = (sc.lines && sc.lines.length) ? sc.lines : [{ who: (sc.who || [])[0], emo: 'neutral', text: '' }];
+    const i = Math.max(0, Math.min(ui.line, lines.length - 1)), last = i >= lines.length - 1, L = lines[i] || {};
+    const many = lines.length > 1;
+    const dots = many ? `<span class="st-dots" aria-hidden="true">${lines.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</span>` : '';
+    const prog = many ? `<span class="st-prog">Реплика <b>${i + 1}</b> из ${lines.length}</span>` : '';
+    const attrs = last ? '' : ' data-next="1" role="button" tabindex="0" aria-label="Дальше, следующая реплика"';
+    return `<div class="st-stage"${attrs}>
+        ${portrait(L.who, L.emo)}
+        <div class="st-say">
+          <div class="st-meta"><b class="st-who">${esc(whoName(L.who))}</b><span class="st-role">${esc(hero(L.who).role || '')}</span></div>
+          <p class="st-text">${esc(L.text || '')}</p>
+          ${many ? `<div class="st-foot">${prog}${dots}</div>` : ''}
+          ${last ? '' : '<button type="button" class="btn primary block st-next" data-act="storyNext">Дальше <span aria-hidden="true">›</span></button>'}
+        </div>
+      </div>
+      ${last ? choicesHtml(S, sc) : ''}`;
+  }
+  function chapterOf(S, sc) {
+    const R = ST.state(S);
+    const id = sc.ch || (R ? ST.chapter(S, R) : '');
+    return ST.chapterName ? ST.chapterName(id) : id;
   }
   function sceneHtml(S, sc) {
-    const climax = sc.form === 'climax';
-    const chName = ST.chapterName ? ST.chapterName(ST.chapter(S, ST.state(S))) : '';
-    return `<div class="modal-h"><span class="eyebrow">${climax ? 'Поворотный момент' : esc(chName)}</span><h2>${esc(sc.title)}</h2></div>
-      <div class="modal-b story-m">
-        <div class="st-lines">${linesHtml(sc)}</div>
-        <div class="st-choices">${choicesHtml(sc, S)}</div>
-      </div>`;
+    const paper = post(sc), climax = isClimax(sc), ch = chapterOf(S, sc);
+    const ey = paper ? (sc.form === 'post' ? 'Пост' : 'Письмо') : climax ? 'Поворотный момент' : ch;
+    return `<div class="modal-h st-h${climax ? ' climax' : ''}">
+        <span class="eyebrow st-ey">${esc(ey)}</span>
+        ${climax ? `<span class="st-ch">${esc(ch)}</span>` : ''}
+        <h2>${esc(sc.title)}</h2>
+      </div>
+      <div class="modal-b story-m">${bodyHtml(S, sc)}</div>`;
   }
+
+  /* ---------- открыть сцену ---------- */
   function openScene(keep) {
-    const S = APP().state; const sc = ST.pendingScene(S);
-    if (!sc) return false;
-    APP().openModal(sceneHtml(S, sc), { closable: false, keepScroll: keep === 'keep' });
-    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('story-modal', 'story-' + (sc.form || 'scene'));
-    return true;
+    const S = APP() && APP().state; if (!S) return false;
+    const sc = ST.pendingScene(S);
+    if (sc) {
+      ui.scene = sc.id; ui.line = 0; ui.form = sc.form || 'scene'; ui.letter = null;
+      APP().openModal(sceneHtml(S, sc), { closable: false, keepScroll: keep === 'keep' });
+      decorate(sc);
+      return true;
+    }
+    const m = firstUnread(S);
+    if (m) { showLetter(S, m, keep); return true; }
+    return false;
   }
-  // Лента Семёна и записи сюжета в «Сводке» — короткая строка (полная летопись — в итогах игры).
+  function decorate(sc) {
+    const el = $('#modal .modal'); if (!el) return;
+    el.classList.add('story-modal', 'story-' + (ui.form || 'scene'));
+    el.classList.toggle('story-climax', isClimax(sc));
+    el.classList.toggle('story-paper', post(sc));
+    el.setAttribute('aria-label', sc.title || 'Сцена');
+    bindStage();
+    hydrate(el);
+  }
+  // тап по реплике = «Дальше» (кнопки внутри не трогаем)
+  function bindStage() {
+    const st = $('#modal .st-stage[data-next="1"]'); if (!st) return;
+    const go = (ev) => { if (ev.target.closest && ev.target.closest('button')) return; advance(); };
+    st.addEventListener('click', go);
+    st.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); advance(); } });
+  }
+  function renderBody(S, sc) {
+    const m = $('#modal .story-m'); if (!m) return;
+    m.innerHTML = bodyHtml(S, sc);
+    bindStage();
+    hydrate(m);
+  }
+  function advance() {
+    const S = APP() && APP().state; if (!S) return false;
+    const sc = ST.pendingScene(S); if (!sc || post(sc)) return false;
+    const lines = sc.lines || [];
+    if (ui.line < lines.length - 1) { ui.line++; renderBody(S, sc); return true; }
+    const first = $('#modal .st-choices .choice:not(:disabled), #modal .st-choices .btn:not(:disabled)');
+    if (first) { first.focus(); return true; }
+    return false;
+  }
+
+  /* ---------- входящие (S.story.inbox) — письма пишет логика; пусто — ничего не показываем ---------- */
+  function firstUnread(S) {
+    const R = ST.state(S); if (!R || !R.inbox || !R.inbox.length) return null;
+    return R.inbox.find((m) => m && !m.read) || null;
+  }
+  function letterHtml(S, m) {
+    const R = ST.state(S), day = m.day != null ? m.day : S.day;
+    const who = m.who || ((m.lines && m.lines[0] && m.lines[0].who) || 'semyon');
+    const h = hero(who);
+    const lines = m.lines || (m.text ? [{ who, text: m.text }] : []);
+    const body = lines.map((l) => esc(l.text)).join('</p><p>');
+    const isPost = m.form === 'post';
+    return `<div class="modal-h st-h"><span class="eyebrow st-ey">${isPost ? 'Пост' : 'Входящее'}</span><h2>${esc(m.title || (isPost ? 'Новый пост' : 'Письмо'))}</h2></div>
+      <div class="modal-b story-m"><article class="st-paper ${isPost ? 'post' : 'letter'}">
+        <header class="st-ph">${portrait(who, 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
+        <div class="st-pb"><p>${body}</p></div><div class="st-ps">— ${esc(whoName(who))}</div>
+      </article><div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyRead">Прочитано</button></div></div>`;
+  }
+  function showLetter(S, m, keep) {
+    ui.scene = null; ui.letter = m; ui.form = m.form || 'letter';
+    APP().openModal(letterHtml(S, m), { closable: false, keepScroll: keep === 'keep' });
+    decorate({ title: m.title || 'Письмо', form: ui.form });
+  }
+  function markRead(S, m) {
+    if (!m || m.read) return;
+    m.read = true;
+    try { APP().save(); } catch (e) { /* сохранит следующий автосейв */ }
+  }
+
+  /* ---------- лента в «Сводке»: последнее решение + «Вся летопись» ---------- */
   function block(S) {
     const R = ST.state(S); if (!R) return '';
-    const last = R.log.length ? R.log[R.log.length - 1] : null;
-    const pend = ST.pendingScene(S);
+    const log = R.log || [], last = log.length ? log[log.length - 1] : null;
+    const pend = ST.pendingScene(S) || firstUnread(S);
     if (!last && !pend) return '';
-    let s = `<div class="sec storyb"><h3><span class="st-h">${ICON}История</span>${R.log.length ? `<button class="linkbtn" data-act="storyLog">Вся летопись →</button>` : ''}</h3>`;
-    if (pend) s += `<div class="st-pend"><b>Ждёт решения: «${esc(pend.title)}»</b><button class="btn sm primary" data-act="story">Открыть</button></div>`;
-    else if (last) s += `<p class="hint" style="margin:0">${E().fmtDate(last.day)} — ${esc(last.title)}${last.choice ? `: ${esc(last.choice)}` : ''}</p>`;
-    return s + '</div>';
+    let inner;
+    if (pend) {
+      const title = pend.title || (pend.text ? String(pend.text).slice(0, 60) : 'Письмо');
+      inner = `<div class="st-pend"><span class="st-pi" aria-hidden="true">${CHAT}</span><span class="st-pt"><b>«${esc(title)}»</b><small>Ждёт вашего решения</small></span><button class="btn sm primary" data-act="story">Открыть</button></div>`;
+    } else {
+      const ch = last.chapter ? ST.chapterName(last.chapter) : '';
+      inner = `<div class="st-last"><span class="st-ld">${E().fmtDate(last.day)}</span><span class="st-lt"><b>${esc(last.title || 'Решение')}</b>${last.choice ? `<small>${esc(last.choice)}</small>` : ''}${ch ? `<small class="st-lc">${esc(ch)}</small>` : ''}</span></div>`;
+    }
+    return `<div class="sec storyb"><h3><span class="st-h">${BOOK}История</span><button class="linkbtn" data-act="storyLog">Вся летопись →</button></h3>${inner}</div>`;
   }
+
+  /* ---------- летопись ---------- */
   function logHtml(S) {
     const h = ST.history(S);
-    if (!h.list.length) return '<div class="modal-h"><span class="eyebrow">История</span><h2>Летопись</h2></div><div class="modal-b"><p class="hint" style="margin:0">Пока ничего не случилось. История начинается с первого решения.</p></div>';
-    let s = `<div class="modal-h"><span class="eyebrow">История</span><h2>Летопись</h2></div><div class="modal-b story-m">`;
+    const head = '<div class="modal-h"><span class="eyebrow">История</span><h2>Летопись</h2></div>';
+    if (!h.list.length && !h.ending) return `${head}<div class="modal-b"><p class="hint" style="margin:0">Пока ничего не случилось. История начинается с первого решения.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+    let s = `${head}<div class="modal-b story-m st-logm">`;
     for (const ch of h.chapters) {
-      s += `<h4 class="st-ch-h">${esc(ch.name)}</h4><ul class="st-log">`;
-      for (const it of ch.items) s += `<li><span class="st-d">${E().fmtDate(it.day)}</span><b>${esc(it.title)}</b>${it.choice ? `<span class="st-c">${esc(it.choice)}</span>` : ''}</li>`;
+      s += `<h4 class="st-ch-h">${esc(ch.name)}<small>${ch.items.length}</small></h4><ul class="st-log">`;
+      for (const it of ch.items) s += `<li><span class="st-d">${E().fmtDate(it.day)}</span><span class="st-lb"><b>${esc(it.title || '')}</b>${it.choice ? `<span class="st-c">${esc(it.choice)}</span>` : ''}</span></li>`;
       s += '</ul>';
     }
-    if (h.ending) s += `<div class="st-end"><b>${esc(h.ending.name)}</b>${esc(h.ending.text)}</div>`;
-    return s + '</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>';
+    if (h.ending) s += `<div class="st-end"><b>${esc(h.ending.name)}</b><span>${esc(h.ending.text)}</span></div>`;
+    return `${s}</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
   }
-  function toast(n) {
+  function openLog() {
+    const S = APP() && APP().state; if (!S) return;
+    APP().openModal(logHtml(S), { closable: true });
+    const el = $('#modal .modal'); if (el) el.classList.add('story-modal', 'story-logm');
+    if (BK.Sound) BK.Sound.play('ribbon');
+  }
+
+  /* ---------- тост о решении (как у остальных механик) ---------- */
+  function notify(n) {
+    if (!n) return;
     if (n.phase === 'scene') { openScene(); return; }
     const box = document.getElementById('toasts'); if (!box) return;
+    const end = n.phase === 'ending';
     const el = document.createElement('div');
-    el.className = 'toast sttoast' + (n.phase === 'ending' ? ' warn' : '');
+    el.className = 'toast sttoast ' + (end ? 'warn' : 'good');
     el.setAttribute('role', 'status');
-    if (n.phase === 'ending') {
-      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">История закончилась</span><b>${esc(n.name || '')}</b><span class="md">${esc(n.text || '')}</span></span>`;
+    if (end) {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">История закончилась</span><b>${esc(n.name || '')}</b>${n.text ? `<span class="md">${esc(n.text)}</span>` : ''}</span>`;
     } else {
-      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">${esc(n.title || '')}</span><b>${esc(n.choice || '')}</b>${n.out ? `<span class="md">${esc(n.out)}</span>` : ''}</span>`;
+      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">Решение</span><b>${esc(n.title || 'Сцена')}</b><span class="md">${esc(n.choice || '')}${n.out ? ` · ${esc(n.out)}` : ''}</span></span>`;
     }
-    el.addEventListener('click', () => { el.remove(); openLog(); });
     el.title = 'Открыть летопись';
+    el.addEventListener('click', () => { el.remove(); openLog(); });
     setTimeout(() => el.remove(), 9000);
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
-    if (BK.Sound) BK.Sound.play(n.phase === 'ending' ? 'warn' : 'fanfare');
+    if (BK.Sound) BK.Sound.play(end ? 'warn' : 'fanfare');
   }
-  function openLog() {
-    const S = APP().state; if (!S) return;
-    APP().openModal(logHtml(S), { closable: true });
-    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('story-modal');
+
+  /* ---------- клавиши: Enter/Space — дальше, Esc сцену НЕ закрывает ---------- */
+  function onKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!ui.scene && !ui.letter) return;
+    const A = APP(); if (!A || !A.ui || !A.ui.modal) return;
+    if (e.key === 'Escape') return;                       // сцену нельзя просто закрыть — нужно решение
+    if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+      const a = document.activeElement;
+      if (a && a.tagName === 'BUTTON') return;            // кнопка с фокусом работает сама
+      if (advance()) e.preventDefault();
+    }
   }
-  function boot() {
-    const A = APP() && APP().ACT; if (!A) return;
+
+  /* ---------- врезка в ACT ---------- */
+  // Лента «История» должна стоять в «Сводке» (docs/story.md §9.1), а «Сводку» собирает panels.js — он вне
+  // наших файлов. Поэтому оборачиваем BK.Panels.dash снаружи (тот же приём, что у achievements.js с движком):
+  // блок встаёт перед последними «ленивыми» секциями. Если в panels.js появится своя строка в dash — обёртку
+  // можно убрать; строка 951 panels.js (таб «Финансы») остаётся и дублирует ленту, её снимает владелец panels.js.
+  function wrapPanel() {
+    const P = BK.Panels;
+    if (!P || P.__storyDash || typeof P.dash !== 'function') return;
+    P.__storyDash = true;
+    const orig = P.dash;
+    P.dash = function (S) {
+      const html = orig.apply(this, arguments);
+      if (typeof html !== 'string') return html;
+      try {
+        const b = block(S); if (!b) return html;
+        const at = html.indexOf('<div class="sec lazy">');
+        return at > 0 ? html.slice(0, at) + b + html.slice(at) : html + b;
+      } catch (e) { return html; }
+    };
+  }
+  function boot(tries) {
+    wrapPanel();                                        // лента в «Сводке» — даже если ACT ещё не готов
+    const A = APP() && APP().ACT;
+    if (!A) { if ((tries || 0) < 20) setTimeout(() => boot((tries || 0) + 1), 150); return; }
+    if (A.__storyUI) return;
+    A.__storyUI = true;
     Object.assign(A, {
-      story: () => openScene(),
+      story: () => { if (!openScene()) APP().toast('История', 'Сейчас сюжет ничего не ждёт.', 'warn'); },
       storyLog: () => openLog(),
+      storyNext: () => { advance(); },
       storyPick: (d) => {
-        const S = APP().state;
+        const S = APP().state; if (!S) return;
+        if (ui.letter) { const m = ui.letter; ui.letter = null; markRead(S, m); if (!openScene()) { APP().closeModal(); return; } APP().refresh(); return; }
         const r = ST.resolve(S, +d.arg);
-        APP().save();
-        if (r.ok && r.out && r.out.length) APP().toast(r.scene.title, r.out.join('; '), 'good');
-        if (r.ok && S.lost) { APP().refresh(); return; }
-        if (!openScene('keep')) { APP().closeModal(); APP().refresh(); }
+        if (!r.ok) { APP().toast('Не получилось', r.msg || '', 'warn'); return; }
+        try { APP().save(); } catch (e) { /* автосейв ниже */ }
+        ui.line = 0;
+        if (S.lost) { APP().refresh(); return; }          // концовка: игра останавливается, итоги показывает app.js
+        if (!openScene('keep')) { APP().closeModal(); return; }
+        APP().refresh();                                  // панель за окном: снять «Ждёт решения»
+      },
+      storyRead: () => {
+        const S = APP().state; if (!S || !ui.letter) return;
+        const m = ui.letter; ui.letter = null; markRead(S, m);
+        if (!openScene()) { APP().closeModal(); return; }
+        APP().refresh();
       },
     });
   }
+  document.addEventListener('keydown', onKey);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.StoryUI = { openScene, openLog, block, logHtml, sceneHtml, toast, portrait, ICON };
+  BK.StoryUI = { openScene, openLog, block, logHtml, sceneHtml, notify, toast: notify, portrait, pxKey, PX_NOTE, ICON: BOOK, get ui() { return ui; } };
 })();
 
 /* ui/story-history.js */
