@@ -524,6 +524,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const wz = wasteFactors(S, ms), fcRec = fcPct / (cfg.FOODCOST_MULT || 1); let dayFc = 0; // списания — по себестоимости непроданного
     S.cache.waste = wz; S.cache.fcPct = (fcPct + fcRec * wz.waste) / wz.revMult; // фудкост с учётом списаний и скидки — для прогнозов
     let dayRev = 0, dayAgg = 0;
+    const waste0 = S.month.waste || 0; // списания месяца до сегодняшнего дня: учёту по продуктам (prodstats.js) отдаём списания дня точно
     const aggK = C().AGG_PACK + aggCommission(S);
     for (const r of rows) {
       if (!r) continue;
@@ -549,7 +550,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     spend(S, dayFc, 'fc');
     if (dayAgg) { S.month.aggRev = (S.month.aggRev || 0) + dayAgg; spend(S, dayAgg * aggK, 'agg'); } // комиссия агрегатора и упаковка
     S.cache.dayRev = dayRev;
-    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
+    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks, (S.month.waste || 0) - waste0); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
     // производство: загрузка
     for (const p of S.productions) {
       p.load = S.cache.capUse;
