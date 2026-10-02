@@ -2,6 +2,9 @@
    ВЕХИ — короткие задания «живости» (vision-plan §4 п. 4, этап В2).
    Чистая логика, без DOM: одна веха за раз, выдаётся сама и живёт 10–45 игровых дней.
    Взял — маленькая награда на пару недель (выше поток гостей, конверсия или чек), звук, тост и запись в журнал.
+   Иногда вместо временного бонуса веха открывает «редкий рецепт» — продукт, который обычным путём требует
+   оборудования цеха, можно поставить в меню без покупки (см. eqUnlocked в engine.js). Рецепт постоянный,
+   но не бесконечный: не больше CFG.MILES.RECIPES за игру.
    Не успел — веха просто уходит, без штрафа (принцип §2: ошибка не наказывает навсегда).
 
    Состояние (старые сохранения получают значения по умолчанию — ensure()):
@@ -10,7 +13,8 @@
        cur: null,                 // текущая веха: { k, at, until, need, base, got, spot, num, best }
        nextDay: 0,                // раньше этого дня новую веху не выдаём
        n: 0, fail: 0,             // взято / не успел
-       done: [{ k, day }],        // последние взятые (не больше KEEP)
+       done: [{ k, day }],        // последние взятые (не больше KEEP); у рецептовых — ещё recipe: id
+       recipes: [id, …],          // открытые рецепты (старые сохранения — пусто)
        gAvg: 0, chk: 0,           // скользящие средние: гостей в день и среднего чека сети
        rng: 20261001              // свой ГСЧ — поток случайностей движка не сдвигается
      }
@@ -33,12 +37,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- состояние ---------------- */
   // Важно: ensure() дозаполняет поля в существующем объекте, а не заменяет его — иначе ссылка на состояние
   // «стареет» после любого вложенного вызова (rnd → ensure) и запись прогресса теряется.
-  const DEF = { v: 1, on: true, cur: null, nextDay: 0, n: 0, fail: 0, done: null, gAvg: 0, chk: 0, rng: 20261001 };
+  const DEF = { v: 1, on: true, cur: null, nextDay: 0, n: 0, fail: 0, done: null, recipes: null, gAvg: 0, chk: 0, rng: 20261001 };
   function ensure(S) {
     if (!S) return null;
     const M = S.miles || (S.miles = {});
-    for (const k in DEF) if (M[k] === undefined) M[k] = k === 'done' ? [] : DEF[k];
+    for (const k in DEF) if (M[k] === undefined) M[k] = (k === 'done' || k === 'recipes') ? [] : DEF[k];
     if (!Array.isArray(M.done)) M.done = [];
+    if (!Array.isArray(M.recipes)) M.recipes = []; // старые сохранения — рецептов нет
     if (!M.cool || typeof M.cool !== 'object') M.cool = {}; // вид вехи, который не вышел, какое-то время не предлагаем
     if (typeof M.rng !== 'number' || !M.rng) M.rng = 20261001;
     if (M.nextDay == null) M.nextDay = S.day || 0;
@@ -206,6 +211,73 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const RW_NAME = { traffic: 'гостям сети', conv: 'конверсии', check: 'среднему чеку', aggOrders: 'заказам доставки' };
   const RW_SHORT = { traffic: 'гостям', conv: 'конверсии', check: 'чеку', aggOrders: 'заказам' };
 
+  /* ---------------- редкий рецепт как награда за веху (мелкая задача плана) ----------------
+     Продукт с требованием оборудования (`req` в data/world.js) можно поставить в меню без покупки.
+     Доступ проверяет движок: eqUnlocked(S, req, id) спрашивает нашу recipeOpen(S, id, req).
+     Рецепт берём из умеренных продуктов (не самые ходовые и не самые маржинальные) и только те,
+     чьё оборудование у игрока ещё не куплено, — иначе награда ничего не даёт. */
+  const useEquip = (S, req) => !!(req && (S.productions || []).some((p) => p.status === 'open' && (p.equip[req] || 0) > 0));
+  const recipeText = (p) => `Открыт рецепт: ${p.name} — теперь его можно ставить в меню без оборудования`;
+  // Открыт ли рецепт продукта. Без id (окно шеф-пекаря спрашивает только «какое нужно оборудование»,
+  // а ui/menu-stats.js — чужой файл) считаем продукт открытым, если его рецепт открыт и он сам сейчас
+  // в новинках шефа: их мы подкладываем туда в chefPluck и не оставляем других продуктов с тем же
+  // оборудованием, поэтому лишнего окно не покажет, а движок всё равно проверит по id.
+  function recipeOpen(S, id, req) {
+    const K_ = K(); if (!K_ || !K_.ON || !S) return false;
+    const R = S.miles && Array.isArray(S.miles.recipes) ? S.miles.recipes : null;
+    if (!R || !R.length) return false;
+    if (id) return R.indexOf(id) >= 0;
+    if (!req || !S.chef || !Array.isArray(S.chef.pending)) return false;
+    return R.some((x) => { const p = E().byId(BK.PRODUCTS, x); return !!p && p.req === req && S.chef.pending.indexOf(x) >= 0; });
+  }
+  function recipePool(S) {
+    const M = ensure(S), K_ = K();
+    return (BK.PRODUCTS || []).filter((p) => p.req
+      && p.pop <= K_.RECIPE_MAX_POP && p.fc >= K_.RECIPE_MIN_FC
+      && M.recipes.indexOf(p.id) < 0
+      && !(S.menu || []).some((m) => m.id === p.id)
+      && !useEquip(S, p.req));
+  }
+  // пора ли вместо обычного бонуса дать рецепт: с RECIPES_AFTER-й взятой вехи и дальше каждую RECIPES_EVERY-ю
+  function recipeDue(S) {
+    const M = ensure(S), K_ = K(), ord = M.n + 1;
+    return M.recipes.length < K_.RECIPES && ord >= K_.RECIPES_AFTER && (ord - K_.RECIPES_AFTER) % K_.RECIPES_EVERY === 0;
+  }
+  function grantRecipe(S) {
+    const M = ensure(S), pool = recipePool(S); if (!pool.length) return null;
+    const p = pool[Math.floor(rnd(S) * pool.length)];
+    M.recipes.push(p.id);
+    return p;
+  }
+  function recipeList(S) {
+    const M = ensure(S);
+    return M.recipes.map((id) => {
+      const p = E().byId(BK.PRODUCTS, id) || {}, eq = p.req ? (E().byId(BK.EQUIPMENT, p.req) || {}) : {};
+      return { id, name: p.name || id, req: p.req || null, reqName: eq.name || '', inMenu: (S.menu || []).some((m) => m.id === id) };
+    });
+  }
+  // Открытый рецепт нужно ещё поставить в меню, а меню меняет шеф-пекарь раз в год.
+  // Поэтому, когда приходят новинки, кладём в них открытый рецепт (и убираем оттуда продукты
+  // с тем же оборудованием — иначе окно шефа не отличит их от рецепта).
+  function chefPluck(S) {
+    if (!K() || !K().ON || !S || S.phase !== 'play') return;
+    if (BK.Stage1 && BK.Stage1.on && BK.Stage1.on(S)) return;
+    if (!S.chef || !Array.isArray(S.chef.pending) || !S.chef.pending.length) return;
+    const M = S.miles; if (!M || !Array.isArray(M.recipes) || !M.recipes.length) return; // без ensure — не создаём состояние
+    const miss = M.recipes.filter((x) => { const p = E().byId(BK.PRODUCTS, x); return !!p && p.req && !useEquip(S, p.req) && !(S.menu || []).some((m) => m.id === x); });
+    if (!miss.length) return;
+    const rp = E().byId(BK.PRODUCTS, miss[0]);
+    S.chef.pending = S.chef.pending.filter((y) => { const q = E().byId(BK.PRODUCTS, y); return !(q && q.req === rp.req && y !== rp.id); });
+    if (S.chef.pending.indexOf(rp.id) < 0) S.chef.pending.unshift(rp.id);
+    const want = (BK.CFG.CHEF_OFFER || 5);
+    for (let i = 0; S.chef.pending.length < want && i < 80; i++) { // добираем новинки до прежнего числа
+      const cand = (BK.PRODUCTS || []).filter((q) => q.req !== rp.req && !M.recipes.includes(q.id)
+        && !(S.menu || []).some((m) => m.id === q.id) && S.chef.pending.indexOf(q.id) < 0);
+      if (!cand.length) break;
+      S.chef.pending.push(cand[Math.floor(rnd(S) * cand.length)].id);
+    }
+  }
+
   /* ---------------- выдача / награда / итог ---------------- */
   function logLine(S, text, kind) { const I_ = I(); if (I_.log) I_.log(S, text, kind); }
 
@@ -244,13 +316,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   function complete(S, m) {
-    const M = ensure(S), t = KINDS[m.k].txt(S, m), bonus = reward(S, m);
+    const M = ensure(S), t = KINDS[m.k].txt(S, m);
+    const rec = recipeDue(S) ? grantRecipe(S) : null; // редкий рецепт вместо временного бонуса
+    const bonus = rec ? recipeText(rec) : reward(S, m);
     M.n++; M.takeK = M.takeK || {}; M.takeK[m.k] = (M.takeK[m.k] || 0) + 1;
     M.cur = null; M.nextDay = S.day + rint(S, K().GAP[0], K().GAP[1]);
-    M.done.push({ k: m.k, day: S.day, t: t.t });
+    M.done.push({ k: m.k, day: S.day, t: t.t, recipe: rec ? rec.id : null });
     if (M.done.length > K().KEEP) M.done = M.done.slice(-K().KEEP);
     logLine(S, `Веха взята: ${t.t}${bonus ? ` — ${bonus}` : ''}`, 'good');
-    if (S.notify) S.notify.push({ type: 'mile', phase: 'done', id: m.k, title: t.t, bonus });
+    if (S.notify) S.notify.push({ type: 'mile', phase: 'done', id: m.k, title: t.t, bonus, recipe: rec ? rec.name : null });
   }
   function expire(S, m) {
     const M = ensure(S), t = KINDS[m.k].txt(S, m);
@@ -319,7 +393,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return out;
   }
   const done = (S) => { const M = ensure(S); return M ? M.done.slice().reverse() : []; };
-  const stats = (S) => { const M = ensure(S); return { n: M.n, fail: M.fail, cur: M.cur, nextDay: M.nextDay, on: M.on, takeK: M.takeK || {}, failK: M.failK || {} }; };
+  const stats = (S) => { const M = ensure(S); return { n: M.n, fail: M.fail, cur: M.cur, nextDay: M.nextDay, on: M.on, takeK: M.takeK || {}, failK: M.failK || {}, recipes: M.recipes.length }; };
   function setOn(S, v) { const M = ensure(S); M.on = !!v; if (!v) M.cur = null; return M.on; }
   function reset(S) { const M = ensure(S); M.cur = null; M.nextDay = S.day + 3; return M; }
 
@@ -331,11 +405,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     Eng.tick = function (S) {
       const pre = S ? S.day : null;
       const r = ot.apply(this, arguments);
-      if (S && S.day !== pre) { try { day(S); } catch (e) { /* вехи не должны ломать игру */ } }
+      if (S && S.day !== pre) {
+        try { day(S); } catch (e) { /* вехи не должны ломать игру */ }
+        try { chefPluck(S); } catch (e) { /* и новинки шефа тоже */ }
+      }
       return r;
     };
   }
   if (BK.Engine) wrap();
 
-  BK.Miles = { ensure, active, issue, day, info, bonuses, done, stats, setOn, reset, KINDS, ORDER, GROUP, NAME };
+  BK.Miles = { ensure, active, issue, day, info, bonuses, done, stats, setOn, reset, recipeOpen, recipeList, recipeMax: () => K().RECIPES, KINDS, ORDER, GROUP, NAME };
 })();
