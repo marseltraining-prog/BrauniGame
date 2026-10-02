@@ -72,6 +72,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     if (BK.Ach) BK.Ach.ensure(st); // достижения: уже выполненные в старом сохранении начисляются тихо
+    if (BK.Miles) BK.Miles.ensure(st); // вехи (живость): старые сохранения получают значения по умолчанию
+    if (BK.Thoughts) BK.Thoughts.ensure(st); // мысли гостей недели
     if (BK.Corp) BK.Corp.ensure(st); // Россия: карта активного города; старое сохранение с оборотом ≥ 10 млрд — выход открывается сразу
     return st;
   }
@@ -98,6 +100,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><div class="gr"><span class="k" id="hud-goal-k"><span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span></span><span class="gp" id="hud-goal-p"></span></div><div class="gr"><span class="v" id="hud-goal"></span><span class="dl muted" id="hud-goal-eta"></span></div><div id="hud-goalbar"></div></div>
     </div>
     <div class="hudbtns">
+      <button class="iconbtn" data-act="sound" aria-label="Звук" title="Звук"></button>
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть" aria-label="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры" aria-label="Меню игры">${ICON.gear}</button>
@@ -114,6 +117,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   </div>
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="coins" aria-hidden="true"></div>
 <div id="modal"></div>
 <div id="start"></div>`);
     map = new BK.MapView($('#map'), { onClick: mapClick, tipFor });
@@ -193,10 +197,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
+    openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+    openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
@@ -205,6 +211,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- цикл ---------------- */
   function setSpeed(v) { ui.speed = v; acc = 0; renderHud(); }
+  // живость (§4 п. 3): заметили, что открылась точка или цех, — колокольчик с ленточкой и монетки у счёта
+  let openSeen = null;
+  function checkOpening() {
+    const now = S.stores.filter((st) => st.status !== 'opening').length + S.productions.filter((p) => p.status === 'open').length;
+    if (openSeen != null && now > openSeen) {
+      if (BK.Sound) BK.Sound.play('ribbon');
+      if (BK.LivelyUI) BK.LivelyUI.burst(8);
+    }
+    openSeen = now;
+  }
   function frame(t) {
     requestAnimationFrame(frame);
     if (!S) return;
@@ -220,6 +236,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         acc -= ms; n++;
         E.tick(S);
         if (BK.Rewind) BK.Rewind.record(S); // «Переиграть»: снимок на 1-е число
+        checkOpening(); // живость: «дзынь» и монетки, когда открылась точка или цех
         handleNotify();
         if (ui.modal || S.ev.pending || S.chef.pending) { acc = 0; break; }
       }
@@ -246,12 +263,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const q = S.notify; S.notify = [];
     for (const n of q) {
       if (n.type === 'toast') toast(n.title, n.text, n.kind, null, n.storeId ? () => ACT.openStore({ arg: n.storeId }) : null);
-      else if (n.type === 'event') toast(n.ev.title, n.ev.text, n.ev.kind === 'pos' ? 'pos' : 'neg', n.ev.effectsText);
-      else if (n.type === 'month') { save(); }
+      else if (n.type === 'event') { toast(n.ev.title, n.ev.text, n.ev.kind === 'pos' ? 'pos' : 'neg', n.ev.effectsText); if (BK.Sound) BK.Sound.play(n.ev.kind === 'pos' ? 'coin' : 'warn'); }
+      else if (n.type === 'month') { save(); if (BK.LivelyUI) BK.LivelyUI.monthFx(n.profit); }
       else if (n.type === 'year') ui.modalQueue.push(() => openYearModal(n));
-      else if (n.type === 'won') ui.modalQueue.unshift(() => openWinModal());
-      else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
+      else if (n.type === 'won') { if (BK.Sound) BK.Sound.play('fanfare'); ui.modalQueue.unshift(() => openWinModal()); }
+      else if (n.type === 'lost') { if (BK.Sound) BK.Sound.play('bad'); ui.modalQueue.unshift(() => openLostModal()); }
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
+      else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
@@ -884,6 +902,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     applyTheme(loadTheme());
     shell();
     applyTheme(ui.theme);
+    if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
     requestAnimationFrame(frame);

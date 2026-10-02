@@ -143,8 +143,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0; cursor: pointer; display: inline-grid; place-items: center; width: 34px; height: 34px; color: var(--ink-2); }
 .iconbtn:hover { color: var(--ink); border-color: var(--ink-3); }
 .iconbtn svg { width: 16px; height: 16px; }
-@media (max-width: 1400px) { .hud .spk { display: none; } .stats { gap: 16px; } .hud { gap: 14px; } }
-@media (max-width: 1340px) { .brand-sub, .s-res { display: none; } .hud .goal { width: 190px; } }
+@media (max-width: 1400px) { .hud .spk { display: none; } .stats { gap: 16px; } .hud { gap: 12px; } }
+/* в правом верхнем углу стало на одну кнопку больше (звук): на 1341–1520 px поджимаем отступы и цель,
+   чтобы HUD не вылезал за экран (без обрезки содержимого — обрезать цель нельзя, из неё пропадал счётчик) */
+@media (min-width: 1341px) and (max-width: 1500px) { .hud { gap: 12px; } .stats { gap: 15px; } .hud .goal { width: 190px; } }
+@media (max-width: 1370px) { .brand-sub, .s-res { display: none; } .hud .goal { width: 190px; } }
 @media (min-width: 821px) and (max-width: 1180px) { .s-rev, .vsep { display: none; } }
 @media (min-width: 821px) and (max-width: 1100px) { .hud .goal { width: 170px; } .hud { gap: 12px; } .stats { gap: 14px; } .brand-name { max-width: 130px; } }
 @media (min-width: 821px) and (max-width: 960px) { .brand-tx, .s-st { display: none; } }
@@ -477,6 +480,18 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 /* узкий экран: категория продукта в окне шефа — отдельной строкой, иначе длинная плашка («Башкирская и татарская») наезжает на название */
 @media (max-width: 480px) { .chefitem .chip { grid-column: 2 / span 2; grid-row: 2; justify-self: start; } .chefitem .cm { grid-row: 3; } .chefitem input { grid-row: 1 / span 3; align-self: start; margin-top: 2px; } }
 @media (max-width: 374px) { .stat .v { font-size: 13.5px; letter-spacing: -.03em; } .stats { column-gap: 12px; } .hud { column-gap: 6px; } }
+/* очень узкий телефон: в одну строку скорость, дата и кнопки не влезают — группа скорости вылезала из своей колонки
+   и накрывала кнопки в правом верхнем углу HUD. Ужимаем скорость, дату и кнопки, чтобы они не наезжали друг на друга. */
+@media (max-width: 430px) {
+  .hud { gap: 6px; column-gap: 6px; padding-inline: 10px; }
+  .clock { gap: 4px; }
+  .date { font-size: 11.5px; }
+  .speed { gap: 0; padding: 1px; }
+  .speed button { width: 34px; height: 36px; border-radius: 5px; }
+  .speed svg { width: 13px; height: 12px; }
+  .iconbtn { width: 36px; height: 36px; }
+  .hudbtns { gap: 4px; }
+}
 
 /* ---------- «Сводка» в стиле макета 1: цель, карточки с трендами, полоса команды, график 12 мес., «Требует внимания» ---------- */
 .caps { font-family: var(--f-display); font-size: 10.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
@@ -1161,6 +1176,87 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .gr-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gr-left { margin-left: 0; flex-basis: 100%; }
   .gr-legend .hint { margin-left: 0; flex-basis: 100%; }
+}
+
+/* «Живость» (этап В2): вехи, «что говорят гости», звук и монетки на 1-е число. См. src/ui/lively-ui.js. */
+
+/* ---------- вехи ---------- */
+.sec.mil .mil-h3, .sec.talk .talk-h3 { display: inline-flex; align-items: center; gap: 6px; }
+.sec.mil .mil-h3 svg, .sec.talk .talk-h3 svg { width: 14px; height: 14px; color: var(--crust); }
+.sec.talk .talk-h3 small { margin-left: 2px; }
+.sec.mil .count { font-family: var(--f-mono); font-size: 11px; font-weight: 600; background: var(--crust-soft); color: var(--crust-t); border-radius: 9px; padding: 1px 7px; margin-left: 6px; }
+.mil-lead { margin: 0; }
+.mil-cur { border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; padding: 9px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
+.mil-cur.soon { border-left-color: var(--warn); }
+.mil-cur.big { padding: 11px 12px; }
+.mil-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mil-h b { font-size: 13px; }
+.mil-tag { flex: none; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 6px; padding: 2px 6px; }
+.mil-left { margin-left: auto; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.mil-d { font-size: 12px; color: var(--ink-2); }
+.mil-m { height: 8px; }
+.mil-f { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.mil-val { font-family: var(--f-mono); font-weight: 600; }
+.mil-rw { color: var(--good-t); font-size: 11px; }
+.mil-empty { font-size: 13px; color: var(--ink-3); padding: 6px 0; }
+.mil-bonus { display: flex; flex-wrap: wrap; gap: 5px; }
+.mil-bonus .chip { font-size: 11px; }
+.mil-acts { margin-top: 2px; }
+.mil-stat { display: flex; gap: 16px; font-size: 13px; }
+.mil-stat span { display: flex; align-items: baseline; gap: 5px; color: var(--ink-2); }
+.mil-stat b { font-family: var(--f-mono); font-size: 15px; color: var(--ink); }
+.mil-groups { display: flex; flex-direction: column; gap: 8px; }
+.mil-g { display: flex; flex-direction: column; gap: 4px; }
+.mil-g > b { font-size: 12px; color: var(--ink-2); }
+.mil-ks { display: flex; flex-wrap: wrap; gap: 5px; }
+.mil-k { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.mil-k.now { background: var(--crust-soft); color: var(--crust-t); font-weight: 600; }
+.mil-hist { display: flex; flex-direction: column; }
+.mil-hl { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.mil-hl:first-child { border-top: 0; }
+.mil-hl b { color: var(--ink-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.mil-bl { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.mil-bl:first-child { border-top: 0; }
+.mil-bonus-sec { gap: 4px; }
+
+/* ---------- что говорят гости ---------- */
+.talk-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.talk-l li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.talk-l li:first-child { border-top: 0; }
+.talk-i { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-3); }
+.talk-i svg { width: 15px; height: 15px; }
+.talk-bad .talk-i { background: var(--bad-soft); color: var(--bad-t); }
+.talk-good .talk-i { background: var(--good-soft); color: var(--good-t); }
+.talk-tx { min-width: 0; }
+.talk-tx b { display: block; font-size: 13px; font-weight: 600; }
+.talk-tx small { display: block; font-size: 12px; color: var(--ink-3); }
+.talk-foot { margin: 0; }
+
+/* ---------- монетки на 1-е число ---------- */
+#coins { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+#coins .coin { position: fixed; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd98a, var(--crust) 70%); border: 1px solid #a8641a;
+  animation: coinpop 1.25s cubic-bezier(.22,.7,.3,1) forwards; }
+@keyframes coinpop {
+  0% { transform: translate(0, 0) scale(.4); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0), -58px) scale(1.05); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { #coins { display: none; } }
+
+/* ---------- звук ---------- */
+.snd-row > span { display: flex; flex-direction: column; gap: 1px; }
+.snd-row .hint { font-size: 11px; }
+.hud .iconbtn[data-act="sound"][aria-pressed="false"] { color: var(--ink-3); opacity: .75; }
+
+/* лента открытия точки на карте: короткая вспышка у нового маркера */
+@keyframes ribbonfin { 0% { opacity: 0; transform: scale(.4); } 40% { opacity: .9; } 100% { opacity: 0; transform: scale(1.9); } }
+.markers .m-store.fresh .halo { animation: ribbonfin 1.6s ease-out 1; }
+
+@media (max-width: 560px) {
+  .talk-l li { grid-template-columns: 24px minmax(0, 1fr); }
+  .talk-l li .linkbtn { grid-column: 2; justify-self: start; }
+  .mil-stat { gap: 12px; }
 }
 
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
@@ -2774,6 +2870,20 @@ BK.CFG.MANAGERS = {
   MKT: 0.04,                     // «маркетинг»: 4% прибыли
   VERDICT_DAYS: 30,              // через сколько дней после «Сделать» в статистике виден итог (полезно / лишнее)
 };
+
+/* Живость (vision-plan §4, этап В2): короткие вехи, мысли гостей недели и звук.
+   Логика — src/milestones.js (BK.Miles) и src/thoughts.js (BK.Thoughts), интерфейс — src/ui/lively-ui.js, звук — src/sound.js.
+   В Node вехи по умолчанию выключены (sim/load.js ставит ON:false, включает `BK_MILES=1`): канонические прогоны ботов
+   первого акта остаются побайтно прежними, а темп вех измеряет отдельный `node sim/miles.js`. */
+BK.CFG.MILES = {
+  ON: true,                      // выключатель всей системы (в браузере включена)
+  GAP: [30, 70],                 // сколько дней до следующей вехи после взятой
+  GAP_FAIL: [14, 30],            // после «не вышло» — короче: игрок не должен ждать
+  KEEP: 120,                     // сколько взятых вех держим в состоянии
+  COOL_FAIL: 400,                // не вышедший вид вехи не предлагаем столько дней
+};
+/* Мысли гостей недели (§4 п. 2): каждый день копим «что говорят», раз в WEEK дней — итог из SHOW мыслей. */
+BK.CFG.THOUGHTS = { WEEK: 7, SHOW: 3 };
 
 /* Пролог «Бариста» (стадия 0, docs/vision-plan.md §3.1.1). Логика — src/prologue.js (BK.Prologue), интерфейс — src/ui/prologue.js.
    Деньги — в рублях «в ценах старта», инфляции в прологе нет (кроме события «подорожала аренда»).
@@ -9968,6 +10078,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cnt('ruS200', 'russia', '🧱', 'e', 'Двести точек', '200 точек во всех городах сети', netStores, 200),
     cnt('ruS300', 'russia', '🏗', 'e', 'Триста точек', '300 точек во всех городах сети', netStores, 300),
     flag('ruFed', 'russia', '🦅', 'e', 'Федеральная сеть', '10 городов по 10+ точек и оборот сети 40 млрд ₽ за 12 месяцев', (S) => !!(S.corp && S.corp.fed && S.corp.fed.goalDay != null)),
+    // Вехи (живость, vision-plan §4 п. 4): короткие задания. В прогонах ботов вех нет — S.miles не создаётся,
+    // поэтому условия спокойно возвращают 0 и баланс/побайтность первого акта не меняются.
+    cnt('mil10', 'city', '🚩', 'c', 'Десять вех', 'Взять десять коротких вех', (S) => (S.miles ? S.miles.n : 0), 10),
+    cnt('mil50', 'city', '🚩', 'r', 'Пятьдесят вех', 'Взять пятьдесят коротких вех', (S) => (S.miles ? S.miles.n : 0), 50),
+    cnt('mil150', 'city', '🚩', 'e', 'Сто пятьдесят вех', 'Взять сто пятьдесят коротких вех', (S) => (S.miles ? S.miles.n : 0), 150),
     // Секретные (до получения скрыты)
     flag('s13', 'secret', '🐈', 'c', 'Чёртова дюжина', 'Открыть точку №13', (S) => (S.flags.storeNum || 0) >= 13, { secret: true }),
     flag('sPrice', 'secret', '👑', 'c', 'Хлеб по цене золота', 'Все цены в меню на 50% выше рекомендованных', (S) => S.menu.length > 0 && S.menu.every((m) => m.pm >= 1.5), { secret: true }),
@@ -11929,6 +12044,625 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.Rewind = { KEY, max, record, list, can, restore, attach, persist, flush, freshJson, freeStorage, forget, status, take, strip, _games: games };
+})();
+
+/* sound.js */
+/* =====================================================================
+   ЗВУК «Хлебной карты» (vision-plan §4 п. 3, этап В2 «Живость»).
+   Все звуки синтезируются кодом через WebAudio — файлов нет, сборка не растёт.
+   Тихие по умолчанию (громкость ниже обычной), включаются кнопкой в HUD и в «Меню игры»;
+   выбор игрока — localStorage['bk-ufa-sound'] ('0' — выключено, '1' — включено; по умолчанию включено, но тихо).
+
+   Что звучит (по §4 п. 3):
+     coin    — касса: короткий «дзынь-дзынь» (мелкое поступление, продажа);
+     money   — 1-е число: горсть монет и касса (итоги месяца);
+     ribbon  — открытие точки/цеха: колокольчик с ленточкой;
+     fanfare — веха (короткое задание выполнено);
+     sparkle — достижение;
+     warn    — предупреждение (негативное событие, проблема);
+     bad     — банкротство/провал;
+     click   — очень тихий отклик интерфейса (кнопки-действия).
+
+   Требования к надёжности: модуль не должен ломать игру, если WebAudio нет (старый Safari, тесты, Node):
+   всё в try/catch, `play` в таком случае просто ничего не делает. Звук не играет в скрытой вкладке.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const KEY = 'bk-ufa-sound';
+  const MASTER = 0.16;              // «тихие по умолчанию»: общая громкость невелика
+  const RATE = 0.045;               // один и тот же звук не чаще раза в 45 мс (на ×10 иначе трещит)
+  let on = null, ctx = null, master = null, last = {};
+
+  function stored() { try { const v = localStorage.getItem(KEY); return v == null ? null : v === '1'; } catch (e) { return null; } }
+  function isOn() { if (on == null) on = stored(); return on !== false; } // нет записи — включено (тихо)
+  function set(v) {
+    on = !!v;
+    try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {}
+    if (on) resume(); else stopAll();
+    syncBtns();
+    return on;
+  }
+  function toggle() { return set(!isOn()); }
+
+  function ac() {
+    if (ctx) return ctx;
+    const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = MASTER; master.connect(ctx.destination);
+    } catch (e) { ctx = null; }
+    return ctx;
+  }
+  function resume() { const c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} } }
+  function stopAll() { if (master) { try { master.gain.value = 0; setTimeout(() => { if (master) master.gain.value = MASTER; }, 60); } catch (e) {} } }
+
+  /* ---------- кирпичики синтеза ---------- */
+  // нота: осциллятор с огибающей. o: { f, f2, t (задержка), d (длина), type, vol, sweep }
+  function tone(o) {
+    const c = ac(); if (!c || !master) return;
+    const t0 = c.currentTime + (o.t || 0), d = o.d || 0.1;
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'triangle';
+    osc.frequency.setValueAtTime(Math.max(20, o.f), t0);
+    if (o.f2) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.f2), t0 + d * (o.sweep || 1));
+    const v = (o.vol == null ? 1 : o.vol);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + d + 0.03);
+  }
+  // шум (касса, «шшш» монет): короткий буфер с полосовым фильтром
+  function noise(o) {
+    const c = ac(); if (!c || !master) return;
+    const t0 = c.currentTime + (o.t || 0), d = o.d || 0.08;
+    const n = Math.max(1, Math.floor(c.sampleRate * d));
+    const buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.2);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = o.hz || 2600; f.Q.value = o.q || 1.1;
+    const g = c.createGain(); g.gain.value = o.vol == null ? 0.5 : o.vol;
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start(t0);
+  }
+
+  const RECIPES = {
+    coin: (c) => { tone({ f: 1046, d: 0.07, vol: 0.5 }); tone({ f: 1568, d: 0.11, t: 0.055, vol: 0.42 }); noise({ hz: 3600, d: 0.05, vol: 0.16, t: 0.01 }); },
+    money: (c) => {
+      noise({ hz: 2400, d: 0.09, vol: 0.3 });
+      const ns = [1568, 1397, 1245, 1046];
+      ns.forEach((f, i) => tone({ f, d: 0.09, t: 0.03 + i * 0.055, vol: 0.34 - i * 0.03 }));
+      tone({ f: 2093, d: 0.16, t: 0.27, vol: 0.3 });
+    },
+    ribbon: (c) => { tone({ f: 880, f2: 1420, d: 0.16, type: 'sine', vol: 0.42, sweep: 0.7 }); tone({ f: 1318, d: 0.5, t: 0.1, type: 'sine', vol: 0.34 }); tone({ f: 2637, d: 0.42, t: 0.1, type: 'sine', vol: 0.16 }); },
+    fanfare: (c) => { [523, 659, 784, 1046].forEach((f, i) => { tone({ f, d: i === 3 ? 0.34 : 0.13, t: i * 0.1, vol: 0.34 }); tone({ f: f * 2, d: 0.1, t: i * 0.1, vol: 0.1 }); }); },
+    sparkle: (c) => { tone({ f: 1318, d: 0.09, vol: 0.3 }); tone({ f: 1976, d: 0.16, t: 0.08, vol: 0.26 }); tone({ f: 2637, d: 0.2, t: 0.16, vol: 0.16 }); },
+    warn: (c) => { tone({ f: 392, d: 0.13, type: 'sine', vol: 0.3 }); tone({ f: 311, d: 0.2, t: 0.12, type: 'sine', vol: 0.28 }); },
+    bad: (c) => { tone({ f: 196, f2: 130, d: 0.5, type: 'sawtooth', vol: 0.22, sweep: 1 }); tone({ f: 98, d: 0.6, t: 0.04, type: 'sine', vol: 0.24 }); },
+    click: (c) => { tone({ f: 1500, d: 0.025, type: 'square', vol: 0.1 }); },
+  };
+
+  // Главный вход. Возвращает true, если звук действительно попытались проиграть.
+  function play(name, o) {
+    if (!name || !RECIPES[name] || !isOn()) return false;
+    if (typeof document !== 'undefined' && document.hidden) return false; // в скрытой вкладке молчим
+    const now = (globalThis.performance ? performance.now() : Date.now());
+    if (last[name] && now - last[name] < RATE) return false;
+    last[name] = now;
+    try { resume(); RECIPES[name](o || {}); } catch (e) { /* WebAudio недоступен — просто тишина */ }
+    return true;
+  }
+
+  /* ---------- кнопки в интерфейсе ---------- */
+  const IC_ON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6h2.4L9 3.2v9.6L5.4 10H3z" fill="currentColor"/><path d="M11 5.6a3.4 3.4 0 0 1 0 4.8M12.8 3.9a6 6 0 0 1 0 8.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  const IC_OFF = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6h2.4L9 3.2v9.6L5.4 10H3z" fill="currentColor"/><path d="M11.2 6.4l3.6 3.6M14.8 6.4l-3.6 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  function syncBtns() {
+    if (typeof document === 'undefined') return;
+    const v = isOn();
+    document.querySelectorAll('[data-act="sound"]').forEach((b) => {
+      b.innerHTML = v ? IC_ON : IC_OFF;
+      b.setAttribute('aria-pressed', String(v));
+      b.setAttribute('aria-label', v ? 'Звук включён. Выключить' : 'Звук выключен. Включить');
+      b.title = v ? 'Звук: включён (тихий). Нажмите, чтобы выключить' : 'Звук: выключен. Нажмите, чтобы включить';
+    });
+    document.querySelectorAll('[data-snd]').forEach((b) => b.setAttribute('aria-pressed', String(String(v) === b.dataset.snd)));
+    document.documentElement.classList.toggle('sound-on', v);
+  }
+
+  BK.Sound = {
+    get on() { return isOn(); },
+    play, toggle, sync: syncBtns,
+    set,
+    // первый жест игрока — можно включать звук (политика браузеров)
+    arm() {
+      if (typeof document === 'undefined' || BK.Sound.__armed) return;
+      BK.Sound.__armed = true;
+      const go = () => { if (isOn()) resume(); };
+      document.addEventListener('pointerdown', go, { passive: true });
+      document.addEventListener('keydown', go);
+    },
+    IC_ON, IC_OFF,
+  };
+  if (typeof document !== 'undefined') {
+    const init = () => { syncBtns(); try { const m = matchMedia('(prefers-color-scheme: dark)'); if (m && m.addEventListener) m.addEventListener('change', syncBtns); } catch (e) {} };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else setTimeout(init);
+  }
+})();
+
+/* milestones.js */
+/* =====================================================================
+   ВЕХИ — короткие задания «живости» (vision-plan §4 п. 4, этап В2).
+   Чистая логика, без DOM: одна веха за раз, выдаётся сама и живёт 10–45 игровых дней.
+   Взял — маленькая награда на пару недель (выше поток гостей, конверсия или чек), звук, тост и запись в журнал.
+   Не успел — веха просто уходит, без штрафа (принцип §2: ошибка не наказывает навсегда).
+
+   Состояние (старые сохранения получают значения по умолчанию — ensure()):
+     S.miles = {
+       v: 1, on: true,            // выключатель системы
+       cur: null,                 // текущая веха: { k, at, until, need, base, got, spot, num, best }
+       nextDay: 0,                // раньше этого дня новую веху не выдаём
+       n: 0, fail: 0,             // взято / не успел
+       done: [{ k, day }],        // последние взятые (не больше KEEP)
+       gAvg: 0, chk: 0,           // скользящие средние: гостей в день и среднего чека сети
+       rng: 20261001              // свой ГСЧ — поток случайностей движка не сдвигается
+     }
+
+   Подключение: обёртка `BK.Engine.tick` (как achievements.js и trainers.js) — сам движок не менялся.
+   Награда — через обычные S.mods с пометкой src: 'mile' (движок знает типы traffic / conv / check / aggOrders).
+   Числа — CFG.MILES (config.js). Темп проверяет `node sim/miles.js`. Интерфейс — src/ui/lively-ui.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, K = () => BK.CFG.MILES;
+  const I = () => (BK.Engine._int || {});
+  const open = (S) => (S.stores || []).filter((st) => st.status !== 'opening');
+  const n0 = (v) => Math.round(v).toLocaleString('ru-RU');
+  const fm = (v) => (BK.fmtMoney ? BK.fmtMoney(v) : Math.round(v) + ' ₽');
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rnd2 = (v) => Math.round(v * 10) / 10;
+  const step = (v, s) => Math.round(v / s) * s;
+
+  /* ---------------- состояние ---------------- */
+  // Важно: ensure() дозаполняет поля в существующем объекте, а не заменяет его — иначе ссылка на состояние
+  // «стареет» после любого вложенного вызова (rnd → ensure) и запись прогресса теряется.
+  const DEF = { v: 1, on: true, cur: null, nextDay: 0, n: 0, fail: 0, done: null, gAvg: 0, chk: 0, rng: 20261001 };
+  function ensure(S) {
+    if (!S) return null;
+    const M = S.miles || (S.miles = {});
+    for (const k in DEF) if (M[k] === undefined) M[k] = k === 'done' ? [] : DEF[k];
+    if (!Array.isArray(M.done)) M.done = [];
+    if (!M.cool || typeof M.cool !== 'object') M.cool = {}; // вид вехи, который не вышел, какое-то время не предлагаем
+    if (typeof M.rng !== 'number' || !M.rng) M.rng = 20261001;
+    if (M.nextDay == null) M.nextDay = S.day || 0;
+    return M;
+  }
+  function rnd(S) { const M = ensure(S); M.rng = (Math.imul(M.rng >>> 0, 1664525) + 1013904223) >>> 0; return M.rng / 4294967296; }
+  const rint = (S, a, b) => a + Math.floor(rnd(S) * (b - a + 1));
+
+  // где вехи уместны: первый акт или активный город второго, есть хоть одна открытая точка;
+  // в прологе и в стадии 1 «Своя кофейня» — свои сюжетные вехи, там не мешаем
+  function active(S) {
+    if (!K().ON) return false;
+    if (S && S.miles && S.miles.on === false) return false; // игрок выключил вехи в окне «Вехи»
+    if (!S || S.lost || S.won) return false;
+    if (S.phase !== 'play') return false;
+    if (S.prologue && S.prologue.status === 'run') return false;
+    if (BK.Stage1 && BK.Stage1.on && BK.Stage1.on(S)) return false;
+    return open(S).length >= 1;
+  }
+
+  /* ---------------- что измеряем ---------------- */
+  const staffAll = (S) => open(S).reduce((a, st) => a + st.staff.length, 0);
+  const fullStores = (S) => open(S).filter((st) => st.staff.length >= (st.staffTarget || 0)).length;
+  const guestsDay = (S) => open(S).reduce((a, st) => a + ((st.today && !st.today.closed && st.today.checks) || 0), 0);
+  const dayCheck = (S) => { let r = 0, c = 0; for (const st of open(S)) { const t = st.today; if (!t || t.closed || !t.checks) continue; r += (t.check || 0) * t.checks; c += t.checks; } return c ? r / c : 0; };
+  const fixedMonth = (S) => {
+    const h = (S.history || [])[S.history.length - 1], p = h && h.pnl;
+    if (!p) return 2.4e6;
+    return Math.max(700e3, (p.rent || 0) + (p.payroll || 0) + (p.util || 0) + (p.tax || 0) + (p.agg || 0) + (p.other || 0));
+  };
+  const minMood = (S) => { let m = 100; for (const st of open(S)) for (const e of st.staff) m = Math.min(m, e.mood); return m; };
+  const avgFat = (S) => { let f = 0, n = 0; for (const st of open(S)) for (const e of st.staff) { f += e.fatigue; n++; } return n ? f / n : 0; };
+  const lowRated = (S) => { let b = null; for (const st of open(S)) { const r = E().storeRating(S, st); if (!b || r < b.r) b = { st, r }; } return b; };
+  const lvl2 = (S) => { let n = 0; for (const st of open(S)) for (const e of st.staff) if (e.lvl >= 2) n++; return n; };
+  const aggOn = (S) => open(S).filter((st) => st.agg).length;
+
+  /* ---------------- виды вех ----------------
+     ok(S) — уместна ли сейчас; mk(S) — числа на момент выдачи; val(S,m) — текущее значение;
+     hit(S,m) — выполнено; txt(S,m) — { t, d, u }; rw — награда (маленькая и временная). */
+  const KINDS = {
+    staff: { // Полная смена
+      ok: (S) => fullStores(S) < open(S).length,
+      mk: (S) => ({ need: open(S).length, base: fullStores(S), d: rint(S, 14, 24) }),
+      val: (S) => fullStores(S),
+      hit: (S) => fullStores(S) >= open(S).length,
+      txt: () => ({ t: 'Полная смена', d: 'Укомплектовать все точки: в каждой — штат по норме', u: 'точ.' }),
+      rw: { t: 'traffic', v: 0.04, d: 12 },
+    },
+    rating: { // Рейтинг точки
+      ok: (S) => { const b = lowRated(S); return !!b && b.r < 4.75; },
+      mk: (S) => { const b = lowRated(S); return { need: rnd2(Math.min(4.85, b.r + 0.2)), base: rnd2(b.r), spot: b.st.id, num: b.st.num, d: rint(S, 45, 70) }; },
+      val: (S, m) => { const st = E().byId(S.stores, m.spot); return st ? rnd2(E().storeRating(S, st)) : 0; },
+      hit: (S, m) => { const st = E().byId(S.stores, m.spot); return !!st && E().storeRating(S, st) >= m.need - 0.001; },
+      txt: (S, m) => ({ t: `Точка №${m.num} — до ★${String(m.need).replace('.', ',')}`, d: 'Подтянуть рейтинг на картах: обучение, ремонт, свежесть, настроение', u: '★' }),
+      rw: { t: 'conv', v: 0.035, d: 12 },
+    },
+    guests: { // Полные залы
+      ok: () => true,
+      mk: (S) => { const d = rint(S, 10, 16), day = Math.max(40, Math.round(ensure(S).gAvg || guestsDay(S))); return { need: step(day * d * 1.06, 100), base: 0, got: 0, d }; },
+      val: (S, m) => m.got || 0,
+      hit: (S, m) => (m.got || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Полные залы', d: `Накормить ${n0(m.need)} гостей за ${m.d} дней`, u: 'гостей' }),
+      rw: { t: 'traffic', v: 0.045, d: 12 },
+    },
+    check: { // Чек выше
+      ok: (S) => (ensure(S).chk || 0) > 0,
+      mk: (S) => { const c = Math.max(1, Math.round(ensure(S).chk)); return { need: step(c * 1.03, 10), base: c, d: rint(S, 32, 50) }; },
+      val: (S) => Math.round(ensure(S).chk || 0),
+      hit: (S, m) => (ensure(S).chk || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Чек выше', d: `Поднять средний чек сети с ${n0(m.base)} до ${n0(m.need)} ₽`, u: '₽' }),
+      rw: { t: 'check', v: 0.03, d: 12 },
+    },
+    mood: { // Без недовольных
+      ok: (S) => minMood(S) < 58,
+      mk: (S) => ({ need: rint(S, 8, 14), base: 0, got: 0, d: rint(S, 12, 20) }),
+      val: (S, m) => m.got || 0,
+      hit: (S, m) => (m.got || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Без недовольных', d: `${m.need} дней подряд никто в команде не падает духом`, u: 'дн.' }),
+      rw: { t: 'conv', v: 0.03, d: 12 },
+    },
+    fatigue: { // Отдохнувшая команда
+      ok: (S) => avgFat(S) > 48,
+      mk: (S) => ({ need: rint(S, 7, 12), base: Math.round(avgFat(S)), got: 0, d: rint(S, 12, 18) }),
+      val: (S, m) => m.got || 0,
+      hit: (S, m) => (m.got || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Отдохнувшая команда', d: `${m.need} дней подряд усталость сети ниже 45 % (сейчас ${m.base} %)`, u: 'дн.' }),
+      rw: { t: 'traffic', v: 0.035, d: 12 },
+    },
+    nofire: { // Никто не ушёл
+      ok: (S) => staffAll(S) >= 6,
+      mk: (S) => ({ need: rint(S, 14, 24), base: staffAll(S), best: staffAll(S), got: 0, d: rint(S, 20, 30) }),
+      val: (S, m) => Math.max(m.got || 0, 0),
+      hit: (S, m) => (m.got || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Никто не ушёл', d: `${m.need} дней подряд команда не теряет людей`, u: 'дн.' }),
+      rw: { t: 'conv', v: 0.03, d: 12 },
+    },
+    reserve: { // Подушка побольше
+      ok: (S) => S.reserve < step(fixedMonth(S) * 0.6, 100e3),
+      mk: (S) => ({ need: step(fixedMonth(S) * 0.6, 100e3), base: Math.round(S.reserve), d: rint(S, 30, 50) }),
+      val: (S) => Math.round(S.reserve),
+      hit: (S, m) => S.reserve >= m.need,
+      txt: (S, m) => ({ t: 'Подушка побольше', d: `Довести резервный фонд до ${fm(m.need)} — запас прочности на спокойный месяц`, u: '₽' }),
+      rw: { t: 'check', v: 0.03, d: 12 },
+    },
+    cash: { // Денег больше
+      ok: (S) => S.cash > 0,
+      mk: (S) => ({ need: step(Math.max(S.cash * 1.08, S.cash + 1e6), 500e3), base: Math.round(S.cash), d: rint(S, 28, 48) }),
+      val: (S) => Math.round(S.cash),
+      hit: (S, m) => S.cash >= m.need,
+      txt: (S, m) => ({ t: 'Денег больше', d: `Довести счёт с ${fm(m.base)} до ${fm(m.need)}`, u: '₽' }),
+      rw: { t: 'traffic', v: 0.03, d: 12 },
+    },
+    loan: { // Без долгов
+      ok: (S) => S.loan > 0,
+      mk: (S) => ({ need: 0, base: Math.round(S.loan), d: rint(S, 60, 120) }),
+      val: (S) => Math.round(S.loan),
+      hit: (S) => S.loan <= 0,
+      txt: (S, m) => ({ t: 'Без долгов', d: `Погасить кредит ${fm(m.base)} — проценты останутся в деле`, u: '₽' }),
+      rw: { t: 'conv', v: 0.04, d: 14 },
+    },
+    loanfree: { // Только свои деньги
+      ok: (S) => S.loan <= 0,
+      mk: (S) => ({ need: rint(S, 12, 20), base: 0, got: 0, d: rint(S, 16, 26) }),
+      val: (S, m) => m.got || 0,
+      hit: (S, m) => (m.got || 0) >= m.need,
+      txt: (S, m) => ({ t: 'Только свои деньги', d: `${m.need} дней подряд без кредита`, u: 'дн.' }),
+      rw: { t: 'traffic', v: 0.03, d: 12 },
+    },
+    train: { // Опытная команда
+      ok: (S) => lvl2(S) > 0 && lvl2(S) < staffAll(S),
+      mk: (S) => { const n = Math.max(1, Math.round(open(S).length * 0.5)); return { need: lvl2(S) + n, base: lvl2(S), d: rint(S, 40, 60) }; },
+      val: (S) => lvl2(S),
+      hit: (S, m) => lvl2(S) >= m.need,
+      txt: (S, m) => ({ t: 'Опытная команда', d: `Довести число обучённых (2-й уровень и выше) с ${m.base} до ${m.need}`, u: 'чел.' }),
+      rw: { t: 'conv', v: 0.04, d: 12 },
+    },
+    open: { // Ещё адрес
+      ok: (S) => S.offers.length > 0 || S.stores.some((st) => st.status === 'opening'),
+      mk: (S) => ({ need: open(S).length + 1, base: open(S).length, d: rint(S, 70, 120) }),
+      val: (S) => open(S).length,
+      hit: (S, m) => open(S).length >= m.need,
+      txt: () => ({ t: 'Ещё адрес', d: 'Открыть новую точку — сеть растёт', u: 'точ.' }),
+      rw: { t: 'traffic', v: 0.04, d: 14 },
+    },
+    agg: { // Больше заказов
+      ok: (S) => !!(S.agg && S.agg.on) && aggOn(S) < open(S).length,
+      mk: (S) => { const n = Math.max(1, Math.round(open(S).length * 0.34)); return { need: aggOn(S) + n, base: aggOn(S), d: rint(S, 25, 40) }; },
+      val: (S) => aggOn(S),
+      hit: (S, m) => aggOn(S) >= m.need,
+      txt: (S, m) => ({ t: 'Больше заказов', d: `Подключить доставку ещё на ${m.need - m.base} ${(m.need - m.base) === 1 ? 'точке' : 'точках'}`, u: 'точ.' }),
+      rw: { t: 'aggOrders', v: 1.06, d: 12, mult: true },
+    },
+    repair: { // Ремонт точки
+      ok: (S) => open(S).some((st) => st.status === 'open' && (st.repair || 0) < (BK.CFG.REPAIRS.length - 1) && S.cash > E().repairCost(S, st) * 1.5),
+      mk: (S) => { const st = open(S).filter((x) => x.status === 'open' && (x.repair || 0) < (BK.CFG.REPAIRS.length - 1) && S.cash > E().repairCost(S, x) * 1.5).sort((a, b) => (a.repair || 0) - (b.repair || 0))[0]; return { need: (st.repair || 0) + 1, base: st.repair || 0, spot: st.id, num: st.num, d: rint(S, 40, 62) }; },
+      val: (S, m) => { const st = E().byId(S.stores, m.spot); return st ? (st.repair || 0) : 0; },
+      hit: (S, m) => { const st = E().byId(S.stores, m.spot); return !!st && (st.repair || 0) >= m.need; },
+      txt: (S, m) => ({ t: `Ремонт точки №${m.num}`, d: 'Сделать ремонт — уютнее, выше рейтинг и чек', u: 'ст.' }),
+      rw: { t: 'check', v: 0.03, d: 12 },
+    },
+  };
+  const ORDER = ['staff', 'rating', 'guests', 'check', 'mood', 'fatigue', 'reserve', 'train', 'nofire', 'loanfree', 'agg', 'repair', 'cash', 'loan', 'open'];
+  const NAME = { 'staff': 'Полная смена', 'rating': 'Рейтинг точки', 'guests': 'Полные залы', 'check': 'Чек выше', 'mood': 'Без недовольных', 'fatigue': 'Отдохнувшая команда', 'nofire': 'Никто не ушёл', 'reserve': 'Подушка побольше', 'cash': 'Денег больше', 'loan': 'Без долгов', 'loanfree': 'Только свои деньги', 'train': 'Опытная команда', 'open': 'Ещё адрес', 'agg': 'Больше заказов', 'repair': 'Ремонт точки' };
+  const GROUP = { staff: 'Команда', rating: 'Рейтинг', guests: 'Гости', check: 'Чек', mood: 'Настроение', fatigue: 'Усталость', reserve: 'Резерв', train: 'Обучение', nofire: 'Текучка', loanfree: 'Без долгов', agg: 'Доставка', repair: 'Точка', cash: 'Деньги', loan: 'Кредит', open: 'Рост' };
+  const RW_NAME = { traffic: 'гостям сети', conv: 'конверсии', check: 'среднему чеку', aggOrders: 'заказам доставки' };
+  const RW_SHORT = { traffic: 'гостям', conv: 'конверсии', check: 'чеку', aggOrders: 'заказам' };
+
+  /* ---------------- выдача / награда / итог ---------------- */
+  function logLine(S, text, kind) { const I_ = I(); if (I_.log) I_.log(S, text, kind); }
+
+  function issue(S) {
+    const M = ensure(S);
+    const cand = ORDER.filter((k) => { if (M.cool[k] && M.cool[k] > S.day) return false; try { return KINDS[k].ok(S); } catch (e) { return false; } });
+    if (!cand.length) { M.nextDay = S.day + 5; return null; }
+    const fresh = cand.filter((k) => k !== M.lastK);
+    // тасуем своим ГСЧ и берём первую веху, которая ещё НЕ выполнена прямо сейчас:
+    // иначе бывает веха «на один день» (например, рейтинг уже выше цели) — она гаснет в тот же тик
+    const order = (fresh.length ? fresh : cand).slice();
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd(S) * (i + 1)); const t = order[i]; order[i] = order[j]; order[j] = t; }
+    let k = null, p = null;
+    for (const c of order) {
+      let pp; try { pp = KINDS[c].mk(S); } catch (e) { continue; }
+      const probe = { k: c, at: S.day, until: S.day + pp.d, need: pp.need, base: pp.base, got: pp.got || 0, spot: pp.spot || null, num: pp.num || 0, best: pp.best || 0 };
+      let already = false; try { already = !!KINDS[c].hit(S, probe); } catch (e) { already = false; }
+      if (!already) { k = c; p = pp; break; }
+    }
+    if (!k) { M.nextDay = S.day + 5; return null; }
+    M.cur = { k, at: S.day, until: S.day + p.d, need: p.need, base: p.base, got: p.got || 0, spot: p.spot || null, num: p.num || 0, best: p.best || 0 };
+    M.lastK = k;
+    const t = KINDS[k].txt(S, M.cur);
+    logLine(S, `Веха: ${t.t} — ${t.d} (до ${E().fmtDate(M.cur.until)})`, 'info');
+    if (BK.Sound) BK.Sound.play('click');
+    if (S.notify) S.notify.push({ type: 'mile', phase: 'new', id: k });
+    return M.cur;
+  }
+
+  function reward(S, m) {
+    const rw = KINDS[m.k] && KINDS[m.k].rw; if (!rw) return '';
+    const n = ensure(S).n || 0;
+    const k = rw.mult ? rw.v : 1 + rw.v * (1 + Math.min(0.6, n * 0.01)); // с опытом чуть щедрее, но не бесконечно
+    S.mods.push({ t: rw.t, m: k, until: S.day + rw.d, scope: 'global', src: 'mile' });
+    return `+${Math.round((k - 1) * 100)} % к ${RW_NAME[rw.t] || rw.t} на ${rw.d} дн.`;
+  }
+
+  function complete(S, m) {
+    const M = ensure(S), t = KINDS[m.k].txt(S, m), bonus = reward(S, m);
+    M.n++; M.takeK = M.takeK || {}; M.takeK[m.k] = (M.takeK[m.k] || 0) + 1;
+    M.cur = null; M.nextDay = S.day + rint(S, K().GAP[0], K().GAP[1]);
+    M.done.push({ k: m.k, day: S.day, t: t.t });
+    if (M.done.length > K().KEEP) M.done = M.done.slice(-K().KEEP);
+    logLine(S, `Веха взята: ${t.t}${bonus ? ` — ${bonus}` : ''}`, 'good');
+    if (S.notify) S.notify.push({ type: 'mile', phase: 'done', id: m.k, title: t.t, bonus });
+  }
+  function expire(S, m) {
+    const M = ensure(S), t = KINDS[m.k].txt(S, m);
+    M.fail++; M.failK = M.failK || {}; M.failK[m.k] = (M.failK[m.k] || 0) + 1;
+    M.cool = M.cool || {}; M.cool[m.k] = S.day + K().COOL_FAIL; // не вышло — этот вид какое-то время не предлагаем
+    M.cur = null; M.nextDay = S.day + rint(S, K().GAP_FAIL[0], K().GAP_FAIL[1]);
+    logLine(S, `Веха не вышла: ${t.t}`, 'info');
+    if (S.notify) S.notify.push({ type: 'mile', phase: 'fail', id: m.k, title: t.t });
+  }
+
+  /* ---------------- день ---------------- */
+  function day(S) {
+    const M = ensure(S); if (!M || !M.on) return;
+    if (!active(S)) return;
+    // скользящие средние — нужны и для выдачи, и для прогресса
+    const g = guestsDay(S), c = dayCheck(S);
+    M.gAvg = M.gAvg ? M.gAvg * 0.88 + g * 0.12 : g;
+    if (c > 0) M.chk = M.chk ? M.chk * 0.85 + c * 0.15 : c;
+    if (!M.cur) { if (S.day >= (M.nextDay || 0)) issue(S); return; }
+    const m = M.cur, kd = KINDS[m.k];
+    if (!kd) { M.cur = null; return; }
+    try { // накопительные показатели
+      if (m.k === 'guests') m.got = (m.got || 0) + g;
+      else if (m.k === 'mood') m.got = minMood(S) >= 40 ? (m.got || 0) + 1 : 0;
+      else if (m.k === 'fatigue') m.got = avgFat(S) < 45 ? (m.got || 0) + 1 : 0;
+      else if (m.k === 'nofire') { const n = staffAll(S); if (n >= (m.best || 0)) { m.got = (m.got || 0) + 1; m.best = n; } else { m.got = 0; m.best = n; } }
+      else if (m.k === 'loanfree') m.got = S.loan <= 0 ? (m.got || 0) + 1 : 0;
+    } catch (e) { /* старое сохранение */ }
+    let hit = false;
+    try { hit = !!kd.hit(S, m); } catch (e) { hit = false; }
+    if (hit) complete(S, m);
+    else if (S.day > m.until) expire(S, m);
+  }
+
+  /* ---------------- данные для интерфейса ---------------- */
+  function info(S) {
+    const M = ensure(S); if (!M || !M.cur) return null;
+    const m = M.cur, kd = KINDS[m.k]; if (!kd) return null;
+    const t = kd.txt(S, m);
+    let val = 0; try { val = kd.val(S, m); } catch (e) {}
+    const need = m.need || 1;
+    let p;
+    if (m.k === 'loan') p = m.base ? cl(1 - val / m.base, 0, 1) : 0;
+    else if (m.k === 'guests') p = cl(val / need, 0, 1);
+    else if (m.k === 'mood' || m.k === 'fatigue' || m.k === 'nofire' || m.k === 'loanfree') p = cl(val / Math.max(1, need), 0, 1);
+    else if (m.k === 'staff' || m.k === 'open' || m.k === 'agg' || m.k === 'train' || m.k === 'culture' || m.k === 'repair') p = cl((val - m.base) / Math.max(1, need - m.base), 0, 1);
+    else p = cl((val - m.base) / Math.max(1, need - m.base), 0, 1);
+    const show = {
+      guests: `${n0(val)} / ${n0(need)}`, check: `${n0(val)} / ${n0(need)} ₽`, cash: `${fm(val)} / ${fm(need)}`, reserve: `${fm(val)} / ${fm(need)}`,
+      loan: `осталось ${fm(val)}`, rating: `★${String(val).replace('.', ',')} / ★${String(need).replace('.', ',')}`,
+      staff: `${val} / ${need}`, open: `${val} / ${need}`, agg: `${val} / ${need}`, train: `${val} / ${need}`, culture: `${val} / ${need}`, repair: `${val} / ${need}`,
+      mood: `${val} / ${need} дн.`, fatigue: `${val} / ${need} дн.`, nofire: `${val} / ${need} дн.`, loanfree: `${val} / ${need} дн.`,
+    }[m.k] || `${val} / ${need}`;
+    const rw = kd.rw || null;
+    return {
+      k: m.k, group: GROUP[m.k] || 'Веха', t: t.t, d: t.d, u: t.u, p: cl(p, 0, 1), val, need, show,
+      left: Math.max(0, m.until - S.day), at: m.at, until: m.until, spot: m.spot, num: m.num,
+      reward: rw ? `+${Math.round((rw.mult ? rw.v : 1 + rw.v) * 100 - 100)} % к ${RW_NAME[rw.t] || rw.t} на ${rw.d} дн.` : '',
+      rewardShort: rw ? `+${Math.round((rw.mult ? rw.v : 1 + rw.v) * 100 - 100)} % к ${RW_SHORT[rw.t] || rw.t} · ${rw.d} дн.` : '',
+    };
+  }
+  // активные награды вех (что сейчас работает) — для «Сводки»
+  function bonuses(S) {
+    const out = [];
+    for (const x of S.mods || []) if (x.src === 'mile' && x.until > S.day) out.push({ t: RW_NAME[x.t] || x.t, k: x.m, add: x.add, days: x.until - S.day, mult: x.t !== 'aggComm' });
+    return out;
+  }
+  const done = (S) => { const M = ensure(S); return M ? M.done.slice().reverse() : []; };
+  const stats = (S) => { const M = ensure(S); return { n: M.n, fail: M.fail, cur: M.cur, nextDay: M.nextDay, on: M.on, takeK: M.takeK || {}, failK: M.failK || {} }; };
+  function setOn(S, v) { const M = ensure(S); M.on = !!v; if (!v) M.cur = null; return M.on; }
+  function reset(S) { const M = ensure(S); M.cur = null; M.nextDay = S.day + 3; return M; }
+
+  /* ---------------- подключение к движку ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__miles) return;
+    Eng.__miles = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* вехи не должны ломать игру */ } }
+      return r;
+    };
+  }
+  if (BK.Engine) wrap();
+
+  BK.Miles = { ensure, active, issue, day, info, bonuses, done, stats, setOn, reset, KINDS, ORDER, GROUP, NAME };
+})();
+
+/* thoughts.js */
+/* =====================================================================
+   ЧТО ГОВОРЯТ ГОСТИ (vision-plan §4 п. 2, этап В2 «Живость»).
+   Чистая логика, без DOM. Каждый день собирает «мысли» гостей по всем открытым точкам
+   (очередь, дорого, пустая витрина, вкусно, свежее, сонные продавцы, заказы ждут)
+   и раз в неделю подводит итог: три главные мысли сети за неделю + что с этим делать.
+
+   Состояние (маленькое — в сохранении только счётчики):
+     S.thoughts = { v: 1, day: 0, wk: { k: { n, w } }, acc: { k: { n, w } } }
+     n — сколько раз замечено (в точко-днях), w — вес по выручке точек (крупные точки влияют сильнее).
+
+   Цифры — CFG.THOUGHTS. Блоками в «Сводке» занимается src/ui/lively-ui.js (BK.LivelyUI).
+   Движок не менялся: обёртка `BK.Engine.tick`, случайных чисел не тратит (мысли — только чтение состояния).
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, K = () => BK.CFG.THOUGHTS;
+  const open = (S) => (S.stores || []).filter((st) => st.status !== 'opening');
+
+  /* ---------------- список мыслей: как узнать и что советовать ---------------- */
+  const KINDS = {
+    queue: { tone: 'bad', t: 'очередь в час пик', d: 'Гостей больше, чем успевает команда: часть уходит, не дождавшись.', todo: 'Добавить человека за стойку или сдвинуть часы', act: 'stores', label: 'Точки' },
+    price: { tone: 'bad', t: 'дороговато', d: 'Цены выше того, что район считает справедливым.', todo: 'Проверить цены и набор в «Меню»', act: 'menu', label: 'Меню' },
+    empty: { tone: 'bad', t: 'пустая витрина', d: 'К вечеру выпечка кончается — гости уходят с пустыми руками.', todo: 'Печь больше или включить вечернюю скидку', act: 'prod', label: 'Цех' },
+    tired: { tone: 'bad', t: 'продавцы сонные', d: 'Команда устала: сервис проседает, гости это замечают.', todo: 'Дать выходной, добавить людей или поднять зарплату', act: 'team', label: 'Команда' },
+    slow: { tone: 'bad', t: 'заказы ждут', d: 'Доставка занимает команду, зал стоит в очереди.', todo: 'Разгрузить доставку или усилить смену', act: 'stores', label: 'Точки' },
+    tasty: { tone: 'good', t: 'вкусно!', d: 'Высокий рейтинг на картах — гости хвалят выпечку.', todo: 'Держать уровень и собирать отзывы', act: 'stores', label: 'Точки' },
+    fresh: { tone: 'good', t: 'свежая выпечка', d: 'Утренний хлеб свежий, гости приходят к открытию.', todo: 'Не ломать график печи', act: 'prod', label: 'Цех' },
+  };
+  const ORDER = ['queue', 'price', 'empty', 'tired', 'slow', 'tasty', 'fresh'];
+
+  /* ---------------- состояние ---------------- */
+  // дозаполняем поля на месте (не заменяем объект: ссылка на состояние не должна «стареть»)
+  function ensure(S) {
+    if (!S) return null;
+    const T = S.thoughts || (S.thoughts = {});
+    if (T.v == null) T.v = 1;
+    if (typeof T.day !== 'number') T.day = 0;
+    if (!T.wk || typeof T.wk !== 'object') T.wk = {};
+    if (!T.acc || typeof T.acc !== 'object') T.acc = {};
+    return T;
+  }
+
+  /* ---------------- что думает одна точка сегодня ---------------- */
+  // Общие для всех точек числа дня считаем один раз (день идёт по 60 точкам — важно не гонять menuStats в цикле).
+  function dayFactors(S) {
+    const e = E();
+    let priceIdx = 1; try { priceIdx = e.menuStats(S).priceIdx; } catch (er) {}
+    let bake = 0; try { bake = (e.wasteState ? e.wasteState(S) : {}).bake || 0; } catch (er) {}
+    return { priceIdx, bake };
+  }
+  // Возвращает список видов мыслей (по одному разу) — по состоянию точки «сегодня». F — dayFactors(S).
+  function ofStore(S, st, F) {
+    const out = [];
+    if (!st || st.status === 'opening' || st.status === 'repair') return out;
+    const t = st.today || {}; if (t.closed) return out;
+    const e = E(), f = F || dayFactors(S);
+    const load = t.load || 0;
+    if (load > 1.02) out.push('queue');
+    if (load > 1.05 && st.agg && t.agg) out.push('slow');
+    if (f.priceIdx > 1.12) out.push('price');
+    // витрина: «печём мало» (bake < 0), а гости всё равно идут
+    if (f.bake < 0 && load > 0.85) out.push('empty');
+    let parts = null; try { parts = e.ratingParts(S, st); } catch (er) {}
+    let rt = 4; try { rt = e.storeRating(S, st); } catch (er) {}
+    if (rt >= 4.35) out.push('tasty');
+    if (parts && parts.fresh >= 4.4) out.push('fresh');
+    let fat = 0; for (const x of st.staff) fat += x.fatigue; fat = st.staff.length ? fat / st.staff.length : 0;
+    if (fat > 60) out.push('tired');
+    return out;
+  }
+
+  /* ---------------- день и неделя ---------------- */
+  function day(S) {
+    const T = ensure(S); if (!T) return;
+    const list = open(S); if (!list.length) return;
+    const F = dayFactors(S); // общие числа дня — один раз на весь день
+    for (const st of list) {
+      const w = Math.max(1, ((st.m && st.m.rev) || 0) / 30.4); // вес точки — её дневная выручка
+      for (const k of ofStore(S, st, F)) {
+        const a = T.acc[k] || (T.acc[k] = { n: 0, w: 0 });
+        a.n += 1; a.w += w;
+      }
+    }
+    T.day = (T.day || 0) + 1;
+    if (T.day >= K().WEEK) { T.wk = T.acc; T.acc = {}; T.day = 0; T.at = S.day; }
+    // страховка от разрастания (мыслей всего 7 видов, но старое сохранение могло накопить лишнее)
+    for (const k in T.wk) if (!KINDS[k]) delete T.wk[k];
+    for (const k in T.acc) if (!KINDS[k]) delete T.acc[k];
+  }
+
+  /* ---------------- итог недели для интерфейса ---------------- */
+  function week(S, max) {
+    const T = ensure(S);
+    const src = (T.day > 0 && Object.keys(T.wk).length < 3) ? Object.assign({}, T.wk, T.acc) : T.wk; // первая неделя — показываем, что есть
+    const rows = ORDER.filter((k) => src[k] && src[k].n > 0).map((k) => {
+      const a = src[k], d = KINDS[k];
+      return { k, tone: d.tone, t: d.t, d: d.d, todo: d.todo, act: d.act, label: d.label, n: Math.max(1, Math.round(a.n / K().WEEK)), w: a.w, share: 0 };
+    });
+    const totalW = rows.reduce((s, r) => s + r.w, 0) || 1;
+    for (const r of rows) r.share = r.w / totalW;
+    // три главные: сначала плохие с большим весом, потом хорошие (их приятно видеть)
+    const bad = rows.filter((r) => r.tone === 'bad').sort((a, b) => b.w - a.w);
+    const good = rows.filter((r) => r.tone === 'good').sort((a, b) => b.w - a.w);
+    const out = bad.concat(good).slice(0, max || K().SHOW);
+    // «очередь» и «заказы ждут» — про одно и то же, второе оставляем только если первое не попало
+    if (out.some((r) => r.k === 'queue') && out.some((r) => r.k === 'slow')) {
+      const i = out.findIndex((r) => r.k === 'slow'); if (i >= 0) out.splice(i, 1);
+    }
+    return out;
+  }
+  // готов ли итог: до первой недели — «копим»
+  function ready(S) { const T = ensure(S); return !!(T && Object.keys(T.wk).length); }
+  function days(S) { const T = ensure(S); return T ? T.day : 0; }
+  function clear(S) { const T = ensure(S); T.wk = {}; T.acc = {}; T.day = 0; return T; }
+
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__thoughts) return;
+    Eng.__thoughts = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* мысли не должны ломать игру */ } }
+      return r;
+    };
+  }
+  if (BK.Engine) wrap();
+
+  BK.Thoughts = { ensure, ofStore, dayFactors, week, ready, days, clear, KINDS };
 })();
 
 /* prologue.js */
@@ -15729,6 +16463,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
     if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
+    if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -16002,11 +16737,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div>`;
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
+    if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
     s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
       ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
+    if (BK.LivelyUI) s += BK.LivelyUI.talkBlock(S); // живость: три главные мысли гостей за неделю (рядом с «Требует внимания»)
     if (BK.TrainersUI) s += BK.TrainersUI.dashBlock(S); // личные тренеры
     if (BK.ManagersUI) s += BK.ManagersUI.dashBlock(S); // управляющие точек
     s += holidaysBlock(S).replace('<div class="sec">', '<div class="sec lazy">');
@@ -16827,6 +17564,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.title = 'Открыть достижения';
     el.addEventListener('click', () => { el.remove(); if (APP().state) openAchievements(); });
     box.appendChild(el);
+    if (BK.Sound) BK.Sound.play('sparkle'); // живость: звук достижения
     while (box.children.length > 3) box.firstChild.remove();
     setTimeout(() => el.remove(), 7000);
   }
@@ -16972,7 +17710,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Лучший год${bestYear ? ' · ' + bestYear : ''}</span><span class="v">${bestYear ? fm(byYear[bestYear]) : '—'}</span></div>
       <div class="kpi"><span class="k">Точек (максимум)</span><span class="v">${Math.max(S.stats.peakStores || 0, S.stores.length)}</span></div>
       <div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div>
-      <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div></div>`;
+      <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div>${S.miles && (S.miles.n || S.miles.fail) ? `<div class="kpi"><span class="k">Вехи</span><span class="v">${S.miles.n || 0}${S.miles.fail ? ` <small class="muted">· ${S.miles.fail} не вышло</small>` : ''}</span></div>` : ''}</div>`;
     if (S.rewind && S.rewind.n) s += `<p class="hint sumrw">↩️ Переигровок в этой игре: ${S.rewind.n} (отменено ${S.rewind.days} ${plural(S.rewind.days, 'день', 'дня', 'дней')} игры). Итоги и достижения — по той версии событий, что осталась.</p>`;
     s += `<div class="sec"><h3>Вся игра по месяцам</h3><div class="sumcharts">
       <figure><figcaption>Выручка и прибыль за месяц</figcaption>${lineChart(h, [{ v: (x) => x.rev, cls: 's-rev', label: 'Выручка', area: true }, { v: (x) => x.profit, cls: 's-prof', label: 'Прибыль' }], 'Выручка и прибыль по месяцам')}</figure>
@@ -17003,6 +17741,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function settingsHtml(S) {
     const got = A() ? A().count(S) : 0, n = A() ? A().LIST.length : 0;
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
+      ${BK.LivelyUI ? BK.LivelyUI.soundRow(S) : ''}
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
@@ -18108,6 +18847,192 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
   BK.GrowthUI = { tabs, tabDot, panel, attItems, unlockModal, mapItems, tip, legend, ICON, WHY };
+})();
+
+/* ui/lively-ui.js */
+/* =====================================================================
+   «ЖИВОСТЬ» — интерфейс этапа В2 (vision-plan §4 п. 2–4).
+   Три вещи на экране:
+     1) «Вехи» в «Сводке» — короткое задание на пару недель, полоса прогресса, срок и награда;
+        окно «Вехи» — как это работает, что уже взято, сколько не вышло;
+     2) «Что говорят гости» в «Сводке» — три главные мысли сети за неделю (логика — src/thoughts.js);
+     3) звук — кнопка в HUD и переключатель в «Меню игры» (логика — src/sound.js), монетки на 1-е число.
+   В panels.js / app.js / extras.js — только хуки (BK.LivelyUI.*).
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  if (typeof document === 'undefined') return;
+  const ML = () => BK.Miles, TH = () => BK.Thoughts, APP = () => BK.App;
+  const fm = (v) => BK.fmtMoney(v);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const nw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4"/><path d="M6 5h11l-2 4 2 4H6"/></svg>';
+  const TALK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg>';
+  const RW_LABEL = { traffic: 'гостям сети', conv: 'конверсии', check: 'среднему чеку', aggOrders: 'заказам доставки' };
+
+  /* ---------------- «Вехи» в «Сводке» ---------------- */
+  function milesBlock(S) {
+    if (!ML() || !ML().active(S)) return '';
+    const st = ML().stats(S), cur = ML().info(S);
+    const bonus = ML().bonuses(S);
+    let rows = '';
+    if (cur) {
+      const soon = cur.left <= 4;
+      rows = `<div class="mil-cur${soon ? ' soon' : ''}">
+        <div class="mil-h"><span class="mil-tag">${esc(cur.group)}</span><b>${esc(cur.t)}</b><span class="mil-left">${cur.left ? `ещё ${nw(cur.left, 'день', 'дня', 'дней')}` : 'последний день'}</span></div>
+        <div class="mil-d">${esc(cur.d)}</div>
+        <div class="meter mil-m" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(cur.p * 100)}" aria-label="Прогресс вехи"><i style="width:${(cur.p * 100).toFixed(0)}%"></i></div>
+        <div class="mil-f"><span class="mil-val">${esc(cur.show)}</span>${cur.rewardShort ? `<span class="mil-rw" title="Награда за веху">${esc(cur.rewardShort)}</span>` : ''}</div>
+      </div>`;
+    } else {
+      rows = '<div class="mil-empty">Подбираем следующую веху…</div>';
+    }
+    if (bonus.length) {
+      rows += `<div class="mil-bonus" title="Награды за взятые вехи работают прямо сейчас">${bonus.map((b) => `<span class="chip good">${b.mult ? `+${Math.round((b.k - 1) * 100)} %` : `+${b.add}`} к ${esc(RW_LABEL[b.t] || b.t)} · ещё ${nw(b.days, 'день', 'дня', 'дней')}</span>`).join('')}</div>`;
+    }
+    const taken = st.n ? `<span class="count">${st.n}</span>` : '';
+    return `<div class="sec mil" id="milBlock"><h3><span class="mil-h3">${ICON}Вехи${taken}</span><button class="linkbtn" data-act="miles">Все вехи →</button></h3>
+      <p class="hint mil-lead">${st.n ? 'Короткие задания: одно за раз. Взяли — небольшой бонус, не успели — ничего страшного.' : 'Короткие задания на пару недель — чтобы всегда было, к чему стремиться. За взятые — небольшой бонус.'}</p>
+      ${rows}</div>`;
+  }
+  // строка в «Требует внимания», когда срок вехи подходит
+  function attItems(S) {
+    if (!ML() || !ML().active(S)) return [];
+    const cur = ML().info(S); if (!cur || cur.left > 3) return [];
+    return [{ lvl: 'info', ic: 'flag', icHtml: ICON, t: `Веха «${esc(cur.t)}» — ${cur.left ? nw(cur.left, 'день', 'дня', 'дней') : 'последний день'}`, d: `${esc(cur.show)} · ${esc(cur.d)}`, b: { act: 'miles', label: 'Вехи' } }];
+  }
+
+  /* ---------------- «Что говорят гости» в «Сводке» ---------------- */
+  function talkBlock(S) {
+    if (!TH()) return '';
+    const ready = TH().ready(S);
+    const list = ready ? TH().week(S, 3) : [];
+    let body;
+    if (!ready) { const d = Math.max(1, TH().days(S) + 1); body = `<p class="hint" style="margin:0">Собираем первые впечатления: ${nw(Math.min(d, 7), 'день', 'дня', 'дней')} из недели. Итог появится в конце недели — а прямо сейчас мысли гостей видно «вблизи», в карточке точки.</p>`; }
+    else if (!list.length) body = `<p class="hint" style="margin:0">Гости всем довольны и молчат — ни жалоб, ни восторгов.</p>`;
+    else body = `<ul class="talk-l">${list.map((r) => `<li class="talk-${r.tone}"><span class="talk-i" aria-hidden="true">${TALK_ICON}</span><div class="talk-tx"><b>${esc(r.t)}</b><small>${r.n > 1 ? `на ${r.n} ${plural(r.n, 'точке', 'точках', 'точках')}` : 'на точке'} · ${esc(r.todo)}</small></div><button class="linkbtn" data-act="tab" data-arg="${r.act}">${esc(r.label)}</button></li>`).join('')}</ul>`;
+    return `<div class="sec talk" id="talkBlock"><h3><span class="talk-h3">${TALK_ICON}Что говорят гости<small>за неделю</small></span></h3>${body}
+      <p class="hint talk-foot">Мысли гостей видно и «вблизи» — в карточке точки, по часам.</p></div>`;
+  }
+
+  /* ---------------- окно «Вехи» ---------------- */
+  function modalHtml(S) {
+    const st = ML().stats(S), cur = ML().info(S);
+    const byGroup = {};
+    for (const k of ML().ORDER) (byGroup[ML().GROUP[k]] || (byGroup[ML().GROUP[k]] = [])).push(k);
+    const rowsOf = (keys) => keys.map((k) => {
+      const now = cur && cur.k === k;
+      const name = (ML().NAME && ML().NAME[k]) || k;
+      return `<span class="mil-k${now ? ' now' : ''}" title="${now ? 'Выполняется сейчас' : esc(ML().KINDS[k].txt(S, { k, need: 0, base: 0, num: 0, got: 0 }).d)}">${esc(name)}</span>`;
+    }).join('');
+    let s = `<div class="modal-h"><span class="eyebrow">Живость · короткие задания</span><h2>Вехи</h2></div><div class="modal-b mil-m2">
+      <p class="hint" style="margin:0">Веха — небольшая цель на пару недель. Игра выдаёт её сама, одну за раз: накормить гостей, подтянуть рейтинг точки, довести резерв, обучить людей. Взяли веху — награда работает ${plural(12, 'день', 'дня', 'дней')} (чуть больше гостей, чек или конверсия). Не успели — веха уходит без штрафа, придёт следующая.</p>
+      <div class="mil-stat"><span><b>${st.n}</b>${plural(st.n, 'веха взята', 'вехи взяты', 'вех взято')}</span><span><b>${st.fail}</b>не вышло</span></div>`;
+    if (cur) {
+      s += `<div class="mil-cur big${cur.left <= 4 ? ' soon' : ''}"><div class="mil-h"><span class="mil-tag">${esc(cur.group)}</span><b>${esc(cur.t)}</b><span class="mil-left">${cur.left ? `ещё ${nw(cur.left, 'день', 'дня', 'дней')}` : 'последний день'}</span></div>
+        <div class="mil-d">${esc(cur.d)}</div>
+        <div class="meter mil-m" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(cur.p * 100)}"><i style="width:${(cur.p * 100).toFixed(0)}%"></i></div>
+        <div class="mil-f"><span class="mil-val">${esc(cur.show)}</span>${cur.reward ? `<span class="mil-rw">${esc(cur.reward)}</span>` : ''}</div>
+        <div class="row mil-acts"><button class="btn sm" data-act="milesOther">Взять другую веху</button></div></div>`;
+    } else s += `<div class="mil-empty">Подбираем следующую веху… <button class="btn sm" data-act="milesNow">Взять веху сейчас</button></div>`;
+    const act = ML().bonuses(S);
+    if (act.length) s += `<div class="sec mil-bonus-sec"><h3>Сейчас работают награды</h3>${act.map((b) => `<div class="mil-bl"><span>${b.mult ? `+${Math.round((b.k - 1) * 100)} %` : `+${b.add}`} к ${esc(RW_LABEL[b.t] || b.t)}</span><b>ещё ${nw(b.days, 'день', 'дня', 'дней')}</b></div>`).join('')}</div>`;
+    s += `<div class="sec"><h3>Какие бывают вехи</h3><div class="mil-groups">${Object.keys(byGroup).map((g) => `<div class="mil-g"><b>${esc(g)}</b><div class="mil-ks">${rowsOf(byGroup[g])}</div></div>`).join('')}</div><p class="hint">Игра выбирает то, что сейчас уместно: если в команде нехватка — предложит укомплектовать смены, если в точке просел рейтинг — подтянуть его.</p></div>`;
+    const done = ML().done(S).slice(0, 14);
+    if (done.length) s += `<div class="sec"><h3>Последние взятые</h3><div class="mil-hist">${done.map((d) => `<div class="mil-hl"><span>${esc(d.t || (ML().GROUP[d.k] || 'Веха'))}</span><b>${BK.Engine.fmtDate(d.day)}</b></div>`).join('')}</div></div>`;
+    s += `<div class="sec"><div class="row sp"><span>Показывать вехи</span><div class="seg" role="group" aria-label="Показывать вехи">${[[1, 'Да'], [0, 'Нет']].map(([v, n]) => `<button type="button" data-act="milesOn" data-arg="${v}" aria-pressed="${String(!!st.on) === String(!!v)}">${n}</button>`).join('')}</div></div><p class="hint" style="margin:0">Выключить можно в любой момент — на игру это не влияет.</p></div>`;
+    s += `</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+    return s;
+  }
+  function open(keep) {
+    const S = APP().state; if (!S || !ML()) return;
+    APP().openModal(modalHtml(S), { closable: true, keepScroll: keep === 'keep' });
+    const m = document.querySelector('#modal .modal'); if (m) m.classList.add('mil-modal');
+  }
+  const inModal = () => !!(APP().ui.modal && document.querySelector('#modal .mil-modal'));
+
+  /* ---------------- уведомления ---------------- */
+  function mileNotify(n) {
+    const S = APP().state; if (!S) return;
+    const box = document.getElementById('toasts'); if (!box) return;
+    const g = (ML().GROUP[n.id] || 'Веха');
+    const el = document.createElement('div');
+    el.className = `toast miltoast ${n.phase}`;
+    el.setAttribute('role', 'status');
+    if (n.phase === 'new') {
+      const cur = ML().info(S);
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Новая веха · ${esc(g)}</span><b>${esc(cur ? cur.t : '')}</b><span class="md">${esc(cur ? cur.d : '')}</span></span>`;
+      el.title = 'Открыть вехи';
+      el.addEventListener('click', () => { el.remove(); open(); });
+      setTimeout(() => el.remove(), 9000);
+      if (BK.Sound) BK.Sound.play('click');
+    } else if (n.phase === 'done') {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Веха взята!</span><b>${esc(n.title || g)}</b>${n.bonus ? `<span class="md">${esc(n.bonus)}</span>` : ''}</span>`;
+      el.title = 'Открыть вехи';
+      el.addEventListener('click', () => { el.remove(); open(); });
+      setTimeout(() => el.remove(), 8000);
+      if (BK.Sound) BK.Sound.play('fanfare');
+      burst(6);
+    } else {
+      el.className = 'toast miltoast fail';
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Веха не вышла</span><b>${esc(n.title || g)}</b><span class="md">Ничего страшного — придёт следующая.</span></span>`;
+      setTimeout(() => el.remove(), 6000);
+    }
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+  }
+
+  /* ---------------- монетки на 1-е число ---------------- */
+  function burst(n) {
+    if (document.hidden) return;
+    const box = document.getElementById('coins'); if (!box) return;
+    if (matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = document.querySelector('.hud .s-cash') ? document.querySelector('.hud .s-cash').getBoundingClientRect() : { left: innerWidth / 2, top: 40, width: 0, height: 0 };
+    for (let i = 0; i < (n || 10); i++) {
+      const c = document.createElement('i');
+      c.className = 'coin';
+      c.style.left = (rect.left + rect.width / 2 + (Math.random() * 90 - 45)) + 'px';
+      c.style.top = (rect.top + rect.height * 0.6) + 'px';
+      c.style.animationDelay = (i * 55 + Math.random() * 40) + 'ms';
+      c.style.setProperty('--dx', (Math.random() * 46 - 23).toFixed(0) + 'px');
+      box.appendChild(c);
+      setTimeout(() => c.remove(), 1500);
+    }
+  }
+  // итоги месяца: звук кассы + монетки (вызывается из app.js на уведомление «month»)
+  function monthFx(profit) {
+    if (BK.Sound) BK.Sound.play('money');
+    if (profit > 0) burst(profit > 0 ? 12 : 6);
+  }
+  function coinsHtml() { return '<div id="coins" aria-hidden="true"></div>'; }
+
+  /* ---------------- звук: строка в «Меню игры» ---------------- */
+  function soundRow(S) {
+    const on = BK.Sound ? BK.Sound.on : false;
+    return `<div class="row sp snd-row"><span>Звук<small class="hint">касса, открытие точки, вехи, достижения</small></span>
+      <div class="seg snd-seg" role="group" aria-label="Звук игры">
+        <button type="button" data-act="sndSet" data-arg="1" data-snd="1" aria-pressed="${on}">Вкл</button>
+        <button type="button" data-act="sndSet" data-arg="0" data-snd="0" aria-pressed="${!on}">Выкл</button>
+      </div></div>`;
+  }
+
+  /* ---------------- действия и кнопка в HUD ---------------- */
+  function boot() {
+    const A = APP() && APP().ACT; if (!A) return;
+    Object.assign(A, {
+      miles: () => open(),
+      milesOther: () => { const S = APP().state; if (S && ML()) { ML().reset(S); ML().issue(S); } APP().save(); open('keep'); APP().refresh(); },
+      milesNow: () => { const S = APP().state; if (S && ML()) { ML().ensure(S).nextDay = S.day; ML().issue(S); } APP().save(); open('keep'); APP().refresh(); },
+      milesOn: (d) => { const S = APP().state; if (S && ML()) { ML().setOn(S, d.arg === '1'); if (d.arg === '1' && !ML().ensure(S).cur) ML().ensure(S).nextDay = S.day; } APP().save(); open('keep'); APP().refresh(); },
+      sndSet: (d) => { if (BK.Sound) BK.Sound.set(d.arg === '1'); if (BK.Sound) BK.Sound.sync(); if (d.arg === '1' && BK.Sound) BK.Sound.play('coin'); if (inModal()) open('keep'); },
+      sound: () => { if (!BK.Sound) return; const v = BK.Sound.toggle(); if (v) BK.Sound.play('coin'); APP().toast(v ? 'Звук включён' : 'Звук выключен', v ? 'Тихий — громкость браузера регулируется как обычно.' : '', v ? 'good' : 'warn'); },
+    });
+    if (BK.Sound) BK.Sound.sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
+
+  BK.LivelyUI = { milesBlock, attItems, talkBlock, modalHtml, open, mileNotify, monthFx, burst, coinsHtml, soundRow, ICON };
 })();
 
 /* ui/russia.js */
@@ -20411,6 +21336,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (E.wasteState) E.wasteState(st); // списания и вечерняя скидка — значения по умолчанию для старых сохранений
     st.office = Object.assign({ hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 }, st.office || {});
     if (BK.Ach) BK.Ach.ensure(st); // достижения: уже выполненные в старом сохранении начисляются тихо
+    if (BK.Miles) BK.Miles.ensure(st); // вехи (живость): старые сохранения получают значения по умолчанию
+    if (BK.Thoughts) BK.Thoughts.ensure(st); // мысли гостей недели
     if (BK.Corp) BK.Corp.ensure(st); // Россия: карта активного города; старое сохранение с оборотом ≥ 10 млрд — выход открывается сразу
     return st;
   }
@@ -20437,6 +21364,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><div class="gr"><span class="k" id="hud-goal-k"><span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span></span><span class="gp" id="hud-goal-p"></span></div><div class="gr"><span class="v" id="hud-goal"></span><span class="dl muted" id="hud-goal-eta"></span></div><div id="hud-goalbar"></div></div>
     </div>
     <div class="hudbtns">
+      <button class="iconbtn" data-act="sound" aria-label="Звук" title="Звук"></button>
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть" aria-label="Как играть">${ICON.help}</button>
       <button class="iconbtn" data-act="settings" title="Меню игры" aria-label="Меню игры">${ICON.gear}</button>
@@ -20453,6 +21381,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   </div>
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="coins" aria-hidden="true"></div>
 <div id="modal"></div>
 <div id="start"></div>`);
     map = new BK.MapView($('#map'), { onClick: mapClick, tipFor });
@@ -20532,10 +21461,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
+    openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
     hideStart(); closeModal(); map.reset(); renderAll(); save();
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+    openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
     hideStart(); closeModal(); map.reset(); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
@@ -20544,6 +21475,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- цикл ---------------- */
   function setSpeed(v) { ui.speed = v; acc = 0; renderHud(); }
+  // живость (§4 п. 3): заметили, что открылась точка или цех, — колокольчик с ленточкой и монетки у счёта
+  let openSeen = null;
+  function checkOpening() {
+    const now = S.stores.filter((st) => st.status !== 'opening').length + S.productions.filter((p) => p.status === 'open').length;
+    if (openSeen != null && now > openSeen) {
+      if (BK.Sound) BK.Sound.play('ribbon');
+      if (BK.LivelyUI) BK.LivelyUI.burst(8);
+    }
+    openSeen = now;
+  }
   function frame(t) {
     requestAnimationFrame(frame);
     if (!S) return;
@@ -20559,6 +21500,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         acc -= ms; n++;
         E.tick(S);
         if (BK.Rewind) BK.Rewind.record(S); // «Переиграть»: снимок на 1-е число
+        checkOpening(); // живость: «дзынь» и монетки, когда открылась точка или цех
         handleNotify();
         if (ui.modal || S.ev.pending || S.chef.pending) { acc = 0; break; }
       }
@@ -20585,12 +21527,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const q = S.notify; S.notify = [];
     for (const n of q) {
       if (n.type === 'toast') toast(n.title, n.text, n.kind, null, n.storeId ? () => ACT.openStore({ arg: n.storeId }) : null);
-      else if (n.type === 'event') toast(n.ev.title, n.ev.text, n.ev.kind === 'pos' ? 'pos' : 'neg', n.ev.effectsText);
-      else if (n.type === 'month') { save(); }
+      else if (n.type === 'event') { toast(n.ev.title, n.ev.text, n.ev.kind === 'pos' ? 'pos' : 'neg', n.ev.effectsText); if (BK.Sound) BK.Sound.play(n.ev.kind === 'pos' ? 'coin' : 'warn'); }
+      else if (n.type === 'month') { save(); if (BK.LivelyUI) BK.LivelyUI.monthFx(n.profit); }
       else if (n.type === 'year') ui.modalQueue.push(() => openYearModal(n));
-      else if (n.type === 'won') ui.modalQueue.unshift(() => openWinModal());
-      else if (n.type === 'lost') ui.modalQueue.unshift(() => openLostModal());
+      else if (n.type === 'won') { if (BK.Sound) BK.Sound.play('fanfare'); ui.modalQueue.unshift(() => openWinModal()); }
+      else if (n.type === 'lost') { if (BK.Sound) BK.Sound.play('bad'); ui.modalQueue.unshift(() => openLostModal()); }
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
+      else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
@@ -21223,6 +22166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     applyTheme(loadTheme());
     shell();
     applyTheme(ui.theme);
+    if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
     requestAnimationFrame(frame);

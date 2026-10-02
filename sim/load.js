@@ -9,6 +9,11 @@ module.exports = globalThis.BK;
 // переопределение констант для экспериментов: BK_CFG='{"INFLATION_BASE":0.05}' node sim/bot.js good 6 20
 if (process.env.BK_CORP === '0') globalThis.BK.CFG.CORP_ON = false; // BK_CORP=0 — без второго акта (Россия не открывается)
 if (process.env.BK_RIVAL === '0') globalThis.BK.CFG.RIVAL_ON = false; // BK_RIVAL=0 — игра без сети-соперника
+// Живость (вехи, мысли гостей недели — vision-plan §4, этап В2) в обычных прогонах ботов не подключается:
+// канонические прогоны первого акта остаются побайтно прежними. Включается только явно: BK_MILES=1.
+if (process.env.BK_MILES) {
+  for (const f of ['milestones.js', 'thoughts.js']) { delete require.cache[require.resolve(path.join(src, f))]; require(path.join(src, f)); }
+}
 // вложенные ключи через точку: BK_CFG='{"DIFFICULTY.easy.sev":0.5}'
 if (process.env.BK_CFG) for (const [k, v] of Object.entries(JSON.parse(process.env.BK_CFG))) {
   const p = k.split('.'); let o = globalThis.BK.CFG;

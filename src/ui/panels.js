@@ -202,6 +202,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.TrainersUI) for (const x of BK.TrainersUI.attItems(S)) add(x); // личные тренеры: подсказки навыков (лампочка)
     if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
+    if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -475,11 +476,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     </div>`;
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
+    if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
     s += `<div class="sec att"><h3><span>Требует внимания${items.length ? `<span class="count">${items.length}</span>` : ''}</span>${items.length > MAX ? `<button class="linkbtn" data-act="attAll">${ui.attAll ? 'Свернуть' : `Все ${items.length}`}</button>` : `<button class="linkbtn" data-act="tab" data-arg="log">Журнал →</button>`}</h3>
       ${items.length ? shown.map(attRow).join('') : '<div class="att-ok">Срочных дел нет — сеть работает спокойно.</div>'}</div>`;
+    if (BK.LivelyUI) s += BK.LivelyUI.talkBlock(S); // живость: три главные мысли гостей за неделю (рядом с «Требует внимания»)
     if (BK.TrainersUI) s += BK.TrainersUI.dashBlock(S); // личные тренеры
     if (BK.ManagersUI) s += BK.ManagersUI.dashBlock(S); // управляющие точек
     s += holidaysBlock(S).replace('<div class="sec">', '<div class="sec lazy">');

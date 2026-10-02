@@ -391,13 +391,15 @@ async function r4(p, tag, shot) {
 async function r42(p, tag, shot) {
   await p.evaluate(() => { const S = BK.App.state; if (S.cash < 20e9) S.cash = 20e9; if (BK.App.ui.view !== 'russia') BK.App.ACT.russia(); }); await p.waitForTimeout(700);
   // 1. таймера нет: сразу после входа в город можно входить в следующий, цена растёт
+  // (сравниваем цену ОДНОГО И ТОГО ЖЕ города до и после входа в другой: у городов разные базовые ставки —
+  //  аренда, дальность, «ворота» — и сравнивать цену разных городов между собой нельзя)
   const t1 = await p.evaluate(() => {
     const S = BK.App.state, E = BK.Engine, free = BK.CITIES.map((d) => d.id).filter((id) => !S.corp.cities[id] && !BK.CITY_BY_ID[id].big && !E.enterLock(S, id));
-    const a = free[0], b = free[1], costA = E.enterCost(S, a), n0 = Object.keys(S.corp.cities).length;
+    const a = free[0], b = free[1], costB0 = E.enterCost(S, b), n0 = Object.keys(S.corp.cities).length;
     if (!S.corp.dirCand.length) E.dirRefresh(S, true);
     const h = E.dirHire(S, S.corp.dirCand[0].id, null); const r = E.enterCity(S, a, { director: h.d.id });
     const lockB = E.enterLock(S, b), costB = E.enterCost(S, b);
-    return { a, b, ok: r.ok, lockB, costA, costB, n0, grow: BK.CFG.CORP.ENTER_GROW };
+    return { a, b, ok: r.ok, lockB, costA: costB0, costB, n0, grow: BK.CFG.CORP.ENTER_GROW };
   });
   if (!t1.ok || t1.lockB) issues.push(`[${tag}] вход без таймера: ${JSON.stringify(t1)}`);
   else if (!(t1.costB > t1.costA * 1.15)) issues.push(`[${tag}] цена входа не растёт: ${JSON.stringify(t1)}`);

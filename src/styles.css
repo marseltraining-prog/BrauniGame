@@ -140,8 +140,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0; cursor: pointer; display: inline-grid; place-items: center; width: 34px; height: 34px; color: var(--ink-2); }
 .iconbtn:hover { color: var(--ink); border-color: var(--ink-3); }
 .iconbtn svg { width: 16px; height: 16px; }
-@media (max-width: 1400px) { .hud .spk { display: none; } .stats { gap: 16px; } .hud { gap: 14px; } }
-@media (max-width: 1340px) { .brand-sub, .s-res { display: none; } .hud .goal { width: 190px; } }
+@media (max-width: 1400px) { .hud .spk { display: none; } .stats { gap: 16px; } .hud { gap: 12px; } }
+/* в правом верхнем углу стало на одну кнопку больше (звук): на 1341–1520 px поджимаем отступы и цель,
+   чтобы HUD не вылезал за экран (без обрезки содержимого — обрезать цель нельзя, из неё пропадал счётчик) */
+@media (min-width: 1341px) and (max-width: 1500px) { .hud { gap: 12px; } .stats { gap: 15px; } .hud .goal { width: 190px; } }
+@media (max-width: 1370px) { .brand-sub, .s-res { display: none; } .hud .goal { width: 190px; } }
 @media (min-width: 821px) and (max-width: 1180px) { .s-rev, .vsep { display: none; } }
 @media (min-width: 821px) and (max-width: 1100px) { .hud .goal { width: 170px; } .hud { gap: 12px; } .stats { gap: 14px; } .brand-name { max-width: 130px; } }
 @media (min-width: 821px) and (max-width: 960px) { .brand-tx, .s-st { display: none; } }
@@ -474,6 +477,18 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 /* узкий экран: категория продукта в окне шефа — отдельной строкой, иначе длинная плашка («Башкирская и татарская») наезжает на название */
 @media (max-width: 480px) { .chefitem .chip { grid-column: 2 / span 2; grid-row: 2; justify-self: start; } .chefitem .cm { grid-row: 3; } .chefitem input { grid-row: 1 / span 3; align-self: start; margin-top: 2px; } }
 @media (max-width: 374px) { .stat .v { font-size: 13.5px; letter-spacing: -.03em; } .stats { column-gap: 12px; } .hud { column-gap: 6px; } }
+/* очень узкий телефон: в одну строку скорость, дата и кнопки не влезают — группа скорости вылезала из своей колонки
+   и накрывала кнопки в правом верхнем углу HUD. Ужимаем скорость, дату и кнопки, чтобы они не наезжали друг на друга. */
+@media (max-width: 430px) {
+  .hud { gap: 6px; column-gap: 6px; padding-inline: 10px; }
+  .clock { gap: 4px; }
+  .date { font-size: 11.5px; }
+  .speed { gap: 0; padding: 1px; }
+  .speed button { width: 34px; height: 36px; border-radius: 5px; }
+  .speed svg { width: 13px; height: 12px; }
+  .iconbtn { width: 36px; height: 36px; }
+  .hudbtns { gap: 4px; }
+}
 
 /* ---------- «Сводка» в стиле макета 1: цель, карточки с трендами, полоса команды, график 12 мес., «Требует внимания» ---------- */
 .caps { font-family: var(--f-display); font-size: 10.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }

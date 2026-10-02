@@ -114,6 +114,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.title = 'Открыть достижения';
     el.addEventListener('click', () => { el.remove(); if (APP().state) openAchievements(); });
     box.appendChild(el);
+    if (BK.Sound) BK.Sound.play('sparkle'); // живость: звук достижения
     while (box.children.length > 3) box.firstChild.remove();
     setTimeout(() => el.remove(), 7000);
   }
@@ -259,7 +260,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Лучший год${bestYear ? ' · ' + bestYear : ''}</span><span class="v">${bestYear ? fm(byYear[bestYear]) : '—'}</span></div>
       <div class="kpi"><span class="k">Точек (максимум)</span><span class="v">${Math.max(S.stats.peakStores || 0, S.stores.length)}</span></div>
       <div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div>
-      <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div></div>`;
+      <div class="kpi"><span class="k">Достижения</span><span class="v">${got} из ${L.length}</span></div>${S.miles && (S.miles.n || S.miles.fail) ? `<div class="kpi"><span class="k">Вехи</span><span class="v">${S.miles.n || 0}${S.miles.fail ? ` <small class="muted">· ${S.miles.fail} не вышло</small>` : ''}</span></div>` : ''}</div>`;
     if (S.rewind && S.rewind.n) s += `<p class="hint sumrw">↩️ Переигровок в этой игре: ${S.rewind.n} (отменено ${S.rewind.days} ${plural(S.rewind.days, 'день', 'дня', 'дней')} игры). Итоги и достижения — по той версии событий, что осталась.</p>`;
     s += `<div class="sec"><h3>Вся игра по месяцам</h3><div class="sumcharts">
       <figure><figcaption>Выручка и прибыль за месяц</figcaption>${lineChart(h, [{ v: (x) => x.rev, cls: 's-rev', label: 'Выручка', area: true }, { v: (x) => x.profit, cls: 's-prof', label: 'Прибыль' }], 'Выручка и прибыль по месяцам')}</figure>
@@ -290,6 +291,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function settingsHtml(S) {
     const got = A() ? A().count(S) : 0, n = A() ? A().LIST.length : 0;
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
+      ${BK.LivelyUI ? BK.LivelyUI.soundRow(S) : ''}
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
