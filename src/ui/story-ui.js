@@ -310,27 +310,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------- врезка в ACT ---------- */
-  // Лента «История» должна стоять в «Сводке» (docs/story.md §9.1), а «Сводку» собирает panels.js — он вне
-  // наших файлов. Поэтому оборачиваем BK.Panels.dash снаружи (тот же приём, что у achievements.js с движком):
-  // блок встаёт перед последними «ленивыми» секциями. Если в panels.js появится своя строка в dash — обёртку
-  // можно убрать; строка 951 panels.js (таб «Финансы») остаётся и дублирует ленту, её снимает владелец panels.js.
-  function wrapPanel() {
-    const P = BK.Panels;
-    if (!P || P.__storyDash || typeof P.dash !== 'function') return;
-    P.__storyDash = true;
-    const orig = P.dash;
-    P.dash = function (S) {
-      const html = orig.apply(this, arguments);
-      if (typeof html !== 'string') return html;
-      try {
-        const b = block(S); if (!b) return html;
-        const at = html.indexOf('<div class="sec lazy">');
-        return at > 0 ? html.slice(0, at) + b + html.slice(at) : html + b;
-      } catch (e) { return html; }
-    };
-  }
+  // Лента «История» встроена в panels.js (dash) — обёртка больше не нужна.
   function boot(tries) {
-    wrapPanel();                                        // лента в «Сводке» — даже если ACT ещё не готов
     const A = APP() && APP().ACT;
     if (!A) { if ((tries || 0) < 20) setTimeout(() => boot((tries || 0) + 1), 150); return; }
     if (A.__storyUI) return;
@@ -341,6 +322,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
       storyNext: () => { advance(); },
       storyPick: (d) => {
         const S = APP().state; if (!S) return;
+        // выбор, который заканчивает историю, подтверждаем — чтобы не нажать случайно
+        const sc0 = ST.pendingScene(S); const c0 = sc0 && (sc0.choices || [])[+d.arg];
+        if (c0 && (c0.effects || []).some((e) => e.t === 'ending') && !ui.confirmEnd) {
+          ui.confirmEnd = sc0.id;
+          APP().openModal(`<div class="modal-h"><span class="eyebrow">Подтверждение</span><h2>Закончить историю?</h2></div><div class="modal-b">
+            <p style="margin:0">Вы выбрали: «${String(c0.label).replace(/[<>&]/g, '')}».</p>
+            <p class="hint" style="margin:0">Это решение заканчивает игру — дальше будет только экран финала и итоги.</p></div>
+            <div class="modal-f"><button class="btn danger block" data-act="storyPick" data-arg="${+d.arg}">Да, закончить</button><button class="btn block" data-act="story">Вернуться к выбору</button></div>`, { closable: false });
+          return;
+        }
+        ui.confirmEnd = null;
         if (ui.letter) { const m = ui.letter; ui.letter = null; markRead(S, m); if (!openScene()) { APP().closeModal(); return; } APP().refresh(); return; }
         const r = ST.resolve(S, +d.arg);
         if (!r.ok) { APP().toast('Не получилось', r.msg || '', 'warn'); return; }

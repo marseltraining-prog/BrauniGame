@@ -36,7 +36,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0, ildar: 0, babushka: 0 },
       m: { care: 0, risk: 0, honesty: 0, fair: 0 },
       f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
-      perks: [], shares: [], ending: null, log: [],
+      perks: [], shares: [], ending: null, log: [], wonQueued: false,
     };
   }
   // Состояние сюжета: null, если игра ещё не начиналась (боты, старые сохранения без игры).
@@ -78,6 +78,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.crisis != null) return !!(S.ev && S.ev.crisis);
     if (c.corp != null) return !!(S.corp && S.corp.active);                                  // второй акт открыт
     if (c.cities != null) return ((S.corp && S.corp.cities) ? Object.keys(S.corp.cities).length : 0) >= c.cities;
+    if (c.revenue12 != null) { try { return E().rolling12(S) >= c.revenue12; } catch (e) { return false; } }   // оборот за 12 месяцев
     if (c.rel) return Object.keys(c.rel).every((k) => (R.rel[k] || 0) >= c.rel[k]);
     if (c.meter) return Object.keys(c.meter).every((k) => (R.m[k] || 0) >= c.meter[k]);
     if (c.flag) return Object.keys(c.flag).every((k) => R.f[k] === c.flag[k]);
@@ -110,7 +111,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const gap = (K().GAP_MONTHS[chapter(S, R)] != null ? K().GAP_MONTHS[chapter(S, R)] : 3) * 30.44;
     if (R.lastScene && S.day - R.lastScene < gap) return null;
     const list = scenes();
-    for (const sc of list) if (fits(S, R, sc)) return sc;
+    for (const sc of list) { if (sc.queueOnly) continue; if (fits(S, R, sc)) return sc; }   // queueOnly — только по очереди
     // запасной вариант: срок вышел — приходим в мягкой версии
     for (const sc of list) {
       if (!sc.fallback || R.seen[sc.id]) continue;
@@ -227,6 +228,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       });
     }
     if (monthStart(S)) sharesMonthly(S);   // доли сюжета: выплата 1-го числа
+    // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
+    if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
     if (sc) start(S, sc);
   }
