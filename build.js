@@ -5,7 +5,14 @@ const fs = require('fs'), path = require('path');
 const R = (f) => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
 const js = ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'sound.js', 'milestones.js', 'thoughts.js', 'prologue.js', 'pixel/px.js', 'pixel/cast.js', 'pixel/stage.js', 'pixel/scenes.js', 'pixel/store.js', 'pixel/live.js', 'stage1.js', 'ui/map.js', 'ui/panels.js', 'ui/delivery.js', 'ui/menu-stats.js', 'ui/extras.js', 'ui/rewind-ui.js', 'ui/tutorial.js', 'ui/trainers-ui.js', 'ui/managers-ui.js', 'ui/growth-ui.js', 'ui/lively-ui.js', 'ui/collateral-ui.js', 'ui/russia.js', 'ui/corp-ui.js', 'ui/prologue.js', 'ui/stage1.js', 'ui/app.js'].map((f) => `/* ${f} */\n` + R(f)).join('\n');
 const css = R('styles.css') + '\n' + R('ui/extras.css') + '\n' + R('ui/tutorial.css') + '\n' + R('ui/trainers.css') + '\n' + R('ui/managers.css') + '\n' + R('ui/growth.css') + '\n' + R('lively.css') + '\n' + R('ui/collateral.css') + '\n' + R('ui/russia.css') + '\n' + R('ui/menu-stats.css') + '\n' + R('ui/delivery.css') + '\n' + R('ui/rewind.css') + '\n' + R('ui/prologue.css') + '\n' + R('pixel/pixel.css') + '\n' + R('ui/stage1.css') + '\n[hidden]{display:none!important}\n';
-const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap">';
+// Шрифты грузим НЕ блокируя показ страницы: обычный <link rel="stylesheet"> держит белый экран, пока
+// Google Fonts не ответит, — а он бывает медленным или недоступным (у владельца из-за этого был белый экран
+// в Safari, а в тестах этого не видели, потому что там шрифты специально блокируются).
+// media="print" + onload → браузер рисует игру сразу системным шрифтом, а когда шрифты придут — подменяет.
+const FONT_URL = 'https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap';
+const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+  + '<link rel="stylesheet" href="' + FONT_URL + '" media="print" onload="this.media=\'all\'">'
+  + '<noscript><link rel="stylesheet" href="' + FONT_URL + '"></noscript>';
 // Если игра не запустилась (ошибка в скрипте), вместо белого экрана показываем причину текстом.
 // Это важно для Safari: раньше владелец видел просто пустую страницу и не мог сказать, что случилось.
 const GUARD = `<script>(function(){
