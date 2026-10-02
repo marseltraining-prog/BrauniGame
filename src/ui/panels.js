@@ -205,6 +205,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
     if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
+      if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -947,6 +948,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
       if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
+      if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}

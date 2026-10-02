@@ -1384,6 +1384,14 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .inv-acts .btn { width: 100%; }
 }
 
+/* Окно сюжетной сцены — базовые стили (расширяет помощник). */
+.story-m .st-lines { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+.story-m .st-line { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.story-m .st-line b { display: block; font-size: 12px; color: var(--crust-t); margin-bottom: 2px; }
+.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; }
+.story-m .st-ch { text-align: left; }
+.story-m .st-ch small { display: block; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
 /* сгенерированные города у воды: море / залив */
 .m-sea { fill: color-mix(in srgb, var(--map-river) 15%, var(--map-land)); }
@@ -3027,6 +3035,18 @@ BK.CFG.COLL = {
   WARN_DAYS: 5,                  // за сколько дней до 1-го числа показывать «не хватит на платёж»
 };
 
+/* Сюжет (этап В4 плана, docs/story.md). Логика — src/story.js (BK.Story), данные — src/data/story.js.
+   В прогонах ботов выключено: sim/load.js ставит ON = false (включает BK_STORY=1), иначе сцены
+   останавливали бы бота и меняли состояние. */
+BK.CFG.STORY = {
+  ON: true,
+  GAP_MONTHS: { own: 3, city: 2, war: 2, russia: 2, deep: 2, final: 3 },  // не чаще сцены раз в N игровых месяцев
+  CLIMAX_MIN_DAYS: 30,      // между кульминациями
+  DEFER_DAYS: [3, 7],       // на сколько откладываем, если игрок занят (окно события/шефа)
+  LETTER_GAP_DAYS: 30,      // письма не чаще раза в месяц
+  FALLBACK_K: 2,            // запасной вариант: срок условия × K
+};
+
 /* Инвесторы (ROADMAP, этап 2). Логика — src/investors.js (BK.Inv), интерфейс — src/ui/investors-ui.js.
    После UNLOCK_STORES точек раз в GAP дней приходит инвестор: деньги за долю в прибыли или в выручке,
    торг в несколько раундов, ежемесячные выплаты, право досрочного выкупа доли.
@@ -3340,6 +3360,151 @@ BK.CFG.GROWTH = {
   CAT_PACK: 10,
   CAT_FINE: 0.3,                   // сорвали больше 5% заказа — неустойка от стоимости недопоставки и −0,05★ сети
   CAT_TEAM: 3e6, CAT_TEAM_MONTH: 0.45e6, CAT_TEAM_K: 1.3, // своя команда кейтеринга: заказов и объёма ×1,3
+};
+
+/* data/story.js */
+/* =====================================================================
+   СЮЖЕТ: данные (BK.STORY). Тексты, герои, сцены, перки, концовки.
+   Логика — src/story.js (BK.Story). Интерфейс — src/ui/story-ui.js.
+   Полный замысел и все главы — docs/story.md (этап В4 плана).
+
+   Портреты героев уже нарисованы кодом: src/pixel/cast.js (Px.CAST) — поле px здесь
+   это ключ портрета, а не картинка.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+
+BK.STORY = {
+  heroes: {
+    hero: { name: 'Вы', role: '', px: 'hero' },
+    rashid: { name: 'Рашид Хайруллин', role: 'наставник, хозяин «Калача»', px: 'rashid' },
+    gulya: { name: 'Гульнара Сафина', role: 'первая коллега, пекарь', px: 'gulya', short: 'Гуля' },
+    oleg: { name: 'Олег Кравцов', role: 'владелец «Хлебного двора»', px: 'oleg' },
+    elvira: { name: 'Эльвира Ахметова', role: 'банк, потом фонд', px: 'elvira' },
+    family: { name: 'Мама Фания', role: 'семья', px: 'fania' },
+    semyon: { name: 'Семён Аркадьевич', role: 'постоянный гость и летописец', px: 'semyon' },
+    ildar: { name: 'Ильдар', role: 'брат', px: 'ildar' },
+    babushka: { name: 'Бабушка Сания', role: 'семья', px: 'sania' },
+  },
+
+  /* Именованные бонусы. Сила — в пределах ±10–15 %, как требует plan.
+     until — на сколько дней; иначе — навсегда, пока сюжет не отменит. */
+  perks: {
+    gulyaCeo: { name: 'Гуля ведёт цех', text: 'себестоимость в цехе −2 %', mods: [{ t: 'foodcost', m: 0.98, d: 3650, scope: 'production' }] },
+    familyRecipe: { name: 'Эчпочмак Сании', text: 'национальная выпечка: гостей +4 % на 3 месяца', mods: [{ t: 'traffic', m: 1.04, d: 90 }] },
+    rashidNotebook: { name: 'Тетрадь Рашида', text: 'проверенный рецепт: чек +3 % навсегда', mods: [{ t: 'check', m: 1.03, d: 3650 }] },
+    olegPact: { name: 'Пакт с «Двором»', text: 'Олег не открывается рядом с вашими точками', flag: { k: 'lenin', v: 'pact' } },
+  },
+
+  /* Сцены главы 2 «Сеть» (2–15 точек, годы 1–5) — docs/story.md §7.
+     Формат — docs/story.md §9.2. Триггеры по состоянию игры, дата — только запасной вариант. */
+  scenes: [
+    {
+      id: 's21', ch: 'city', form: 'scene', title: 'Гуля хочет цех',
+      who: ['gulya'],
+      trigger: { afterAny: [], all: [{ prod: true }], any: [{ stores: 3 }, { months: 14 }] },
+      fallback: { months: 6 },
+      lines: [
+        { who: 'gulya', emo: 'calm', text: 'Я посчитала. У нас четыре точки, а хлеб мы берём у дяди Рустама. Он хороший, но он не мы.' },
+        { who: 'gulya', emo: 'smile', text: 'Поставьте меня в цех. Я знаю тесто лучше, чем отчёты. К вечеру будете пробовать.' },
+      ],
+      choices: [
+        { label: 'В цех. Ты знаешь тесто лучше меня.', desc: 'Гуля ведёт производство: себестоимость в цехе −2 %, но в точках её больше нет.',
+          effects: [{ t: 'flag', k: 'gulya', v: 'manager' }, { t: 'rel', who: 'gulya', add: 15 }, { t: 'perk', id: 'gulyaCeo' }, { t: 'meter', k: 'care', add: 5 }] },
+        { label: 'Пока рано. Останься на точке.', desc: 'Гуля не обидится, но запомнит. В точках она — ваш лучший пекарь.',
+          effects: [{ t: 'rel', who: 'gulya', add: -5 }, { t: 'meter', k: 'care', add: 3 }] },
+      ],
+    },
+    {
+      id: 's22', ch: 'city', form: 'scene', title: 'Воскресный ужин',
+      who: ['family', 'gulya'],
+      trigger: { after: ['s21'], any: [{ stores: 5 }, { months: 24 }] },
+      fallback: { months: 8 },
+      lines: [
+        { who: 'family', emo: 'smile', text: 'В воскресенье собираемся. Бабушка печёт, Ильдар приедет. Тебя ждать?' },
+        { who: 'gulya', emo: 'calm', text: 'В воскресенье открытие пятой. Я не настаиваю. Просто говорю, как есть.' },
+      ],
+      choices: [
+        { label: 'Перенесу открытие на понедельник.', desc: 'Три дня простоя, зато семья рядом: отношения +15.', cost: 'открытие на 3 дня позже',
+          effects: [{ t: 'rel', who: 'family', add: 15 }, { t: 'meter', k: 'care', add: 5 }, { t: 'deferOpen', days: 3 }] },
+        { label: 'Откроюсь в воскресенье. Потом отпразднуем.', desc: 'Мама ответит коротко, и вы будете это помнить.',
+          effects: [{ t: 'rel', who: 'family', add: -10 }, { t: 'meter', k: 'care', add: -5 }] },
+      ],
+    },
+    {
+      id: 's24', ch: 'city', form: 'scene', title: 'Бабушкин эчпочмак',
+      who: ['babushka', 'family'],
+      trigger: { after: ['s21'], any: [{ months: 20 }, { stores: 6 }] },
+      fallback: { months: 10 },
+      lines: [
+        { who: 'babushka', emo: 'smile', text: 'Я тебе тетрадку принесла. Тут эчпочмак, как мы в Казани делали, когда твой дед ещё ходил.' },
+        { who: 'babushka', emo: 'calm', text: 'Только ты не подумай, что я учить пришла. Я просто не хочу, чтобы рецепт пропал.' },
+      ],
+      choices: [
+        { label: 'Поставим в меню на этой неделе.', desc: 'Новый вкус и тёплая история: гостей +4 % на три месяца, семья +10.',
+          effects: [{ t: 'rel', who: 'family', add: 10 }, { t: 'rel', who: 'babushka', add: 10 }, { t: 'perk', id: 'familyRecipe' }, { t: 'journal', text: 'Бабушкин эчпочмак встал в меню' }] },
+        { label: 'Запишу. Потом посмотрим.', desc: 'Тетрадка ляжет в стол. Ничего не случится — но и ничего не случится.',
+          effects: [{ t: 'rel', who: 'family', add: -5 }] },
+      ],
+    },
+    {
+      id: 's25', ch: 'war', form: 'climax', title: 'Обед на проспекте Октября',
+      who: ['oleg', 'semyon'],
+      trigger: { after: ['s22'], any: [{ stores: 8 }, { rivalStores: 10 }] },
+      fallback: { months: 10 },
+      climax: true,
+      lines: [
+        { who: 'oleg', emo: 'calm', text: 'Садись. Я плачу — у меня скидка как у постоянного гостя.' },
+        { who: 'oleg', emo: 'serious', text: 'Ты знаешь, что Рашид лежал с инфарктом, когда я пришёл в его пекарню? Я вытащил её. На маргарине, да. Он меня за это выгнал.' },
+        { who: 'oleg', emo: 'calm', text: 'Я не оправдываюсь. Я объясняю, почему я такой. И предлагаю: продай мне сеть за полторы годовые выручки. Ты уедешь с деньгами, я останусь с хлопотами.' },
+        { who: 'semyon', emo: 'smile', text: 'Записываю. «Обед, на котором решалась судьба города». Вкусно поел, между прочим.' },
+      ],
+      choices: [
+        { label: 'Продать. Полторы годовые выручки — это свобода.', desc: 'История заканчивается здесь: концовка «Сделка». Деньги вы получаете, игру — нет.',
+          effects: [{ t: 'ending', id: 'deal' }] },
+        { label: 'Отказать. Это моё.', desc: 'Олег не обидится — он начнёт воевать. Отношения −10, «Двор» ведёт себя жёстче.',
+          effects: [{ t: 'flag', k: 'lenin', v: 'no' }, { t: 'rel', who: 'oleg', add: -10 }, { t: 'rivalMod', agg: 0.1, nearK: 1.2, days: 720 }, { t: 'meter', k: 'risk', add: 5 }] },
+        { label: 'Давайте хотя бы без войны.', desc: 'Вы делите город: Олег не встаёт рядом с вашими точками, вы — рядом с его. Отношения +10.',
+          need: { rel: { oleg: 0 } },
+          effects: [{ t: 'flag', k: 'lenin', v: 'pact' }, { t: 'rel', who: 'oleg', add: 10 }, { t: 'perk', id: 'olegPact' }, { t: 'rivalMod', agg: -0.1, nearK: 0.5, days: 3650 }, { t: 'meter', k: 'fair', add: 5 }] },
+      ],
+    },
+    {
+      id: 's2hook', ch: 'war', form: 'post', title: 'Три точки за неделю',
+      who: ['semyon', 'oleg'],
+      trigger: { after: ['s25'], any: [{ stores: 15 }, { year: 5 }] },
+      climax: false, once: true,
+      lines: [
+        { who: 'semyon', emo: 'serious', text: 'Посчитал: «Двор» за неделю открыл три точки вокруг твоей самой прибыльной. Похоже, это война.' },
+        { who: 'semyon', emo: 'smile', text: 'Беру попкорн. И эчпочмак.' },
+      ],
+      choices: [
+        { label: 'Понял. Готовимся.', desc: 'Олег открывается рядом с вашей лучшей точкой.',
+          effects: [{ t: 'rivalOpenNear', count: 3, once: true }] },
+      ],
+    },
+  ],
+
+  /* Концовки (docs/story.md §5.2) — короткое описание для итогов игры. */
+  endings: {
+    empire: { name: 'Империя', text: 'Вы построили федеральную сеть и не потеряли себя в цифрах. Почти.' },
+    city: { name: 'Хлеб нашего города', text: 'Уфа ваша — и она об этом знает. Люди идут за хлебом и за именем.' },
+    twocrusts: { name: 'Две корки', text: 'Вы и Олег договорились. Город ест ваш хлеб с двух сторон — и не жалуется.' },
+    empty: { name: 'Пустой зал', text: 'Сеть есть, людей нет. В залах чисто, тихо и никто не здоровается.' },
+    deal: { name: 'Сделка', text: 'Вы продали сеть «Двору» и уехали с деньгами. Иногда вы просыпаетесь в четыре утра — по привычке.' },
+    hired: { name: 'Жизнь в найме', text: 'Своё дело не вышло. Вы вернулись за стойку — и, честно говоря, вам там спокойнее.' },
+    bankrupt: { name: 'Всё сгорело', text: 'Банк забрал последнее. Но тесто вы месить умеете — начнёте снова.' },
+  },
+
+  /* Летопись: как из журнала собирается история (заголовки по главам). */
+  chapters: [
+    { id: 'prologue', name: 'Пролог. Бариста', text: 'Наём, смены, копилка' },
+    { id: 'own', name: 'Глава 1. Своя точка', text: 'Первая вывеска' },
+    { id: 'city', name: 'Глава 2. Сеть', text: 'Люди и цифры' },
+    { id: 'war', name: 'Глава 3. Война за город', text: 'Уфа на двоих' },
+    { id: 'russia', name: 'Глава 4. Россия', text: 'Люди на расстоянии' },
+    { id: 'deep', name: 'Глава 4. Глубина', text: 'Вглубь, а не вширь' },
+    { id: 'final', name: 'Финал', text: 'Лодочная станция' },
+  ],
 };
 
 /* data/world.js */
@@ -7181,7 +7346,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     newGame, diffK, loanRate, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
     storeOpenCost, prodOpenCost, chooseProduction, rentStore, refreshOffers, repairCost, startRepair, train, trainAll, trainCost, hire, hireCost, hireDays,
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
-    setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
+    setPay, buyCulture, buyOffice, resolveEvent, applyEffects, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth, // applyEffects — для сюжетных сцен (story.js): те же эффекты, что у событий
     allStaff, bakersTotal, refreshCandidates, proposeChef, dist, byId, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
     holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult, kmPerUnit,
   };
@@ -12819,6 +12984,287 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
 })();
 
+/* story.js */
+/* =====================================================================
+   СЮЖЕТ: каркас (BK.Story). Чистая логика без DOM.
+   Данные и тексты — src/data/story.js (BK.STORY), интерфейс — src/ui/story-ui.js.
+   Замысел целиком — docs/story.md (этап В4 плана работ).
+
+   Что делает: следит за состоянием игры (точки, месяцы, отношения, боль) и по триггерам
+   ставит сюжетную сцену в очередь (S.story.pending). Сцену показывает интерфейс, игрок выбирает
+   вариант, BK.Story.resolve применяет последствия: отношения, скрытые стили (care / risk /
+   honesty / fair), флаги развилок, именованные бонусы (perks), доли, концовку — и пишет запись
+   в летопись (S.story.log) для итогов игры.
+
+   Состояние — S.story по схеме docs/story.md §4.5 (его же пишет пролог, syncStory).
+   **В прогонах ботов сюжет выключен** (sim/load.js ставит CFG.STORY.ON = false, включает BK_STORY=1):
+   пока игрок не начал играть, S.story не создаётся, случайные числа основного потока не тратятся.
+   Свой ГСЧ — S.story.rng.
+
+   Обёртка BK.Engine.tick (как achievements.js, milestones.js): движок не менялся, кроме
+   экспорта applyEffects — сюжет применяет обычные эффекты событий той же функцией движка.
+   Числа — CFG.STORY. Проверки — node sim/story.js, node qa/story.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, K = () => BK.CFG.STORY, D = () => BK.STORY;
+  const openStores = (S) => (S.stores || []).filter((s) => s.status !== 'opening');
+  const months = (S) => S.day / 30.44;                       // игровых месяцев с начала игры
+  const year = (S) => S.day / 365;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const R2 = (v) => Math.round(v * 100) / 100;
+
+  /* ---------------- состояние ---------------- */
+  function defaults(seed) {
+    return {
+      v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'own',
+      rng: ((seed | 0) ^ 0x5f3a1) | 0, seen: {}, queue: [], pending: null, inbox: [],
+      lastScene: 0, lastLetter: 0, lastLine: 0,
+      rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0, ildar: 0, babushka: 0 },
+      m: { care: 0, risk: 0, honesty: 0, fair: 0 },
+      f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
+      perks: [], shares: [], ending: null, log: [],
+    };
+  }
+  // Состояние сюжета: null, если игра ещё не начиналась (боты, старые сохранения без игры).
+  function state(S) { return S && S.story && S.story.v ? S.story : null; }
+  function ensure(S) {
+    if (!S) return null;
+    if (!K().ON) return null;                       // выключено — ничего не создаём
+    if (S.story && S.story.v) return fill(S.story);
+    S.story = fill(defaults(S.seed || 0));
+    return S.story;
+  }
+  // дозаполнение старых сохранений и того, что писал пролог
+  function fill(R) {
+    const d = defaults(0);
+    for (const k of Object.keys(d)) if (R[k] === undefined) R[k] = d[k];
+    for (const k of Object.keys(d.rel)) if (R.rel[k] === undefined) R.rel[k] = d.rel[k];
+    for (const k of Object.keys(d.m)) if (R.m[k] === undefined) R.m[k] = d.m[k];
+    for (const k of Object.keys(d.f)) if (R.f[k] === undefined) R.f[k] = d.f[k];
+    if (!Array.isArray(R.perks)) R.perks = [];
+    if (!Array.isArray(R.log)) R.log = [];
+    if (!Array.isArray(R.inbox)) R.inbox = [];
+    if (!Array.isArray(R.queue)) R.queue = [];
+    return R;
+  }
+  function rnd(R) { R.rng = (Math.imul(R.rng >>> 0, 1664525) + 1013904223) >>> 0; return R.rng / 4294967296; }
+
+  /* ---------------- данные сцен ---------------- */
+  function scenes() { return (D() && D().scenes) || []; }
+  function scene(id) { return scenes().find((s) => s.id === id) || null; }
+
+  /* ---------------- условия триггера ---------------- */
+  function cond(S, R, c) {
+    if (c.stores != null) return openStores(S).length >= c.stores;
+    if (c.months != null) return months(S) >= c.months;
+    if (c.year != null) return year(S) >= c.year;
+    if (c.rivalStores != null) { const rv = S.rival || {}; return (rv.stores ? rv.stores.length : (rv.n || 0)) >= c.rivalStores; }
+    if (c.prod != null) return !!(S.productions && S.productions.length);
+    if (c.cash != null) return S.cash >= c.cash;
+    if (c.crisis != null) return !!(S.ev && S.ev.crisis);
+    if (c.rel) return Object.keys(c.rel).every((k) => (R.rel[k] || 0) >= c.rel[k]);
+    if (c.meter) return Object.keys(c.meter).every((k) => (R.m[k] || 0) >= c.meter[k]);
+    if (c.flag) return Object.keys(c.flag).every((k) => R.f[k] === c.flag[k]);
+    return false;
+  }
+  function fits(S, R, sc) {
+    if (!sc || R.seen[sc.id]) return false;
+    if (sc.once === false) { /* повторяемые сцены разрешены */ }
+    const t = sc.trigger || {};
+    if (t.after && !t.after.every((id) => R.seen[id])) return false;
+    if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) return false;
+    if (t.all && !t.all.every((c) => cond(S, R, c))) return false;
+    if (t.any && t.any.length && !t.any.some((c) => cond(S, R, c))) return false;
+    return true;
+  }
+  // Глава по состоянию игры: нужна для летописи и для порядка сцен.
+  function chapter(S, R) {
+    if (R && R.ch === 'final') return 'final';
+    if (R && R.f && R.f.ufa === 'deep') return 'deep';
+    if (S.corp && S.corp.active) return 'russia';
+    const n = openStores(S).length;
+    if (n >= 15) return 'war';
+    if (n >= 2) return 'city';
+    return 'own';
+  }
+  // Очередь: сцена, которую пора показать (или null). Темп — не чаще GAP_MONTHS, не в день события.
+  function pick(S, R) {
+    if (R.pending) return null;
+    if (S.ev && S.ev.pending) return null;                       // не мешаем событию
+    const gap = (K().GAP_MONTHS[chapter(S, R)] != null ? K().GAP_MONTHS[chapter(S, R)] : 3) * 30.44;
+    if (R.lastScene && S.day - R.lastScene < gap) return null;
+    const list = scenes();
+    for (const sc of list) if (fits(S, R, sc)) return sc;
+    // запасной вариант: срок вышел — приходим в мягкой версии
+    for (const sc of list) {
+      if (!sc.fallback || R.seen[sc.id]) continue;
+      const t = sc.trigger || {};
+      if (t.after && !t.after.every((id) => R.seen[id])) continue;
+      const base = (t.any || []).map((c) => (c.months != null ? c.months : c.year != null ? c.year * 12 : null)).filter((x) => x != null);
+      if (!base.length) continue;
+      if (months(S) >= Math.min.apply(null, base) + sc.fallback.months) return sc;
+    }
+    return null;
+  }
+
+  /* ---------------- показ и выбор ---------------- */
+  function start(S, sc) {
+    const R = ensure(S); if (!R) return null;
+    R.pending = { id: sc.id, day: S.day };
+    R.ch = chapter(S, R);
+    if (S.notify) S.notify.push({ type: 'story', phase: 'scene', id: sc.id });
+    return R.pending;
+  }
+  function pendingScene(S) {
+    const R = state(S); if (!R || !R.pending) return null;
+    return scene(R.pending.id);
+  }
+  // Выбор варианта: применяет последствия и закрывает сцену.
+  function resolve(S, idx) {
+    const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
+    const sc = scene(R.pending.id); if (!sc) { R.pending = null; return { ok: false }; }
+    const ch = (sc.choices || [])[idx];
+    if (!ch) return { ok: false, msg: 'Нет такого варианта' };
+    const out = [];
+    for (const fx of ch.effects || []) { const t = apply(S, R, fx); if (t) out.push(t); }
+    const list = (ch.effects || []).map((fx) => fx.t);
+    R.seen[sc.id] = S.day;
+    R.lastScene = S.day;
+    R.pending = null;
+    R.ch = chapter(S, R);
+    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.label, chapter: R.ch, fx: list });
+    while (R.log.length > 120) R.log.shift();
+    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.label, out: out.join('; ') });
+    return { ok: true, scene: sc, choice: ch, out };
+  }
+
+  /* ---------------- эффекты сюжета ---------------- */
+  function apply(S, R, fx) {
+    switch (fx.t) {
+      case 'rel': {
+        R.rel[fx.who] = clamp((R.rel[fx.who] || 0) + fx.add, -100, 100);
+        const h = hero(fx.who);
+        return `${h.short || h.name}: отношения ${fx.add > 0 ? '+' : ''}${fx.add}`;
+      }
+      case 'meter': R.m[fx.k] = clamp((R.m[fx.k] || 0) + fx.add, -100, 100); return null;
+      case 'flag': R.f[fx.k] = fx.v; return null;
+      case 'perk': return givePerk(S, R, fx.id);
+      case 'share': R.shares.push({ who: fx.who, what: fx.what, pct: fx.pct, buyout: fx.buyout }); return `доля ${hero(fx.who).name} — ${Math.round(fx.pct * 100)} %`;
+      case 'rivalMod': {
+        const rv = S.rival; if (!rv) return null;
+        rv.storyAgg = R2((rv.storyAgg || 0) + (fx.agg || 0));
+        rv.storyNearK = fx.nearK != null ? fx.nearK : rv.storyNearK;
+        rv.storyUntil = S.day + (fx.days || 720);
+        return null;
+      }
+      case 'rivalOpenNear': {
+        if (!S.rival || !S.rival.enabled) return null;
+        if (BK.Rival && BK.Rival.openNear) { BK.Rival.openNear(S, { count: fx.count || 1 }); return '«Двор» открылся рядом с вашей точкой'; }
+        R.queue.push({ kind: 'rivalNear', count: fx.count || 1, day: S.day });
+        return null;
+      }
+      case 'journal': R.log.push({ day: S.day, id: 'j' + S.day, title: fx.text, choice: '', chapter: R.ch, fx: ['journal'] }); return fx.text;
+      case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
+      case 'schedule': R.queue.push({ kind: 'scene', id: fx.id, day: S.day + (fx.after || 30), p: fx.p }); return null;
+      case 'ending': {
+        R.ending = fx.id;
+        const e = (D().endings || {})[fx.id] || {};
+        R.log.push({ day: S.day, id: 'end_' + fx.id, title: 'Финал: ' + (e.name || fx.id), choice: '', chapter: 'final', fx: ['ending'] });
+        if (S.notify) S.notify.push({ type: 'story', phase: 'ending', id: fx.id, name: e.name, text: e.text });
+        S.lost = true; S.storyEnding = fx.id;   // игра останавливается, итоги показывают концовку
+        return `концовка «${e.name || fx.id}»`;
+      }
+      default:
+        // всё остальное — обычные эффекты событий, применяет движок той же функцией
+        if (fx.t) { try { S.__storyFx = [fx]; E().applyEffects(S, [fx], { scope: 'global', target: null }); return null; } catch (e) { return null; } }
+        return null;
+    }
+  }
+  function hero(id) { return (D().heroes || {})[id] || { name: id }; }
+  function givePerk(S, R, id) {
+    const p = (D().perks || {})[id]; if (!p) return null;
+    R.perks.push(id);
+    for (const m of p.mods || []) S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 90), scope: m.scope || 'global', src: 'story' });
+    if (p.flag) R.f[p.flag.k] = p.flag.v;
+    return `бонус «${p.name}»: ${p.text}`;
+  }
+
+  /* ---------------- день ---------------- */
+  function day(S) {
+    if (!K().ON || !S || S.lost) return;
+    const R = ensure(S); if (!R) return;
+    if (R.mode === 'off') return;
+    // отложенные записи
+    if (R.queue.length) {
+      R.queue = R.queue.filter((q) => {
+        if (q.day > S.day) return true;
+        if (q.kind === 'scene') { const sc = scene(q.id); if (sc) start(S, sc); return false; }
+        if (q.kind === 'journal') return false;
+        return false;
+      });
+    }
+    if (R.inbox.length) { const nm = monthStart(S); if (nm) R.inbox = R.inbox.map((m) => (m.read ? m : m)); }
+    const sc = pick(S, R);
+    if (sc) start(S, sc);
+  }
+  function monthStart(S) { return E().dateOf(S.day).d === 1; }
+
+  /* ---------------- летопись для итогов игры ---------------- */
+  function history(S) {
+    const R = state(S); if (!R) return { list: [], chapters: [] };
+    const list = R.log.slice().sort((a, b) => a.day - b.day);
+    const chs = [];
+    for (const it of list) {
+      const c = it.chapter || 'city';
+      if (!chs.length || chs[chs.length - 1].id !== c) chs.push({ id: c, name: chapterName(c), items: [] });
+      chs[chs.length - 1].items.push(it);
+    }
+    return { list, chapters: chs, ending: R.ending ? (D().endings || {})[R.ending] : null, rel: R.rel, f: R.f };
+  }
+  function chapterName(id) {
+    const c = ((D().chapters) || []).find((x) => x.id === id);
+    return c ? c.name : id;
+  }
+  function summary(S) {
+    const R = state(S); if (!R) return null;
+    return {
+      scenes: R.log.filter((x) => x.title && x.choice).length,
+      seen: Object.keys(R.seen).length,
+      rel: R.rel, m: R.m, f: R.f, ending: R.ending, perks: R.perks.slice(),
+    };
+  }
+
+  /* ---------------- «Требует внимания» ---------------- */
+  function attItems(S) {
+    const R = state(S); const out = [];
+    if (R && R.pending) {
+      const sc = scene(R.pending.id);
+      if (sc) out.push({ lvl: 'info', ic: 'chat', t: `Сюжет: «${sc.title}»`, d: 'Ждёт вашего решения.', b: { act: 'story', label: 'Открыть', primary: true } });
+    }
+    return out;
+  }
+
+  /* ---------------- подключение ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__story) return;
+    Eng.__story = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* сюжет не должен ломать игру */ } }
+      return r;
+    };
+  }
+  if (BK.Engine) wrap();
+
+  BK.Story = {
+    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems,
+    chapter, hero, chapterName, defaults, fits, cond,
+  };
+})();
+
 /* sound.js */
 /* =====================================================================
    ЗВУК «Хлебной карты» (vision-plan §4 п. 3, этап В2 «Живость»).
@@ -17868,6 +18314,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
     if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
+      if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -18610,6 +19057,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
       if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
+      if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
@@ -20821,6 +21269,131 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.InvUI = { block, openOffer, openInfo, offerHtml, infoHtml, notify, ICON };
 })();
+
+/* ui/story-ui.js */
+/* Сюжет — интерфейс (логика — src/story.js, BK.Story; тексты — src/data/story.js).
+   Окно сцены: портреты героев (пиксельные, Px.portraitTag), реплики, варианты выбора
+   с последствиями; тост о случившемся; записи в летопись для итогов игры.
+   В app.js / panels.js — только хуки (BK.StoryUI.*). */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  if (typeof document === 'undefined') return;
+  const ST = BK.Story, APP = () => BK.App, E = () => BK.Engine;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';
+
+  function portrait(who, emo) {
+    const h = (BK.STORY.heroes || {})[who] || { name: who };
+    if (BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px" title="${esc(h.name)}">${BK.Px.portraitTag(h.px || who, emo || 'calm')}</span>`;
+    return `<span class="st-av" title="${esc(h.name)}">${esc((h.name || '?').slice(0, 1))}</span>`;
+  }
+  function linesHtml(sc) {
+    return (sc.lines || []).map((l) => {
+      const h = (BK.STORY.heroes || {})[l.who] || { name: l.who };
+      return `<div class="st-line"><b>${esc(h.short || h.name)}</b>${esc(l.text)}</div>`;
+    }).join('');
+  }
+  function choicesHtml(sc, S) {
+    return (sc.choices || []).map((c, i) => {
+      const need = needText(S, c.need);
+      return `<button class="btn st-ch" data-act="storyPick" data-arg="${i}"${need.dis ? ' disabled' : ''}>${esc(c.label)}${c.desc ? `<small>${esc(c.desc)}</small>` : ''}${need.dis ? `<small>${esc(need.text)}</small>` : ''}</button>`;
+    }).join('');
+  }
+  // требование к варианту (отношения и скрытые стили) — показываем честно
+  function needText(S, need) {
+    const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
+    const bad = [];
+    if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`${(BK.STORY.heroes[k] || {}).short || k} ≥ ${need.rel[k]}`);
+    if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`стиль «${k}» ≥ ${need.meter[k]}`);
+    if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push('другое решение раньше');
+    return bad.length ? { dis: true, text: 'Требуется: ' + bad.join(', ') } : { dis: false, text: '' };
+  }
+  function sceneHtml(S, sc) {
+    const climax = sc.form === 'climax';
+    const chName = ST.chapterName ? ST.chapterName(ST.chapter(S, ST.state(S))) : '';
+    return `<div class="modal-h"><span class="eyebrow">${climax ? 'Поворотный момент' : esc(chName)}</span><h2>${esc(sc.title)}</h2></div>
+      <div class="modal-b story-m">
+        <div class="st-lines">${linesHtml(sc)}</div>
+        <div class="st-choices">${choicesHtml(sc, S)}</div>
+      </div>`;
+  }
+  function openScene(keep) {
+    const S = APP().state; const sc = ST.pendingScene(S);
+    if (!sc) return false;
+    APP().openModal(sceneHtml(S, sc), { closable: false, keepScroll: keep === 'keep' });
+    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('story-modal', 'story-' + (sc.form || 'scene'));
+    return true;
+  }
+  // Лента Семёна и записи сюжета в «Сводке» — короткая строка (полная летопись — в итогах игры).
+  function block(S) {
+    const R = ST.state(S); if (!R) return '';
+    const last = R.log.length ? R.log[R.log.length - 1] : null;
+    const pend = ST.pendingScene(S);
+    if (!last && !pend) return '';
+    let s = `<div class="sec storyb"><h3><span class="st-h">${ICON}История</span>${R.log.length ? `<button class="linkbtn" data-act="storyLog">Вся летопись →</button>` : ''}</h3>`;
+    if (pend) s += `<div class="st-pend"><b>Ждёт решения: «${esc(pend.title)}»</b><button class="btn sm primary" data-act="story">Открыть</button></div>`;
+    else if (last) s += `<p class="hint" style="margin:0">${E().fmtDate(last.day)} — ${esc(last.title)}${last.choice ? `: ${esc(last.choice)}` : ''}</p>`;
+    return s + '</div>';
+  }
+  function logHtml(S) {
+    const h = ST.history(S);
+    if (!h.list.length) return '<div class="modal-h"><span class="eyebrow">История</span><h2>Летопись</h2></div><div class="modal-b"><p class="hint" style="margin:0">Пока ничего не случилось. История начинается с первого решения.</p></div>';
+    let s = `<div class="modal-h"><span class="eyebrow">История</span><h2>Летопись</h2></div><div class="modal-b story-m">`;
+    for (const ch of h.chapters) {
+      s += `<h4 class="st-ch-h">${esc(ch.name)}</h4><ul class="st-log">`;
+      for (const it of ch.items) s += `<li><span class="st-d">${E().fmtDate(it.day)}</span><b>${esc(it.title)}</b>${it.choice ? `<span class="st-c">${esc(it.choice)}</span>` : ''}</li>`;
+      s += '</ul>';
+    }
+    if (h.ending) s += `<div class="st-end"><b>${esc(h.ending.name)}</b>${esc(h.ending.text)}</div>`;
+    return s + '</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>';
+  }
+  function toast(n) {
+    if (n.phase === 'scene') { openScene(); return; }
+    const box = document.getElementById('toasts'); if (!box) return;
+    const el = document.createElement('div');
+    el.className = 'toast sttoast' + (n.phase === 'ending' ? ' warn' : '');
+    el.setAttribute('role', 'status');
+    if (n.phase === 'ending') {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">История закончилась</span><b>${esc(n.name || '')}</b><span class="md">${esc(n.text || '')}</span></span>`;
+    } else {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">${esc(n.title || '')}</span><b>${esc(n.choice || '')}</b>${n.out ? `<span class="md">${esc(n.out)}</span>` : ''}</span>`;
+    }
+    el.addEventListener('click', () => { el.remove(); openLog(); });
+    el.title = 'Открыть летопись';
+    setTimeout(() => el.remove(), 9000);
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    if (BK.Sound) BK.Sound.play(n.phase === 'ending' ? 'warn' : 'fanfare');
+  }
+  function openLog() {
+    const S = APP().state; if (!S) return;
+    APP().openModal(logHtml(S), { closable: true });
+    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('story-modal');
+  }
+  function boot() {
+    const A = APP() && APP().ACT; if (!A) return;
+    Object.assign(A, {
+      story: () => openScene(),
+      storyLog: () => openLog(),
+      storyPick: (d) => {
+        const S = APP().state;
+        const r = ST.resolve(S, +d.arg);
+        APP().save();
+        if (r.ok && r.out && r.out.length) APP().toast(r.scene.title, r.out.join('; '), 'good');
+        if (r.ok && S.lost) { APP().refresh(); return; }
+        if (!openScene('keep')) { APP().closeModal(); APP().refresh(); }
+      },
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
+
+  BK.StoryUI = { openScene, openLog, block, logHtml, sceneHtml, toast, portrait, ICON };
+})();
+
+/* ui/story-history.js */
+/* Летопись сюжета — заготовка (наполняет помощник). */
+var BK = globalThis.BK || (globalThis.BK = {});
+BK.StoryHistory = BK.StoryHistory || { block: () => '' };
 
 /* ui/russia.js */
 /* Карта России (второй акт, этап Р1): статичный лист-чертёж 1600×900 в стиле карты Уфы, города кружками,
@@ -23323,6 +23896,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
       else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
+        else if (n.type === 'story' && BK.StoryUI) BK.StoryUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
@@ -23891,6 +24465,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else { ui.tab = 'dash'; refresh(); }
   }
   function openLostModal() {
+    if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
+      const e = BK.STORY.endings[S.storyEnding];
+      openModal(`<div class="modal-h"><span class="eyebrow">История закончилась</span><h2>${e.name}</h2></div><div class="modal-b">
+        <p style="margin:0">${e.text}</p>
+        <p class="hint" style="margin:0">Вы играли ${yearsText(S.day)}.</p>
+        ${BK.StoryUI ? BK.StoryUI.block(S) : ''}</div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+      $('#newAfter').addEventListener('click', toStart);
+      return;
+    }
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>

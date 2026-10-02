@@ -272,6 +272,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
       else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
+        else if (n.type === 'story' && BK.StoryUI) BK.StoryUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
@@ -840,6 +841,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else { ui.tab = 'dash'; refresh(); }
   }
   function openLostModal() {
+    if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
+      const e = BK.STORY.endings[S.storyEnding];
+      openModal(`<div class="modal-h"><span class="eyebrow">История закончилась</span><h2>${e.name}</h2></div><div class="modal-b">
+        <p style="margin:0">${e.text}</p>
+        <p class="hint" style="margin:0">Вы играли ${yearsText(S.day)}.</p>
+        ${BK.StoryUI ? BK.StoryUI.block(S) : ''}</div><div class="modal-f"><button class="btn primary block" id="newAfter">Начать заново</button><button class="btn block" data-act="summary">Итоги игры</button></div>`);
+      $('#newAfter').addEventListener('click', toStart);
+      return;
+    }
     openModal(`<div class="modal-h"><span class="eyebrow neg">Банкротство</span><h2>Сеть не смогла расплатиться с долгами</h2></div><div class="modal-b">
       <p style="margin:0">${H.nw(C.BANKRUPT_MONTHS, 'месячный расчёт', 'месячных расчёта', 'месячных расчётов')} подряд счёт был в минусе, а резервный фонд пуст. Вы продержались ${yearsText(S.day)}, максимум точек в сети — ${Math.max(S.stats.peakStores, S.stores.length)}.</p>
       <p class="hint" style="margin:0">Совет: держите в резерве 2–3 месячных расхода, не открывайте точки на последние деньги и следите за загрузкой производства.</p>

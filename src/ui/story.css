@@ -1,0 +1,7 @@
+/* Окно сюжетной сцены — базовые стили (расширяет помощник). */
+.story-m .st-lines { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+.story-m .st-line { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.story-m .st-line b { display: block; font-size: 12px; color: var(--crust-t); margin-bottom: 2px; }
+.story-m .st-choices { display: flex; flex-direction: column; gap: 8px; }
+.story-m .st-ch { text-align: left; }
+.story-m .st-ch small { display: block; color: var(--ink-3); font-weight: 400; margin-top: 2px; }

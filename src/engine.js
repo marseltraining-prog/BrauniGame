@@ -1406,7 +1406,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     newGame, diffK, loanRate, tick, dateOf, fmtDate, MONTHS, MONTHS_G, menuStats, storeDemand, prodCapacity, prodFcMult, deliveryCost, nearestProd,
     storeOpenCost, prodOpenCost, chooseProduction, rentStore, refreshOffers, repairCost, startRepair, train, trainAll, trainCost, hire, hireCost, hireDays,
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
-    setPay, buyCulture, buyOffice, resolveEvent, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth,
+    setPay, buyCulture, buyOffice, resolveEvent, applyEffects, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth, // applyEffects — для сюжетных сцен (story.js): те же эффекты, что у событий
     allStaff, bakersTotal, refreshCandidates, proposeChef, dist, byId, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
     holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult, kmPerUnit,
   };
