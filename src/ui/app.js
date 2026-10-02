@@ -440,8 +440,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- действия ---------------- */
   function res(r, okMsg) {
-    if (r && r.ok === false && r.msg) toast('Не получилось', r.msg, 'warn');
-    else if (okMsg) toast(okMsg, '', 'good');
+    if (r && r.ok === false && r.msg) { if (BK.Sound) BK.Sound.play('deny'); toast('Не получилось', r.msg, 'warn'); } // звук: неудача действия — мягкий низкий тон
+    else if (okMsg) { if (BK.Sound) BK.Sound.play('tap'); toast(okMsg, '', 'good'); } // звук: удачное действие кнопки
     refresh();
   }
   const ACT = {
@@ -554,7 +554,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const t = e.target.closest('[data-act]');
     if (!t || t.disabled) return;
     const fn = ACT[t.dataset.act];
-    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); if (fn) fn(t.dataset); }
+    if (fn && S || t.dataset.act === 'continue' || t.dataset.act === 'closeModal' || t.dataset.act === 'theme') { e.preventDefault(); if (fn) fn(t.dataset); if (BK.Sound) BK.Sound.tap(t.dataset.act); } // звук: отклик кнопки-действия и вкладки
   }
   function onInput(e) {
     const t = e.target; if (!t.dataset || !t.dataset.inp || !S) return;
