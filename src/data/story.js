@@ -82,7 +82,7 @@ BK.STORY = {
       ],
     },
     {
-      id: 's25', ch: 'war', form: 'climax', title: 'Обед на проспекте Октября',
+      id: 's25', ch: 'city', form: 'climax', title: 'Обед на проспекте Октября',
       who: ['oleg', 'semyon'],
       trigger: { after: ['s22'], any: [{ stores: 8 }, { rivalStores: 10 }] },
       fallback: { months: 10 },
