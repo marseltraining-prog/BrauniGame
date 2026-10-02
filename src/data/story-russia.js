@@ -35,17 +35,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
      scope не указываем: у бонуса сюжета нет цели-города, движок применяет его как «вся сеть». */
   BK.STORY.perks.millFlour = { name: 'Своя мельница', text: 'мука своя: себестоимость сети −2,5 %', mods: [{ t: 'foodcost', m: 0.975, d: 3650 }] };
   BK.STORY.perks.millShare = { name: 'Кооператив с мельницей', text: 'половина муки по себестоимости: −1,5 %', mods: [{ t: 'foodcost', m: 0.985, d: 3650 }] };
-  BK.STORY.perks.deepFlagship = { name: 'Флагман', text: 'флагман в Центре: чек +5 %, гостей +4 %', mods: [{ t: 'check', m: 1.05, d: 3650 }, { t: 'traffic', m: 1.04, d: 1825 }] };
-  BK.STORY.perks.shelfPremium = { name: 'Своя полка', text: 'хлеб на полках супермаркетов: чек +3 %', mods: [{ t: 'check', m: 1.03, d: 1095 }] };
-  BK.STORY.perks.fiveBillion = { name: 'Пять миллиардов', text: 'сеть вышла на пять миллиардов в Уфе: гостей +5 %', mods: [{ t: 'traffic', m: 1.05, d: 730 }] };
-  BK.STORY.perks.gulyaKazan = { name: 'Гуля ведёт Казань', text: 'переманить её почти нельзя; в городе меньше текучки и воровства', mods: [{ t: 'traffic', m: 1.03, d: 1095 }], flag: { k: 'gulyaTrust', v: true } };
-  BK.STORY.perks.ownHands = { name: 'Хозяин на месте', text: 'город открыт своими руками: гостей +4 % на год', mods: [{ t: 'traffic', m: 1.04, d: 365 }] };
-  BK.STORY.perks.gulyaOption = { name: 'Опцион Гули', text: 'один процент прибыли Казани — её; удерживать больше не нужно', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'gulyaTrust', v: true } };
-  BK.STORY.perks.gulyaBoard = { name: 'Гуля в совете', text: 'её голос в совете: раз в год она растит вам директора', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'gulyaBoard', v: true } };
-  BK.STORY.perks.gulyaOwn = { name: 'Гулина закваска', text: 'своя закваска и поставка в Казань: себестоимость сети −2 %', mods: [{ t: 'foodcost', m: 0.98, d: 3650 }] };
-  BK.STORY.perks.ipoBell = { name: 'Колокол', text: 'деньги рынка: гостей +5 % на три года, но каждый квартал — план для рынка', mods: [{ t: 'traffic', m: 1.05, d: 1095 }], flag: { k: 'ipo', v: true } };
-  BK.STORY.perks.dvorBought = { name: '«Двор» куплен', text: 'точки «Двора» переходят сети: гостей +5 %', mods: [{ t: 'traffic', m: 1.05, d: 1825 }] };
-  BK.STORY.perks.twocrusts = { name: 'Две корки', text: 'одна карта на двоих: давление соперника падает', mods: [{ t: 'traffic', m: 1.04, d: 3650 }], flag: { k: 'olegEnd', v: 'merge' } };
+  BK.STORY.perks.deepFlagship = { name: 'Флагман', text: 'флагман в Центре: чек +5 %, гостей +4 %', mods: [{ t: 'check', m: 1.025, d: 3650 }, { t: 'traffic', m: 1.02, d: 1825 }] };
+  BK.STORY.perks.shelfPremium = { name: 'Своя полка', text: 'хлеб на полках супермаркетов: чек +3 %', mods: [{ t: 'check', m: 1.015, d: 1095 }] };
+  BK.STORY.perks.fiveBillion = { name: 'Пять миллиардов', text: 'сеть вышла на пять миллиардов в Уфе: гостей +5 %', mods: [{ t: 'traffic', m: 1.025, d: 730 }] };
+  BK.STORY.perks.gulyaKazan = { name: 'Гуля ведёт Казань', text: 'переманить её почти нельзя; в городе меньше текучки и воровства', mods: [{ t: 'traffic', m: 1.015, d: 1095 }], flag: { k: 'gulyaTrust', v: true } };
+  BK.STORY.perks.ownHands = { name: 'Хозяин на месте', text: 'город открыт своими руками: гостей +4 % на год', mods: [{ t: 'traffic', m: 1.02, d: 365 }] };
+  BK.STORY.perks.gulyaOption = { name: 'Опцион Гули', text: 'один процент прибыли Казани — её; удерживать больше не нужно', mods: [{ t: 'traffic', m: 1.01, d: 3650 }], flag: { k: 'gulyaTrust', v: true } };
+  BK.STORY.perks.gulyaBoard = { name: 'Гуля в совете', text: 'её голос в совете: раз в год она растит вам директора', mods: [{ t: 'traffic', m: 1.01, d: 3650 }], flag: { k: 'gulyaBoard', v: true } };
+  BK.STORY.perks.gulyaOwn = { name: 'Гулина закваска', text: 'своя закваска и поставка в Казань: себестоимость сети −2 %', mods: [{ t: 'foodcost', m: 0.99, d: 3650 }] };
+  BK.STORY.perks.ipoBell = { name: 'Колокол', text: 'деньги рынка: гостей +5 % на три года, но каждый квартал — план для рынка', mods: [{ t: 'traffic', m: 1.025, d: 1095 }], flag: { k: 'ipo', v: true } };
+  BK.STORY.perks.dvorBought = { name: '«Двор» куплен', text: 'точки «Двора» переходят сети: гостей +5 %', mods: [{ t: 'traffic', m: 1.025, d: 1825 }] };
+  BK.STORY.perks.twocrusts = { name: 'Две корки', text: 'одна карта на двоих: давление соперника падает', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'olegEnd', v: 'merge' } };
 
   BK.STORY.scenes.push(
     /* =====================================================================
@@ -124,7 +124,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         },
         {
           label: 'Ответим ценой: акция на четыре рубля.', desc: 'Гостей +5 % на два года, чек −3 %. Олег ответит, он всегда отвечает.',
-          effects: [{ t: 'traffic', m: 1.05, d: 730 }, { t: 'check', m: 0.97, d: 730 }, { t: 'meter', k: 'fair', add: -10 },
+          effects: [{ t: 'traffic', m: 1.025, d: 730 }, { t: 'check', m: 0.985, d: 730 }, { t: 'meter', k: 'fair', add: -10 },
             { t: 'rel', who: 'oleg', add: -10 }, { t: 'rivalMod', agg: 0.1, nearK: 1.15, days: 720 }],
         },
         {
@@ -155,7 +155,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         },
         {
           label: 'Взять пять и сразу объявить шестой цех.', desc: 'Рывок без паузы: гостей +4 % на два года, но резерва станет меньше.',
-          effects: [{ t: 'traffic', m: 1.04, d: 730 }, { t: 'cash', v: -80e6 }, { t: 'meter', k: 'risk', add: 10 },
+          effects: [{ t: 'traffic', m: 1.02, d: 730 }, { t: 'cash', v: -80e6 }, { t: 'meter', k: 'risk', add: 10 },
             { t: 'flag', k: 'deepFive', v: true }],
         },
       ],
@@ -212,12 +212,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       choices: [
         {
           label: 'Качество: поднимем стандарт, цену не тронем.', desc: 'Свежая выпечка каждые три часа и местный маркетинг: гостей +5 %, чек −1,5 % на два года. 25 млн ₽.',
-          effects: [{ t: 'cash', v: -25e6 }, { t: 'traffic', m: 1.05, d: 730 }, { t: 'check', m: 0.985, d: 730 },
+          effects: [{ t: 'cash', v: -25e6 }, { t: 'traffic', m: 1.025, d: 730 }, { t: 'check', m: 0.985, d: 730 },
             { t: 'meter', k: 'fair', add: 5 }, { t: 'rel', who: 'oleg', add: 5 }],
         },
         {
           label: 'Ценой: демпинг на четыре недели.', desc: 'Гостей +7 % на год, чек −5 %. Олег ответит, и в этот раз злее.',
-          effects: [{ t: 'check', m: 0.95, d: 365 }, { t: 'traffic', m: 1.07, d: 365 }, { t: 'meter', k: 'fair', add: -10 },
+          effects: [{ t: 'check', m: 0.975, d: 365 }, { t: 'traffic', m: 1.035, d: 365 }, { t: 'meter', k: 'fair', add: -10 },
             { t: 'rel', who: 'oleg', add: -10 }, { t: 'rivalMod', agg: 0.15, nearK: 1.3, days: 720 }],
         },
         {
@@ -244,7 +244,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         {
           label: 'Уехать в Черниковку на месяц. Дела подождут.', desc: 'Город идёт на автопилоте: выручка сети −2 % месяц, но это запомнят надолго. Семья +20.',
           effects: [{ t: 'rel', who: 'family', add: 20 }, { t: 'rel', who: 'babushka', add: 20 }, { t: 'meter', k: 'care', add: 10 },
-            { t: 'traffic', m: 0.98, d: 30 }, { t: 'journal', text: 'Месяц в Черниковке, у бабушки' }],
+            { t: 'traffic', m: 0.99, d: 30 }, { t: 'journal', text: 'Месяц в Черниковке, у бабушки' }],
         },
         {
           label: 'Отправить подарок и деньги. Много денег.', desc: 'Мама скажет «спасибо» и положит трубку. Деньги — не то, что она просила.',
@@ -351,7 +351,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         },
         {
           label: 'Отдать письмо Семёну. Пусть проверит сам.', desc: 'Он копает лучше аудита и пишет громче. Гостей −2 % на полгода, зато правда выйдет наружу.',
-          effects: [{ t: 'rel', who: 'semyon', add: 10 }, { t: 'meter', k: 'honesty', add: 5 }, { t: 'traffic', m: 0.98, d: 180 },
+          effects: [{ t: 'rel', who: 'semyon', add: 10 }, { t: 'meter', k: 'honesty', add: 5 }, { t: 'traffic', m: 0.99, d: 180 },
             { t: 'journal', text: 'Письмо ушло к Семёну' }],
         },
       ],

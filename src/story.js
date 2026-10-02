@@ -108,6 +108,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function pick(S, R) {
     if (R.pending) return null;
     if (S.ev && S.ev.pending) return null;                       // не мешаем событию
+    if (S.chef && S.chef.pending) return null;                   // и окну шеф-пекаря (1 января)
+    // и не в те дни, когда только что случилось событие (docs/story.md §6: отложить на 3–7 дней)
+    const r0 = (S.ev && S.ev.recent && S.ev.recent[0]) || null;
+    if (r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) return null;
     const gap = (K().GAP_MONTHS[chapter(S, R)] != null ? K().GAP_MONTHS[chapter(S, R)] : 3) * 30.44;
     if (R.lastScene && S.day - R.lastScene < gap) return null;
     const list = scenes();
@@ -221,7 +225,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (R.queue.length) {
       R.queue = R.queue.filter((q) => {
         if (q.day > S.day) return true;
-        if (q.kind === 'scene') { const sc = scene(q.id); if (sc) start(S, sc); return false; }
+        if (q.kind === 'scene') {
+          const sc = scene(q.id); if (!sc) return false;
+          // то же правило, что и у обычного триггера: не в день события и не при открытом окне шефа
+          const r0 = (S.ev && S.ev.recent && S.ev.recent[0]) || null;
+          if ((r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
+          start(S, sc); return false;
+        }
         if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
         if (q.kind === 'journal') return false;
         return false;
