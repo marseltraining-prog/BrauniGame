@@ -1,7 +1,7 @@
 // Загружает игровые модули в Node (глобальный BK)
 const path = require('path');
 const src = path.join(__dirname, '..', 'src');
-for (const f of ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'prologue.js', 'stage1.js']) {
+for (const f of ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'investors.js', 'prologue.js', 'stage1.js']) {
   delete require.cache[require.resolve(path.join(src, f))];
   require(path.join(src, f));
 }
@@ -11,6 +11,9 @@ if (process.env.BK_CORP === '0') globalThis.BK.CFG.CORP_ON = false; // BK_CORP=0
 if (process.env.BK_RIVAL === '0') globalThis.BK.CFG.RIVAL_ON = false; // BK_RIVAL=0 — игра без сети-соперника
 // Живость (вехи, мысли гостей недели — vision-plan §4, этап В2) в обычных прогонах ботов не подключается:
 // канонические прогоны первого акта остаются побайтно прежними. Включается только явно: BK_MILES=1.
+// Инвесторы появляются сами после 10 точек — в обычных прогонах ботов выключаем (BK_INV=1 включает),
+// чтобы канонические прогоны первого акта оставались побайтно прежними.
+if (!process.env.BK_INV) globalThis.BK.CFG.INV.ON = false;
 if (process.env.BK_MILES) {
   for (const f of ['milestones.js', 'thoughts.js']) { delete require.cache[require.resolve(path.join(src, f))]; require(path.join(src, f)); }
 }

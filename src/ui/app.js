@@ -271,6 +271,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
+      else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));

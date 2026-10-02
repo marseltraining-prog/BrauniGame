@@ -105,7 +105,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return S;
   }
   function resetMonth(S) {
-    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0, coll: 0 };
+    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0, coll: 0, inv: 0 };
   }
 
   /* ---------------- генерация предложений ---------------- */
@@ -159,17 +159,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     };
   }
   function offersWanted(S) { return Math.min(C().OFFERS_MAX, C().OFFERS_BASE + S.stores.length); }
+  // инвестор со связями в ритейле: новые помещения приходят заметно чаще (investors.js)
+  function invOfferK(S) { return (S.inv && BK.Inv && BK.Inv.perkOf(S, 'offers')) ? 0.75 : 1; }
   function genStoreOffers(S, initial) {
     const want = offersWanted(S);
     if (initial) {
       while (S.offers.length < want) S.offers.push(makeStoreOffer(S));
       S.offerRefreshDay = S.day + C().OFFER_REFRESH_DAYS;
-      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap') * invOfferK(S));
       return;
     }
     if (S.offers.length < want && S.day >= (S.nextOfferDay || 0)) {
       S.offers.push(makeStoreOffer(S));
-      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap') * invOfferK(S));
     }
   }
   function makeProdOffer(S, d) {
@@ -856,7 +858,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // налоги
     const taxRate = currentTaxRate(S);
     let tax = M.rev * taxRate;
-    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0);
+    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0) + (M.inv || 0); // + выплаты инвесторам (investors.js)
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
@@ -1362,14 +1364,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (amount > 0) { amount = Math.min(amount, Math.max(0, S.cash)); S.cash -= amount; S.reserve += amount; }
     else { amount = Math.min(-amount, S.reserve); S.reserve -= amount; S.cash += amount; }
   }
+  // инвестор в совете: лимит кредита больше (investors.js)
+  function invBankK(S) { return (S.inv && BK.Inv && BK.Inv.perkOf(S, 'bank')) ? 1.25 : 1; }
   function loanLimit(S) {
     const h = S.history.slice(-3); const avg = h.length ? h.reduce((a, x) => a + x.rev, 0) / h.length : 0;
     let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT) * diffK(S, 'loanMult');
     if (S.ev && S.day < (S.ev.creditSqueezeUntil || 0)) lim *= C().CRISIS_LOAN_MULT != null ? C().CRISIS_LOAN_MULT : 1; // кризис: лимит урезан
     if (S.corp && S.corp.creditK) lim *= S.corp.creditK; // корпоративное событие e213: кредитная линия под экспансию
-    return lim;
+    return lim * invBankK(S);
   }
-  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0) + (S.coll && BK.Coll ? BK.Coll.rateAdd(S) : 0); } // штаб: казначейство, ковенанта банка; залог: надбавка после изъятия точки
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0) + (S.coll && BK.Coll ? BK.Coll.rateAdd(S) : 0) - ((S.inv && BK.Inv && BK.Inv.perkOf(S, 'bank')) ? 0.01 : 0); } // инвестор с казначейством: −1 п. п. // штаб: казначейство, ковенанта банка; залог: надбавка после изъятия точки
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };

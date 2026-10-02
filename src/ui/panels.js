@@ -204,6 +204,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
+    if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -376,6 +377,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('Найм и обучение', '−' + fm((p.hire || 0) + (p.train || 0)));
       s += row('Налоги', '−' + fm(p.tax || 0));
       if (p.interest) s += row('Проценты по кредиту', '−' + fm(p.interest));
+      if (p.inv) s += row('Партнёрам (инвесторы)', '−' + fm(p.inv));
       if (p.other) s += row('Прочие расходы (события)', '−' + fm(p.other));
       if (p.income) s += row('Прочие доходы', '+' + fm(p.income));
     } else if (p.profit != null) s += row('Налог (оценка)', '−' + fm(p.rev * (taxRate != null ? taxRate : 0.06)));
@@ -826,7 +828,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!p || p.rev <= 0) return s + `<div class="empty">«Водопад» появится 1-го числа следующего месяца — после первого расчёта.</div></div>`;
     const R = p.rev;
     // статьи; мелкие (< 2 % выручки) складываем в «Прочее», чтобы столбики читались
-    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest]];
+    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest], ['Партнёрам', p.inv || 0]];
     const items = []; let other = p.other - p.income;
     for (const [l, v] of raw) { if (!v) continue; if (Math.abs(v) < R * 0.02 && l !== 'Налоги') other += v; else items.push([l, v]); }
     if (Math.abs(other) >= 1) items.push([other >= 0 ? 'Прочее' : 'Доходы', other]);
@@ -944,6 +946,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
+      if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}

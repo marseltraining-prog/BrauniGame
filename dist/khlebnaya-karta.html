@@ -2,13 +2,11 @@
   function show(text){ try{ var d=document.getElementById('bk-fail'); if(!d){ d=document.createElement('div'); d.id='bk-fail';
     d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#a3301c;font:14px/1.6 ui-monospace,Menlo,monospace;padding:20px;white-space:pre-wrap;overflow:auto';
     (document.body||document.documentElement).appendChild(d); }
-    d.textContent='Игра не запустилась. Покажите это сообщение разработчику:
-
-'+text; }catch(e){} }
+    d.textContent='Игра не запустилась. Покажите это сообщение разработчику:\n\n'+text; }catch(e){} }
   window.addEventListener('error', function(e){
-    if (e && e.target && e.target.tagName === 'SCRIPT') return;
-    show((e && (e.message || (e.error && e.error.message)) || 'неизвестная ошибка') + '
-' + (e && e.filename ? e.filename : '') + (e && e.lineno ? ':' + e.lineno : ''));
+    var t = e && e.target;
+    if (t && t !== window && t.tagName && t.tagName !== 'SCRIPT') return; // не загрузились шрифты или картинка — это не ошибка игры
+    show((e && (e.message || (e.error && e.error.message)) || 'неизвестная ошибка') + '\n' + (e && e.filename ? e.filename : '') + (e && e.lineno ? ':' + e.lineno : ''));
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
@@ -1339,6 +1337,51 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 
 @media (max-width: 560px) {
   .coll-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Инвесторы (src/ui/investors-ui.js). Только интерфейс: условия и выплаты — в src/investors.js. */
+
+.inv-h { display: inline-flex; align-items: center; gap: 6px; }
+.inv-h svg { width: 14px; height: 14px; color: var(--good); }
+
+/* карточка инвестора и сделки */
+.inv-card { border: 1px solid var(--line); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 11px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.inv-card.deal { border-left-color: var(--river); }
+.inv-who { display: flex; flex-direction: column; gap: 1px; }
+.inv-who b { font-size: 14px; }
+.inv-who span { font-size: 12px; color: var(--ink-3); }
+.inv-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 7px 12px; }
+.inv-nums.big { margin: 4px 0 2px; }
+.inv-nums span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.inv-nums small { font-size: 11px; color: var(--ink-3); }
+.inv-nums b { font-family: var(--f-mono); font-size: 13px; }
+.inv-perk { font-size: 12px; color: var(--good-t); background: var(--good-soft); border-radius: 6px; padding: 6px 8px; }
+.inv-last { font-size: 12px; color: var(--warn-t); background: var(--warn-soft); border-radius: 6px; padding: 7px 9px; }
+.inv-warn { font-size: 12px; color: var(--bad-t); background: var(--bad-soft); border-radius: 6px; padding: 8px 10px; }
+.inv-list { display: flex; flex-direction: column; gap: 8px; }
+.inv-foot { font-size: 12px; color: var(--ink-2); }
+.inv-foot b { font-family: var(--f-mono); }
+.inv-offer { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; border: 1px solid var(--good); border-radius: 8px; padding: 9px 10px; background: var(--good-soft); }
+.inv-offer b { font-size: 13px; color: var(--good-t); }
+.inv-offer span { font-size: 12px; color: var(--ink-2); }
+.inv-acts { gap: 8px; }
+.inv-m .inv-card { margin: 4px 0 2px; }
+
+/* тост */
+.toast.invtoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.invtoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--good-soft); color: var(--good-t); }
+.invtoast.warn .mi { background: var(--warn-soft); color: var(--warn-t); }
+.invtoast .mi svg { width: 18px; height: 18px; }
+.invtoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.invtoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--good-t); }
+.invtoast.warn .ey { color: var(--warn-t); }
+.invtoast b { margin: 0; }
+.invtoast .md { color: var(--ink-2); font-size: 12px; }
+
+@media (max-width: 560px) {
+  .inv-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inv-acts { flex-direction: column; align-items: stretch; }
+  .inv-acts .btn { width: 100%; }
 }
 
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
@@ -2971,6 +3014,38 @@ BK.CFG.COLL = {
   BAN_DAYS: 730,                 // после изъятия — 2 года без новых кредитов
   BAN_RATE_ADD: 0.02,            // потом ставка выше на 2 п. п.
   WARN_DAYS: 5,                  // за сколько дней до 1-го числа показывать «не хватит на платёж»
+};
+
+/* Инвесторы (ROADMAP, этап 2). Логика — src/investors.js (BK.Inv), интерфейс — src/ui/investors-ui.js.
+   После UNLOCK_STORES точек раз в GAP дней приходит инвестор: деньги за долю в прибыли или в выручке,
+   торг в несколько раундов, ежемесячные выплаты, право досрочного выкупа доли.
+   Кроме денег инвестор приносит пользу делу (PERKS) — потому что сильному игроку деньги не нужны
+   (проверено ботом: к 10 точкам у него 117 млн свободного кредитного лимита и ноль долга),
+   и без этого предложение было бы бессмысленным. */
+BK.CFG.INV = {
+  ON: true,                      // в браузере инвесторы включены; sim/load.js выключает их для канонических прогонов ботов
+  UNLOCK_STORES: 10,             // с какого числа открытых точек приходят инвесторы
+  FIRST_DELAY: [90, 270],        // первый инвестор — не сразу после десятой точки
+  GAP: [730, 1825],              // дальше — раз в 2–5 лет
+  SUM: [100e6, 200e6],           // сумма вложений (× уровень цен)
+  PROFIT_PCT: [0.08, 0.18],      // доля от прибыли
+  REV_PCT: [0.025, 0.05],        // доля от выручки (для игрока дешевле при тонкой марже)
+  PATIENCE: [2, 3],              // сколько раундов торга выдерживает
+  HARSH_P: 0.4,                  // доля жёстких инвесторов
+  MORE_K: [1.10, 1.35],          // «дайте больше денег»: насколько может поднять сумму
+  LESS_K: [0.80, 0.92],          // «меньше процент»: насколько может уступить
+  SWITCH_ADD: 0.15,              // смена типа выплаты: на столько меняется доля
+  BUYOUT_K: 1.35,                // выкуп доли: во столько раз дороже вложенного
+  BUYOUT_YEAR: 0.10,             // и ещё столько за каждый год владения
+  BUYOUT_MIN: 1.3,               // но не дешевле, чем в 1,3 раза от вложенного
+  WARN_SHARE: 0.33,              // с какой суммарной доли партнёров предупреждать
+  MAX_SHARE: 0.55,               // выше — новые инвесторы не приходят
+  DEBT_PENALTY: 1.25,            // после изъятия залога просят больше и дают меньше
+  PERKS: [                       // что инвестор приносит кроме денег
+    { id: 'offers', name: 'связи в ритейле', text: 'новые помещения приходят на 25 % чаще' },
+    { id: 'brand', name: 'бренд и реклама', text: '+3 % гостей всем точкам сети' },
+    { id: 'bank', name: 'своё казначейство', text: 'ставка по кредитам ниже на 1 п. п. и лимит больше на 25 %' },
+  ],
 };
 
 /* Живость (vision-plan §4, этап В2): короткие вехи, мысли гостей недели и звук.
@@ -5784,7 +5859,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return S;
   }
   function resetMonth(S) {
-    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0, coll: 0 };
+    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0, coll: 0, inv: 0 };
   }
 
   /* ---------------- генерация предложений ---------------- */
@@ -5838,17 +5913,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     };
   }
   function offersWanted(S) { return Math.min(C().OFFERS_MAX, C().OFFERS_BASE + S.stores.length); }
+  // инвестор со связями в ритейле: новые помещения приходят заметно чаще (investors.js)
+  function invOfferK(S) { return (S.inv && BK.Inv && BK.Inv.perkOf(S, 'offers')) ? 0.75 : 1; }
   function genStoreOffers(S, initial) {
     const want = offersWanted(S);
     if (initial) {
       while (S.offers.length < want) S.offers.push(makeStoreOffer(S));
       S.offerRefreshDay = S.day + C().OFFER_REFRESH_DAYS;
-      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap') * invOfferK(S));
       return;
     }
     if (S.offers.length < want && S.day >= (S.nextOfferDay || 0)) {
       S.offers.push(makeStoreOffer(S));
-      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap'));
+      S.nextOfferDay = S.day + Math.round(ri(S, C().OFFER_ARRIVAL_DAYS[0], C().OFFER_ARRIVAL_DAYS[1]) * diffK(S, 'offerGap') * invOfferK(S));
     }
   }
   function makeProdOffer(S, d) {
@@ -6535,7 +6612,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // налоги
     const taxRate = currentTaxRate(S);
     let tax = M.rev * taxRate;
-    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0);
+    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0) + (M.inv || 0); // + выплаты инвесторам (investors.js)
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
@@ -7041,14 +7118,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (amount > 0) { amount = Math.min(amount, Math.max(0, S.cash)); S.cash -= amount; S.reserve += amount; }
     else { amount = Math.min(-amount, S.reserve); S.reserve -= amount; S.cash += amount; }
   }
+  // инвестор в совете: лимит кредита больше (investors.js)
+  function invBankK(S) { return (S.inv && BK.Inv && BK.Inv.perkOf(S, 'bank')) ? 1.25 : 1; }
   function loanLimit(S) {
     const h = S.history.slice(-3); const avg = h.length ? h.reduce((a, x) => a + x.rev, 0) / h.length : 0;
     let lim = Math.max(C().LOAN_MIN * S.macro.priceLevel, avg * C().LOAN_MAX_REV_MULT) * diffK(S, 'loanMult');
     if (S.ev && S.day < (S.ev.creditSqueezeUntil || 0)) lim *= C().CRISIS_LOAN_MULT != null ? C().CRISIS_LOAN_MULT : 1; // кризис: лимит урезан
     if (S.corp && S.corp.creditK) lim *= S.corp.creditK; // корпоративное событие e213: кредитная линия под экспансию
-    return lim;
+    return lim * invBankK(S);
   }
-  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0) + (S.coll && BK.Coll ? BK.Coll.rateAdd(S) : 0); } // штаб: казначейство, ковенанта банка; залог: надбавка после изъятия точки
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0) + (S.coll && BK.Coll ? BK.Coll.rateAdd(S) : 0) - ((S.inv && BK.Inv && BK.Inv.perkOf(S, 'bank')) ? 0.01 : 0); } // инвестор с казначейством: −1 п. п. // штаб: казначейство, ковенанта банка; залог: надбавка после изъятия точки
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
@@ -12409,6 +12488,300 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
 })();
 
+/* investors.js */
+/* =====================================================================
+   ИНВЕСТОРЫ (ROADMAP, этап 2). Чистая логика, без DOM.
+   После CFG.INV.UNLOCK_STORES открытых точек раз в 2–5 лет приходит инвестор:
+   даёт деньги (100–200 млн ₽ × уровень цен) за долю — в прибыли или в выручке.
+   Можно принять, отказаться или торговаться (больше денег / меньше процент / другой тип выплаты):
+   у инвестора 2–3 раунда терпения, характер (жёсткий или мягкий) влияет на уступки.
+   Выплаты — 1-го числа, отдельной статьёй в отчёте; долю можно выкупить досрочно, дороже вложенного.
+
+   Кроме денег инвестор приносит делу пользу (CFG.INV.PERKS): связи в ритейле (помещения приходят
+   чаще), бренд и реклама (+3 % гостей сети) или своё казначейство (ставка по кредитам ниже, лимит
+   больше). Это не отсебятина: проверено ботом — к 10 точкам у сильного игрока 117 млн свободного
+   кредитного лимита и ноль долга, то есть одни только деньги ему не нужны, и без пользы для дела
+   предложение было бы бессмысленным.
+
+   Состояние (старые сохранения — ensure(); пока инвесторов не было, S.inv не создаётся,
+   поэтому прогоны ботов и сохранения игроков не меняются):
+     S.inv = { v: 1, offer: null | { id, name, kind, pct, sum, perk, rounds, harsh, day, until },
+               deals: [ { id, name, kind, pct, sum, perk, since } ],
+               nextDay: 0, n: 0, refused: 0, rng: 20261002, log: [] }
+
+   Подключение: обёртка BK.Engine.tick (приход инвестора и выплаты 1-го числа). Сам движок не менялся,
+   кроме трёх маленьких хуков: статья месяца S.month.inv, лимит кредита и ставка (польза «казначейство»),
+   и частота прихода помещений (польза «связи в ритейле»).
+   Числа — CFG.INV. Интерфейс — src/ui/investors-ui.js (BK.InvUI).
+   Проверка — node sim/investors.js, node qa/investors.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const E = () => BK.Engine, C = () => BK.CFG, K = () => BK.CFG.INV;
+  const I = () => (BK.Engine._int || {});
+  const fm = (v) => (BK.fmtMoney ? BK.fmtMoney(v) : Math.round(v) + ' ₽');
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const open = (S) => (S.stores || []).filter((st) => st.status !== 'opening');
+  const state = (S) => (S && S.inv && typeof S.inv === 'object' ? S.inv : null);
+
+  const NAMES = ['Артур Валиев', 'Фонд «Урал-Капитал»', 'Марина Дёмина', 'Тимур Хабибуллин', 'Фонд «Растущие рынки»',
+    'Ильдар Сафин', 'Елена Королёва', 'Группа «Первый хлеб»', 'Руслан Мухаметшин', 'Ирина Белова'];
+  const FIRMS = ['частный инвестор', 'фонд', 'семейный офис', 'стратегический партнёр', 'фонд', 'частный инвестор'];
+
+  /* ---------------- состояние ---------------- */
+  function ensure(S) {
+    if (!S) return null;
+    const R = S.inv || (S.inv = {});
+    if (R.v == null) R.v = 1;
+    if (R.offer === undefined) R.offer = null;
+    if (!Array.isArray(R.deals)) R.deals = [];
+    if (!Array.isArray(R.log)) R.log = [];
+    if (R.nextDay == null) R.nextDay = 0;
+    if (R.n == null) R.n = 0;
+    if (R.refused == null) R.refused = 0;
+    if (typeof R.rng !== 'number' || !R.rng) R.rng = 20261002;
+    return R;
+  }
+  function rnd(S) { const R = ensure(S); R.rng = (Math.imul(R.rng >>> 0, 1664525) + 1013904223) >>> 0; return R.rng / 4294967296; }
+  const rint = (S, a, b) => a + Math.floor(rnd(S) * (b - a + 1));
+  const rnum = (S, a, b) => a + rnd(S) * (b - a);
+
+  /* ---------------- польза от инвестора ---------------- */
+  function perkOf(S, id) { const R = state(S); return !!(R && R.deals.some((d) => d.perk === id)); }
+
+  /* ---------------- цифры ---------------- */
+  const lastMonth = (S) => { const h = S.history || []; return h.length ? h[h.length - 1] : null; };
+  // сколько уходит партнёрам в месяц при текущем состоянии
+  function monthlyPay(S) {
+    const R = state(S); if (!R || !R.deals.length) return 0;
+    const m = lastMonth(S); if (!m) return 0;
+    let sum = 0;
+    for (const d of R.deals) sum += payOf(d, m);
+    return Math.round(sum);
+  }
+  const payOf = (d, m) => (d.kind === 'profit' ? Math.max(0, m.profit) * d.pct : Math.max(0, m.rev) * d.pct);
+  // доля, которую забирают партнёры, от прибыли месяца (для предупреждения)
+  function drainShare(S) {
+    const m = lastMonth(S); if (!m) return 0;
+    const profit = Math.max(0, m.profit); if (profit <= 0) return 0;
+    return cl(monthlyPay(S) / profit, 0, 2);
+  }
+  // цена выкупа доли: дороже вложенного, растёт со временем
+  function buyoutPrice(S, d) {
+    const years = Math.max(0, (S.day - d.since) / 365);
+    const k = Math.max(K().BUYOUT_MIN, K().BUYOUT_K + K().BUYOUT_YEAR * years);
+    return Math.round(d.sum * k);
+  }
+
+  /* ---------------- приход инвестора ---------------- */
+  function eligible(S) {
+    if (!K().ON) return false;
+    if (!S || S.lost || S.won || S.phase !== 'play') return false;
+    if (open(S).length < K().UNLOCK_STORES) return false;
+    const R = state(S);
+    if (R && R.offer) return false;
+    if (drainShare(S) >= K().MAX_SHARE) return false;
+    return true;
+  }
+  function makeOffer(S) {
+    const R = ensure(S);
+    const pl = S.macro.priceLevel;
+    const harsh = rnd(S) < K().HARSH_P;
+    const penalty = (state(S) && state(S).banUntil > S.day) || (BK.Coll && BK.Coll.banned && BK.Coll.banned(S)) ? K().DEBT_PENALTY : 1; // после изъятия залога условия хуже
+    const kind = rnd(S) < 0.55 ? 'profit' : 'revenue';
+    let pct = kind === 'profit' ? rnum(S, K().PROFIT_PCT[0], K().PROFIT_PCT[1]) : rnum(S, K().REV_PCT[0], K().REV_PCT[1]);
+    let sum = rnum(S, K().SUM[0], K().SUM[1]) * pl / penalty;
+    if (harsh) { pct *= 1.12; }
+    const name = NAMES[rint(S, 0, NAMES.length - 1)];
+    const firm = FIRMS[rint(S, 0, FIRMS.length - 1)];
+    const perk = K().PERKS[rint(S, 0, K().PERKS.length - 1)].id;
+    R.offer = {
+      id: 'inv' + (R.n + 1) + '_' + S.day, name, firm, kind, harsh, perk,
+      pct: Math.round(pct * 1000) / 1000,
+      sum: Math.round(sum / 1e6) * 1e6,
+      rounds: rint(S, K().PATIENCE[0], K().PATIENCE[1]),
+      day: S.day, until: S.day + 30,
+    };
+    R.n++;
+    const t = terms(R.offer);
+    log(S, `Пришёл инвестор: ${name} (${firm}). Предлагает ${fm(R.offer.sum)} за ${t.pctText} — ${t.kindText}. Кроме денег: ${t.perkText}.`, 'warn');
+    if (S.notify) S.notify.push({ type: 'inv', phase: 'offer', id: R.offer.id });
+    return R.offer;
+  }
+  function terms(o) {
+    const perk = (K().PERKS.find((p) => p.id === o.perk) || {});
+    return {
+      kindText: o.kind === 'profit' ? 'доля в прибыли' : 'доля в выручке',
+      pctText: (o.pct * 100).toFixed(1).replace('.', ',') + ' % ' + (o.kind === 'profit' ? 'от прибыли' : 'от выручки'),
+      perkText: perk.text || '',
+      perkName: perk.name || '',
+      harshText: o.harsh ? 'жёсткий: уступает неохотно' : 'мягкий: готов торговаться',
+      payText: (o.pct * 100).toFixed(1).replace('.', ',') + ' %',
+    };
+  }
+
+  /* ---------------- торг ---------------- */
+  function negotiate(S, action) {
+    const R = state(S); if (!R || !R.offer) return { ok: false, msg: 'Предложения нет' };
+    const o = R.offer;
+    o.rounds--;
+    if (o.rounds < 0) { const n = o.name; R.offer = null; R.refused++; log(S, `${n} устал торговаться и ушёл.`, 'warn'); if (S.notify) S.notify.push({ type: 'inv', phase: 'left' }); return { ok: true, left: true }; }
+    const soft = !o.harsh;
+    const chance = cl((soft ? 0.72 : 0.4) + o.rounds * 0.12, 0.1, 0.95);
+    if (rnd(S) > chance) {
+      log(S, `${o.name} не согласился. ${o.rounds ? `Осталось раундов торга: ${o.rounds}.` : 'Это был последний раунд.'}`, 'warn');
+      return { ok: true, refused: true, rounds: o.rounds };
+    }
+    let what = '';
+    if (action === 'more') {
+      const k = rnum(S, K().MORE_K[0], K().MORE_K[1]);
+      const add = Math.round(o.sum * (k - 1) / 1e6) * 1e6;
+      o.sum += add; o.pct = Math.round(o.pct * 1.06 * 1000) / 1000;
+      what = `добавил ${fm(add)} (теперь ${fm(o.sum)}), но доля выросла до ${(o.pct * 100).toFixed(1).replace('.', ',')} %`;
+    } else if (action === 'less') {
+      const k = rnum(S, K().LESS_K[0], K().LESS_K[1]);
+      const was = o.pct; o.pct = Math.round(o.pct * k * 1000) / 1000;
+      what = `уступил по доле: ${(was * 100).toFixed(1).replace('.', ',')} % → ${(o.pct * 100).toFixed(1).replace('.', ',')} %`;
+    } else if (action === 'switch') {
+      const was = o.kind;
+      o.kind = o.kind === 'profit' ? 'revenue' : 'profit';
+      // при смене типа доля приводится к сопоставимой: от выручки она меньше
+      o.pct = o.kind === 'revenue' ? Math.round(o.pct * 0.3 * 1000) / 1000 : Math.round(o.pct * 3.2 * 1000) / 1000;
+      o.pct = cl(o.pct, 0.01, 0.45);
+      what = `согласился на ${o.kind === 'profit' ? 'долю в прибыли' : 'долю в выручке'} — ${(o.pct * 100).toFixed(1).replace('.', ',')} %`;
+    }
+    log(S, `${o.name} после торга: ${what}.`, 'warn');
+    return { ok: true, changed: what, rounds: o.rounds };
+  }
+  function accept(S) {
+    const R = ensure(S); const o = R.offer; if (!o) return { ok: false, msg: 'Предложения нет' };
+    R.deals.push({ id: o.id, name: o.name, firm: o.firm, kind: o.kind, pct: o.pct, sum: o.sum, perk: o.perk, since: S.day });
+    R.offer = null;
+    S.cash += o.sum;
+    const t = terms(o);
+    log(S, `Сделка с инвестором: ${o.name} вложил ${fm(o.sum)} за ${t.pctText}. Выплаты — 1-го числа, отдельной статьёй. Долю можно выкупить досрочно.`, 'good');
+    toast(S, 'Инвестор в деле', `${o.name}: ${fm(o.sum)} на счёт. ${t.pctText} партнёру — 1-го числа.`, 'good');
+    if (S.notify) S.notify.push({ type: 'inv', phase: 'deal', id: o.id, name: o.name, sum: o.sum, pct: o.pct, kind: o.kind });
+    syncMods(S);
+    return { ok: true, deal: R.deals[R.deals.length - 1] };
+  }
+  function decline(S) {
+    const R = ensure(S); const o = R.offer; if (!o) return { ok: false };
+    R.offer = null; R.refused++;
+    log(S, `Отказано инвестору ${o.name}.`, 'info');
+    return { ok: true };
+  }
+  function buyout(S, id) {
+    const R = ensure(S); const d = R.deals.find((x) => x.id === id); if (!d) return { ok: false, msg: 'Сделки нет' };
+    const price = buyoutPrice(S, d);
+    if (S.cash < price) return { ok: false, msg: `Нужно ${fm(price)}` };
+    S.cash -= price;
+    R.deals = R.deals.filter((x) => x.id !== id);
+    log(S, `Выкуплена доля ${d.name}: ${fm(price)} (вложил ${fm(d.sum)}). Партнёр больше не получает выплат.`, 'good');
+    toast(S, 'Доля выкуплена', `${d.name}: заплатили ${fm(price)}. Теперь вся прибыль ваша.`, 'good');
+    syncMods(S);
+    return { ok: true, price };
+  }
+
+  /* ---------------- польза «бренд»: модификатор гостей ---------------- */
+  function syncMods(S) {
+    if (!S || !Array.isArray(S.mods)) return;
+    S.mods = S.mods.filter((m) => m.src !== 'inv');
+    if (perkOf(S, 'brand')) S.mods.push({ t: 'traffic', m: 1.03, until: S.day + 3650, scope: 'global', src: 'inv' });
+  }
+
+  /* ---------------- ежемесячные выплаты ---------------- */
+  function monthly(S) {
+    const R = state(S); if (!R || !R.deals.length) return 0;
+    const m = lastMonth(S); if (!m) return 0;
+    let total = 0;
+    for (const d of R.deals) {
+      const pay = Math.round(payOf(d, m));
+      if (pay <= 0) continue;
+      total += pay;
+      if (I().spend) I().spend(S, pay, 'inv'); else { S.cash -= pay; S.month.inv = (S.month.inv || 0) + pay; }
+    }
+    if (total > 0) {
+      log(S, `Выплаты партнёрам за ${E().MONTHS[m.m]}: ${fm(total)} (${R.deals.length === 1 ? 'один инвестор' : R.deals.length + ' инвестора'}).`, 'info');
+      if (drainShare(S) >= K().WARN_SHARE) toast(S, 'Партнёрам уходит много', `${(drainShare(S) * 100).toFixed(0)} % прибыли — во «Финансах» видно, сколько и кого можно выкупить.`, 'warn');
+    }
+    return total;
+  }
+
+  /* ---------------- день ---------------- */
+  function day(S) {
+    if (!K().ON) return; // в прогонах ботов инвесторы выключены (sim/load.js): состояние не создаётся
+    if (!S || S.lost) return;
+    const R = state(S);
+    if (!R) {
+      // состояния нет: смотрим только, не пора ли позвать первого инвестора
+      if (open(S).length >= K().UNLOCK_STORES) { const r = ensure(S); if (!r.nextDay) r.nextDay = S.day + rint(S, K().FIRST_DELAY[0], K().FIRST_DELAY[1]); }
+      else return;
+    }
+    const M = ensure(S);
+    if (M.offer && M.offer.until && S.day > M.offer.until) { const n = M.offer.name; M.offer = null; M.refused++; log(S, `${n} не дождался ответа и ушёл.`, 'info'); if (S.notify) S.notify.push({ type: 'inv', phase: 'left' }); }
+    if (!M.nextDay) M.nextDay = S.day + 30;
+    if (S.day >= M.nextDay && !M.offer && eligible(S)) {
+      makeOffer(S);
+      M.nextDay = S.day + rint(S, K().GAP[0], K().GAP[1]);
+    }
+    if (E().dateOf(S.day).d === 1 && M.deals.length) monthly(S);
+  }
+
+  /* ---------------- данные для интерфейса ---------------- */
+  function list(S) {
+    const R = state(S); if (!R || !R.deals.length) return [];
+    const m = lastMonth(S) || { profit: 0, rev: 0 };
+    return R.deals.map((d) => ({
+      id: d.id, name: d.name, firm: d.firm, kind: d.kind, pct: d.pct, sum: d.sum, perk: d.perk, since: d.since,
+      pay: Math.round(payOf(d, m)), buyout: buyoutPrice(S, d), profit: buyoutPrice(S, d) - d.sum,
+      years: Math.round((S.day - d.since) / 365 * 10) / 10,
+      perkText: (K().PERKS.find((p) => p.id === d.perk) || {}).text || '',
+    }));
+  }
+  function status(S) {
+    const R = state(S);
+    return {
+      n: R ? R.deals.length : 0, offer: R ? R.offer : null, taken: R ? R.n : 0, refused: R ? R.refused : 0,
+      invest: R ? R.deals.reduce((a, d) => a + d.sum, 0) : 0,
+      pay: monthlyPay(S), share: drainShare(S),
+      buyoutAll: R ? R.deals.reduce((a, d) => a + buyoutPrice(S, d), 0) : 0,
+      nextDay: R ? R.nextDay : 0,
+    };
+  }
+  function attItems(S) {
+    const R = state(S); const out = [];
+    if (R && R.offer) {
+      const o = R.offer, t = terms(o);
+      out.push({ lvl: 'info', ic: 'rub', t: `Ждёт ответа инвестор: ${fm(o.sum)} за ${t.pctText}`, d: `${o.name} (${o.firm}). Кроме денег: ${t.perkText}. Осталось ${Math.max(0, o.until - S.day)} дн.`, b: { act: 'inv', label: 'Обсудить', primary: true } });
+    }
+    const st = status(S);
+    if (st.n && st.share >= K().WARN_SHARE) out.push({ lvl: 'warn', ic: 'rub', t: `Партнёрам уходит ${Math.round(st.share * 100)} % прибыли`, d: `Выплаты ${fm(st.pay)} в месяц. Доли можно выкупить — всего за ${fm(st.buyoutAll)}.`, b: { act: 'inv', label: 'Инвесторы' } });
+    return out;
+  }
+
+  /* ---------------- подключение к движку ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__inv) return;
+    Eng.__inv = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* инвесторы не должны ломать игру */ } }
+      return r;
+    };
+  }
+  function log(S, text, kind) { const I_ = I(); if (I_.log) I_.log(S, text, kind); }
+  function toast(S, title, text, kind) { const I_ = I(); if (I_.toast) I_.toast(S, title, text, kind); }
+
+  if (BK.Engine) wrap();
+  BK.Inv = {
+    ensure, state, perkOf, terms, makeOffer, negotiate, accept, decline, buyout, list, status, attItems,
+    monthlyPay, drainShare, buyoutPrice, eligible, syncMods, monthly, day, NAMES,
+  };
+})();
+
 /* sound.js */
 /* =====================================================================
    ЗВУК «Хлебной карты» (vision-plan §4 п. 3, этап В2 «Живость»).
@@ -16829,6 +17202,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
+    if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -17001,6 +17375,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('Найм и обучение', '−' + fm((p.hire || 0) + (p.train || 0)));
       s += row('Налоги', '−' + fm(p.tax || 0));
       if (p.interest) s += row('Проценты по кредиту', '−' + fm(p.interest));
+      if (p.inv) s += row('Партнёрам (инвесторы)', '−' + fm(p.inv));
       if (p.other) s += row('Прочие расходы (события)', '−' + fm(p.other));
       if (p.income) s += row('Прочие доходы', '+' + fm(p.income));
     } else if (p.profit != null) s += row('Налог (оценка)', '−' + fm(p.rev * (taxRate != null ? taxRate : 0.06)));
@@ -17451,7 +17826,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!p || p.rev <= 0) return s + `<div class="empty">«Водопад» появится 1-го числа следующего месяца — после первого расчёта.</div></div>`;
     const R = p.rev;
     // статьи; мелкие (< 2 % выручки) складываем в «Прочее», чтобы столбики читались
-    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest]];
+    const raw = [['Фудкост', p.fc - p.waste], ['Списания', p.waste], ['Аренда', p.rent], ['ФОТ', p.payroll], ['Доставка', p.delivery], ['Коммуналка', p.util], ['Управление', p.upkeep], ['Найм', p.hire + p.train], ['Налоги', p.tax], ['Проценты', p.interest], ['Партнёрам', p.inv || 0]];
     const items = []; let other = p.other - p.income;
     for (const [l, v] of raw) { if (!v) continue; if (Math.abs(v) < R * 0.02 && l !== 'Налоги') other += v; else items.push([l, v]); }
     if (Math.abs(other) >= 1) items.push([other >= 0 ? 'Прочее' : 'Доходы', other]);
@@ -17569,6 +17944,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
+      if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
@@ -19618,6 +19994,159 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
   BK.CollUI = { block, open: openModal, modalHtml, storeLine, mapBadge, tip, notify, LOCK, ICON };
+})();
+
+/* ui/investors-ui.js */
+/* Инвесторы — интерфейс (логика — src/investors.js, BK.Inv).
+   Где видно: окно торга при приходе инвестора (принять / отказаться / торговаться), блок «Инвесторы»
+   во вкладке «Финансы» (доли, выплаты, выкуп), строки в «Требует внимания», тосты и записи в журнале.
+   В panels.js / app.js — только хуки (BK.InvUI.*). */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  if (typeof document === 'undefined') return;
+  const IV = BK.Inv, APP = () => BK.App, E = () => BK.Engine;
+  const fm = (v) => BK.fmtMoney(v);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const nw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
+  const pct = (v) => (v * 100).toFixed(1).replace('.', ',') + ' %';
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg>';
+  const ui = { last: null };
+
+  /* ---------------- окно торга ---------------- */
+  function offerHtml(S) {
+    const o = IV.state(S) && IV.state(S).offer; if (!o) return '';
+    const t = IV.terms(o);
+    const months = 12;
+    const estimate = o.kind === 'profit'
+      ? (S.history.length ? Math.max(0, S.history[S.history.length - 1].profit) * o.pct : 0)
+      : (S.history.length ? Math.max(0, S.history[S.history.length - 1].rev) * o.pct : 0);
+    return `<div class="modal-h"><span class="eyebrow">Этап 2 · инвестор</span><h2>Инвестор с деньгами</h2></div><div class="modal-b inv-m">
+      <p class="hint" style="margin:0">Инвестор даёт деньги за долю в бизнесе: выплаты идут каждый месяц, 1-го числа, отдельной статьёй в отчёте. Долю можно выкупить досрочно — дороже вложенного. Можно согласиться, отказаться или поторговаться: у него в запасе ещё ${nw(o.rounds, 'раунд', 'раунда', 'раундов')} терпения.</p>
+      <div class="inv-card">
+        <div class="inv-who"><b>${esc(o.name)}</b><span>${esc(o.firm)} · ${esc(t.harshText)}</span></div>
+        <div class="inv-nums">
+          <span><small>Вкладывает</small><b>${fm(o.sum)}</b></span>
+          <span><small>Просит</small><b>${esc(t.pctText)}</b></span>
+          <span><small>Это примерно</small><b>${estimate > 0 ? fm(estimate) + ' в месяц' : '—'}</b></span>
+          <span><small>Кроме денег</small><b>${esc(t.perkName)}</b></span>
+        </div>
+        <div class="inv-perk">${esc(t.perkText)}</div>
+      </div>
+      ${ui.last ? `<div class="inv-last">${esc(ui.last)}</div>` : ''}
+      <div class="row inv-acts">
+        <button class="btn primary" data-act="invAccept">Согласиться: ${fm(o.sum)}</button>
+        <button class="btn" data-act="invMore"${o.rounds < 1 ? ' disabled' : ''}>Дать больше денег</button>
+        <button class="btn" data-act="invLess"${o.rounds < 1 ? ' disabled' : ''}>Снизить процент</button>
+        <button class="btn" data-act="invSwitch"${o.rounds < 1 ? ' disabled' : ''}>${o.kind === 'profit' ? 'Платить с выручки' : 'Платить с прибыли'}</button>
+        <button class="btn danger" data-act="invDecline">Отказаться</button>
+      </div>
+      <p class="hint" style="margin:0">Если раунды торга кончатся, инвестор уйдёт. Досрочный выкуп доли сразу после сделки — ${fm(Math.round(o.sum * BK.CFG.INV.BUYOUT_MIN))}.</p>
+    </div><div class="modal-f"><button class="btn block" data-act="closeModal">Решить позже</button></div>`;
+  }
+  function openOffer(keep) {
+    const S = APP().state; if (!S || !IV || !IV.state(S) || !IV.state(S).offer) { openInfo(keep); return; }
+    APP().openModal(offerHtml(S), { closable: true, keepScroll: keep === 'keep' });
+    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('inv-modal');
+  }
+
+  /* ---------------- окно «Инвесторы» (сводка) ---------------- */
+  function block(S) {
+    const st = IV.status(S), deals = IV.list(S);
+    let s = `<div class="sec invb"><h3><span class="inv-h">${ICON}Инвесторы</span><button class="linkbtn" data-act="inv">Подробнее →</button></h3>`;
+    if (st.offer) {
+      const t = IV.terms(st.offer);
+      s += `<div class="inv-offer"><b>Ждёт ответа: ${esc(st.offer.name)}</b><span>${fm(st.offer.sum)} за ${esc(t.pctText)} · ${esc(t.perkText)}</span><button class="btn sm primary" data-act="inv">Обсудить</button></div>`;
+    }
+    if (!deals.length) {
+      s += `<p class="hint" style="margin:0">Инвесторы приходят после ${BK.CFG.INV.UNLOCK_STORES} точек: дают деньги за долю в прибыли или выручке, раз в 2–5 лет.${st.taken ? ` Уже приходили: ${nw(st.taken, 'раз', 'раза', 'раз')}.` : ''}</p>`;
+    } else {
+      s += `<div class="inv-list">${deals.map((d) => `<article class="inv-card deal">
+        <div class="inv-who"><b>${esc(d.name)}</b><span>${esc(d.firm)} · с ${E().fmtDate(d.since)} (${String(d.years).replace('.', ',')} г.)</span></div>
+        <div class="inv-nums">
+          <span><small>Вложил</small><b>${fm(d.sum)}</b></span>
+          <span><small>Забирает</small><b>${d.kind === 'profit' ? pct(d.pct) + ' прибыли' : pct(d.pct) + ' выручки'}</b></span>
+          <span><small>Выплата в месяц</small><b>${fm(d.pay)}</b></span>
+          <span><small>Выкуп доли</small><b>${fm(d.buyout)}</b></span>
+        </div>
+        ${d.perkText ? `<div class="inv-perk">${esc(d.perkText)}</div>` : ''}
+        <div class="row"><button class="btn sm" data-act="invBuyout" data-arg="${d.id}"${S.cash < d.buyout ? ' disabled' : ''}>Выкупить долю · ${fm(d.buyout)}</button></div>
+      </article>`).join('')}</div>`;
+      const warn = st.share >= BK.CFG.INV.WARN_SHARE;
+      s += `<div class="inv-foot${warn ? ' warnc' : ''}">Партнёрам уходит <b>${fm(st.pay)}</b> в месяц — это <b>${Math.round(st.share * 100)} %</b> прибыли.${warn ? ' Это уже много: подумайте о выкупе долей.' : ''}</div>`;
+    }
+    return s + '</div>';
+  }
+  function infoHtml(S) {
+    const st = IV.status(S);
+    const next = st.nextDay ? E().fmtDate(st.nextDay) : '—';
+    return `<div class="modal-h"><span class="eyebrow">Этап 2 · инвесторы</span><h2>Инвесторы</h2></div><div class="modal-b inv-m">
+      <p class="hint" style="margin:0">Инвесторы дают деньги за долю в бизнесе. Выплаты — каждый месяц, 1-го числа, отдельной статьёй в отчёте; долю всегда можно выкупить досрочно, но дороже вложенного. Кроме денег инвестор приносит делу пользу: связи в ритейле (помещения приходят чаще), бренд (+3 % гостей сети) или своё казначейство (кредит дешевле и лимит больше).</p>
+      <div class="inv-nums big">
+        <span><small>Действующих сделок</small><b>${st.n}</b></span>
+        <span><small>Привлечено всего</small><b>${fm(st.invest)}</b></span>
+        <span><small>Выплаты в месяц</small><b>${fm(st.pay)}</b></span>
+        <span><small>Доля прибыли партнёрам</small><b>${Math.round(st.share * 100)} %</b></span>
+        <span><small>Выкупить всё</small><b>${fm(st.buyoutAll)}</b></span>
+        <span><small>Ждём следующего</small><b>${st.n ? next : '—'}</b></span>
+      </div>
+      ${st.share >= BK.CFG.INV.WARN_SHARE ? `<div class="inv-warn">Партнёрам уходит ${Math.round(st.share * 100)} % прибыли — новые инвесторы при такой доле не приходят. Выкуп долей вернёт всю прибыль вам.</div>` : ''}
+      ${st.offer ? `<div class="inv-offer"><b>Ждёт ответа: ${esc(st.offer.name)}</b><span>${fm(st.offer.sum)} за ${esc(IV.terms(st.offer).pctText)}</span><button class="btn sm primary" data-act="inv">Обсудить</button></div>` : ''}
+      ${st.refused ? `<p class="hint" style="margin:0">Отказано или ушло инвесторов: ${st.refused}.</p>` : ''}
+    </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+  }
+  function openInfo(keep) {
+    const S = APP().state; if (!S) return;
+    APP().openModal(infoHtml(S), { closable: true, keepScroll: keep === 'keep' });
+    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('inv-modal');
+  }
+  const inModal = () => !!(APP().ui.modal && document.querySelector('#modal .inv-modal'));
+
+  /* ---------------- тосты ---------------- */
+  function notify(n) {
+    if (n.phase === 'offer') { openOffer(); return; }
+    const S = APP().state; if (!S) return;
+    const box = document.getElementById('toasts'); if (!box) return;
+    const el = document.createElement('div');
+    el.className = 'toast invtoast ' + (n.phase === 'deal' ? 'good' : 'warn');
+    el.setAttribute('role', 'status');
+    if (n.phase === 'deal') {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Сделка закрыта</span><b>${esc(n.name)}: ${fm(n.sum)}</b><span class="md">${n.kind === 'profit' ? pct(n.pct) + ' от прибыли' : pct(n.pct) + ' от выручки'} — 1-го числа. Долю можно выкупить.</span></span>`;
+    } else {
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Инвестор ушёл</span><b>Ждём следующего</b><span class="md">Раз в 2–5 лет приходят новые.</span></span>`;
+    }
+    el.addEventListener('click', () => { el.remove(); openInfo(); });
+    el.title = 'Открыть инвесторов';
+    setTimeout(() => el.remove(), 8000);
+    box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    if (BK.Sound) BK.Sound.play(n.phase === 'deal' ? 'fanfare' : 'warn');
+  }
+
+  /* ---------------- действия ---------------- */
+  function boot() {
+    const A = APP() && APP().ACT; if (!A) return;
+    const refresh = (keep) => { APP().save(); APP().refresh(); if (inModal()) { const S = APP().state; (IV.state(S) && IV.state(S).offer) ? openOffer(keep) : openInfo(keep); } };
+    Object.assign(A, {
+      inv: () => { const S = APP().state; (IV.state(S) && IV.state(S).offer) ? openOffer() : openInfo(); },
+      invAccept: () => { const S = APP().state; ui.last = null; const r = IV.accept(S); if (!r.ok) APP().toast('Не получилось', r.msg, 'warn'); else openInfo('keep'); APP().save(); APP().refresh(); },
+      invDecline: () => { const S = APP().state; ui.last = null; IV.decline(S); openInfo('keep'); APP().save(); APP().refresh(); },
+      invMore: () => step('more'), invLess: () => step('less'), invSwitch: () => step('switch'),
+      invBuyout: (d) => { const S = APP().state; const r = IV.buyout(S, d.arg); if (r.ok) APP().toast('Доля выкуплена', `${fm(r.price)} — теперь вся прибыль ваша.`, 'good'); else APP().toast('Не получилось', r.msg, 'warn'); APP().save(); APP().refresh(); if (inModal()) openInfo('keep'); },
+    });
+    function step(action) {
+      const S = APP().state;
+      const r = IV.negotiate(S, action);
+      if (r.left) { ui.last = null; openInfo('keep'); APP().save(); APP().refresh(); return; }
+      ui.last = r.refused
+        ? 'Инвестор не согласился. Можно попробовать ещё раз или принять условия.'
+        : (r.changed ? r.changed.charAt(0).toUpperCase() + r.changed.slice(1) + '.' : '');
+      APP().save(); APP().refresh(); openOffer('keep');
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
+
+  BK.InvUI = { block, openOffer, openInfo, offerHtml, infoHtml, notify, ICON };
 })();
 
 /* ui/russia.js */
@@ -22120,6 +22649,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
+      else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
