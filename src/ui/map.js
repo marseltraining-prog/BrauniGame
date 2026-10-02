@@ -473,6 +473,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         let g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
         const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
         if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
+        if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4); // залог банка
         g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
         // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
         if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);

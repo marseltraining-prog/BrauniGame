@@ -270,6 +270,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'lost') { if (BK.Sound) BK.Sound.play('bad'); ui.modalQueue.unshift(() => openLostModal()); }
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
+      else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
@@ -421,7 +422,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const st = E.byId(S.stores, id); if (!st) return '';
       const mood = BK.storeMood(st);
       const rt = st.status !== 'opening' && H.rating ? ` · ${H.rating.r1(E.storeRating(S, st))}★` : '';
-      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}${BK.DeliveryUI ? `<br>${BK.DeliveryUI.tipText(st)}${st.agg ? ' · доставка' : ''}` : ''}${BK.TrainersUI ? BK.TrainersUI.tip(S, st) : ''}`;
+      return `<b>№${st.num} · ${e(st.address)}</b>${rt}<br>${H.dname(st.district)} · штат ${st.staff.length}/${st.staffTarget}${mood ? ` · настроение: ${mood === 'happy' ? 'довольны' : mood === 'mid' ? 'так себе' : 'недовольны'}` : ''}<br>${st.last ? 'Выручка за месяц ' + H.fm(st.last.rev) : st.status === 'opening' ? 'Открывается' : 'Первый месяц'}${BK.DeliveryUI ? `<br>${BK.DeliveryUI.tipText(st)}${st.agg ? ' · доставка' : ''}` : ''}${BK.TrainersUI ? BK.TrainersUI.tip(S, st) : ''}${BK.CollUI ? BK.CollUI.tip(S, st) : ''}`;
     }
     if (kind === 'offer') {
       const o = E.byId(S.offers, id); if (!o) return '';

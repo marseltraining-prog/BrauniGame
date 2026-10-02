@@ -350,6 +350,15 @@ function manage(S, P, buf) {
   }
   // кредиты: закрыть дыру, гасить при избытке
   if (S.cash < 0) E.takeLoan(S, -S.cash + buf * 0.5);
+  // залог точки (этап 2 ROADMAP): включается профилем P.coll — берём под точку, когда обычный лимит почти выбран
+  if (P.coll && BK.Coll && S.stores.length >= (P.collFrom || 5) && !BK.Coll.banned(S)) {
+    const free = S.stores.filter((st) => st.status === 'open' && !BK.Coll.loanOf(S, st.id) && BK.Coll.limit(S, st) > 1e6);
+    if (free.length && S.cash < buf * 0.8) { // не хватает оборотных денег — берём под точку, а не в дорогой обычный кредит
+      free.sort((a, b) => BK.Coll.limit(S, b.id) - BK.Coll.limit(S, a.id));
+      const lim = BK.Coll.limit(S, free[0]);
+      BK.Coll.take(S, free[0].id, Math.min(lim, Math.max(1e6, buf * 2 - S.cash)));
+    }
+  }
   if (S.loan > 0 && S.cash > buf * 2) E.repayLoan(S, S.cash - buf * 1.5);
 
   const open = S.stores.filter((s) => s.status !== 'opening');

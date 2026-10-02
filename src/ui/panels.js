@@ -203,6 +203,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.ManagersUI) for (const x of BK.ManagersUI.attItems(S)) add(x); // управляющие: можно нанять / точки без присмотра
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
+    if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -321,6 +322,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Trainers) bills += BK.Trainers.monthFee(S); // личные тренеры — 1-го числа
     if (BK.Managers) bills += BK.Managers.monthFee(S); // оклады управляющих — 1-го числа
     if (BK.Growth) bills += BK.Growth.monthFee(S); // рост вглубь: фабрика, флагман, команда кейтеринга, контроль франчайзи
+    if (BK.Coll) bills += BK.Coll.dueNow(S); // залог: платёж по кредиту под точку — 1-го числа
     const t = E_.dateOf(S.day);
     const left = Math.max(0, new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate() - t.d);
     const daily = S.cache && S.cache.dayRev != null ? S.cache.dayRev : 0;
@@ -565,6 +567,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><div class="card-h"><div><h2 style="font-family:var(--f-display);font-size:18px">№${st.num} · ${esc(st.address)}</h2><div class="card-s">${dname(st.district)} · ${fmtLong(st.size)}, ${st.area} м²</div></div></div>
       <div class="row">${statusChip(S, st)}${st.status !== 'opening' ? ratingChip(S, st) : ''}${st.landmarks.map((l) => `<span class="chip river">${lname(l)}</span>`).join('')}${st.repair ? `<span class="chip crust">${cfg.REPAIRS[st.repair].name}</span>` : ''}${rivalChip(S, st)}</div></div>`;
     if (BK.PixelUI) s += BK.PixelUI.storeSlot(S, st); // «живая точка» вблизи — пиксельная сцена (src/pixel/live.js)
+    if (BK.CollUI) s += BK.CollUI.storeLine(S, st); // кредит под залог точки
     if (T && !T.closed) {
       s += `<div class="sec"><h3>Сегодня</h3><div class="kpis">
         <div class="kpi"><span class="k">Чеков</span><span class="v">${n0(T.checks)}</span><span class="d">трафик ${n0(T.traffic)} чел.</span></div>
@@ -611,7 +614,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="acts">${confirm ? `${btn('fire', 'Уволить', { cls: 'sm danger', arg: st.id, arg2: e.id, title: 'Компенсация — месячный оклад' })}${btn('cancelFire', 'Отмена', { cls: 'sm' })}` : `${e.lvl < 5 ? btn('train', 'Учить', { cls: 'sm', arg: st.id, arg2: e.id, cost: tc, dis: !canPay(S, tc), title: `Поднять до уровня ${e.lvl + 1}: обслуживает больше гостей, чек выше, реже увольняется` }) : '<span class="chip crust">макс.</span>'}${btn('askFire', '✕', { cls: 'sm', arg: e.id, title: 'Уволить (компенсация — месячный оклад)' })}`}</div></div>`;
     }
     s += `</div></div>`;
-    s += `<div class="sec"><h3>Закрытие</h3>${ui.confirmClose === st.id ? `<div class="confirm">Закрыть точку и продать оборудование за ${fm(st.capex * cfg.CLOSE_REFUND)}? ${btn('closeStore', 'Закрыть', { cls: 'sm danger', arg: st.id })}${btn('cancelClose', 'Отмена', { cls: 'sm' })}</div>` : btn('askClose', 'Закрыть точку', { cls: 'sm danger', arg: st.id })}</div>`;
+    s += `<div class="sec"><h3>Закрытие</h3>${st.coll ? `<span class="hint warnc">Точка в залоге банка: закрыть или продать её нельзя, пока кредит не погашен (блок «Кредит под залог»).</span>` : ui.confirmClose === st.id ? `<div class="confirm">Закрыть точку и продать оборудование за ${fm(st.capex * cfg.CLOSE_REFUND)}? ${btn('closeStore', 'Закрыть', { cls: 'sm danger', arg: st.id })}${btn('cancelClose', 'Отмена', { cls: 'sm' })}</div>` : btn('askClose', 'Закрыть точку', { cls: 'sm danger', arg: st.id })}</div>`;
     return s;
   }
 
@@ -940,6 +943,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><h3>Кредит <small>лимит ${fm(lim)}</small></h3><div class="row">
       ${btn('loan', 'Взять 5 млн', { cls: 'sm', arg: 5e6, dis: S.loan + 1 > lim })}${btn('loan', 'Взять 20 млн', { cls: 'sm', arg: 2e7, dis: S.loan + 1 > lim })}${btn('repay', 'Погасить 5 млн', { cls: 'sm', arg: 5e6, dis: !S.loan })}${btn('repay', 'Погасить всё', { cls: 'sm', arg: 1e15, dis: !S.loan })}</div>
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
+      if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}

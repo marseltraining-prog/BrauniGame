@@ -105,7 +105,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return S;
   }
   function resetMonth(S) {
-    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0 };
+    S.month = { rev: 0, checks: 0, fc: 0, rent: 0, payroll: 0, util: 0, delivery: 0, tax: 0, interest: 0, upkeep: 0, hire: 0, train: 0, other: 0, income: 0, capex: 0, lost: 0, bonus: 0, marketing: 0, coll: 0 };
   }
 
   /* ---------------- генерация предложений ---------------- */
@@ -860,7 +860,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
-    const interest = S.loan * loanRate(S) / 12;
+    const interest = S.loan * loanRate(S) / 12 + (M.coll || 0); // залог: проценты по кредиту под точку (collateral.js кладёт их в S.month.coll)
     spend(S, interest, 'interest');
     const resInc = S.reserve * Math.max(0, S.macro.keyRate - cfg.RESERVE_SPREAD + (S.corp && BK.HQ ? BK.HQ.resAdd(S) : 0)) / 12; // финдеп: казначейство
     S.reserve += resInc;
@@ -1369,7 +1369,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.corp && S.corp.creditK) lim *= S.corp.creditK; // корпоративное событие e213: кредитная линия под экспансию
     return lim;
   }
-  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0); } // штаб: казначейство, ковенанта банка
+  function loanRate(S) { return S.macro.keyRate + C().LOAN_SPREAD + diffK(S, 'spreadAdd') + (S.corp && BK.HQ ? BK.HQ.rateAdd(S) : 0) + (S.coll && BK.Coll ? BK.Coll.rateAdd(S) : 0); } // штаб: казначейство, ковенанта банка; залог: надбавка после изъятия точки
   function takeLoan(S, amount) {
     const room = loanLimit(S) - S.loan; amount = Math.min(amount, room);
     if (amount <= 0) return { ok: false, msg: 'Банк больше не даёт: кредитный лимит исчерпан' };
