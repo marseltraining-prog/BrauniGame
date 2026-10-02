@@ -98,6 +98,15 @@ async function screens(b, vp, theme, sv) {
   });
   if (!late.missed) issues.push(`[${tag}] просрочка не засчиталась`);
   if (!late.att) issues.push(`[${tag}] в «Требует внимания» нет просрочки по залогу: ${late.txt}`);
+  const tsz = await p.evaluate(() => {
+    BK.CollUI.notify({ phase: 'seized', num: 1, sum: 1e6, until: BK.App.state.day + 700 });
+    const t = document.querySelector('#toasts .colltoast');
+    if (!t) return null;
+    const r = t.getBoundingClientRect(), ic = t.querySelector('.mi svg');
+    const ri = ic ? ic.getBoundingClientRect() : { width: 0, height: 0 };
+    return { w: Math.round(r.width), h: Math.round(r.height), ic: Math.round(Math.max(ri.width, ri.height)) };
+  });
+  if (tsz && (tsz.w > 380 || tsz.h > 190 || tsz.ic > 48)) issues.push(`[${tag}] тост залога без оформления: ${JSON.stringify(tsz)}`);
   await p.waitForTimeout(200);
   await shot(p, `late-${tag}`, '.att');
   issues.push(...await layoutCheck(p, `${tag} просрочка`, { mobile }), ...await textProblems(p, `${tag} просрочка`));

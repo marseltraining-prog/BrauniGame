@@ -145,9 +145,18 @@ async function screens(b, vp, theme, sv) {
     document.querySelectorAll('#toasts .miltoast').forEach((t) => t.remove());
     BK.LivelyUI.mileNotify({ phase: 'new', id: 'guests' });
     BK.LivelyUI.mileNotify({ phase: 'fail', id: 'guests', title: 'Проба' });
-    return [...document.querySelectorAll('#toasts .miltoast')].map((t) => t.className);
+    return [...document.querySelectorAll('#toasts .miltoast')].map((t) => {
+      const r = t.getBoundingClientRect(), ic = t.querySelector('.mi svg');
+      const ri = ic ? ic.getBoundingClientRect() : { width: 0, height: 0 };
+      return { cls: t.className, w: Math.round(r.width), h: Math.round(r.height), ic: Math.round(Math.max(ri.width, ri.height)) };
+    });
   });
-  if (!other.some((c) => /new/.test(c)) || !other.some((c) => /fail/.test(c))) issues.push(`[${tag}] тосты «новая веха» / «не вышла» не показаны: ${JSON.stringify(other)}`);
+  // оформление тоста: он не должен раздуваться (был случай, когда стилей не было и значок занимал пол-экрана)
+  for (const t of other) {
+    if (t.w > 380 || t.h > 190) issues.push(`[${tag}] тост вехи слишком большой: ${t.w}×${t.h} (${t.cls})`);
+    if (t.ic > 48) issues.push(`[${tag}] значок тоста вехи ${t.ic} px — стили не применились (${t.cls})`);
+  }
+  if (!other.some((c) => /new/.test(c.cls)) || !other.some((c) => /fail/.test(c.cls))) issues.push(`[${tag}] тосты «новая веха» / «не вышла» не показаны: ${JSON.stringify(other)}`);
   await p.evaluate(() => document.querySelectorAll('#toasts .miltoast').forEach((t) => t.remove()));
   await p.evaluate(() => BK.App.ACT.tab({ arg: 'log' })); await p.waitForTimeout(200);
   const jlog = await p.evaluate(() => document.querySelector('#pbody').innerText);
