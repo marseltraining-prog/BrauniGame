@@ -75,7 +75,7 @@
       <h3 class="ms-h">Новинки шефа <span class="ms-est">оценка</span></h3>
       <p class="hint ms-sub">В месяц, если добавить одну эту новинку к нынешнему меню: сколько она продаст, её доля и маржа, и как изменится выручка всей сети (часть гостей просто переключится с других позиций).</p><div class="chefgrid">`;
     for (const id of S.chef.pending) {
-      const p = E().byId(BK.PRODUCTS, id), ok = E().eqUnlocked(S, p.req);
+      const p = E().byId(BK.PRODUCTS, id), ok = E().eqUnlocked(S, p.req, p.id); // p.id — чтобы работали открытые рецепты (BK.Miles)
       const reqName = p.req ? (E().byId(BK.EQUIPMENT, p.req) || {}).name : '';
       const c = PS().candidate(S, id, s);
       html += `<label class="chefitem ms-new ${pick.has(id) ? 'on' : ''} ${ok ? '' : 'locked'}"><input type="checkbox" data-pick="${id}" ${pick.has(id) ? 'checked' : ''} ${ok ? '' : 'disabled'}><span class="cn">${esc(p.name)}</span><span class="chip cat" style="--cat:${cat(p).color}">${cat(p).name}</span>

@@ -91,7 +91,30 @@ async function screens(b, vp, theme, sv) {
     const after = await p.evaluate(() => (BK.App.state.miles.cur ? BK.App.state.miles.cur.k + ':' + BK.App.state.miles.cur.at : null));
     if (!after) issues.push(`[${tag}] после «Взять другую веху» вехи нет`);
     notes.push(`${tag}: веха ${before} → ${after}`);
-    await p.evaluate(() => BK.App.closeModal()); await p.waitForTimeout(150);
+    // рецепты от пекаря: открытый рецепт ставится в меню без оборудования, соседний продукт того же цеха — нет
+  const rec = await p.evaluate(() => {
+    const S = BK.App.state, E = BK.Engine, M = BK.Miles;
+    if (!S.miles) return { skip: true };
+    const locked = BK.PRODUCTS.filter((q) => q.req && !E.eqUnlocked(S, q.req) && !S.menu.some((m) => m.id === q.id));
+    if (!locked.length) return { skip: true };
+    const one = locked[0], sib = BK.PRODUCTS.find((q) => q.req && q.req === one.req && q.id !== one.id && !S.menu.some((m) => m.id === q.id));
+    S.miles.recipes = [one.id];
+    const openByRecipe = E.eqUnlocked(S, one.req, one.id);
+    const sibOpen = sib ? E.eqUnlocked(S, sib.req, sib.id) : false;
+    const other = BK.PRODUCTS.filter((q) => q.req && q.req !== one.req)[0];
+    const otherOpen = other ? E.eqUnlocked(S, other.req, other.id) : false;
+    const list = M.recipeList(S).length;
+    S.miles.recipes = (S.miles.recipes || []).filter((x) => false);
+    return { skip: false, openByRecipe, sibOpen, otherOpen, list, name: one.name };
+  });
+  if (!rec.skip) {
+    if (!rec.openByRecipe) issues.push(`[${tag}] открытый рецепт не даёт поставить продукт без оборудования («${rec.name}»)`);
+    if (rec.sibOpen) issues.push(`[${tag}] рецепт открыл лишний продукт того же цеха («${rec.name}»)`);
+    if (rec.otherOpen) issues.push(`[${tag}] рецепт открыл продукт другого цеха («${rec.name}»)`);
+    if (rec.list !== 1) issues.push(`[${tag}] в окне «Вехи» показывается не тот список рецептов: ${rec.list}`);
+    notes.push(`${tag}: рецепт «${rec.name}» — без оборудования ставится, соседний продукт цеха закрыт`);
+  }
+  await p.evaluate(() => BK.App.closeModal()); await p.waitForTimeout(150);
   }
   // 3. звук: кнопка в HUD и переключатель в «Меню игры»
   const snd = await p.evaluate(() => {
