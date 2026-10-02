@@ -1,4 +1,18 @@
-<title>Хлебная карта</title>
+<script>(function(){
+  function show(text){ try{ var d=document.getElementById('bk-fail'); if(!d){ d=document.createElement('div'); d.id='bk-fail';
+    d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#a3301c;font:14px/1.6 ui-monospace,Menlo,monospace;padding:20px;white-space:pre-wrap;overflow:auto';
+    (document.body||document.documentElement).appendChild(d); }
+    d.textContent='Игра не запустилась. Покажите это сообщение разработчику:
+
+'+text; }catch(e){} }
+  window.addEventListener('error', function(e){
+    if (e && e.target && e.target.tagName === 'SCRIPT') return;
+    show((e && (e.message || (e.error && e.error.message)) || 'неизвестная ошибка') + '
+' + (e && e.filename ? e.filename : '') + (e && e.lineno ? ':' + e.lineno : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
+  setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
+})();</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap">
 <style>
 :root {

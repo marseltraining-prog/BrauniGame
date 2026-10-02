@@ -6,7 +6,21 @@ const R = (f) => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
 const js = ['config.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'sound.js', 'milestones.js', 'thoughts.js', 'prologue.js', 'pixel/px.js', 'pixel/cast.js', 'pixel/stage.js', 'pixel/scenes.js', 'pixel/store.js', 'pixel/live.js', 'stage1.js', 'ui/map.js', 'ui/panels.js', 'ui/delivery.js', 'ui/menu-stats.js', 'ui/extras.js', 'ui/rewind-ui.js', 'ui/tutorial.js', 'ui/trainers-ui.js', 'ui/managers-ui.js', 'ui/growth-ui.js', 'ui/lively-ui.js', 'ui/collateral-ui.js', 'ui/russia.js', 'ui/corp-ui.js', 'ui/prologue.js', 'ui/stage1.js', 'ui/app.js'].map((f) => `/* ${f} */\n` + R(f)).join('\n');
 const css = R('styles.css') + '\n' + R('ui/extras.css') + '\n' + R('ui/tutorial.css') + '\n' + R('ui/trainers.css') + '\n' + R('ui/managers.css') + '\n' + R('ui/growth.css') + '\n' + R('lively.css') + '\n' + R('ui/collateral.css') + '\n' + R('ui/russia.css') + '\n' + R('ui/menu-stats.css') + '\n' + R('ui/delivery.css') + '\n' + R('ui/rewind.css') + '\n' + R('ui/prologue.css') + '\n' + R('pixel/pixel.css') + '\n' + R('ui/stage1.css') + '\n[hidden]{display:none!important}\n';
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap">';
-const page = (c, j) => `<title>Хлебная карта</title>\n${fonts}\n<style>\n${c}</style>\n<script>\n${j.replace(/<\/script/gi, '<\\/script')}\n</script>\n`;
+// Если игра не запустилась (ошибка в скрипте), вместо белого экрана показываем причину текстом.
+// Это важно для Safari: раньше владелец видел просто пустую страницу и не мог сказать, что случилось.
+const GUARD = `<script>(function(){
+  function show(text){ try{ var d=document.getElementById('bk-fail'); if(!d){ d=document.createElement('div'); d.id='bk-fail';
+    d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#a3301c;font:14px/1.6 ui-monospace,Menlo,monospace;padding:20px;white-space:pre-wrap;overflow:auto';
+    (document.body||document.documentElement).appendChild(d); }
+    d.textContent='Игра не запустилась. Покажите это сообщение разработчику:\n\n'+text; }catch(e){} }
+  window.addEventListener('error', function(e){
+    if (e && e.target && e.target.tagName === 'SCRIPT') return;
+    show((e && (e.message || (e.error && e.error.message)) || 'неизвестная ошибка') + '\n' + (e && e.filename ? e.filename : '') + (e && e.lineno ? ':' + e.lineno : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
+  setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
+})();</script>`;
+const page = (c, j) => `${GUARD}<title>Хлебная карта</title>\n${fonts}\n<style>\n${c}</style>\n<script>\n${j.replace(/<\/script/gi, '<\\/script')}\n</script>\n`;
 const content = page(css, js);
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'dist/khlebnaya-karta.html'), content);
