@@ -76,6 +76,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.prod != null) return !!(S.productions && S.productions.length);
     if (c.cash != null) return S.cash >= c.cash;
     if (c.crisis != null) return !!(S.ev && S.ev.crisis);
+    if (c.corp != null) return !!(S.corp && S.corp.active);                                  // второй акт открыт
+    if (c.cities != null) return ((S.corp && S.corp.cities) ? Object.keys(S.corp.cities).length : 0) >= c.cities;
     if (c.rel) return Object.keys(c.rel).every((k) => (R.rel[k] || 0) >= c.rel[k]);
     if (c.meter) return Object.keys(c.meter).every((k) => (R.m[k] || 0) >= c.meter[k]);
     if (c.flag) return Object.keys(c.flag).every((k) => R.f[k] === c.flag[k]);
@@ -114,6 +116,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!sc.fallback || R.seen[sc.id]) continue;
       const t = sc.trigger || {};
       if (t.after && !t.after.every((id) => R.seen[id])) continue;
+      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
+      if (t.all && !t.all.every((c) => cond(S, R, c))) continue;
       const base = (t.any || []).map((c) => (c.months != null ? c.months : c.year != null ? c.year * 12 : null)).filter((x) => x != null);
       if (!base.length) continue;
       if (months(S) >= Math.min.apply(null, base) + sc.fallback.months) return sc;
@@ -173,13 +177,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       case 'rivalOpenNear': {
         if (!S.rival || !S.rival.enabled) return null;
-        if (BK.Rival && BK.Rival.openNear) { BK.Rival.openNear(S, { count: fx.count || 1 }); return '«Двор» открылся рядом с вашей точкой'; }
-        R.queue.push({ kind: 'rivalNear', count: fx.count || 1, day: S.day });
-        return null;
+        const n = rivalNear(S, fx.count || 1);
+        return n ? `«Двор» открыл ${n} ${n === 1 ? 'точку' : 'точки'} рядом с вашими` : null;
       }
       case 'journal': R.log.push({ day: S.day, id: 'j' + S.day, title: fx.text, choice: '', chapter: R.ch, fx: ['journal'] }); return fx.text;
       case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
-      case 'schedule': R.queue.push({ kind: 'scene', id: fx.id, day: S.day + (fx.after || 30), p: fx.p }); return null;
+      case 'schedule': {
+        const a = fx.after;
+        const d = Array.isArray(a) ? Math.round(a[0] + (a[1] - a[0]) * rnd(R)) : (a || 30);   // в сценах after бывает диапазоном
+        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p });
+        return null;
+      }
       case 'ending': {
         R.ending = fx.id;
         const e = (D().endings || {})[fx.id] || {};
@@ -213,15 +221,53 @@ var BK = globalThis.BK || (globalThis.BK = {});
       R.queue = R.queue.filter((q) => {
         if (q.day > S.day) return true;
         if (q.kind === 'scene') { const sc = scene(q.id); if (sc) start(S, sc); return false; }
+        if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
         if (q.kind === 'journal') return false;
         return false;
       });
     }
-    if (R.inbox.length) { const nm = monthStart(S); if (nm) R.inbox = R.inbox.map((m) => (m.read ? m : m)); }
+    if (monthStart(S)) sharesMonthly(S);   // доли сюжета: выплата 1-го числа
     const sc = pick(S, R);
     if (sc) start(S, sc);
   }
   function monthStart(S) { return E().dateOf(S.day).d === 1; }
+
+  /* ---------------- письма и СМС (их показывает BK.StoryUI) ---------------- */
+  function letter(S, o) {
+    const R = ensure(S); if (!R) return null;
+    if (R.lastLetter && S.day - R.lastLetter < K().LETTER_GAP_DAYS) return null;   // не чаще раза в месяц
+    const it = { id: o.id || ('l' + S.day), who: o.who || 'semyon', title: o.title || '', text: o.text || '', form: o.form || 'letter', day: S.day, read: false };
+    R.inbox.push(it); R.lastLetter = S.day; while (R.inbox.length > 40) R.inbox.shift();
+    if (S.notify) S.notify.push({ type: 'story', phase: 'letter', id: it.id });
+    return it;
+  }
+  // «Двор» открывает точки рядом с вашими (эффект rivalOpenNear и очередь)
+  function rivalNear(S, count) {
+    const I = E()._int || {};
+    if (!S.rival || !S.rival.enabled || !I.rivalPlace) return 0;
+    let n = 0;
+    for (let i = 0; i < (count || 1); i++) { try { if (I.rivalPlace(S, 'near')) n++; } catch (e) { break; } }
+    return n;
+  }
+
+  /* ---------------- доли сюжета: выплаты 1-го числа ---------------- */
+  function sharesMonthly(S) {
+    const R = state(S); if (!R || !R.shares.length) return 0;
+    const h = S.history || []; if (!h.length) return 0;
+    const m = h[h.length - 1];
+    let total = 0;
+    for (const sh of R.shares) {
+      const base = sh.what === 'net' ? Math.max(0, m.profit) : Math.max(0, m.profit);   // доля от прибыли сети
+      const pay = Math.round(base * (sh.pct || 0));
+      if (pay > 0) total += pay;
+    }
+    if (total > 0) {
+      const I = E()._int || {};
+      if (I.spend) I.spend(S, total, 'inv'); else { S.cash -= total; S.month.inv = (S.month.inv || 0) + total; }
+      R.lastShare = S.day;
+    }
+    return total;
+  }
 
   /* ---------------- летопись для итогов игры ---------------- */
   function history(S) {
@@ -273,7 +319,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.Engine) wrap();
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems,
+    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
   };
 })();

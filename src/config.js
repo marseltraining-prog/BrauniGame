@@ -457,7 +457,7 @@ BK.CFG.COLL = {
    останавливали бы бота и меняли состояние. */
 BK.CFG.STORY = {
   ON: true,
-  GAP_MONTHS: { own: 3, city: 2, war: 2, russia: 2, deep: 2, final: 3 },  // не чаще сцены раз в N игровых месяцев
+  GAP_MONTHS: { own: 3, city: 2, war: 2, russia: 4, deep: 2, final: 3 },  // не чаще сцены раз в N игровых месяцев
   CLIMAX_MIN_DAYS: 30,      // между кульминациями
   DEFER_DAYS: [3, 7],       // на сколько откладываем, если игрок занят (окно события/шефа)
   LETTER_GAP_DAYS: 30,      // письма не чаще раза в месяц

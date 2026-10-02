@@ -3040,7 +3040,7 @@ BK.CFG.COLL = {
    останавливали бы бота и меняли состояние. */
 BK.CFG.STORY = {
   ON: true,
-  GAP_MONTHS: { own: 3, city: 2, war: 2, russia: 2, deep: 2, final: 3 },  // не чаще сцены раз в N игровых месяцев
+  GAP_MONTHS: { own: 3, city: 2, war: 2, russia: 4, deep: 2, final: 3 },  // не чаще сцены раз в N игровых месяцев
   CLIMAX_MIN_DAYS: 30,      // между кульминациями
   DEFER_DAYS: [3, 7],       // на сколько откладываем, если игрок занят (окно события/шефа)
   LETTER_GAP_DAYS: 30,      // письма не чаще раза в месяц
@@ -3913,9 +3913,470 @@ var BK = globalThis.BK || (globalThis.BK = {});
 })();
 
 /* data/story-russia.js */
-/* story-russia — заготовка (наполняет помощник). Сцены/реплики добавляются в BK.STORY. */
+/* =====================================================================
+   СЮЖЕТ: глава 4 «Россия», ветка «Глубина» и финал (BK.STORY).
+   Замысел и тексты — docs/story.md §7 (4.1–4.7, 4Г.1–4Г.4, «Финал»), §5 (концовки),
+   §4 (развилки Р7). Механика второго акта — docs/russia-design.md.
+   Логика — src/story.js (BK.Story) — не меняется, интерфейс — src/ui/story-ui.js.
+
+   Здесь только данные: сцены, варианты, последствия и именованные бонусы.
+   ВАЖНО: fallback у сцен главы 4 не указан намеренно. В каркасе (src/story.js, pick())
+   запасной вариант проверяет только after и any, но НЕ all и НЕ afterAny — то есть
+   обходил бы ветвление «Россия / Глубина» (проверено: сцена «Глубины» приходила в партии
+   по России). Ветку задаёт флаг f.ufa, а срок — условие any { year: N }, поэтому запасной
+   вариант не нужен: год наступает всегда. Если pick() научится уважать all/afterAny —
+   fallback можно вернуть.
+   Сцены «Глубины» стоят раньше сцен «России» намеренно: у игрока, который выбрал
+   остаться в Уфе (Р6 → «Глубина»), срабатывают именно они.
+
+   Развилки главы (меняют правила, а не только текст):
+     • 4.1  — кто ведёт Казань: Гуля / наёмный директор / сам игрок / Айдар в Уфе;
+     • 4.2  — «Двор» в Казани: качество, цена, игнор или договор о районах;
+     • 4.3  — месяц в Черниковке против дел (время против денег);
+     • 4.4  — Р7, главная личная драма: опцион, совет и доля, уход к «Двору», своё дело;
+     • 4.5  — IPO: деньги рынка против ежеквартального плана;
+     • 4.6  — анонимное письмо: аудит, немедленное увольнение, игнор или Семён;
+     • 4.7  — письмо Олега и лодочная станция (главный крючок игры).
+   «Глубина»: 4Г.1 мельница/фабрика → 4Г.2 флагман → 4Г.3 полка → 4Г.4 пять миллиардов.
+   Финал: Ф1 «Лодочная станция» (купить / слияние / пусть падает / продаться),
+          Ф2 «Последний ужин» (как это назовут — четыре концовки по тому, как играли).
+   ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
-(function () { if (!BK.STORY) return; })();
+(function () {
+  if (!BK.STORY || !BK.STORY.scenes) return;
+
+  /* ---------------- именованные бонусы главы 4 ----------------
+     Все модификаторы — в пределах ±5 % (требование плана: сюжет не должен ломать баланс).
+     scope не указываем: у бонуса сюжета нет цели-города, движок применяет его как «вся сеть». */
+  BK.STORY.perks.millFlour = { name: 'Своя мельница', text: 'мука своя: себестоимость сети −2,5 %', mods: [{ t: 'foodcost', m: 0.975, d: 3650 }] };
+  BK.STORY.perks.millShare = { name: 'Кооператив с мельницей', text: 'половина муки по себестоимости: −1,5 %', mods: [{ t: 'foodcost', m: 0.985, d: 3650 }] };
+  BK.STORY.perks.deepFlagship = { name: 'Флагман', text: 'флагман в Центре: чек +5 %, гостей +4 %', mods: [{ t: 'check', m: 1.05, d: 3650 }, { t: 'traffic', m: 1.04, d: 1825 }] };
+  BK.STORY.perks.shelfPremium = { name: 'Своя полка', text: 'хлеб на полках супермаркетов: чек +3 %', mods: [{ t: 'check', m: 1.03, d: 1095 }] };
+  BK.STORY.perks.fiveBillion = { name: 'Пять миллиардов', text: 'сеть вышла на пять миллиардов в Уфе: гостей +5 %', mods: [{ t: 'traffic', m: 1.05, d: 730 }] };
+  BK.STORY.perks.gulyaKazan = { name: 'Гуля ведёт Казань', text: 'переманить её почти нельзя; в городе меньше текучки и воровства', mods: [{ t: 'traffic', m: 1.03, d: 1095 }], flag: { k: 'gulyaTrust', v: true } };
+  BK.STORY.perks.ownHands = { name: 'Хозяин на месте', text: 'город открыт своими руками: гостей +4 % на год', mods: [{ t: 'traffic', m: 1.04, d: 365 }] };
+  BK.STORY.perks.gulyaOption = { name: 'Опцион Гули', text: 'один процент прибыли Казани — её; удерживать больше не нужно', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'gulyaTrust', v: true } };
+  BK.STORY.perks.gulyaBoard = { name: 'Гуля в совете', text: 'её голос в совете: раз в год она растит вам директора', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'gulyaBoard', v: true } };
+  BK.STORY.perks.gulyaOwn = { name: 'Гулина закваска', text: 'своя закваска и поставка в Казань: себестоимость сети −2 %', mods: [{ t: 'foodcost', m: 0.98, d: 3650 }] };
+  BK.STORY.perks.ipoBell = { name: 'Колокол', text: 'деньги рынка: гостей +5 % на три года, но каждый квартал — план для рынка', mods: [{ t: 'traffic', m: 1.05, d: 1095 }], flag: { k: 'ipo', v: true } };
+  BK.STORY.perks.dvorBought = { name: '«Двор» куплен', text: 'точки «Двора» переходят сети: гостей +5 %', mods: [{ t: 'traffic', m: 1.05, d: 1825 }] };
+  BK.STORY.perks.twocrusts = { name: 'Две корки', text: 'одна карта на двоих: давление соперника падает', mods: [{ t: 'traffic', m: 1.04, d: 3650 }], flag: { k: 'olegEnd', v: 'merge' } };
+
+  BK.STORY.scenes.push(
+    /* =====================================================================
+       ВЕТКА «ГЛУБИНА» (Р6 = остаться в Уфе). Сцены идут первыми,
+       чтобы у игрока «вглубь» не могла сработать сцена «России».
+       ===================================================================== */
+    {
+      id: 's4g1', ch: 'deep', form: 'scene', title: 'Фабрика Гули',
+      who: ['gulya', 'elvira'],
+      /* Включается флагом Р6: docs/story.md §4.1 — сцена 3.7 ставит f.ufa = 'deep'.
+         На id сцены главы 3 намеренно не ссылаемся: её пишут параллельно. */
+      trigger: { all: [{ flag: { ufa: 'deep' } }], any: [{ year: 11 }, { stores: 30 }] },
+      lines: [
+        { who: 'gulya', emo: 'calm', text: 'Хватит покупать муку у людей, которые её не нюхали. Я знаю, у кого брать зерно. Нужна своя мельница.' },
+        { who: 'gulya', emo: 'smile', text: 'А я считала тесто. Оно у нас лучше, чем мука, из которой мы его месим. Так не бывает.' },
+        { who: 'elvira', emo: 'serious', text: 'Мельница с фасовкой — триста восемьдесят миллионов в нынешних ценах. При нашем объёме она возвращает себя за четыре года и семь месяцев. Я считала дважды.' },
+      ],
+      choices: [
+        {
+          label: 'Строим мельницу. Гуля — во главе.', desc: '380 млн ₽, зато своя мука: себестоимость сети −2,5 % надолго. Гуля уходит с производства на мельницу.',
+          effects: [{ t: 'cash', v: -380e6 }, { t: 'perk', id: 'millFlour' }, { t: 'rel', who: 'gulya', add: 15 }, { t: 'meter', k: 'risk', add: 8 },
+            { t: 'flag', k: 'deepMill', v: 'own' }, { t: 'journal', text: 'Своя мельница: Гуля ушла с производства на муку' }],
+        },
+        {
+          label: 'Возьмём мельницу в долю с кооперативом.', desc: '140 млн ₽ сразу и половина муки по себестоимости: −1,5 %. Своей мельницы не будет.',
+          effects: [{ t: 'cash', v: -140e6 }, { t: 'perk', id: 'millShare' }, { t: 'rel', who: 'gulya', add: 5 }, { t: 'meter', k: 'risk', add: 3 },
+            { t: 'flag', k: 'deepMill', v: 'share' }],
+        },
+        {
+          label: 'Пусть будет как есть. Тесто правда хорошее.', desc: 'Гуля не спорит. Она просто перестаёт приносить расчёты.',
+          effects: [{ t: 'rel', who: 'gulya', add: -8 }, { t: 'meter', k: 'care', add: -3 }],
+        },
+      ],
+    },
+    {
+      id: 's4g2', ch: 'deep', form: 'scene', title: 'Флагман',
+      who: ['semyon', 'gulya'],
+      trigger: { after: ['s4g1'], all: [{ flag: { ufa: 'deep' } }], any: [{ year: 12 }, { stores: 35 }] },
+      lines: [
+        { who: 'semyon', emo: 'smile', text: 'Пять утра, Пушкина. У вас в окне свет, у меня — американо. Я сорок лет ждал, когда здесь снова запахнет тестом.' },
+        { who: 'gulya', emo: 'calm', text: 'Флагман — это не вывеска. Это когда в шесть утра очередь на улице, а к семи всё разобрали. Мы можем. Но это не точка, это дом.' },
+        { who: 'semyon', emo: 'serious', text: 'И заметьте: я не пишу «легенда». Я пишу «пекарня». Легенды — это когда уже закрылись.' },
+      ],
+      choices: [
+        {
+          label: 'Флагман на месте «Калача». Печь Рашида, наша работа.', need: { rel: { rashid: 20 } },
+          desc: 'Старая печь, лояльные гости и Рашид рядом: чек +5 %, гостей +4 %. Переделка — 120 млн ₽.',
+          effects: [{ t: 'cash', v: -120e6 }, { t: 'perk', id: 'deepFlagship' }, { t: 'rel', who: 'rashid', add: 15 }, { t: 'rel', who: 'semyon', add: 10 },
+            { t: 'flag', k: 'deepFlag', v: 'kalach' }, { t: 'journal', text: 'Флагман встал на месте «Калача»' }],
+        },
+        {
+          label: 'Свой флагман в Центре, с нуля.', desc: '180 млн ₽: большой зал, витрина, туристы. Дороже — зато никому не кланяться.',
+          effects: [{ t: 'cash', v: -180e6 }, { t: 'perk', id: 'deepFlagship' }, { t: 'rel', who: 'gulya', add: 10 }, { t: 'meter', k: 'risk', add: 8 },
+            { t: 'flag', k: 'deepFlag', v: 'new' }, { t: 'journal', text: 'Свой флагман в Центре' }],
+        },
+        {
+          label: 'Рано. Сначала полка, потом дворец.', desc: 'Гуля пожимает плечами: «Ты начальник». Это не комплимент.',
+          effects: [{ t: 'rel', who: 'gulya', add: -5 }],
+        },
+      ],
+    },
+    {
+      id: 's4g3', ch: 'deep', form: 'scene', title: 'Хлеб на полке',
+      who: ['elvira', 'oleg'],
+      trigger: { after: ['s4g2'], all: [{ flag: { ufa: 'deep' } }], any: [{ year: 13 }, { stores: 40 }] },
+      lines: [
+        { who: 'elvira', emo: 'calm', text: 'Сеть магазинов готова взять четыре позиции в двухстах точках. Полка, логистика и промо — триста сорок миллионов в год. Это плюс одиннадцать процентов к выручке сети. Или минус, если хлеб доедет чёрствым.' },
+        { who: 'oleg', emo: 'calm', text: 'Ты на полке, я на полке. Я поставил цену ниже на четыре рубля. Не обижайся, это математика.' },
+        { who: 'oleg', emo: 'smile', text: 'Хотя вру. Немножко обижайся. Мне так интереснее.' },
+      ],
+      choices: [
+        {
+          label: 'Держим цену. Хлеб не должен стоить дешевле воды.', desc: 'Ставка на качество и свою марку: чек +3 %. Олег уважает тех, кто не дёргается.',
+          effects: [{ t: 'perk', id: 'shelfPremium' }, { t: 'meter', k: 'fair', add: 5 }, { t: 'rel', who: 'oleg', add: 5 },
+            { t: 'cash', v: -60e6 }, { t: 'journal', text: 'Хлеб на полках — без скидки' }],
+        },
+        {
+          label: 'Ответим ценой: акция на четыре рубля.', desc: 'Гостей +5 % на два года, чек −3 %. Олег ответит, он всегда отвечает.',
+          effects: [{ t: 'traffic', m: 1.05, d: 730 }, { t: 'check', m: 0.97, d: 730 }, { t: 'meter', k: 'fair', add: -10 },
+            { t: 'rel', who: 'oleg', add: -10 }, { t: 'rivalMod', agg: 0.1, nearK: 1.15, days: 720 }],
+        },
+        {
+          label: 'Уйдём с полок. У нас своя витрина.', desc: 'Эльвира молча закрывает папку. Она не любит, когда отказываются от выручки из принципа.',
+          effects: [{ t: 'rel', who: 'elvira', add: -5 }, { t: 'meter', k: 'risk', add: -5 }],
+        },
+      ],
+    },
+    {
+      id: 's4g4', ch: 'deep', form: 'climax', title: 'Пять миллиардов', climax: true,
+      who: ['elvira', 'semyon', 'oleg'],
+      trigger: { after: ['s4g3'], all: [{ flag: { ufa: 'deep' } }], any: [{ year: 15 }, { cash: 1e9 }] },
+      lines: [
+        { who: 'elvira', emo: 'serious', text: 'Четыре миллиарда восемьсот. До пяти не хватает двухсот. Это не цифра, это обидная цифра.' },
+        { who: 'semyon', emo: 'smile', text: 'Я был первым гостем в вашей первой точке. Ставлю на вас. Только не говорите Олегу, он расстроится.' },
+        { who: 'oleg', emo: 'calm', text: 'СМС: «Приходи на Белую, к лодочной станции. Разговор на один вечер. — О.»' },
+      ],
+      choices: [
+        {
+          label: 'Дожать год и позвонить Олегу первым.', desc: 'Пять миллиардов в Уфе — и разговор, который вы откладывали двадцать лет.',
+          effects: [{ t: 'perk', id: 'fiveBillion' }, { t: 'rel', who: 'oleg', add: 10 }, { t: 'meter', k: 'risk', add: 5 },
+            { t: 'flag', k: 'deepFive', v: true }, { t: 'journal', text: 'Уфа: пять миллиардов и звонок Олегу' }],
+        },
+        {
+          label: 'Сначала ужин с мамой. Миллиарды подождут до утра.', desc: 'Семья +15, люди сети это заметят.',
+          effects: [{ t: 'rel', who: 'family', add: 15 }, { t: 'rel', who: 'babushka', add: 10 }, { t: 'meter', k: 'care', add: 10 },
+            { t: 'flag', k: 'deepFive', v: true }],
+        },
+        {
+          label: 'Взять пять и сразу объявить шестой цех.', desc: 'Рывок без паузы: гостей +4 % на два года, но резерва станет меньше.',
+          effects: [{ t: 'traffic', m: 1.04, d: 730 }, { t: 'cash', v: -80e6 }, { t: 'meter', k: 'risk', add: 10 },
+            { t: 'flag', k: 'deepFive', v: true }],
+        },
+      ],
+    },
+
+    /* =====================================================================
+       ГЛАВА 4 «РОССИЯ» (Р6 = идти в города). 4.1 – 4.7 по docs/story.md §7.
+       ===================================================================== */
+    {
+      id: 's41', ch: 'russia', form: 'scene', title: 'Кто поедет в Казань',
+      who: ['gulya', 'elvira'],
+      /* Включается флагом Р6: docs/story.md §4.1 — сцена 3.7 ставит f.ufa = 'russia'.
+         На id сцены главы 3 намеренно не ссылаемся: её пишут параллельно. */
+      trigger: { all: [{ flag: { ufa: 'russia' } }], any: [{ year: 10 }, { rel: { gulya: 30 } }] },
+      lines: [
+        { who: 'elvira', emo: 'serious', text: 'Казань. Регистрация, штаб нового города, маркетинг и цех — семьдесят восемь миллионов в ценах этого года. Через полтора года город начнёт возвращать. Раньше — нет.' },
+        { who: 'gulya', emo: 'calm', text: 'Я там выросла. Ну, почти — в Зеленодольске. Знаю, где утренний поток, а где просто красивая улица.' },
+        { who: 'gulya', emo: 'smile', text: 'И да, я знаю, что ты хочешь спросить. Спрашивай прямо. Я не люблю вокруг да около.' },
+      ],
+      choices: [
+        {
+          label: 'Гуля, поедешь директором?', need: { rel: { gulya: 20 } },
+          desc: '«Операции» 75, «Люди» 75, черты «Наставник» и «Своя». Переманить её будет почти нельзя.',
+          effects: [{ t: 'flag', k: 'gulya', v: 'director' }, { t: 'rel', who: 'gulya', add: 15 }, { t: 'meter', k: 'care', add: 5 },
+            { t: 'perk', id: 'gulyaKazan' }, { t: 'journal', text: 'Гуля повела Казань' }],
+        },
+        {
+          label: 'Наймём директора по рынку. Ты нужнее в цехе.', desc: 'Грейд-3 из Казани стоит как половина цеха, а лояльность за деньги не покупается. Гуля не обидится вслух.',
+          effects: [{ t: 'rel', who: 'gulya', add: -8 }, { t: 'cash', v: -3e6 }, { t: 'meter', k: 'risk', add: 5 },
+            { t: 'flag', k: 'kznWho', v: 'hire' }, { t: 'journal', text: 'Казань взял наёмный директор' }],
+        },
+        {
+          label: 'Поеду сам. Первый город открываю руками.', desc: 'Город без директора: всё видно, но загрузка штаба растёт, а личное управление долго не тянут.',
+          effects: [{ t: 'perk', id: 'ownHands' }, { t: 'meter', k: 'risk', add: 10 }, { t: 'flag', k: 'kznWho', v: 'self' },
+            { t: 'journal', text: 'Казань открывали своими руками' }],
+        },
+        {
+          label: 'Айдар поведёт Уфу, а Гуля — Казань.', need: { flag: { hire1: 'aidar' } },
+          desc: 'Айдар вырос: считает сдачу дважды, а город — трижды. Оба города под своими.',
+          effects: [{ t: 'flag', k: 'gulya', v: 'director' }, { t: 'flag', k: 'ufaWho', v: 'aidar' }, { t: 'rel', who: 'gulya', add: 10 },
+            { t: 'perk', id: 'gulyaKazan' }, { t: 'journal', text: 'Айдар — Уфа, Гуля — Казань' }],
+        },
+      ],
+    },
+    {
+      id: 's42', ch: 'russia', form: 'scene', title: 'Двор в Казани',
+      who: ['oleg', 'gulya'],
+      trigger: { after: ['s41'], all: [{ flag: { ufa: 'russia' } }], any: [{ year: 11 }, { rivalStores: 6 }] },
+      lines: [
+        { who: 'oleg', emo: 'smile', text: 'Хорошее место. Я смотрел его в марте — меня опередили. Уважаю.' },
+        { who: 'gulya', emo: 'calm', text: 'Он открылся через два дома. Не через квартал. Через два дома.' },
+        { who: 'oleg', emo: 'calm', text: 'Я не воюю. Я просто открываюсь там, где ты медленный. В Казани у меня сорок точек и свои пекарни. Ты здесь гость. Пока.' },
+      ],
+      choices: [
+        {
+          label: 'Качество: поднимем стандарт, цену не тронем.', desc: 'Свежая выпечка каждые три часа и местный маркетинг: гостей +5 %, чек −1,5 % на два года. 25 млн ₽.',
+          effects: [{ t: 'cash', v: -25e6 }, { t: 'traffic', m: 1.05, d: 730 }, { t: 'check', m: 0.985, d: 730 },
+            { t: 'meter', k: 'fair', add: 5 }, { t: 'rel', who: 'oleg', add: 5 }],
+        },
+        {
+          label: 'Ценой: демпинг на четыре недели.', desc: 'Гостей +7 % на год, чек −5 %. Олег ответит, и в этот раз злее.',
+          effects: [{ t: 'check', m: 0.95, d: 365 }, { t: 'traffic', m: 1.07, d: 365 }, { t: 'meter', k: 'fair', add: -10 },
+            { t: 'rel', who: 'oleg', add: -10 }, { t: 'rivalMod', agg: 0.15, nearK: 1.3, days: 720 }],
+        },
+        {
+          label: 'Игнор: у нас свои гости.', desc: 'Давление «Двора» в городе растёт полгода. Иногда это дешевле, чем воевать.',
+          effects: [{ t: 'rivalMod', agg: 0.5, days: 540 }, { t: 'meter', k: 'risk', add: 5 }],
+        },
+        {
+          label: 'Позвонить и договориться о районах.', need: { rel: { oleg: 20 } },
+          desc: 'Он не отказывается от разговора, если разговор по делу: «Двор» не встаёт рядом с вашими точками.',
+          effects: [{ t: 'rel', who: 'oleg', add: 10 }, { t: 'perk', id: 'olegPact' }, { t: 'rivalMod', agg: -0.2, nearK: 0.5, days: 3650 },
+            { t: 'meter', k: 'fair', add: 10 }, { t: 'journal', text: 'Пакт с «Двором» о районах' }],
+        },
+      ],
+    },
+    {
+      id: 's43', ch: 'russia', form: 'scene', title: 'Звонок из Черниковки',
+      who: ['family', 'babushka'],
+      trigger: { after: ['s42'], all: [{ flag: { ufa: 'russia' } }], any: [{ year: 11 }, { rel: { family: 20 } }] },
+      lines: [
+        { who: 'family', emo: 'serious', text: 'Әби сдала. Врач сказал — сердце. Она не жалуется, ты же знаешь, она вообще не жалуется. Приезжай, если можешь.' },
+        { who: 'babushka', emo: 'calm', text: 'Не слушай мать. Я ещё тебя переживу. Но эчпочмаки в этот раз не передам — приезжай сам.' },
+      ],
+      choices: [
+        {
+          label: 'Уехать в Черниковку на месяц. Дела подождут.', desc: 'Город идёт на автопилоте: выручка сети −2 % месяц, но это запомнят надолго. Семья +20.',
+          effects: [{ t: 'rel', who: 'family', add: 20 }, { t: 'rel', who: 'babushka', add: 20 }, { t: 'meter', k: 'care', add: 10 },
+            { t: 'traffic', m: 0.98, d: 30 }, { t: 'journal', text: 'Месяц в Черниковке, у бабушки' }],
+        },
+        {
+          label: 'Отправить подарок и деньги. Много денег.', desc: 'Мама скажет «спасибо» и положит трубку. Деньги — не то, что она просила.',
+          effects: [{ t: 'cash', v: -3e6 }, { t: 'rel', who: 'family', add: -8 }, { t: 'rel', who: 'babushka', add: -5 }, { t: 'meter', k: 'care', add: -5 }],
+        },
+        {
+          label: 'Приехать на два дня в выходные.', desc: 'И вас увидят, и дела не встанут. Мама всё равно посчитает дни.',
+          effects: [{ t: 'rel', who: 'family', add: 8 }, { t: 'rel', who: 'babushka', add: 5 }, { t: 'meter', k: 'care', add: 3 }],
+        },
+      ],
+    },
+    {
+      id: 's44', ch: 'russia', form: 'climax', title: 'Гулю зовут', climax: true,
+      who: ['gulya', 'oleg'],
+      trigger: {
+        after: ['s41'],
+        all: [{ flag: { ufa: 'russia' } }, { year: 12 }],
+        any: [{ flag: { gulya: 'director' } }, { flag: { gulya: 'manager' } }, { flag: { gulya: 'with' } }, { flag: { gulya: 'share' } }],
+      },
+      lines: [
+        { who: 'gulya', emo: 'serious', text: 'Я не торгуюсь. Я спрашиваю, нужна ли я тебе. Письмо вот, читай сам.' },
+        { who: 'oleg', emo: 'calm', text: 'Письмо: «Гульнара. Двести восемьдесят тысяч в месяц, своя пекарня внутри сети, никаких планов сверху. Ты знаешь, что я не бросаю слов. — О.»' },
+        { who: 'gulya', emo: 'calm', text: 'Я на него не злюсь. Он платит вовремя и не врёт. Но я двадцать лет мешу тесто и хочу знать, что я для тебя не штатная единица.' },
+      ],
+      choices: [
+        {
+          label: 'Опцион: один процент прибыли Казани — твой. Навсегда.', need: { rel: { gulya: 10 } },
+          desc: 'Лояльность +15, переманить почти нельзя. Доля уходит из вашей прибыли, но не из ваших людей.',
+          effects: [{ t: 'share', who: 'gulya', what: 'city:kzn', pct: 0.01 }, { t: 'rel', who: 'gulya', add: 15 }, { t: 'meter', k: 'care', add: 5 },
+            { t: 'flag', k: 'gulyaStay', v: 'option' }, { t: 'perk', id: 'gulyaOption' }, { t: 'journal', text: 'Р7: Гуля осталась на опционе 1 %' }],
+        },
+        {
+          label: 'Совет директоров и два процента прибыли Казани.', need: { rel: { gulya: 30 } },
+          desc: 'Она садится в совет и раз в год растит вам директора. Дороже — но это уже партнёрство, а не удержание.',
+          effects: [{ t: 'share', who: 'gulya', what: 'city:kzn', pct: 0.02, buyout: 1.5 }, { t: 'rel', who: 'gulya', add: 20 }, { t: 'meter', k: 'care', add: 10 },
+            { t: 'flag', k: 'gulyaStay', v: 'board' }, { t: 'perk', id: 'gulyaBoard' }, { t: 'journal', text: 'Р7: Гуля в совете директоров' }],
+        },
+        {
+          label: 'Иди. «Двор» предложил больше, чем я.', desc: 'Олег получит в Казани директора с её навыками. Это будет самый сильный соперник за всю игру.',
+          effects: [{ t: 'flag', k: 'gulya', v: 'poached' }, { t: 'rel', who: 'gulya', add: -10 }, { t: 'meter', k: 'care', add: -10 },
+            { t: 'rivalMod', agg: 0.5, nearK: 1.4, days: 3650 }, { t: 'journal', text: 'Р7: Гуля ушла к «Хлебному двору»' }],
+        },
+        {
+          label: 'Отпустить в своё дело. Пусть печёт своё.', need: { rel: { gulya: 30 } },
+          desc: '«Гулина закваска» станет вашим поставщиком: себестоимость −2 %. В финале она за вашим столом.',
+          effects: [{ t: 'flag', k: 'gulya', v: 'own' }, { t: 'rel', who: 'gulya', add: 5 }, { t: 'meter', k: 'care', add: 5 },
+            { t: 'perk', id: 'gulyaOwn' }, { t: 'journal', text: 'Р7: Гуля открыла своё дело и поставляет закваску' }],
+        },
+      ],
+    },
+    {
+      id: 's45', ch: 'russia', form: 'climax', title: 'Колокол', climax: true,
+      who: ['elvira', 'family'],
+      trigger: {
+        afterAny: ['s42', 's44'],
+        all: [{ flag: { ufa: 'russia' } }],
+        any: [{ year: 13 }, { rel: { elvira: 30 } }, { flag: { fund: 0.25 } }],
+      },
+      lines: [
+        { who: 'elvira', emo: 'calm', text: 'Инвесторы спрашивают одно: есть ли у вас план на каждый квартал. Не мечта — план. Если да, выходим на биржу: деньги на рывок плюс публичная отчётность.' },
+        { who: 'elvira', emo: 'serious', text: 'Провалите квартал — рынок не спросит про тесто. Он спросит про цифры. И спросит громко.' },
+        { who: 'family', emo: 'smile', text: 'У тебя получилось, а я половину слов не понимаю. Только поешь перед этим своим колоколом.' },
+      ],
+      choices: [
+        {
+          label: 'Выходим на биржу.', desc: '350 млн ₽ в нынешних ценах и гостей +5 % на три года. Взамен — ежеквартальный план для рынка: провал бьёт по нервам и по цене акций.',
+          effects: [{ t: 'cash', v: 350e6 }, { t: 'perk', id: 'ipoBell' }, { t: 'meter', k: 'risk', add: 15 },
+            { t: 'journal', text: 'IPO: колокол на бирже' }],
+        },
+        {
+          label: 'Отказаться вежливо. Растём на своё.', desc: 'Эльвира чуть отстраняется: она любит, когда считают, но не любит, когда боятся.',
+          effects: [{ t: 'rel', who: 'elvira', add: -5 }, { t: 'meter', k: 'risk', add: -5 }],
+        },
+        {
+          label: 'Отказаться и объяснить почему.', need: { rel: { elvira: 30 } },
+          desc: 'Вы показываете ей расчёт: рост на свои деньги медленнее, но план никто не диктует. Она соглашается.',
+          effects: [{ t: 'rel', who: 'elvira', add: 10 }, { t: 'meter', k: 'honesty', add: 10 }, { t: 'meter', k: 'risk', add: -5 },
+            { t: 'journal', text: 'От биржи отказались — сознательно' }],
+        },
+      ],
+    },
+    {
+      id: 's46', ch: 'russia', form: 'scene', title: 'Анонимное письмо',
+      who: ['semyon', 'elvira'],
+      trigger: { afterAny: ['s42', 's44'], all: [{ flag: { ufa: 'russia' } }], any: [{ year: 13 }, { rivalStores: 8 }] },
+      lines: [
+        { who: 'semyon', emo: 'serious', text: 'Мне принесли письмо. Без подписи, но с цифрами: в одном из наших городов закупки идут мимо кассы четвёртый месяц. Я такое без проверки не публикую.' },
+        { who: 'elvira', emo: 'calm', text: 'Аудит стоит 0,3 % годовой выручки города, минимум три миллиона. Проверяем или нет — решать сейчас, потом будет дороже.' },
+      ],
+      choices: [
+        {
+          label: 'Провести аудит немедленно. Во всех городах.', desc: 'Правда стоит шесть миллионов и, возможно, чьей-то лояльности. Но спать вы будете лучше.',
+          effects: [{ t: 'cash', v: -6e6 }, { t: 'meter', k: 'honesty', add: 10 }, { t: 'meter', k: 'risk', add: 3 },
+            { t: 'journal', text: 'Аудит по анонимному письму' }],
+        },
+        {
+          label: 'Уволить директора сразу, без проверки.', desc: 'Быстро и грязно: город остаётся без директора, а вина может оказаться не его. Люди это увидят.',
+          effects: [{ t: 'meter', k: 'honesty', add: 5 }, { t: 'meter', k: 'care', add: -10 }, { t: 'rel', who: 'elvira', add: -5 },
+            { t: 'journal', text: 'Директора уволили по письму без проверки' }],
+        },
+        {
+          label: 'Не проверять. Слухи дороже аудита.', desc: 'Если воруют — будут воровать дальше. Если это ложь — вы зря дёрнулись. Оба варианта останутся с вами.',
+          effects: [{ t: 'meter', k: 'honesty', add: -10 }, { t: 'journal', text: 'Письмо положили в стол' }],
+        },
+        {
+          label: 'Отдать письмо Семёну. Пусть проверит сам.', desc: 'Он копает лучше аудита и пишет громче. Гостей −2 % на полгода, зато правда выйдет наружу.',
+          effects: [{ t: 'rel', who: 'semyon', add: 10 }, { t: 'meter', k: 'honesty', add: 5 }, { t: 'traffic', m: 0.98, d: 180 },
+            { t: 'journal', text: 'Письмо ушло к Семёну' }],
+        },
+      ],
+    },
+    {
+      id: 's47', ch: 'russia', form: 'climax', title: 'Олег просит встречи', climax: true,
+      who: ['oleg', 'semyon'],
+      trigger: { afterAny: ['s44', 's45', 's46'], all: [{ flag: { ufa: 'russia' } }], any: [{ year: 14 }, { rivalStores: 5 }] },
+      lines: [
+        { who: 'oleg', emo: 'serious', text: 'Письмо: «Мне нужно с тобой встретиться. Не в офисе. На Белой, у лодочной станции. В четверг, в семь. Приходи один, я тоже буду один.»' },
+        { who: 'oleg', emo: 'calm', text: '«Я не прошу и не угрожаю. Просто приди. Ты поймёшь, когда увидишь.»' },
+        { who: 'semyon', emo: 'smile', text: 'Я случайно видел, как он шёл к реке. Не спрашивайте, что я там делал. Я летописец, мне положено.' },
+      ],
+      choices: [
+        {
+          label: 'Приду один.', desc: '«Двор» теряет точки второй год. Олег пришёл считать, а не воевать.',
+          effects: [{ t: 'flag', k: 'olegMeet', v: true }, { t: 'rel', who: 'oleg', add: 10 },
+            { t: 'journal', text: 'Олег позвал на лодочную станцию' }],
+        },
+        {
+          label: 'Приду, но с Эльвирой и цифрами.', desc: 'С цифрами разговор короче. Но он просил одного, и это он запомнит.',
+          effects: [{ t: 'flag', k: 'olegMeet', v: true }, { t: 'rel', who: 'oleg', add: -5 }, { t: 'rel', who: 'elvira', add: 5 },
+            { t: 'meter', k: 'risk', add: 5 }, { t: 'journal', text: 'На лодочную станцию пришли с финдиректором' }],
+        },
+        {
+          label: 'Пусть присылает письмо. Встречи — не мой жанр.', desc: 'Он не напишет. Такие разговоры бывают один раз в жизни.',
+          effects: [{ t: 'rel', who: 'oleg', add: -15 }, { t: 'meter', k: 'fair', add: -5 }],
+        },
+      ],
+    },
+
+    /* =====================================================================
+       ФИНАЛ. Ф1 «Лодочная станция» — развязка с Олегом; Ф2 «Последний ужин» —
+       как история называется (концовки §5).
+       ===================================================================== */
+    {
+      id: 'sf1', ch: 'final', form: 'climax', title: 'Лодочная станция', climax: true,
+      who: ['oleg', 'semyon'],
+      trigger: {
+        afterAny: ['s47', 's4g4'],
+        any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }],
+      },
+      lines: [
+        { who: 'oleg', emo: 'serious', text: 'Фонд забрал деньги. У «Двора» двести точек и четыре миллиарда долга. Две тысячи человек, у каждого ипотека. Я не прошу пожалеть — я прошу посчитать.' },
+        { who: 'oleg', emo: 'calm', text: 'Вот бумаги. Тут всё, как я считаю. Ты единственный, кто может забрать это целиком и не развалить. Или не забирать. Решай сейчас, у воды.' },
+        { who: 'semyon', emo: 'calm', text: 'Я пришёл пешком, чтобы не мешать. Если что — я в кустах, с блокнотом. Пишу уже двадцать лет, привычка.' },
+      ],
+      choices: [
+        {
+          label: 'Купить «Двор» целиком.', desc: 'Цена — около трёх месячных выручек сети. Его точки и люди переходят вам; при отношениях ≥ 20 Олег остаётся директором дискаунтер-формата.',
+          effects: [{ t: 'flag', k: 'olegEnd', v: 'buy' }, { t: 'cash', revPct: -3 }, { t: 'rel', who: 'oleg', add: 10 }, { t: 'meter', k: 'risk', add: 10 },
+            { t: 'perk', id: 'dvorBought' }, { t: 'journal', text: 'Финал: «Двор» куплен целиком' }, { t: 'schedule', id: 'sf2', after: 1 }],
+        },
+        {
+          label: 'Слияние. «Две корки» — одна карта, два цвета.', need: { rel: { oleg: 30 } },
+          desc: 'Его точки засчитываются в сеть, давление в городах падает до нуля, вывеска «Двор» остаётся дискаунтером.',
+          effects: [{ t: 'flag', k: 'olegEnd', v: 'merge' }, { t: 'rel', who: 'oleg', add: 15 }, { t: 'meter', k: 'fair', add: 15 },
+            { t: 'perk', id: 'twocrusts' }, { t: 'journal', text: 'Финал: слияние «Две корки»' }, { t: 'schedule', id: 'sf2', after: 1 }],
+        },
+        {
+          label: 'Привести Рашида. Пусть они поговорят при вас.', need: { rel: { rashid: 40, oleg: 30 } },
+          desc: '«Маргарин был дрянной». — «Знаю. Но аренду он заплатил». Дальше — как слияние, и в книге будет отдельная глава.',
+          effects: [{ t: 'flag', k: 'olegEnd', v: 'merge' }, { t: 'rel', who: 'oleg', add: 20 }, { t: 'rel', who: 'rashid', add: 20 },
+            { t: 'meter', k: 'fair', add: 20 }, { t: 'meter', k: 'care', add: 10 }, { t: 'perk', id: 'twocrusts' },
+            { t: 'journal', text: 'Финал: Рашид и Олег помирились у воды' }, { t: 'schedule', id: 'sf2', after: 1 }],
+        },
+        {
+          label: 'Пусть падает. Я не спасаю тех, кто топил меня.', desc: '«Двор» тает за год, его помещения выходят на рынок по одному. Олег уезжает в Шакшу и впервые за двадцать лет выглядит спокойным.',
+          effects: [{ t: 'flag', k: 'olegEnd', v: 'fall' }, { t: 'rel', who: 'oleg', add: -25 }, { t: 'meter', k: 'fair', add: -20 },
+            { t: 'journal', text: 'Финал: «Двор» оставлен падать' }, { t: 'schedule', id: 'sf2', after: 1 }],
+        },
+        {
+          label: 'Продаться. Хватит с меня хлеба.', desc: 'Олег (или фонд) забирает сеть, вы уезжаете с деньгами. Это концовка «Сделка» — история здесь заканчивается.',
+          effects: [{ t: 'ending', id: 'deal' }],
+        },
+      ],
+    },
+    {
+      id: 'sf2', ch: 'final', form: 'scene', title: 'Последний ужин',
+      who: ['family', 'babushka', 'semyon'],
+      trigger: { after: ['sf1'], any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }] },
+      lines: [
+        { who: 'family', emo: 'smile', text: 'Садись, я на всех напекла. И не говори, что у тебя ещё совещание, я телефон у тебя заберу.' },
+        { who: 'babushka', emo: 'calm', text: 'Лук я уже порезала. Крупно, как ты любишь. И не смотри так — я знаю, что ты рецепт так и не открывал.' },
+        { who: 'semyon', emo: 'smile', text: 'Я за столом, но я работаю. Так и запишу: «Он ел молча, и это была лучшая глава книги». Осталось название. Как назовём?' },
+      ],
+      choices: [
+        {
+          label: '«Хлеб на миллиард». Колокол, карта в корочках, всё наше.', need: { flag: { olegEnd: 'buy' } },
+          desc: 'Концовка «Империя»: вы на бирже, Эльвира рядом, в зале гудит.',
+          effects: [{ t: 'ending', id: 'empire' }],
+        },
+        {
+          label: '«Две корки». Про то, как два упрямых человека поделили один город.', need: { flag: { olegEnd: 'merge' } },
+          desc: 'Концовка «Две корки»: одна карта, два цвета, никаких ромбов-врагов.',
+          effects: [{ t: 'ending', id: 'twocrusts' }],
+        },
+        {
+          label: '«Хлеб нашего города». Про Алсу с кассы, про Гулю, про маму.', need: { rel: { family: 30 } },
+          desc: 'Концовка «Хлеб нашего города»: воскресный ужин, стол не помещается, в пять утра в «Калаче» горит свет.',
+          effects: [{ t: 'ending', id: 'city' }],
+        },
+        {
+          label: '«Человек-калькулятор». Как есть: цифры, и всё.', desc: 'Концовка «Пустой зал»: сеть лучшая в стране, гостей на банкете — одиннадцать человек, и половина из банка.',
+          effects: [{ t: 'ending', id: 'empty' }],
+        },
+      ],
+    },
+  );
+})();
 
 /* data/story-lines.js */
 /* story-lines — заготовка (наполняет помощник). Сцены/реплики добавляются в BK.STORY. */
@@ -7857,7 +8318,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const o of R.stores) {
       const dd = dist(o, st); if (dd >= rad) continue;
       if (k == null) k = clamp(1 + cfg.RIVAL_RATING_K * (cfg.RATING_START - storeRating(S, st)), 0.4, 1.6); // высокий рейтинг — теряем меньше
-      m *= 1 - cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad);
+      const sNear = (S.story && R.storyUntil > S.day && R.storyNearK) ? R.storyNearK : 1; // сюжет: пакт ослабляет давление рядом
+      m *= 1 - clamp(cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad) * sNear, 0, 0.9);
     }
     return m;
   }
@@ -7872,12 +8334,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     withRivalRng(S, () => {
       if (S.day >= R.nextDay) {
         const mine = S.stores.filter((s) => s.status !== 'opening').length;
-        const target = Math.min(cfg.RIVAL_MAX, R.agg * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
+        const sAgg = (S.story && R.storyUntil > S.day) ? Math.max(0, R.storyAgg || 0) : 0; // сюжет: развилки усиливают «Двор»
+        const target = Math.min(cfg.RIVAL_MAX, R.agg * (1 + sAgg) * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
         const gap = target - R.stores.length;
         if (gap > 0 && rnd(S) < clamp(gap, 0.3, 1)) {
           const r = rnd(S);
           const canGrab = S.day >= cfg.RIVAL_GRAB_FROM_DAY && mine >= cfg.RIVAL_GRAB_MIN_STORES && S.offers.some((o) => !o.special);
-          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // молодую сеть игрока не душит
+          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P * (1 + 2 * sAgg) && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // сюжет: агрессивный «Двор» чаще встаёт рядом // молодую сеть игрока не душит
           const rs = rivalPlace(S, how);
           if (rs) rivalAnnounce(S, rs);
         }
@@ -7997,7 +8460,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   Object.assign(BK.Engine, { daypartOf, DP_NAMES, aggState, aggConnected, aggCommission, aggDay, aggLatePen, aggConnectCost, setAggStore, setAggNetwork, aggSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
-  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects, storeWaste };
+  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, rivalPlace, storesInScope, diffEffects, storeWaste }; // rivalPlace — сюжету: «Двор» открывается рядом (story.js)
 })();
 
 /* prodstats.js */
@@ -8267,6 +8730,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function check(S) {
     if (S.corp || !C().CORP_ON || !K()) return;
     if (S.cumRevenue < K().UNLOCK_REVENUE) return;
+    if (S.story && S.story.f && S.story.f.ufa === 'deep') return; // сюжет: выбран «Глубина» — Россия закрыта
     unlock(S);
   }
   function unlock(S) {
@@ -8281,7 +8745,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // при загрузке старого сохранения: условие уже выполнено — Россия откроется сразу
   function ensure(S) {
     if (!S) return;
-    if (!S.corp) { if (C().CORP_ON && K() && S.phase === 'play' && S.cumRevenue >= K().UNLOCK_REVENUE) unlock(S); }
+    if (!S.corp) { if (C().CORP_ON && K() && S.phase === 'play' && S.cumRevenue >= K().UNLOCK_REVENUE && !(S.story && S.story.f && S.story.f.ufa === 'deep')) unlock(S); }
     const cr = S.corp;
     if (cr) {
       for (const id in cr.cities) { const c = cr.cities[id]; if (!c.mAcc) c.mAcc = { rev: 0, profit: 0, agg: 0 }; if (!c.hist) c.hist = []; if (c.packed && c.packed.stores) c.packed.stores = c.packed.stores.map(canonStore); }
@@ -13478,6 +13942,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.prod != null) return !!(S.productions && S.productions.length);
     if (c.cash != null) return S.cash >= c.cash;
     if (c.crisis != null) return !!(S.ev && S.ev.crisis);
+    if (c.corp != null) return !!(S.corp && S.corp.active);                                  // второй акт открыт
+    if (c.cities != null) return ((S.corp && S.corp.cities) ? Object.keys(S.corp.cities).length : 0) >= c.cities;
     if (c.rel) return Object.keys(c.rel).every((k) => (R.rel[k] || 0) >= c.rel[k]);
     if (c.meter) return Object.keys(c.meter).every((k) => (R.m[k] || 0) >= c.meter[k]);
     if (c.flag) return Object.keys(c.flag).every((k) => R.f[k] === c.flag[k]);
@@ -13516,6 +13982,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!sc.fallback || R.seen[sc.id]) continue;
       const t = sc.trigger || {};
       if (t.after && !t.after.every((id) => R.seen[id])) continue;
+      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
+      if (t.all && !t.all.every((c) => cond(S, R, c))) continue;
       const base = (t.any || []).map((c) => (c.months != null ? c.months : c.year != null ? c.year * 12 : null)).filter((x) => x != null);
       if (!base.length) continue;
       if (months(S) >= Math.min.apply(null, base) + sc.fallback.months) return sc;
@@ -13575,13 +14043,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
       }
       case 'rivalOpenNear': {
         if (!S.rival || !S.rival.enabled) return null;
-        if (BK.Rival && BK.Rival.openNear) { BK.Rival.openNear(S, { count: fx.count || 1 }); return '«Двор» открылся рядом с вашей точкой'; }
-        R.queue.push({ kind: 'rivalNear', count: fx.count || 1, day: S.day });
-        return null;
+        const n = rivalNear(S, fx.count || 1);
+        return n ? `«Двор» открыл ${n} ${n === 1 ? 'точку' : 'точки'} рядом с вашими` : null;
       }
       case 'journal': R.log.push({ day: S.day, id: 'j' + S.day, title: fx.text, choice: '', chapter: R.ch, fx: ['journal'] }); return fx.text;
       case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
-      case 'schedule': R.queue.push({ kind: 'scene', id: fx.id, day: S.day + (fx.after || 30), p: fx.p }); return null;
+      case 'schedule': {
+        const a = fx.after;
+        const d = Array.isArray(a) ? Math.round(a[0] + (a[1] - a[0]) * rnd(R)) : (a || 30);   // в сценах after бывает диапазоном
+        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p });
+        return null;
+      }
       case 'ending': {
         R.ending = fx.id;
         const e = (D().endings || {})[fx.id] || {};
@@ -13615,15 +14087,53 @@ var BK = globalThis.BK || (globalThis.BK = {});
       R.queue = R.queue.filter((q) => {
         if (q.day > S.day) return true;
         if (q.kind === 'scene') { const sc = scene(q.id); if (sc) start(S, sc); return false; }
+        if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
         if (q.kind === 'journal') return false;
         return false;
       });
     }
-    if (R.inbox.length) { const nm = monthStart(S); if (nm) R.inbox = R.inbox.map((m) => (m.read ? m : m)); }
+    if (monthStart(S)) sharesMonthly(S);   // доли сюжета: выплата 1-го числа
     const sc = pick(S, R);
     if (sc) start(S, sc);
   }
   function monthStart(S) { return E().dateOf(S.day).d === 1; }
+
+  /* ---------------- письма и СМС (их показывает BK.StoryUI) ---------------- */
+  function letter(S, o) {
+    const R = ensure(S); if (!R) return null;
+    if (R.lastLetter && S.day - R.lastLetter < K().LETTER_GAP_DAYS) return null;   // не чаще раза в месяц
+    const it = { id: o.id || ('l' + S.day), who: o.who || 'semyon', title: o.title || '', text: o.text || '', form: o.form || 'letter', day: S.day, read: false };
+    R.inbox.push(it); R.lastLetter = S.day; while (R.inbox.length > 40) R.inbox.shift();
+    if (S.notify) S.notify.push({ type: 'story', phase: 'letter', id: it.id });
+    return it;
+  }
+  // «Двор» открывает точки рядом с вашими (эффект rivalOpenNear и очередь)
+  function rivalNear(S, count) {
+    const I = E()._int || {};
+    if (!S.rival || !S.rival.enabled || !I.rivalPlace) return 0;
+    let n = 0;
+    for (let i = 0; i < (count || 1); i++) { try { if (I.rivalPlace(S, 'near')) n++; } catch (e) { break; } }
+    return n;
+  }
+
+  /* ---------------- доли сюжета: выплаты 1-го числа ---------------- */
+  function sharesMonthly(S) {
+    const R = state(S); if (!R || !R.shares.length) return 0;
+    const h = S.history || []; if (!h.length) return 0;
+    const m = h[h.length - 1];
+    let total = 0;
+    for (const sh of R.shares) {
+      const base = sh.what === 'net' ? Math.max(0, m.profit) : Math.max(0, m.profit);   // доля от прибыли сети
+      const pay = Math.round(base * (sh.pct || 0));
+      if (pay > 0) total += pay;
+    }
+    if (total > 0) {
+      const I = E()._int || {};
+      if (I.spend) I.spend(S, total, 'inv'); else { S.cash -= total; S.month.inv = (S.month.inv || 0) + total; }
+      R.lastShare = S.day;
+    }
+    return total;
+  }
 
   /* ---------------- летопись для итогов игры ---------------- */
   function history(S) {
@@ -13675,7 +14185,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.Engine) wrap();
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems,
+    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
   };
 })();
@@ -19006,6 +19516,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
+    if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
@@ -19472,7 +19983,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
       if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
-      if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+      // сюжет: лента «История» живёт в «Сводке» (dash) — см. panels.js dash
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}

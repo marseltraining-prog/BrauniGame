@@ -1502,7 +1502,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const o of R.stores) {
       const dd = dist(o, st); if (dd >= rad) continue;
       if (k == null) k = clamp(1 + cfg.RIVAL_RATING_K * (cfg.RATING_START - storeRating(S, st)), 0.4, 1.6); // высокий рейтинг — теряем меньше
-      m *= 1 - cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad);
+      const sNear = (S.story && R.storyUntil > S.day && R.storyNearK) ? R.storyNearK : 1; // сюжет: пакт ослабляет давление рядом
+      m *= 1 - clamp(cfg.RIVAL_F * o.q * k * (1 - 0.4 * dd / rad) * sNear, 0, 0.9);
     }
     return m;
   }
@@ -1517,12 +1518,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     withRivalRng(S, () => {
       if (S.day >= R.nextDay) {
         const mine = S.stores.filter((s) => s.status !== 'opening').length;
-        const target = Math.min(cfg.RIVAL_MAX, R.agg * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
+        const sAgg = (S.story && R.storyUntil > S.day) ? Math.max(0, R.storyAgg || 0) : 0; // сюжет: развилки усиливают «Двор»
+        const target = Math.min(cfg.RIVAL_MAX, R.agg * (1 + sAgg) * (cfg.RIVAL_BASE + cfg.RIVAL_PER_YEAR * S.day / 365 + cfg.RIVAL_PER_PLAYER * mine));
         const gap = target - R.stores.length;
         if (gap > 0 && rnd(S) < clamp(gap, 0.3, 1)) {
           const r = rnd(S);
           const canGrab = S.day >= cfg.RIVAL_GRAB_FROM_DAY && mine >= cfg.RIVAL_GRAB_MIN_STORES && S.offers.some((o) => !o.special);
-          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // молодую сеть игрока не душит
+          const how = r < cfg.RIVAL_GRAB_P && canGrab ? 'grab' : r < cfg.RIVAL_GRAB_P + cfg.RIVAL_NEAR_P * (1 + 2 * sAgg) && mine >= cfg.RIVAL_NEAR_MIN_STORES ? 'near' : 'random'; // сюжет: агрессивный «Двор» чаще встаёт рядом // молодую сеть игрока не душит
           const rs = rivalPlace(S, how);
           if (rs) rivalAnnounce(S, rs);
         }
@@ -1642,5 +1644,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   Object.assign(BK.Engine, { daypartOf, DP_NAMES, aggState, aggConnected, aggCommission, aggDay, aggLatePen, aggConnectCost, setAggStore, setAggNetwork, aggSummary });
   // внутренние функции для расширений движка (корпорация, corp.js); не для интерфейса
-  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, storesInScope, diffEffects, storeWaste };
+  BK.Engine._int = { spend, log, toast, rnd, rr, ri, gauss, pick, nextId, makePerson, candLevel, makeStoreOffer, genStoreOffers, genProdOffers, bakeChecks, modScope, modMult, SEASON, holidayDay, dayIdx, resetMonth, rentReview, freeSpot, districtWeight, rivalInit, rivalPlace, storesInScope, diffEffects, storeWaste }; // rivalPlace — сюжету: «Двор» открывается рядом (story.js)
 })();

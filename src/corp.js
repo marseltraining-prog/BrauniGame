@@ -34,6 +34,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function check(S) {
     if (S.corp || !C().CORP_ON || !K()) return;
     if (S.cumRevenue < K().UNLOCK_REVENUE) return;
+    if (S.story && S.story.f && S.story.f.ufa === 'deep') return; // сюжет: выбран «Глубина» — Россия закрыта
     unlock(S);
   }
   function unlock(S) {
@@ -48,7 +49,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // при загрузке старого сохранения: условие уже выполнено — Россия откроется сразу
   function ensure(S) {
     if (!S) return;
-    if (!S.corp) { if (C().CORP_ON && K() && S.phase === 'play' && S.cumRevenue >= K().UNLOCK_REVENUE) unlock(S); }
+    if (!S.corp) { if (C().CORP_ON && K() && S.phase === 'play' && S.cumRevenue >= K().UNLOCK_REVENUE && !(S.story && S.story.f && S.story.f.ufa === 'deep')) unlock(S); }
     const cr = S.corp;
     if (cr) {
       for (const id in cr.cities) { const c = cr.cities[id]; if (!c.mAcc) c.mAcc = { rev: 0, profit: 0, agg: 0 }; if (!c.hist) c.hist = []; if (c.packed && c.packed.stores) c.packed.stores = c.packed.stores.map(canonStore); }

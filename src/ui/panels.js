@@ -482,6 +482,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
+    if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
@@ -948,7 +949,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <span class="hint">Лимит — средняя месячная выручка × ${String(+(cfg.LOAN_MAX_REV_MULT * E().diffK(S, 'loanMult')).toFixed(1)).replace('.', ',')}${S.ev && S.day < (S.ev.creditSqueezeUntil || 0) ? ` (в кризис банки урезают лимит на ${Math.round((1 - (cfg.CRISIS_LOAN_MULT != null ? cfg.CRISIS_LOAN_MULT : 1)) * 100)}%)` : ''}. Проценты списываются 1-го числа.</span></div>`;
       if (BK.CollUI) s += BK.CollUI.block(S); // кредит под залог точки (этап 2 ROADMAP)
       if (BK.InvUI) s += BK.InvUI.block(S); // инвесторы (этап 2 ROADMAP)
-      if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+      // сюжет: лента «История» живёт в «Сводке» (dash) — см. panels.js dash
     s += `<div class="sec"><h3>Экономика</h3><div class="grid2">
       ${kv('Ключевая ставка', pct(S.macro.keyRate, 1))}${kv('Инфляция (прогноз года)', pct(S.macro.inflation + S.macro.inflAdd, 1))}
       ${kv('Уровень цен к 2027 году', pct(S.macro.priceLevel))}${kv('Рыночная зарплата', fm(S.market.seller))}
