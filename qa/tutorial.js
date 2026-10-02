@@ -48,7 +48,7 @@ async function cardCheck(p, label, mobile) {
       if (k < need - 0.01) out.push(`[${label}] КОНТРАСТ ${k.toFixed(2)} «${el.textContent.trim().slice(0, 30)}»`);
       if (fs < (mobile ? 10.5 : 10)) out.push(`[${label}] мелкий шрифт ${fs}px «${el.textContent.trim().slice(0, 30)}»`);
     }
-    const txt = card.innerText; const junk = txt.match(/.{0,20}(NaN|undefined|Infinity|\[object|null ₽).{0,20}/);
+    const txt = card.innerText; const junk = txt.match(/.{0,20}(NaN|не число|undefined|Infinity|\[object|null ₽).{0,20}/);
     if (junk) out.push(`[${label}] МУСОР В ТЕКСТЕ: ${junk[0]}`);
     return out;
   }, [label, mobile]);

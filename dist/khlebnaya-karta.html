@@ -19449,7 +19449,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lim = st ? CL.limit(S, st) : 0;
     const minSum = Math.round(BK.CFG.COLL.MIN * S.macro.priceLevel);
     ui.sum = Math.max(minSum, Math.min(ui.sum || lim, lim));
-    return { list, st, lim, minSum };
+    return { list, st, lim, minSum, sum: ui.sum };
   }
   function modalHtml(S) {
     const stt = CL.status(S), loans = CL.list(S);
