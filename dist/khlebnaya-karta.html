@@ -3507,6 +3507,21 @@ BK.STORY = {
   ],
 };
 
+/* data/story-war.js */
+/* story-war — заготовка (наполняет помощник). Сцены/реплики добавляются в BK.STORY. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () { if (!BK.STORY) return; })();
+
+/* data/story-russia.js */
+/* story-russia — заготовка (наполняет помощник). Сцены/реплики добавляются в BK.STORY. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () { if (!BK.STORY) return; })();
+
+/* data/story-lines.js */
+/* story-lines — заготовка (наполняет помощник). Сцены/реплики добавляются в BK.STORY. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () { if (!BK.STORY) return; })();
+
 /* data/world.js */
 /* Мир игры: районы Уфы, соседство, продукты, оборудование, имена. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -21391,8 +21406,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
 })();
 
 /* ui/story-history.js */
-/* Летопись сюжета — заготовка (наполняет помощник). */
+/* Летопись сюжета: вкладка «История», книга Семёна — заготовка (наполняет помощник). */
 var BK = globalThis.BK || (globalThis.BK = {});
+(function () { if (typeof document === 'undefined') return; })();
 BK.StoryHistory = BK.StoryHistory || { block: () => '' };
 
 /* ui/russia.js */
