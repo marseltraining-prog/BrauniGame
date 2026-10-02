@@ -2,8 +2,9 @@
    Движок считает выручку точки целиком (трафик × конверсия × чек), без разбивки по позициям. Этот модуль раскладывает
    фактические итоги дня (выручка, штуки, себестоимость, списания) по продуктам меню — теми же весами, что и движок
    (популярность × тренд категории × цена, надбавки праздников по категориям), — и копит помесячную историю.
-   Списания раскладываются по себестоимости с поправкой на срок годности категории (напитки почти не списываются)
-   и спрос (редко берут — чаще остаётся). Итог по всем продуктам всегда равен фактическому итогу дня.
+   Списания приходят из движка точной суммой за день (пятый аргумент day), раскладываются по себестоимости с поправкой
+   на срок годности категории (напитки почти не списываются) и спрос (редко берут — чаще остаётся). Итог по всем продуктам
+   всегда равен фактическому итогу дня, а сумма списаний по продуктам — строке «Списания» в отчёте месяца и в окне шеф-пекаря.
    Учёт не тратит случайные числа и ничего не меняет в экономике: только читает итоги дня.
 
    Состояние: S.prodStats = { v: 1, c: { [город]: { lab: 'г-м', cur: { id: [шт, выручка, себест, списания] }, days, hist: [{ y, m, d (дней с продажами), p: { id: [...] } }] } } }
@@ -80,14 +81,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (any && cd.lab) { const [y, m] = cd.lab.split('-').map(Number); cd.hist.push({ y, m, d: cd.days || 1, p }); if (cd.hist.length > HIST_MAX) cd.hist.splice(0, cd.hist.length - HIST_MAX); }
     cd.cur = {}; cd.days = 0;
   }
-  function day(S, dayRev, dayFc, dayChecks) {
+  function day(S, dayRev, dayFc, dayChecks, dayWaste) {
     const key = cityKey(S); if (!key) return;
     const cd = ensure(S, key), t = E().dateOf(S.day), ml = monthLabel(t), lab = ml.y + '-' + ml.m;
     if (cd.lab !== lab) { push(cd); cd.lab = lab; } // город простаивал (был неактивным) — закрыть старый месяц
     if (dayRev > 0 || dayChecks > 0) {
       cd.days = (cd.days || 0) + 1;
       const cfg = C(), wz = (S.cache && S.cache.waste) || { waste: 0 }, M = cfg.FOODCOST_MULT || 1;
-      const waste = dayFc * Math.max(0, wz.waste) / (M + Math.max(0, wz.waste)); // dayFc = выручка × фудкост/M × (M + доля остатков)
+      // Списания дня: движок отдаёт точную сумму (engine.js, dailyStores). Без неё (старый вызов) — оценка доли списаний
+      // в фудкосте по сети: она завышена, потому что в деньFc входит и фудкост доставки (у заказов списаний нет), а остатки
+      // складываются по профилю дня точки (вечерняя скидка), а не по среднему по сети.
+      const est = dayFc * Math.max(0, wz.waste) / (M + Math.max(0, wz.waste)); // dayFc = выручка × фудкост/M × (M + доля остатков)
+      const waste = dayWaste != null && isFinite(dayWaste) ? Math.max(0, Math.min(dayFc, dayWaste)) : est;
       const parts = split(S, S.menu, { units: dayChecks * cfg.ITEMS_PER_CHECK, rev: dayRev, fc: dayFc - waste, waste }, holCat(S, S.day));
       for (const id in parts) { const a = cd.cur[id] || (cd.cur[id] = [0, 0, 0, 0]), b = parts[id]; a[0] += b[0]; a[1] += b[1]; a[2] += b[2]; a[3] += b[3]; }
     }
@@ -155,6 +160,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       row.spark = spark;
       row.trend = trendOf(hist, it.id);
       rows.push(row);
+    }
+    // Строки «среднего месяца» приводим к итогу окна — это ровно та цифра, что в строке «Списания» отчёта месяца:
+    // позиция, ушедшая из меню внутри окна, разное число месяцев у позиций и новинка без истории иначе дают перекос.
+    // Множитель один на все строки, поэтому сравнение позиций между собой (доли, флаги) не меняется.
+    if (base) {
+      const D = { units: 0, rev: 0, fc: 0, waste: 0 }, A = { units: 0, rev: 0, fc: 0, waste: 0 }, kk = {};
+      for (const x of rows) { const t = x.est ? A : D; for (const k in D) t[k] += x[k]; }
+      for (const k in D) kk[k] = D[k] > 0 ? Math.max(0, base[k] - A[k]) / D[k] : 1;
+      for (const x of rows) if (!x.est) { for (const k in D) x[k] *= kk[k]; x.share = base.rev > 0 ? x.rev / base.rev : 0; }
     }
     // средние по меню для флагов
     let R = 0, M = 0, W = 0, F = 0; for (const x of rows) { R += x.rev; M += x.margin; W += x.waste; F += x.fc; }

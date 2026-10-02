@@ -1,6 +1,8 @@
 /* Сверка учёта продаж по продуктам (src/prodstats.js): бот good играет N лет, затем
    сумма по продуктам за месяц сравнивается с отчётом движка и печатается сводка окна шефа.
-   node sim/prodstats.js [лет=3] [сид=7919]  → код выхода 1, если суммы расходятся */
+   node sim/prodstats.js [лет=3] [сид=7919]  → код выхода 1, если суммы расходятся
+   Выручка направлений роста (кейтеринг и пр., growth.js) идёт в оборот месяца, но не через точки,
+   поэтому по продуктам не раскладывается — такие месяцы помечаются в выводе. Списания сходятся всегда. */
 const { play } = require('./bot');
 const BK = globalThis.BK, PS = BK.ProdStats;
 const years = +(process.argv[2] || 3), seed = +(process.argv[3] || 7919);
@@ -13,8 +15,9 @@ for (const h of cd.hist.slice(-3)) {
   let rv = 0, fc = 0, w = 0; for (const id in h.p) { rv += h.p[id][1]; fc += h.p[id][2]; w += h.p[id][3]; }
   if (!hh) { console.log('нет отчёта за', h.y, h.m); continue; }
   const rep = S.corp ? hh.c1 : hh.rev;
+  const gr = hh.pnl.gRev || 0; // выручка направлений роста (кейтеринг и пр.) — не продажи точек, по продуктам не раскладывается
   const d = Math.abs(rv - rep) / Math.max(1, rep), dw = Math.abs(w - (hh.pnl.waste || 0)) / Math.max(1, hh.pnl.waste || 0);
-  console.log(`${h.y}-${h.m + 1}: выручка по продуктам ${Math.round(rv)} / отчёт ${Math.round(rep)} (${(d * 100).toFixed(2)}%), себест.+списания ${Math.round(fc + w)} / ${Math.round(hh.fc)}, списания ${Math.round(w)} / ${Math.round(hh.pnl.waste || 0)}`);
+  console.log(`${h.y}-${h.m + 1}: выручка по продуктам ${Math.round(rv)} / отчёт ${Math.round(rep)} (${(d * 100).toFixed(2)}%)${gr ? ` [+${Math.round(gr)} — направления роста, не по продуктам]` : ''}, себест.+списания ${Math.round(fc + w)} / ${Math.round(hh.fc)}, списания ${Math.round(w)} / ${Math.round(hh.pnl.waste || 0)}`);
   if (d > 0.01 || dw > 0.01) bad++;
 }
 const sum = PS.summary(S);
