@@ -404,6 +404,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // на предельном приближении кластеров нет: точки показываем все, даже если стоят вплотную
     if (ckey !== this.ckey) { this.ckey = ckey; this.nodes = this.vb.w <= MIN_W + 1 ? S.stores.map((st) => ({ x: st.x, y: st.y, items: [st] })) : clusterize(S.stores, upp, selStore, kk / upp); }
     const infoById = {}; for (const st of S.stores) infoById[st.id] = storeInfo(S, st, layer);
+    // «живая точка» при сильном приближении: мини-сцена вместо кружка с номером для 1–3 точек
+    // (выделенной и ближайших к центру). Остальные — как раньше; canvas рисует BK.PixelUI (pixel/live.js).
+    const live = BK.PixelUI && BK.PixelUI.mapLive ? BK.PixelUI.mapLive(this, S, sel) : null;
     this.clusterById = {};
 
     // маршруты доставки: в слое «Доставка» — ярко, в остальных — еле видны
@@ -470,15 +473,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
       } else {
         const st = n.items[0], inf = infoById[st.id];
         const s1 = isSel('store', st.id);
-        let g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
         const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
-        if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
-        if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4); // залог банка
-        g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
-        // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
-        if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
-        if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
-        if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85); // лампочка: подсказка личного тренера
+        const meta = live && live[st.id];
+        let g;
+        if (meta) {
+          // сцена уже нарисована canvas'ом поверх карты: здесь остаются значки (проблема, залог, тренер, настроение)
+          // над сценой и прозрачная цель для наведения и нажатия (canvas пропускает указатель)
+          const dy = meta.h * upp / kk + rad;
+          // невидимый circle.b — отметка точки для подсказок и старых сценариев (номер не показываем), .hit — цель для нажатия
+          g = `<g class="m-store live ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})"><circle class="b t-${inf.tone}" r="${rad}"/><circle class="hit" r="17"/>`;
+          if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4 - dy);
+          if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85 - dy);
+          if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85 - dy);
+          if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4 - dy, 6);
+        } else {
+          g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
+          if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
+          if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4); // залог банка
+          g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
+          // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
+          if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
+          if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
+          if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85); // лампочка: подсказка личного тренера
+        }
         g += `</g>`;
         if (s1) selM = ['s' + st.id, g]; else singles.push(['s' + st.id, g]);
       }
