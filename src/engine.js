@@ -264,7 +264,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const appeal = clamp(avgPop / 58, 0.7, 1.35) * variety * diversity;
     return { avgPrice: wp / w, priceIdx: wpm / w, fcPct: wcost / wrev, appeal, n, cats: cats.size };
   }
-  function eqUnlocked(S, req) { return !req || S.productions.some((p) => p.status === 'open' && (p.equip[req] || 0) > 0); }
+  // id — продукт: у вех бывает «редкий рецепт» (BK.Miles.recipeOpen), он открывает продукт без оборудования
+  function eqUnlocked(S, req, id) { return !req || S.productions.some((p) => p.status === 'open' && (p.equip[req] || 0) > 0) || !!(BK.Miles && BK.Miles.recipeOpen(S, id, req)); }
 
   /* ---------------- производство ---------------- */
   function prodCapacity(S, p) {
@@ -1344,7 +1345,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S.chef.pending) return { ok: false };
     adds = (adds || []).filter((id) => S.chef.pending.includes(id)).slice(0, cfg.CHEF_PICK);
     removes = (removes || []).slice(0, cfg.CHEF_REMOVE);
-    for (const id of adds) { const p = byId(BK.PRODUCTS, id); if (p && !eqUnlocked(S, p.req)) return { ok: false, msg: `Для «${p.name}» нужно оборудование` }; }
+    for (const id of adds) { const p = byId(BK.PRODUCTS, id); if (p && !eqUnlocked(S, p.req, p.id)) return { ok: false, msg: `Для «${p.name}» нужно оборудование` }; }
     const after = S.menu.length - removes.length + adds.length;
     if (after < cfg.MENU_MIN) return { ok: false, msg: `В меню должно быть не меньше ${cfg.MENU_MIN} позиций` };
     if (after > cfg.MENU_MAX) return { ok: false, msg: `Максимум ${cfg.MENU_MAX} позиций` };

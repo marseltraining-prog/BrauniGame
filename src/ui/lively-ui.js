@@ -39,6 +39,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (bonus.length) {
       rows += `<div class="mil-bonus" title="Награды за взятые вехи работают прямо сейчас">${bonus.map((b) => `<span class="chip good">${b.mult ? `+${Math.round((b.k - 1) * 100)} %` : `+${b.add}`} к ${esc(RW_LABEL[b.t] || b.t)} · ещё ${nw(b.days, 'день', 'дня', 'дней')}</span>`).join('')}</div>`;
     }
+    const rl = ML().recipeList ? ML().recipeList(S) : [];
+    if (rl.length) rows += `<p class="hint" style="margin:0" title="Эти позиции можно ставить в меню без покупки оборудования">Рецепты от пекаря: ${rl.map((r) => esc(r.name)).join(', ')} — можно ставить в меню без оборудования.</p>`;
     const taken = st.n ? `<span class="count">${st.n}</span>` : '';
     return `<div class="sec mil" id="milBlock"><h3><span class="mil-h3">${ICON}Вехи${taken}</span><button class="linkbtn" data-act="miles">Все вехи →</button></h3>
       <p class="hint mil-lead">${st.n ? 'Короткие задания: одно за раз. Взяли — небольшой бонус, не успели — ничего страшного.' : 'Короткие задания на пару недель — чтобы всегда было, к чему стремиться. За взятые — небольшой бонус.'}</p>
@@ -75,7 +77,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       return `<span class="mil-k${now ? ' now' : ''}" title="${now ? 'Выполняется сейчас' : esc(ML().KINDS[k].txt(S, { k, need: 0, base: 0, num: 0, got: 0 }).d)}">${esc(name)}</span>`;
     }).join('');
     let s = `<div class="modal-h"><span class="eyebrow">Живость · короткие задания</span><h2>Вехи</h2></div><div class="modal-b mil-m2">
-      <p class="hint" style="margin:0">Веха — небольшая цель на пару недель. Игра выдаёт её сама, одну за раз: накормить гостей, подтянуть рейтинг точки, довести резерв, обучить людей. Взяли веху — награда работает ${plural(12, 'день', 'дня', 'дней')} (чуть больше гостей, чек или конверсия). Не успели — веха уходит без штрафа, придёт следующая.</p>
+      <p class="hint" style="margin:0">Веха — небольшая цель на пару недель. Игра выдаёт её сама, одну за раз: накормить гостей, подтянуть рейтинг точки, довести резерв, обучить людей. Взяли веху — награда работает ${plural(12, 'день', 'дня', 'дней')} (чуть больше гостей, чек или конверсия), а иногда вместо неё веха открывает редкий рецепт: продукт из тех, что требуют оборудования цеха, можно поставить в меню без покупки. Не успели — веха уходит без штрафа, придёт следующая.</p>
       <div class="mil-stat"><span><b>${st.n}</b>${plural(st.n, 'веха взята', 'вехи взяты', 'вех взято')}</span><span><b>${st.fail}</b>не вышло</span></div>`;
     if (cur) {
       s += `<div class="mil-cur big${cur.left <= 4 ? ' soon' : ''}"><div class="mil-h"><span class="mil-tag">${esc(cur.group)}</span><b>${esc(cur.t)}</b><span class="mil-left">${cur.left ? `ещё ${nw(cur.left, 'день', 'дня', 'дней')}` : 'последний день'}</span></div>
@@ -86,9 +88,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     } else s += `<div class="mil-empty">Подбираем следующую веху… <button class="btn sm" data-act="milesNow">Взять веху сейчас</button></div>`;
     const act = ML().bonuses(S);
     if (act.length) s += `<div class="sec mil-bonus-sec"><h3>Сейчас работают награды</h3>${act.map((b) => `<div class="mil-bl"><span>${b.mult ? `+${Math.round((b.k - 1) * 100)} %` : `+${b.add}`} к ${esc(RW_LABEL[b.t] || b.t)}</span><b>ещё ${nw(b.days, 'день', 'дня', 'дней')}</b></div>`).join('')}</div>`;
+    const rec = ML().recipeList ? ML().recipeList(S) : [], rmap = {};
+    for (const r of rec) rmap[r.id] = r.name;
+    if (rec.length) s += `<div class="sec"><h3>Рецепты от пекаря<small>${rec.length} из ${ML().recipeMax ? ML().recipeMax() : 4}</small></h3>
+      <div class="mil-hist">${rec.map((r) => `<div class="mil-hl"><span>${esc(r.name)}${r.reqName ? `<small class="hint"> · вместо «${esc(r.reqName)}»</small>` : ''}</span><b>${r.inMenu ? 'в меню' : 'можно поставить'}</b></div>`).join('')}</div>
+      <p class="hint">Эти позиции открыты навсегда и не требуют оборудования: их можно поставить в меню, когда шеф-пекарь принесёт новинки, — обычным путём продукт доступен только после покупки оборудования цеха. Рецептов за игру — не больше ${ML().recipeMax ? ML().recipeMax() : 4}.</p></div>`;
     s += `<div class="sec"><h3>Какие бывают вехи</h3><div class="mil-groups">${Object.keys(byGroup).map((g) => `<div class="mil-g"><b>${esc(g)}</b><div class="mil-ks">${rowsOf(byGroup[g])}</div></div>`).join('')}</div><p class="hint">Игра выбирает то, что сейчас уместно: если в команде нехватка — предложит укомплектовать смены, если в точке просел рейтинг — подтянуть его.</p></div>`;
     const done = ML().done(S).slice(0, 14);
-    if (done.length) s += `<div class="sec"><h3>Последние взятые</h3><div class="mil-hist">${done.map((d) => `<div class="mil-hl"><span>${esc(d.t || (ML().GROUP[d.k] || 'Веха'))}</span><b>${BK.Engine.fmtDate(d.day)}</b></div>`).join('')}</div></div>`;
+    if (done.length) s += `<div class="sec"><h3>Последние взятые</h3><div class="mil-hist">${done.map((d) => `<div class="mil-hl"><span>${esc(d.t || (ML().GROUP[d.k] || 'Веха'))}${d.recipe ? ` · рецепт: ${esc(rmap[d.recipe] || '')}` : ''}</span><b>${BK.Engine.fmtDate(d.day)}</b></div>`).join('')}</div></div>`;
     s += `<div class="sec"><div class="row sp"><span>Показывать вехи</span><div class="seg" role="group" aria-label="Показывать вехи">${[[1, 'Да'], [0, 'Нет']].map(([v, n]) => `<button type="button" data-act="milesOn" data-arg="${v}" aria-pressed="${String(!!st.on) === String(!!v)}">${n}</button>`).join('')}</div></div><p class="hint" style="margin:0">Выключить можно в любой момент — на игру это не влияет.</p></div>`;
     s += `</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
     return s;
@@ -116,12 +123,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       setTimeout(() => el.remove(), 9000);
       if (BK.Sound) BK.Sound.play('click');
     } else if (n.phase === 'done') {
-      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Веха взята!</span><b>${esc(n.title || g)}</b>${n.bonus ? `<span class="md">${esc(n.bonus)}</span>` : ''}</span>`;
-      el.title = 'Открыть вехи';
+      el.className = `toast miltoast done${n.recipe ? ' recipe' : ''}`;
+      el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">${n.recipe ? 'Редкий рецепт от пекаря' : 'Веха взята!'}</span><b>${esc(n.recipe || n.title || g)}</b>${n.bonus ? `<span class="md">${esc(n.bonus)}</span>` : ''}</span>`;
+      el.title = n.recipe ? 'Рецепт можно ставить в меню без оборудования' : 'Открыть вехи';
       el.addEventListener('click', () => { el.remove(); open(); });
-      setTimeout(() => el.remove(), 8000);
+      setTimeout(() => el.remove(), n.recipe ? 12000 : 8000);
       if (BK.Sound) BK.Sound.play('fanfare');
-      burst(6);
+      burst(n.recipe ? 10 : 6);
     } else {
       el.className = 'toast miltoast fail';
       el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Веха не вышла</span><b>${esc(n.title || g)}</b><span class="md">Ничего страшного — придёт следующая.</span></span>`;
