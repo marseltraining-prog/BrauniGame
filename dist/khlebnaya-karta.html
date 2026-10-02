@@ -2319,6 +2319,17 @@ canvas.pxi.sm { width: 18px; height: 18px; }
 .pxl-th { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; min-height: 20px; }
 .pxl-th .chip { font-size: 11.5px; }
 
+/* --- «живая точка» прямо на карте при сильном приближении: мини-сцена вместо кружка с номером --- */
+.maplive { position: absolute; inset: 0; z-index: 1; pointer-events: none; } /* указатель проходит к маркерам SVG */
+.maplive .mlv { position: absolute; line-height: 0; box-shadow: 0 0 0 1px var(--line), 0 2px 6px rgba(0, 0, 0, .18); }
+.maplive .mlv.on { box-shadow: 0 0 0 2px var(--crust), 0 2px 6px rgba(0, 0, 0, .22); }
+.maplive .mlv[hidden] { display: none; }
+.maplive canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+/* прозрачная цель маркера под сценой: наведение подсказки и нажатие работают как раньше */
+.m-store .hit { fill: none; pointer-events: all; }
+/* у точки со сценой кружок с номером не рисуем: остаётся только невидимая отметка (для подсказок и нажатия) */
+.m-store.live circle.b, .m-store.live text { visibility: hidden; }
+
 /* --- пролог «Бариста» --- */
 .pro-px { width: 100%; border-radius: 14px; overflow: hidden; line-height: 0; background: #f1dcb4; }
 .pro-px canvas { margin: 0 auto; }
@@ -15566,6 +15577,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
    - свет по часу (утро/день/вечер/ночь); мысли гостей — 1–2 пузыря (очередь / дорого / нет круассанов / вкусно / свежее).
    Часы сцены: «Сейчас» — типичный день точки идёт сам (полчаса за секунду, пока игра не на паузе), или фиксированно
    утро/обед/вечер/ночь. Анимация — только пока карточка видна (BK.Px.stage).
+   Плюс mapLive(map, S, sel) — та же сцена прямо на карте при сильном приближении (ui/map.js render, блок в конце файла).
    Встраивание: panels.js storeDetail → storeSlot(S, st) (пустой контейнер с data-keep — морфинг панели его не трогает),
    app.js renderPanel → afterPanel(S) монтирует и обновляет сцену.
    ===================================================================== */
@@ -15701,7 +15713,113 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (key !== view.lastPaintKey && !(view.stage.vis && !document.hidden && !Px.reduceMotion())) view.stage.paint(performance.now() / 1000); // видимая сцена обновится в своём кадре
     view.lastPaintKey = key;
   }
-  BK.PixelUI = Object.assign(BK.PixelUI || {}, { storeSlot, afterPanel, liveView: view, snapshot, sceneAt, setHour: (h) => { view.mode = PRESETKEY(h); view.hour = h; if (view.stage) view.stage.paint(performance.now() / 1000); if (view.el) { segs(view.el); ui(view.el, true); } } });
+  /* =====================================================================
+     «ЖИВАЯ ТОЧКА» ПРЯМО НА КАРТЕ (vision-plan §4 п. 1, §10).
+     При сильном приближении карты (vb.w ≤ LIVE_W; предельное приближение — MIN_W = 160 в ui/map.js) вместо
+     векторного кружка с номером показываем мини-сцену точки: витрину, очередь, продавцов, пар и вывеску.
+     Только 1–3 точки (на телефоне — одна): выделенная и ближайшие к центру видимой области; остальные — как раньше.
+     Карта остаётся векторным «генпланом»: сцена — отдельный canvas поверх SVG, pointer-events: none, поэтому
+     наведение, клики, панорамирование и зум работают как раньше (под canvas — прозрачная цель-кружок маркера).
+     Анимация — общий цикл BK.Px.stage: только пока canvas виден и вкладка открыта (active()), reduced-motion — один кадр.
+     ===================================================================== */
+  const LIVE_W = 300;                // порог: ширина окна карты в единицах (160 — предел приближения)
+  const LIVE_W_PHONE = 200;          // на телефоне — только у самого предела, иначе сцена закрывает карту
+  const LIVE_MAX = 3;                // слотов со сценами не больше трёх
+  const SCENE_W = 130, SCENE_H = 86; // буфер сцены: компактнее, чем блок «Вблизи» в карточке (150×100)
+  const mapClk = { t: -1, hour: 8 }; // один час на все сцены карты
+  const layers = new WeakMap();
+
+  function mapRunning() { const A = BK.App, s = A && A.state; return !!(s && s.phase === 'play' && A.ui && A.ui.speed > 0 && !A.ui.modal && !s.lost); }
+  // типичный день точки идёт сам, пока игра не на паузе (полчаса за секунду — как в карточке точки)
+  function mapHour(t) {
+    if (t !== mapClk.t) {
+      if (mapClk.t >= 0 && mapRunning()) { mapClk.hour += Math.min(0.5, Math.max(0, t - mapClk.t)) * 0.5; if (mapClk.hour >= 23.2) mapClk.hour = 6.9; }
+      mapClk.t = t;
+    }
+    return mapClk.hour;
+  }
+  function drawMap(slot, b, t, W, H) { if (slot.base) Px.scenes.store(b, t, W, H, sceneAt(slot.base, mapHour(t))); }
+  // снимок пересчитывается, только когда состояние точки изменилось (как в afterPanel)
+  const snapKey = (S, st) => { const T = st.today || {}; return [st.id, st.status, st.staff.length, Math.round((T.load || 0) * 20), st.staff.map((x) => (x.fatigue / 8 | 0) + '' + (x.mood / 10 | 0)).join(''), (S.waste || {}).bake, (S.waste || {}).disc, st.agg ? 1 : 0, T.agg ? 1 : 0, Math.round((st.rating || 0) * 10), T.closed ? 1 : 0].join('|'); };
+  const mapOn = (map) => !(BK.App && BK.App.ui && BK.App.ui.view === 'russia') && map.vb.w <= (map.px.w < 480 ? LIVE_W_PHONE : LIVE_W);
+
+  function mapLayer(wrap) {
+    let v = layers.get(wrap);
+    if (v && v.box.isConnected) return v;
+    const box = document.createElement('div');
+    box.className = 'maplive'; box.setAttribute('aria-hidden', 'true');
+    const slots = [];
+    for (let i = 0; i < LIVE_MAX; i++) {
+      const holder = document.createElement('div'); holder.className = 'mlv'; holder.hidden = true;
+      box.appendChild(holder);
+      slots.push({ holder, stage: null, base: null, key: '', painted: '', id: null, cssW: 0, cssH: 0, k: 2, hh: SCENE_H });
+    }
+    // первым ребёнком: остаётся под чипами слоёв, легендой и картушем (у них тот же уровень, они позже по порядку)
+    wrap.insertBefore(box, wrap.firstChild);
+    v = { box, slots }; layers.set(wrap, v);
+    return v;
+  }
+
+  /* Вызывается из ui/map.js render() до отрисовки маркеров.
+     Возвращает { id точки: { w, h, on } } — для таких точек вместо кружка с номером рисуется сцена;
+     null или пустой объект — карта как раньше. */
+  function mapLive(map, S, sel) {
+    const wrap = map && map.wrap; if (!wrap) return null;
+    const v = mapLayer(wrap);
+    const hide = () => { for (const s of v.slots) s.holder.hidden = true; return null; };
+    if (!S || S.phase !== 'play' || (BK.Engine.citySetup && BK.Engine.citySetup(S)) || !mapOn(map)) return hide();
+    const K = map.px.w >= 560 ? 2 : 1;            // целый множитель: на телефоне 1, на большом экране 2
+    const cssW = SCENE_W * K, cssH = SCENE_H * K;
+    const single = new Set();                       // сцену получает только одиночный маркер, не точка внутри кластера
+    for (const n of map.nodes || []) if (n.items.length === 1) single.add(n.items[0].id);
+    const s = 1 / map.upp(), ox = (map.px.w - map.vb.w * s) / 2, oy = (map.px.h - map.vb.h * s) / 2;
+    const cx = map.vb.x + map.vb.w / 2, cy = map.vb.y + map.vb.h / 2;
+    const crowded = map.px.w > 820;                 // на ПК слева чипы слоёв и легенда — сцену под них не ставим
+    const list = [];
+    for (const st of S.stores) {
+      if (!single.has(st.id)) continue;
+      const x = (st.x - map.vb.x) * s + ox, y = (st.y - map.vb.y) * s + oy;
+      if (x < cssW / 2 + 4 || x > map.px.w - cssW / 2 - 4 || y < cssH + 6 || y > map.px.h - 8) continue;
+      if (crowded && x < 290 && y < 380) continue;
+      list.push({ st, x, y, d: Math.hypot(st.x - cx, st.y - cy) });
+    }
+    const selId = sel && sel.kind === 'store' ? sel.id : null, rank = (q) => (q.st.id === selId ? 0 : 1);
+    list.sort((a, b) => rank(a) - rank(b) || a.d - b.d);
+    const max = map.px.w < 480 ? 1 : map.px.w < 900 ? 2 : LIVE_MAX;
+    const pick = [];
+    for (const c of list) {
+      if (pick.length >= max) break;
+      if (pick.some((q) => Math.abs(q.x - c.x) < cssW + 10 && Math.abs(q.y - c.y) < cssH + 8)) continue; // сцены не наезжают друг на друга
+      pick.push(c);
+    }
+    const byId = {};
+    for (let i = 0; i < v.slots.length; i++) {
+      const slot = v.slots[i], c = pick[i];
+      if (!c) { slot.holder.hidden = true; continue; }
+      const key = snapKey(S, c.st);
+      if (key !== slot.key) { slot.key = key; slot.base = snapshot(S, c.st); }
+      slot.id = c.st.id; byId[c.st.id] = { w: cssW, h: cssH, on: c.st.id === selId };
+      const h = slot.holder;
+      h.hidden = false;
+      h.classList.toggle('on', c.st.id === selId);
+      h.style.left = Math.round(c.x - cssW / 2) + 'px';
+      h.style.top = Math.round(c.y - cssH + 5) + 'px'; // точка — у основания сцены (дверь), как «домик» на генплане
+      if (slot.cssW !== cssW) { slot.cssW = cssW; h.style.width = cssW + 'px'; }
+      if (slot.cssH !== cssH) { slot.cssH = cssH; h.style.height = cssH + 'px'; }
+      if (slot.k !== K) { slot.k = K; slot.hh = SCENE_H; }
+      if (!slot.stage) slot.stage = Px.stage({
+        cls: 'pxs', fps: 8, label: 'Живая точка на карте: витрина, очередь и продавцы', scale: () => slot.k, minW: SCENE_W, maxW: SCENE_W, height: () => slot.hh,
+        active: () => !h.hidden && map.el.isConnected && mapOn(map), draw: (b, t, W, H) => drawMap(slot, b, t, W, H),
+      });
+      const stg = slot.stage;
+      if (stg.slot !== h || !stg.cv.isConnected) stg.attach(h);
+      else if (stg.k !== K || stg.W !== SCENE_W) stg.fit();
+      if (slot.painted !== key) { slot.painted = key; stg.data = slot.base; if (!(stg.vis && !document.hidden && !Px.reduceMotion())) stg.paint(performance.now() / 1000); }
+    }
+    return byId;
+  }
+
+  BK.PixelUI = Object.assign(BK.PixelUI || {}, { storeSlot, afterPanel, mapLive, liveView: view, snapshot, sceneAt, setHour: (h) => { view.mode = PRESETKEY(h); view.hour = h; if (view.stage) view.stage.paint(performance.now() / 1000); if (view.el) { segs(view.el); ui(view.el, true); } } });
   function PRESETKEY(h) { for (const k of Object.keys(PRESET)) if (PRESET[k] === h) return k; return 'fixed'; }
 })();
 
@@ -16809,6 +16927,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // на предельном приближении кластеров нет: точки показываем все, даже если стоят вплотную
     if (ckey !== this.ckey) { this.ckey = ckey; this.nodes = this.vb.w <= MIN_W + 1 ? S.stores.map((st) => ({ x: st.x, y: st.y, items: [st] })) : clusterize(S.stores, upp, selStore, kk / upp); }
     const infoById = {}; for (const st of S.stores) infoById[st.id] = storeInfo(S, st, layer);
+    // «живая точка» при сильном приближении: мини-сцена вместо кружка с номером для 1–3 точек
+    // (выделенной и ближайших к центру). Остальные — как раньше; canvas рисует BK.PixelUI (pixel/live.js).
+    const live = BK.PixelUI && BK.PixelUI.mapLive ? BK.PixelUI.mapLive(this, S, sel) : null;
     this.clusterById = {};
 
     // маршруты доставки: в слое «Доставка» — ярко, в остальных — еле видны
@@ -16875,15 +16996,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
       } else {
         const st = n.items[0], inf = infoById[st.id];
         const s1 = isSel('store', st.id);
-        let g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
         const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
-        if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
-        if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4); // залог банка
-        g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
-        // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
-        if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
-        if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
-        if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85); // лампочка: подсказка личного тренера
+        const meta = live && live[st.id];
+        let g;
+        if (meta) {
+          // сцена уже нарисована canvas'ом поверх карты: здесь остаются значки (проблема, залог, тренер, настроение)
+          // над сценой и прозрачная цель для наведения и нажатия (canvas пропускает указатель)
+          const dy = meta.h * upp / kk + rad;
+          // невидимый circle.b — отметка точки для подсказок и старых сценариев (номер не показываем), .hit — цель для нажатия
+          g = `<g class="m-store live ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})"><circle class="b t-${inf.tone}" r="${rad}"/><circle class="hit" r="17"/>`;
+          if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4 - dy);
+          if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85 - dy);
+          if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85 - dy);
+          if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4 - dy, 6);
+        } else {
+          g = `<g class="m-store ${inf.cls}${s1 ? ' sel' : ''}" data-kind="store" data-id="${st.id}" transform="translate(${st.x.toFixed(1)},${st.y.toFixed(1)}) scale(${k})">`;
+          if (s1) g += `<circle class="halo" r="${rad + 8}"/><circle class="halo2" r="${rad + 4}"/>`;
+          if (BK.CollUI) g += BK.CollUI.mapBadge(S, st, -rad - 4, -rad - 4); // залог банка
+          g += `<circle class="b t-${inf.tone}" r="${rad}"/><text>${st.num}</text>`;
+          // смайлик: у довольных — только вблизи, иначе на большой сети карта рябит; у остальных — всегда
+          if (layer === 'mood' && inf.mood && (inf.mood !== 'happy' || upp < 0.75)) g += faceSvg(inf.mood, rad * 0.8, -rad - 4, 6);
+          if (inf.prob) g += badge(inf.prob, -rad * 0.85, -rad * 0.85);
+          if (BK.TrainersUI) g += BK.TrainersUI.mapBadge(S, st, rad * 0.85, -rad * 0.85); // лампочка: подсказка личного тренера
+        }
         g += `</g>`;
         if (s1) selM = ['s' + st.id, g]; else singles.push(['s' + st.id, g]);
       }
