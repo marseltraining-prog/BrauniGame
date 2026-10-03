@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 13:26";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 13:51";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -1538,6 +1538,49 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .story-m .st-text { font-size: 14px; }
   .st-ph { grid-template-columns: auto minmax(0, 1fr); }
   .st-kind { grid-column: 2; justify-self: start; }
+}
+
+/* Нити истории (src/ui/threads-ui.js): блок «Вас помнят» в «Сводке» и окно-реестр.
+   Базовые элементы (.sec, .card, .chip, .hint, .linkbtn) — из styles.css; здесь только своё. */
+
+/* --- блок в «Сводке» --- */
+.sec.thr-block .thr-h { display: inline-flex; align-items: center; gap: 6px; }
+.sec.thr-block .thr-h svg { width: 14px; height: 14px; color: var(--crust); }
+.sec.thr-block .thr-h .cnt { margin-left: 2px; padding: 0 6px; border-radius: 8px; background: var(--warn-soft); color: var(--warn-t); font-size: 11px; font-weight: 700; }
+.thr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.thr-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.thr-list li:first-child { border-top: 0; }
+.thr-list .ic { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); color: var(--crust); }
+.thr-list .ic svg { width: 14px; height: 14px; }
+.thr-list .tx { min-width: 0; }
+.thr-list .tx b { display: block; font-size: 13px; }
+.thr-list .tx small { display: block; color: var(--ink-3); font-size: 12px; line-height: 1.35; }
+.thr-when2 { color: var(--ink-3); font-size: 11px; white-space: nowrap; }
+
+/* --- окно-реестр --- */
+.thr-lead { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.thr-note { margin: 0 0 8px; }
+.thr-card { margin: 8px 0; border-left: 3px solid var(--line-2); }
+.thr-card.thr-bad { border-left-color: var(--bad); }
+.thr-card.thr-warn { border-left-color: var(--warn); }
+.thr-card.thr-good { border-left-color: var(--good); }
+.thr-card .card-t { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.thr-kind { font-size: 11px; }
+.thr-when { display: flex; flex-direction: column; align-items: flex-end; color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+.thr-when small { color: var(--crust); font-size: 11px; }
+.thr-body { padding: 0 2px 2px; }
+.thr-text { margin: 6px 0; font-size: 13px; line-height: 1.45; }
+.thr-eff { margin: 6px 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.thr-eff b { color: var(--ink); }
+.thr-until { color: var(--warn-t); }
+.thr-fx { margin: 6px 0; font-size: 12px; color: var(--ink-3); }
+.thr-meta { margin-top: 6px; color: var(--ink-3); font-size: 11px; }
+
+@media (max-width: 560px) {
+  .thr-list li { grid-template-columns: 24px minmax(0, 1fr); }
+  .thr-list .thr-when2 { grid-column: 2; justify-self: start; }
+  .thr-card .card-h { flex-wrap: wrap; }
+  .thr-when { align-items: flex-start; }
 }
 
 /* =====================================================================
@@ -11293,7 +11336,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function applyGlobals(S) {
     if (!BK.useCity) return;
     const a = S && S.corp && S.corp.active, c = a && S.corp.cities[a];
+    syncOpenDays(S, a); // нити истории: срок открытия точки в городе × openGap (обиженный инспектор — дольше, друг — быстрее)
     if (c && a !== 'ufa') BK.useCity(a, c.seed, c.mapGen); else BK.useCity(null);
+  }
+
+  /* ---------------- нити истории (BK.Threads, src/threads.js) ----------------
+     Срок открытия точки в городе = базовый (CFG.OPEN_DAYS_BASE) × поправка нити. Движок читает
+     CFG.OPEN_DAYS как обычно, поэтому меняется только множитель, а не сам движок. */
+  function openK(S, id) { return (S && BK.Threads && BK.Threads.openGap) ? BK.Threads.openGap(S, id) : 1; }
+  function syncOpenDays(S, id) {
+    const cfg = C(); if (!cfg || !cfg.OPEN_DAYS) return 1;
+    if (cfg.OPEN_DAYS_BASE == null) cfg.OPEN_DAYS_BASE = cfg.OPEN_DAYS;
+    cfg.OPEN_DAYS = Math.max(1, Math.round(cfg.OPEN_DAYS_BASE * openK(S, id)));
+    return cfg.OPEN_DAYS;
   }
 
   /* ---------------- множители для движка ---------------- */
@@ -11317,7 +11372,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.stores = pk.stores; S.productions = pk.productions; S.offers = []; S.prodOffers = []; S.rival = pk.rival || { enabled: false, stores: [] };
     if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
     const w0 = cr._with, a0 = cr._actProd; cr._with = id; if (w0 == null) cr._actProd = keep.productions; // цеха активного города — для снабжения из него (§7.2)
+    const kd0 = C().OPEN_DAYS; syncOpenDays(S, id); // нити истории: у этого города свой срок открытия точки
     try { return withRng(S, c, 'rng', fn); } finally {
+      C().OPEN_DAYS = kd0;
       if (w0 == null) { delete cr._with; delete cr._actProd; } else { cr._with = w0; cr._actProd = a0; }
       S.stores = keep.stores; S.productions = keep.productions; S.offers = keep.offers; S.prodOffers = keep.prodOffers; S.rival = keep.rival;
       BK.DISTRICTS = keep.D; BK.MAP = keep.M; BK.CENTER_POINT = keep.P; BK.CITY = keep.CITY;
@@ -11470,6 +11527,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
     S.flags.storeNum = c.numSeq || 0;
     cr.active = id;
+    syncOpenDays(S, id); // нити истории: в этом городе срок открытия точки может быть другим
     withRng(S, c, 'rng', () => {
       if (c.packed) {
         const pk = c.packed;
@@ -16745,6 +16803,319 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
+  };
+})();
+
+/* threads.js */
+/* =====================================================================
+   НИТИ ИСТОРИИ (BK.Threads) — фундамент «живого сюжета», часть 1 (docs/story-v2.md, этап 7).
+
+   Реестр людей, которые что-то о вас помнят: кто он, чем обижен или что обещал, когда это
+   отзовётся и что произойдёт. Нить приходит через годы, но её ВИДНО заранее («Требует внимания»
+   и окно «Вас помнят»), и она меняет механику, а не только текст: обиженный человек затягивает
+   открытие ваших точек в городе (openGap → срок открытия × множитель), благодарный — ускоряет.
+
+   Запись: { id, who, role, kind: 'favor'|'grudge'|'promise', text, city, from, due, effect, done,
+              doneAt, until, src }
+     who    — имя;  role — кто он («пожарный инспектор»);
+     text   — что помнит («вы выставили его из кофейни — он этого не забыл»);
+     city   — город или null (null — вся сеть);
+     from   — день, когда запомнил;  due — день, когда отзовётся;
+     effect — что произойдёт: { text, openK (множитель срока открытия в городе), days (сколько длится),
+              fx: [обычные эффекты событий — применяет BK.Engine._int.applyEffects] };
+     done   — уже отозвалось;  until — до какого дня длится последствие (для openK).
+
+   Состояние — S.threads = { v, list, n }. Пока ни одной нити нет, поля нет вовсе: игра и боты
+   работают ровно как раньше (проверка — node sim/threads.js, node sim/bot.js good 3 18 --summary).
+   Старые сохранения не ломаются: ensure() дозаполняет всё, чего не хватает.
+
+   Без DOM. Интерфейс — src/ui/threads-ui.js + threads.css. Обёртка BK.Engine.tick (после дня —
+   сроки и fire), движок не менялся. Числа — CFG.OPEN_DAYS (базовый срок открытия точки).
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const C = () => BK.CFG, I = () => (BK.Engine && BK.Engine._int) || {};
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const def = (id) => (BK.CITY_BY_ID || {})[id] || null;
+  const cityName = (id) => (def(id) || {}).name || String(id == null ? '' : id);
+  const cityIn = (id) => (def(id) || {}).in || ('в ' + cityName(id));            // «в Казани»
+  const KINDS = { favor: 'благодарность', grudge: 'обида', promise: 'обещание' };
+  let DEMO = true;   // живой пример нити владельца (обиженный завсегдатай → инспектор). Боты модуль не грузят.
+
+  /* ---------------- состояние ---------------- */
+  function defaults() { return { v: 1, list: [], n: 0 }; }
+  function state(S) { return S && S.threads && S.threads.v ? S.threads : null; }
+  function ensure(S) {                       // безопасные значения по умолчанию (в т. ч. для старых сохранений)
+    if (!S) return null;
+    if (S.threads && S.threads.v) {
+      const R = S.threads;
+      if (!Array.isArray(R.list)) R.list = [];
+      if (R.n == null) R.n = R.list.length;
+      return R;
+    }
+    S.threads = defaults();
+    return S.threads;
+  }
+
+  /* ---------------- чтение ---------------- */
+  function list(S) { const R = state(S); return R ? R.list.slice() : []; }
+  function byId(S, id) { return list(S).find((t) => t.id === id) || null; }
+  function due(S) { return list(S).filter((t) => !t.done && S.day >= t.due); }             // созревшие, но ещё не отозвались
+  function waiting(S) { return list(S).filter((t) => !t.done).sort((a, b) => a.due - b.due); }
+  // нить отозвалась и ещё давит: пока не вышел срок; без срока — пока нить не закрыли (clear)
+  function lingering(S, t) { return !!(t.done && (t.until == null ? !!((t.effect || {}).openK) : S.day <= t.until)); }
+  function active(S) { return list(S).filter((t) => lingering(S, t)).sort((a, b) => (a.until || 0) - (b.until || 0)); }
+  function past(S) { return list(S).filter((t) => t.done && !lingering(S, t)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)); }
+  function base() { const cfg = C(); if (!cfg) return 21; if (cfg.OPEN_DAYS_BASE == null) cfg.OPEN_DAYS_BASE = cfg.OPEN_DAYS; return cfg.OPEN_DAYS_BASE || 21; }
+
+  /* ---------------- множитель срока открытия в городе ----------------
+     Пока нить не отозвалась (не done) — механика не меняется: игрок видит предупреждение заранее.
+     После — множитель действует, пока не вышел срок (until). Город null — вся сеть. */
+  function openGap(S, city) {
+    const R = state(S); if (!R || !R.list.length) return 1;
+    let k = 1;
+    for (const t of R.list) {
+      if (!t.done || !lingering(S, t)) continue;
+      const e = t.effect || {}; if (!e.openK) continue;
+      if (t.city && city && t.city !== city) continue;              // чужая нить
+      if (t.city && !city) continue;
+      k *= clamp(e.openK, 0.5, 3);
+    }
+    return clamp(k, 0.5, 3);
+  }
+  function openDays(S, city) { return Math.max(1, Math.round(base() * openGap(S, city))); }
+  function addDays(S, city) { return openDays(S, city) - base(); }   // на сколько дней дольше (+) или быстрее (−)
+
+  /* ---------------- тексты ---------------- */
+  function nwd(n, a, b, c) { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return n + ' ' + (x > 10 && x < 20 ? c : y === 1 ? a : y >= 2 && y <= 4 ? b : c); }
+  function date(S, day) { try { return BK.Engine.fmtDate(day); } catch (e) { return 'день ' + Math.round(day); } }
+  function openText(S, t) {              // «в Самаре открытие точек дольше на 29 дней (50 вместо 21)»
+    const e = t.effect || {}; if (!e.openK || !t.city) return '';
+    const d = openDays(S, t.city), b = base(), add = Math.abs(d - b);
+    return `${cityIn(t.city)} открытие точек ${e.openK >= 1 ? 'дольше' : 'быстрее'} на ${nwd(add, 'день', 'дня', 'дней')} (${d} вместо ${b})`;
+  }
+  function effectText(S, t) {
+    const e = t.effect || {}, out = [];
+    if (e.text) out.push(e.text);
+    const ot = openText(S, t);
+    if (ot) out.push(ot + (e.days ? ` — ${nwd(Math.max(1, Math.round(e.days / 30)), 'месяц', 'месяца', 'месяцев')}` : ''));
+    if (!out.length && e.fx && e.fx.length) out.push('деньги и дела сети');
+    return out.join(': ') || 'пока ничем';
+  }
+  function short(S, t) { return t.role || t.who; }
+  function kindName(k) { return KINDS[k] || 'обещание'; }
+
+  /* ---------------- запись ---------------- */
+  function normFx(fx) {
+    if (!fx) return {};
+    if (Array.isArray(fx)) return { fx: fx.slice() };
+    const e = Object.assign({}, fx);
+    if (e.fx && !Array.isArray(e.fx)) e.fx = [e.fx];
+    if (e.openK != null) e.openK = clamp(+e.openK, 0.5, 3);
+    if (e.days != null) e.days = Math.max(1, Math.round(e.days));
+    return e;
+  }
+  // add(S, { who, role, kind, text, city, from, due|after, effect, src })
+  function add(S, o) {
+    if (!S || !o) return null;
+    const R = ensure(S); if (!R) return null;
+    const from = o.from != null ? o.from : S.day;
+    const t = {
+      id: o.id || ('th' + (++R.n)),
+      who: o.who || 'знакомый',
+      role: o.role || '',
+      kind: KINDS[o.kind] ? o.kind : 'promise',
+      text: o.text || '',
+      city: o.city || null,
+      from,
+      due: Math.round(o.due != null ? o.due : from + (o.after != null ? o.after : 365)),
+      effect: normFx(o.effect),
+      done: false, doneAt: null, until: null,
+      src: o.src || null,
+    };
+    R.list.push(t);
+    while (R.list.length > 40) R.list.shift();          // реестр не растёт бесконечно
+    const i = I();
+    if (i.log) i.log(S, `Вас помнит ${t.who}${t.role ? ` (${t.role})` : ''}: ${t.text}`, 'info');
+    if (i.toast) i.toast(S, 'Вас помнят', `${t.who}${t.role ? ` — ${t.role}` : ''}. ${t.text}`, 'info');
+    chronicle(S, t, t.text, 'Вас помнит ' + t.who);
+    refresh(S);
+    return t;
+  }
+  // списать нить: помирились, человек ушёл, обещание закрыто вручную
+  function clear(S, id) {
+    const R = state(S); if (!R) return null;
+    const i = R.list.findIndex((t) => t.id === id); if (i < 0) return null;
+    const t = R.list.splice(i, 1)[0];
+    const I_ = I(); if (I_.log) I_.log(S, `Вас больше не помнит ${t.who}: нить закрыта.`, 'info');
+    refresh(S);
+    return t;
+  }
+  function fire(S) {                 // применить созревшее: обычные эффекты игры + последствие на сроки
+    const R = state(S); if (!R) return [];
+    const out = [];
+    for (const t of R.list) {
+      if (t.done || S.day < t.due) continue;
+      t.done = true; t.doneAt = S.day;
+      const e = t.effect || {};
+      if (e.days) t.until = S.day + e.days;
+      let res = [];
+      if (e.fx && e.fx.length) { try { res = BK.Engine.applyEffects(S, e.fx, { scope: 'global', target: null }) || []; } catch (err) { res = []; } }
+      const txt = effectText(S, t) + (res.length ? ` (${res.join('; ')})` : '');
+      const i = I();
+      if (i.log) i.log(S, `Отозвалось: ${t.who} — ${txt}`, t.kind === 'grudge' ? 'bad' : 'good');
+      if (i.toast) i.toast(S, t.kind === 'grudge' ? 'Вас помнят — и не по-доброму' : 'Вас помнят', `${t.who}: ${txt}`, t.kind === 'grudge' ? 'warn' : 'good');
+      chronicle(S, t, txt, 'Вас помнит ' + t.who);
+      out.push(t);
+    }
+    if (out.length) refresh(S);   // срок открытия в городе пересчитываем сразу: игрок это увидит в тот же день
+    return out;
+  }
+
+  /* ---------------- летопись (S.story.log) и итоги игры ----------------
+     Запись той же формы, что пишет сюжет: она попадает в «Летопись по главам» и в раздел
+     «История» на экране итогов игры («Вас помнит …»). Без сюжета (боты) — ничего не пишем. */
+  function chronicle(S, t, txt, title) {
+    try {
+      if (!(BK.Story && BK.Story.state && BK.Story.state(S))) return;
+      const R = S.story; if (!R || !Array.isArray(R.log)) return;
+      R.log.push({ day: S.day, id: 'th_' + t.id + '_' + S.day, title, choice: txt, chapter: BK.Story.chapter ? BK.Story.chapter(S, R) : 'city', fx: ['threads'] });
+      while (R.log.length > 120) R.log.shift();
+    } catch (e) { /* нить не должна ломать игру */ }
+  }
+  // короткая сводка для итогов игры и окна реестра
+  function summary(S) {
+    const R = state(S); if (!R) return null;
+    const a = active(S), p = waiting(S), d = past(S);
+    return { n: R.list.length, active: a.length, waiting: p.length, past: d.length, list: R.list.slice(), openGap: (city) => openGap(S, city) };
+  }
+
+  /* ---------------- «Требует внимания» ---------------- */
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.4"/><path d="M5.5 20c.7-4 3.4-6 6.5-6s5.8 2 6.5 6"/></svg>';
+  function attItems(S) {
+    const R = state(S); const out = [];
+    if (!R || !R.list.length) return out;
+    for (const t of active(S)) {                                   // уже отозвалось и давит сейчас
+      if (out.length >= 2) break;
+      const ot = openText(S, t);
+      out.push({
+        lvl: 'warn', ic: 'alert', icHtml: ICON,
+        t: `Вас помнит ${short(S, t)}`,
+        d: `${t.who}: ${ot || effectText(S, t)}${t.until ? ` — до ${date(S, t.until)}` : ''}. Что ещё помнит — в окне «Вас помнят».`,
+        b: { act: 'threads', label: 'Подробнее' },
+      });
+    }
+    const p = waiting(S);
+    if (p.length && out.length < 3) {                              // отзовётся: предупреждаем заранее
+      const t = p[0], soon = t.due - S.day;
+      out.push({
+        lvl: soon <= 30 ? 'warn' : 'info', ic: 'chat', icHtml: ICON,
+        t: `Вас помнит ${short(S, t)}`,
+        d: `${t.who}${t.role ? ` — ${t.role}` : ''}: ${t.text} Отзовётся ${date(S, t.due)}${t.city ? ` (${cityIn(t.city)})` : ''}${soon <= 90 ? `, через ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')}` : ''}.`,
+        b: { act: 'threads', label: 'Подробнее' },
+      });
+    }
+    return out;
+  }
+
+  /* ---------------- пример владельца: обиженный завсегдатай → пожарный инспектор ----------------
+     Пока нити из пролога не подключены (части 2–3), игра показывает одну живую нить сама:
+     войдя в новый город, вы узнаёте, что недавний знакомый служит в пожарной инспекции —
+     и через полтора месяца это отзовётся задержкой открытий в этом городе. */
+  function demo(S) {
+    if (!DEMO || !S || !S.corp || S.corp.unlockedDay == null) return null;
+    const R = state(S);
+    if (R && R.list.some((t) => t.src === 'inspector')) return null;
+    const ids = Object.keys(S.corp.cities || {});
+    if (ids.length < 2) return null;                                  // второго города ещё нет
+    const city = S.corp.active && S.corp.active !== 'ufa' ? S.corp.active : ids.filter((x) => x !== 'ufa')[0];
+    if (!city) return null;
+    return spawn(S, 'inspector', { city });
+  }
+  const TEMPLATES = {
+    // пример владельца (docs/story-v2.md §5): завсегдатай, которого вы обидели, — теперь инспектор
+    inspector: {
+      who: 'Рустам Ахметов', role: 'пожарный инспектор', kind: 'grudge', src: 'inspector',
+      text: 'Завсегдатай, которого вы выставили из кофейни за скандал. Теперь от него зависят разрешения и приёмка ваших точек — и он этого не забыл.',
+      after: 45,
+      effect: { openK: 2.4, days: 540, text: 'тянет с разрешениями и приёмкой' },
+    },
+    // благодарность: человек помнит добро — в его городе открываться быстрее
+    supplier: {
+      who: 'Азамат Хайруллин', role: 'поставщик муки', kind: 'favor',
+      text: 'Однажды вы выручили его с мукой в кризис. Он помнит и считает это долгом.',
+      after: 20,
+      effect: { openK: 0.8, days: 365, text: 'подсказывает подрядчиков и ускоряет приёмку' },
+    },
+    // обещание: обещал вернуться с деньгами — и вернулся
+    promise: {
+      who: 'Марат Гайнуллин', role: 'знакомый по рынку', kind: 'promise',
+      text: 'Обещал вернуться с деньгами, когда встанет на ноги.',
+      after: 240,
+      effect: { fx: [{ t: 'cash', v: 2e6 }], text: 'вернул долг с процентами' },
+    },
+  };
+  function spawn(S, key, o) {
+    const T = TEMPLATES[key]; if (!T) return null;
+    const rec = Object.assign({}, T, o || {});
+    rec.effect = Object.assign({}, T.effect, (o && o.effect) || {});
+    return add(S, rec);
+  }
+
+  /* ---------------- день ---------------- */
+  function day(S) {
+    if (!S || S.lost) return;
+    demo(S);
+    const R = state(S); if (!R || !R.list.length) return;   // нитей нет — игры не касаемся вовсе
+    fire(S);
+    refresh(S);                                            // срок мог выйти или, наоборот, начаться
+  }
+  // пересчитать «срок открытия в городе» по нитям (corp.js: applyGlobals → OPEN_DAYS = база × openGap).
+  // Вызывается после каждого дня, при записи/закрытии нити и перед арендой точки — чтобы число дней
+  // в журнале и в карточке совпадало с тем, что посчитает движок.
+  function refresh(S) {
+    if (!S) return;
+    const R = state(S);
+    try {
+      const cr = S.corp, mounted = cr && cr._with ? cr._with : (cr && cr.active ? cr.active : 'ufa');
+      // при «смонтированном» чужом городе (withCity) карту не переключаем — считаем только его срок
+      if (R && R.list.length && cr && !cr._with && BK.Corp && BK.Corp.applyGlobals) { BK.Corp.applyGlobals(S); return; }
+      const cfg = C(); if (!cfg || !cfg.OPEN_DAYS) return;
+      if (cfg.OPEN_DAYS_BASE == null) cfg.OPEN_DAYS_BASE = cfg.OPEN_DAYS;
+      cfg.OPEN_DAYS = Math.max(1, Math.round(cfg.OPEN_DAYS_BASE * openGap(S, mounted)));
+    } catch (e) { /* нити не должны ломать игру */ }
+  }
+
+  /* ---------------- подключение ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__threads) return;
+    Eng.__threads = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* нити не должны ломать игру */ } }
+      return r;
+    };
+  }
+  if (BK.Engine) wrap();
+  // перед арендой точки держим CFG.OPEN_DAYS актуальным: иначе сразу после загрузки сохранения
+  // (до первого дня) точка открылась бы по базовому сроку, а не по нити
+  function wrapRent() {
+    const Eng = BK.Engine; if (!Eng || !Eng.rentStore || Eng.__threadsRent) return;
+    Eng.__threadsRent = true;
+    const or = Eng.rentStore;
+    Eng.rentStore = function (S) { try { refresh(S); } catch (e) { /* нити не должны ломать игру */ } return or.apply(this, arguments); };
+  }
+  if (BK.Engine) wrapRent();
+  // базовый срок открытия точки запоминаем один раз: нити меняют только множитель (corp.js читает CFG.OPEN_DAYS)
+  if (BK.CFG && BK.CFG.OPEN_DAYS && BK.CFG.OPEN_DAYS_BASE == null) BK.CFG.OPEN_DAYS_BASE = BK.CFG.OPEN_DAYS;
+
+  BK.Threads = {
+    ensure, state, list, byId, due, waiting, active, past, lingering, fire, add, clear, spawn,
+    openGap, openDays, addDays, base, baseDays: base, attItems, summary, day, refresh, openText, effectText, short, kindName,
+    cityName, cityIn, KINDS, TEMPLATES, defaults,
+    get demo() { return DEMO; }, set demo(v) { DEMO = !!v; },
   };
 })();
 
@@ -22515,6 +22886,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
       if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
       if (BK.Strat && BK.Strat.attItems) for (const x of BK.Strat.attItems(S)) add(x); // стратегия сложилась сама
+      if (BK.Threads && BK.Threads.attItems) for (const x of BK.Threads.attItems(S)) add(x); // нити истории: «вас помнит инспектор» — открытие в городе дольше
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -22794,6 +23166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)
     if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
+    if (BK.ThreadsUI) s += BK.ThreadsUI.dashBlock(S); // нити истории: кто вас помнит, чем это грозит и когда
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);
@@ -26264,6 +26637,111 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   BK.StoryHistory = { summarySection, block: summarySection, chapters: chaptersOf, epilogues, book: bookOf, drawImage, save, bind, styles, TITLES, portraitOf };
+})();
+
+/* ui/threads-ui.js */
+/* =====================================================================
+   НИТИ ИСТОРИИ — интерфейс (BK.ThreadsUI). Логика — src/threads.js, стили — src/ui/threads.css.
+   Что видит игрок:
+     • блок «Вас помнят» в «Сводке» (кто, чем грозит, когда отзовётся) с кнопкой «Подробнее»;
+     • строки в «Требует внимания» (их отдаёт BK.Threads.attItems — панель только вставляет их);
+     • окно-реестр: все нити по разделам «Помнят сейчас» / «Отзовётся» / «Уже отозвалось»,
+       с городом, сроком и точной ценой последствия (в том числе «открытие 50 дней вместо 21»).
+   Кнопки помечены data-act="threads": app.js такое действие не знает, поэтому окно открывает
+   собственный обработчик (как это делают другие модульные окна). Без DOM модуль молчит.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const HAS_DOM = typeof document !== 'undefined';
+  const T = () => BK.Threads, H = () => BK.UIH, APP = () => BK.App, E = () => BK.Engine;
+  const esc = (s) => (H() ? H().esc(s) : String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])));
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.4"/><path d="M5.5 20c.7-4 3.4-6 6.5-6s5.8 2 6.5 6"/></svg>';
+  const KIND_ICON = {
+    grudge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>',
+    favor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>',
+    promise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+  };
+  function date(S, day) { try { return E().fmtDate(day); } catch (e) { return 'день ' + Math.round(day); } }
+  function nw(n, a, b, c) { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return n + ' ' + (x > 10 && x < 20 ? c : y === 1 ? a : y >= 2 && y <= 4 ? b : c); }
+  function openWhen(S, t) {   // «отзовётся 12 марта 2032»
+    return `${t.done ? 'отозвалось' : 'отзовётся'} ${date(S, t.due)}`;
+  }
+  function left(S, t) {
+    const d = t.due - S.day;
+    return d > 0 ? `через ${nw(d, 'день', 'дня', 'дней')}` : 'уже';
+  }
+  function kindCls(k) { return k === 'grudge' ? 'bad' : k === 'favor' ? 'good' : 'warn'; }
+
+  // одна нить в окне
+  function row(S, t) {
+    const T_ = T(), e = t.effect || {};
+    const ot = t.city ? T_.openText(S, t) : '';
+    const until = t.until ? `<span class="thr-until">${t.done ? 'давит' : 'продлится'} до ${date(S, t.until)}</span>` : '';
+    const fx = e.fx && e.fx.length ? `<div class="thr-fx">Последствия: ${e.fx.map(fxText).filter(Boolean).join('; ')}</div>` : '';
+    return `<div class="card thr-card thr-${kindCls(t.kind)}">
+      <div class="card-h"><div><div class="card-t">${esc(t.who)}<span class="chip ${kindCls(t.kind)} thr-kind">${esc(T_.kindName(t.kind))}</span></div>
+        <div class="card-s">${esc(t.role || 'знакомый')}${t.city ? ` · ${esc(T_.cityName(t.city))}` : ' · вся сеть'}</div></div>
+        <span class="thr-when">${t.done ? 'отозвалось ' + date(S, t.doneAt) : openWhen(S, t)}<small>${t.done ? '' : left(S, t)}</small></span></div>
+      <div class="thr-body">
+        <p class="thr-text">${esc(t.text)}</p>
+        <p class="thr-eff"><b>${t.done ? 'Что произошло' : 'Чем отзовётся'}:</b> ${esc(ot ? ((e.text ? e.text + ': ' : '') + ot) : T_.effectText(S, t))}${until ? ' ' + until : ''}</p>
+        ${fx}
+        <div class="thr-meta">Помнит с ${date(S, t.from)} · ${esc(t.done ? 'нить отозвалась' : 'ждёт своего дня')}</div>
+      </div></div>`;
+  }
+  function fxText(f) {
+    const M = { cash: (x) => `деньги ${x.v >= 0 ? '+' : '−'}${BK.fmtMoney(Math.abs(x.v || 0))}`, traffic: (x) => `гости ${Math.round((x.m || 0) * 100)} % на ${x.d} дн.`, check: (x) => `чек ${Math.round((x.m || 0) * 100)} % на ${x.d} дн.`, foodcost: (x) => `себестоимость ${Math.round((x.m || 0) * 100)} % на ${x.d} дн.`, salary: (x) => 'рыночные зарплаты', close: (x) => `закрытие на ${x.d} дн.`, staffQuit: (x) => `уйдут ${x.n || 1} чел.` };
+    return (M[f.t] || (() => ''))(f);
+  }
+
+  function windowHtml(S) {
+    const T_ = T(); T_.ensure(S);
+    const all = T_.list(S), act = T_.active(S), wait = T_.waiting(S), past = T_.past(S);
+    const sec = (title, items, note) => items.length ? `<div class="sec thr-sec"><h3>${esc(title)} <small>${items.length}</small></h3>${note ? `<p class="hint thr-note">${esc(note)}</p>` : ''}${items.map((t) => row(S, t)).join('')}</div>` : '';
+    const works = act.some((t) => (t.effect || {}).openK);
+    let s = `<div class="modal-h"><span class="eyebrow">Нити истории</span><h2>Вас помнят: ${all.length}</h2></div><div class="modal-b">
+      <p class="thr-lead">Люди помнят ваши решения — и возвращаются. Одни помогают, другие ждут своего дня: у каждой нити есть срок, и последствие видно заранее.</p>`;
+    s += sec('Помнят сейчас', act, works ? 'Это уже работает: срок открытия точек в городе считается с этой поправкой.' : 'Это уже работает.');
+    s += sec('Отзовётся', wait, 'Пока ничего не меняется — но вы знаете, что и когда будет.');
+    s += sec('Уже отозвалось', past);
+    if (!all.length) s += `<div class="sec"><div class="empty">Пока никто вас не помнит. Так бывает в начале — но люди запоминают.</div></div>`;
+    s += `</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+    return s;
+  }
+
+  // блок в «Сводке»: коротко, кто помнит и чем это грозит (у панели — одна строка-хук)
+  function dashBlock(S) {
+    const T_ = T(); if (!T_ || !T_.summary || !T_.state(S)) return '';
+    const R = T_.state(S); if (!R || !R.list.length) return '';
+    const act = T_.active(S), wait = T_.waiting(S);
+    const line = (t) => {
+      const ot = t.city ? T_.openText(S, t) : '';
+      const what = t.done ? (ot || T_.effectText(S, t)) : `${t.text.slice(0, 90)}${t.text.length > 90 ? '…' : ''}`;
+      return `<li><span class="ic">${KIND_ICON[t.kind] || KIND_ICON.promise}</span><div class="tx"><b>${esc(t.who)}</b><small>${esc(what)}</small></div><span class="thr-when2">${t.done ? (t.until ? 'до ' + date(S, t.until) : 'уже было') : date(S, t.due)}</span></li>`;
+    };
+    const list = act.concat(wait).slice(0, 3), hidden = act.length + wait.length - list.length;
+    return `<div class="sec thr-block"><h3><span class="thr-h">${ICON}Вас помнят${act.length ? `<span class="cnt">${act.length}</span>` : ''}</span><button class="linkbtn" data-act="threads">Подробнее →</button></h3>
+      <ul class="thr-list">${list.map(line).join('')}</ul>
+      ${hidden > 0 ? `<p class="hint">И ещё ${hidden}…</p>` : ''}</div>`;
+  }
+
+  function open() {
+    const S = APP() && APP().state; if (!S || !T()) return;
+    APP().openModal(windowHtml(S), { closable: true });
+    if (BK.Sound) BK.Sound.tap('threads');
+  }
+
+  function boot() {
+    if (!HAS_DOM) return;
+    // app.js действия «threads» не знает — окно открываем сами (как это делают другие модульные окна)
+    document.addEventListener('click', (e) => {
+      const t = e.target && e.target.closest && e.target.closest('[data-act="threads"]');
+      if (t) open();
+    });
+  }
+  if (HAS_DOM) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot(); }
+
+  BK.ThreadsUI = { windowHtml, dashBlock, row, open, ICON };
 })();
 
 /* ui/strategy-ui.js */

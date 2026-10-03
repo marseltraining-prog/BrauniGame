@@ -16,6 +16,9 @@ if (process.env.BK_RIVAL === '0') globalThis.BK.CFG.RIVAL_ON = false; // BK_RIVA
 if (!process.env.BK_INV) globalThis.BK.CFG.INV.ON = false;
 // Сюжет в прогонах ботов выключаем (BK_STORY=1 включает): сцены останавливали бы бота.
 if (!process.env.BK_STORY) globalThis.BK.CFG.STORY.ON = false;
+// Нити истории (BK_THREADS=1 включает): реестр людей и отложенных последствий. По умолчанию не грузится —
+// канонические прогоны первого акта остаются побайтно прежними (нитей нет — поведение игры не меняется).
+if (process.env.BK_THREADS) { for (const f of ['threads.js']) { delete require.cache[require.resolve(path.join(src, f))]; require(path.join(src, f)); } }
 if (process.env.BK_MILES) {
   for (const f of ['milestones.js', 'thoughts.js']) { delete require.cache[require.resolve(path.join(src, f))]; require(path.join(src, f)); }
 }
