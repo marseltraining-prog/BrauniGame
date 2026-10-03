@@ -19,6 +19,7 @@
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const D = () => BK.SCEN || { list: {} };
+  const E = () => BK.Engine;
   const KEY = 'bk-ufa-scen-done';
   const ls = (typeof localStorage === 'undefined') ? null : localStorage;
 
@@ -81,6 +82,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s = d.start, out = [];
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
     if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
+    if (s.stores) {
+      // старт не с нуля: выдаём готовые точки (для истории «спаси сеть в кризисе»)
+      const I = E()._int || {};
+      let got = 0;
+      for (let i = 0; i < s.stores; i++) {
+        const off = (S.offers || [])[0];
+        if (!off || !E().rentStore) break;
+        try { E().rentStore(S, off); got++; } catch (e) { break; }
+      }
+      if (got) out.push(`${got} ${got === 1 ? 'точка' : 'точки'}`);
+      if (s.mood != null) for (const st2 of (S.stores || [])) { st2.mood = s.mood; }   // уставшая команда
+      if (s.rating != null) for (const st2 of (S.stores || [])) { st2.rating = s.rating; }
+    }
     if (s.crisis) { S.ev = S.ev || {}; S.ev.nextCrisis = (S.day || 0) + (s.crisisIn || 60); S.ev.forcedCrisis = s.crisis; out.push('кризис'); }
     if (s.trafficK) { S.mods.push({ t: 'traffic', m: s.trafficK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('спрос'); }
     if (s.foodcostK) { S.mods.push({ t: 'foodcost', m: s.foodcostK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('мука'); }
@@ -98,7 +112,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // срок сценария (например, «Наследство» — спасти за 6 месяцев)
     if (d.days && !st.expired && S.day - st.at > d.days) {
       st.expired = true;
-      if (S.notify) S.notify.push({ type: 'scen', phase: 'expired', id: st.id, days: d.days });
+      st.flags = st.flags || {};
+      st.flags.expired = true;
+      // срок вышел: сразу считаем, спасена история или нет — вердикт не зависит от того, когда вызван finish()
+      try { st.flags.saved = !!(d.done && d.done(S, st)); } catch (e) { st.flags.saved = false; }
+      if (S.notify) S.notify.push({ type: 'scen', phase: st.flags.saved ? 'saved' : 'expired', id: st.id, days: d.days });
     }
   }
   function failed(S) { const st = state(S); if (!st || !st.expired) return false; const d = info(st.id); return !!(d && d.fail && d.fail(S, st)); }

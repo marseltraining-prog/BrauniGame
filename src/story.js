@@ -75,6 +75,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.rivalStores != null) { const rv = S.rival || {}; return (rv.stores ? rv.stores.length : (rv.n || 0)) >= c.rivalStores; }
     if (c.prod != null) return !!(S.productions && S.productions.length);
     if (c.cash != null) return S.cash >= c.cash;
+    if (c.cashLt != null) return S.cash < c.cashLt;                                  // «денег меньше, чем…»
+    if (c.notSeen) return !R.seen[c.notSeen];                                        // сцену ещё не видели
     if (c.crisis != null) return !!(S.ev && S.ev.crisis);
     if (c.corp != null) return !!(S.corp && S.corp.active);                                  // второй акт открыт
     if (c.cities != null) return ((S.corp && S.corp.cities) ? Object.keys(S.corp.cities).length : 0) >= c.cities;
