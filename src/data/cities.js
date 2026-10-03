@@ -306,10 +306,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const UFA = { DISTRICTS: BK.DISTRICTS, MAP: BK.MAP, CENTER_POINT: BK.CENTER_POINT };
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
-  function cityInfo(def) { // описание для движка: масштаб, конкуренция, сезон, календарь
-    if (def.builtin) return { id: def.id, name: def.name, in: def.in };
-    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
-      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }; // особенности города (Р4)
+  function cityInfo(def) { // описание для движка: экономика, масштаб, конкуренция, сезон, календарь
+    // inc/rent/wage всегда берутся из одной записи CITIES. Первый акт читает их через BK.CITY,
+    // второй — через BK.CITY_BY_ID; одинаковый город поэтому больше не получает разные зарплаты.
+    const base = { id: def.id, name: def.name, in: def.in, inc: def.inc || 1, rent: def.rent || 1, wage: def.wage || 1 };
+    if (def.builtin) return base;
+    return Object.assign(base, { kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
+      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }); // особенности города (Р4)
   }
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;

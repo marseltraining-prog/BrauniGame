@@ -376,7 +376,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // расписание смен: смены приходят сами (5–10 за пролог), игрок их не выбирает и не может пропустить,
   // но может оказаться не готовым. Кнопка только одна — «встать за стойку», и лишь когда смена уже ждёт.
   function shiftBlock(p) {
-    const list = PR().shiftAt(), done = Math.min(PR().shiftsDone(p), list.length);
+    const list = PR().shiftAt(p), done = Math.min(PR().shiftsDone(p), list.length);
     const due = PR().dueShift(p), tired = PR().shiftTired(p);
     const when = (m) => cap(PR().monName(p, m));
     const dots = list.map((m, i) => `<i class="${i < done ? 'on' : ''}${i === done && due ? ' now' : ''}" title="${i < done ? `Смена прошла: ${when(m)}` : `Смена: ${when(m)}`}"></i>`).join('');

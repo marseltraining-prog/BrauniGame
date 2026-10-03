@@ -78,6 +78,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.useCity) BK.useCity(city, seed);
     const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const dk = (k) => diffK({ difficulty }, k);
+    const cityWage = (BK.CITY && BK.CITY.wage) || 1;
+    const sellerMarket = Math.round(cfg.MARKET_SALARY_SELLER * cityWage);
+    const bakerMarket = Math.round(cfg.MARKET_SALARY_BAKER * cityWage);
     const S = {
       v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
@@ -85,8 +88,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
       cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
-      market: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
-      pay: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
+      market: { seller: sellerMarket, baker: bakerMarket },
+      pay: { seller: sellerMarket, baker: bakerMarket },
       alloc: { reserve: 0.15, bonus: 0.03, marketing: 0.05 },
       culture: 0, office: { hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 },
       loyaltyMod: 0, lastBonusPerEmp: 0, lastMarketingPerStore: 0,

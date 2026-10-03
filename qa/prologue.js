@@ -11,28 +11,53 @@ const { chromium, openPage, layoutCheck } = require('./lib');
 const OUT = path.resolve(process.argv[2] || path.join(__dirname, 'shots', 'prologue'));
 fs.mkdirSync(OUT, { recursive: true });
 const issues = [];
+const QA_SEED = 7919;
 const RUNS = [['d1440', false], ['d1440', true], ['m390', false], ['m390', true], ['m360', false], ['m360', true]];
 
 async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + '.png') }); }
 async function check(p, label, root, mobile) { for (const x of await layoutCheck(p, label, { root, mobile })) issues.push(x); }
 const st = (p) => p.evaluate(() => { const P = BK.App.state && BK.App.state.prologue; return P ? { status: P.status, m: P.m, cards: P.cards.length, card: P.cards[0] && P.cards[0].id, mode: BK.PrologueUI.ui.mode, open: BK.PrologueUI.active(), shifts: P.stats.shifts } : null; });
+async function exactClick(p, selector) {
+  await p.waitForSelector(selector, { state: 'attached' });
+  await p.$eval(selector, (el) => el.click());
+}
 // «Смена» приходит сама по расписанию (BK.Prologue.dueShift) — в тесте её нельзя пропустить: играем до конца,
 // а там, где смена только мешает (подготовленные состояния), сразу заканчиваем и закрываем
 async function playShift(p, fast) {
   const s = await st(p); if (!s || s.mode !== 'shift') return false;
   for (let i = 0; i < 8; i++) {
-    if (await p.$('#proSh [data-pa=shiftGo]')) { await p.click('#proSh [data-pa=shiftGo]'); await p.waitForTimeout(90); }
-    if (fast && await p.$('#proSh [data-pa=shiftEnd]')) { await p.click('#proSh [data-pa=shiftEnd]'); await p.waitForTimeout(90); }
-    if (await p.$('#proSh [data-pa=shiftDone]')) { await p.click('#proSh [data-pa=shiftDone]'); await p.waitForTimeout(180); }
+    if (await p.$('#proSh [data-pa=shiftGo]')) { await exactClick(p, '#proSh [data-pa=shiftGo]'); await p.waitForTimeout(90); }
+    if (fast && await p.$('#proSh [data-pa=shiftEnd]')) { await exactClick(p, '#proSh [data-pa=shiftEnd]'); await p.waitForTimeout(90); }
+    if (await p.$('#proSh [data-pa=shiftDone]')) { await exactClick(p, '#proSh [data-pa=shiftDone]'); await p.waitForTimeout(180); }
     const t = await st(p); if (!t || t.mode !== 'shift') return true;
   }
   return true;
 }
 
 async function startPrologue(p) {
-  await p.evaluate(() => { const r = document.querySelector('#start input[name=startmode][value=prologue]'); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); } });
+  await p.evaluate(() => {
+    // Общий тест пролога идёт на базовой истории Уфы. rescue отдельно и корректно стартует
+    // с готовой сетью; случайный выбор истории не должен менять контракт этого QA.
+    if (BK.Scenario && !BK.Scenario.__qaBaseSet) {
+      const set = BK.Scenario.set;
+      BK.Scenario.pick = () => 'ufa';
+      BK.Scenario.set = (S, id, o) => set(S, id === 'random' ? 'ufa' : id, o);
+      BK.Scenario.__qaBaseSet = true;
+    }
+    const r = document.querySelector('#start input[name=startmode][value=prologue]');
+    if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+  });
   await p.click('#startForm button[type=submit]');
   await p.waitForFunction(() => BK.PrologueUI && BK.PrologueUI.active() && document.querySelector('#prologue .pro-card'), null, { timeout: 5000 });
+}
+
+async function isolateStart(p) {
+  await p.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('bk-ufa-tutorial', '0');
+  });
+  await p.reload();
+  await p.waitForSelector('#startForm button[type=submit]');
 }
 // решить все открытые карточки: первый доступный вариант
 async function resolveCards(p, prefer) {
@@ -66,8 +91,9 @@ async function until(p, pred, stop) {
   const browser = await chromium.launch();
   for (const [vp, dark] of RUNS) {
     const tag = `${vp}${dark ? '-dark' : ''}`, mobile = vp.startsWith('m'), full = vp === 'd1440' && !dark || vp === 'm390' && dark;
-    const p = await openPage(browser, vp, { dark });
+    const p = await openPage(browser, vp, { dark, seed: QA_SEED });
     try {
+      await isolateStart(p);
       // --- стартовый экран: выбор «Как начать» ---
       await p.waitForSelector('#startForm .pro-pick');
       await check(p, tag + ' старт', null, mobile);
@@ -89,7 +115,7 @@ async function until(p, pred, stop) {
       if (!(sh0.plan.length >= 5 && sh0.plan.length <= 10)) issues.push(`[${tag}] смен в расписании ${sh0.plan.length} (нужно 5–10): ${sh0.plan}`);
       if (sh0.items !== 9) issues.push(`[${tag}] на полке ${sh0.items} позиций, ожидалось 9 (три ряда по три)`);
       await check(p, tag + ' смена: вступление', '#proSh .sh-in', mobile);
-      await p.click('[data-pa=shiftGo]');
+      await exactClick(p, '#proSh [data-pa=shiftGo]');
       await p.waitForSelector('#proSh .sh-g.front', { timeout: 3000 });
       // полка три на три и подсказки клавиш: на ПК видны, на телефоне — нет
       const shelf = await p.evaluate(() => {
@@ -130,12 +156,12 @@ async function until(p, pred, stop) {
       }
       const shs = await p.evaluate(() => { const sh = BK.PrologueUI.ui.sh; return { served: sh.served, errors: sh.errors, up: sh.upsells }; });
       if (shs.served < 2 || shs.errors < 1) issues.push(`[${tag}] смена: обслужено ${shs.served}, ошибок ${shs.errors} (ожидалось ≥2 и ≥1)`);
-      await p.click('[data-pa=shiftEnd]');
+      await exactClick(p, '#proSh [data-pa=shiftEnd]');
       await p.waitForSelector('#proSh .sh-res');
       await check(p, tag + ' смена: итог', '#proSh .sh-in', mobile);
       await shot(p, `${tag}-04-shift-result`);
       const tips0 = await p.evaluate(() => BK.App.state.prologue.earned.tips);
-      await p.click('[data-pa=shiftDone]');
+      await exactClick(p, '#proSh [data-pa=shiftDone]');
       await p.waitForTimeout(300);
       if (!(tips0 > 0)) issues.push(`[${tag}] «Смена» не дала чаевых`);
       if ((await st(p)).mode) issues.push(`[${tag}] после «Смены» слой не закрылся`);
@@ -220,8 +246,9 @@ async function until(p, pred, stop) {
       const cash0 = await p.evaluate(() => BK.App.state.cash);
       await p.click('[data-pa=finalMain]');
       await p.waitForTimeout(400);
-      const main = await p.evaluate(() => { const S = BK.App.state; return { open: BK.PrologueUI.active(), status: S.prologue.status, cash: S.cash, skills: S.player && S.player.skills, story: S.story && S.story.f.mentor, gulya: S.story && S.story.f.gulya, phase: S.phase }; });
+      const main = await p.evaluate(() => { const S = BK.App.state; return { open: BK.PrologueUI.active(), status: S.prologue.status, cash: S.cash, skills: S.player && S.player.skills, story: S.story && S.story.f.mentor, gulya: S.story && S.story.f.gulya, scenario: S.story && S.story.scenario, phase: S.phase }; });
       if (main.open || main.status !== 'done') issues.push(`[${tag}] после финала не началась основная игра: ${JSON.stringify(main)}`);
+      if (main.scenario !== 'ufa') issues.push(`[${tag}] пролог запущен не в базовой истории Уфы: ${main.scenario}`);
       if (!(main.cash > cash0)) issues.push(`[${tag}] бонус к капиталу не пришёл (${cash0} → ${main.cash})`);
       if (main.cash > cash0 * 1.1501) issues.push(`[${tag}] бонус больше 15 %: ${cash0} → ${main.cash}`);
       if (!main.skills || !Object.keys(main.skills).length) issues.push(`[${tag}] навыки не перенесены: ${JSON.stringify(main.skills)}`);
@@ -276,10 +303,11 @@ async function until(p, pred, stop) {
       if (btnTxt.trim() !== 'Новая игра') issues.push(`[${tag}] кнопка старта «${btnTxt}» вместо «Новая игра»`);
       await p.click('#startForm button[type=submit]');
       await p.waitForTimeout(300);
-      const net = await p.evaluate(() => ({ pro: BK.App.state.prologue || null, open: BK.PrologueUI.active(), cash: BK.App.state.cash }));
+      const net = await p.evaluate(() => ({ pro: BK.App.state.prologue || null, open: BK.PrologueUI.active(), cash: BK.App.state.cash, phase: BK.App.state.phase, scenario: BK.App.state.story && BK.App.state.story.scenario }));
       if (net.pro || net.open) issues.push(`[${tag}] «Сразу своя сеть» запустила пролог`);
+      if (net.phase !== 'setup_prod' || (net.scenario != null && net.scenario !== 'ufa')) issues.push(`[${tag}] «Сразу своя сеть» начала не базовую Уфу: ${JSON.stringify(net)}`);
     } catch (e) {
-      issues.push(`[${tag}] СБОЙ СЦЕНАРИЯ: ${e.message.split('\n')[0]}`);
+      issues.push(`[${tag}] СБОЙ СЦЕНАРИЯ: ${e.message.split('\n').slice(0, 6).join(' ')}`);
       await shot(p, `${tag}-FAIL`).catch(() => {});
     }
     for (const e of p.errs) issues.push(`[${tag}] ${e}`);

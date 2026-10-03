@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 16:45";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 11:46 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -6001,11 +6001,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     goal: 'Закрепиться в Москве: 2 млрд ₽ оборота за 12 месяцев',
     start: {
       city: 'moscow',        // город старта — требует правки каркаса (см. шапку файла, п. 1)
-      cash: 10500000,        // «всё, что было»: хватает на цех и первую точку, без запаса
-      trafficK: 0.50, days: 3650, // до вашей витрины доходит ~половина уфимского потока: Москва огромна,
+      cash: 10500000,        // «всё, что было»: хватает на цех и первую точку, без свободного запаса
+      reserve: 10000000,     // неприкосновенный запас на высокие московские зарплаты и первые кассовые разрывы
+      trafficK: 0.50, days: 5475, // поток велик, но его делят федеральные сети и агрегаторы; штраф действует 15 лет
                                   // но поток делят сеть напротив, агрегаторы и федералы (solv районов
                                   // всё равно даёт высокий чек). Число подобрано ботом — см. шапку.
-      foodcostK: 1.06,       // московские поставщики и логистика: себестоимость +6 % на 10 лет
+      foodcostK: 1.06,       // московские поставщики и логистика: себестоимость +6 % на тот же срок
       // checkK в каркасе нет: высокий чек даёт платёжеспособность районов Москвы (×1,80);
       // rentK не ставим — движок мод 'rent' не читает (шапка, п. 3)
     },
@@ -7816,8 +7817,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
    Индекс «ситуация → герой» — BK.STORY.lineSituations. Проверка текстов — BK.STORY.linesCheck().
 
    В интерфейсе: BK.STORY.lineHtml(S) — готовая строка для отчёта месяца, её вставляют
-   «Сводка» и «Финансы» (хуки в src/ui/panels.js). Логика выбора — BK.STORY.lineOfMonth(S)
-   (чистые данные), разбор проблем — BK.STORY.lineProblems(S) для прогонов.
+   «Сводка» и «Финансы» (хуки в src/ui/panels.js). Реплику один раз на 1-е число
+   фиксирует BK.STORY.recordLineOfMonth(S), а lineOfMonth/lineHtml только читают её. Разбор проблем —
+   BK.STORY.lineProblems(S) для прогонов.
    Проверка поведения: node sim/story.js --lines [сидов] [лет].
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -8409,8 +8411,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* =====================================================================
      РЕПЛИКА МЕСЯЦА В ОТЧЁТЕ (docs/story.md §6: «реплика в отчёте выбирается
-     по самой острой проблеме месяца»). Интерфейс зовёт BK.STORY.lineHtml(S)
-     из отчёта месяца. Логика ничего не выдумывает: если на самую острую
+     по самой острой проблеме месяца»). Доменная логика зовёт
+     BK.STORY.recordLineOfMonth(S) на 1-е число, когда завершённый месяц уже записан в history.
+     Интерфейс только читает lineOfMonth/lineHtml. Логика ничего не выдумывает: если на самую острую
      ситуацию у героя нет текста (или он требует цифры, которой мы не знаем),
      берётся следующая по остроте, а если и там пусто — герой молчит.
 
@@ -8566,19 +8569,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return [];
   }
 
-  // Реплика месяца: null — молчим (сюжет выключен/не начат, лимит месяца, нет текста или История уже сказала).
-  function lineOfMonth(S) {
+  function lineMonthId(S) {
+    const day = numOf(S && S.day), E = BK.Engine || {};
+    if (E.dateOf) { const dt = E.dateOf(day); return dt.y + '-' + dt.m; }
+    return String(Math.floor(day / 30.44));
+  }
+
+  // Один доменный переход на месяц: выбирает и фиксирует реплику. Маркер lineMonth
+  // запоминает и молчание, поэтому повторный Story.day в тот же день ничего не пересчитывает.
+  function recordLineOfMonth(S) {
     if (!S || !S.story || !S.story.v) return null;                                   // сюжет не начат
     if (BK.CFG && BK.CFG.STORY && BK.CFG.STORY.ON === false) return null;            // сюжет выключен
     const E = BK.Engine || {}, R = S.story;
     if (R.mode === 'off') return null;
     const day = numOf(S.day), h = S.history || [], last = h.length ? h[h.length - 1] : null;
     if (!last) return null;                                                          // первого отчёта ещё нет
-    let cur = String(Math.floor(day / 30.44)), when = '';
-    if (E.dateOf) { const dt = E.dateOf(day); cur = dt.y + '-' + dt.m; }
+    const cur = lineMonthId(S); let when = '';
     if (E.MONTHS) when = E.MONTHS[last.m] + ' ' + last.y;
     const prev = R.lineM;
-    if (prev && prev.cur === cur && prev.text) return prev;                          // в этом месяце уже сказали — та же строка
+    if (R.lineMonth === cur) return prev && prev.cur === cur && prev.text ? prev : null;
+    // Старое сохранение могло уже иметь lineM, но ещё не имеет lineMonth: признаём запись, не меняя текст.
+    if (prev && prev.cur === cur && prev.text) { R.lineMonth = cur; return prev; }
+    R.lineMonth = cur;
     if (prev && day - numOf(R.lastLine) < LINE_GAP_DAYS) return null;                // не чаще раза в месяц
     const scene = lastScene(S);
     const list = problemsOf(S);
@@ -8602,6 +8614,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       return item;
     }
     return null;
+  }
+  // Чистое чтение текущей реплики. Старые сохранения с lineM поддерживаются без миграции при рендере.
+  function lineOfMonth(S) {
+    if (!S || !S.story || !S.story.v) return null;
+    if (BK.CFG && BK.CFG.STORY && BK.CFG.STORY.ON === false) return null;
+    if (S.story.mode === 'off') return null;
+    const L = S.story.lineM;
+    return L && L.cur === lineMonthId(S) && L.text ? L : null;
   }
   // Строка для отчёта месяца (Сводка — под блоком «История»; Финансы — под отчётом).
   function lineHtml(S) {
@@ -8649,7 +8669,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.STORY.lineFor = lineFor;
   BK.STORY.lineSituationsOf = situations;
   BK.STORY.linesCheck = linesCheck;
-  BK.STORY.lineOfMonth = lineOfMonth;   // реплика месяца (чистые данные; зовёт lineHtml)
+  BK.STORY.recordLineOfMonth = recordLineOfMonth; // выбор и запись в месячном тике
+  BK.STORY.lineOfMonth = lineOfMonth;   // чистое чтение реплики месяца
   BK.STORY.lineHtml = lineHtml;         // строка для отчёта месяца (Сводка / Финансы)
   BK.STORY.lineProblems = problemsOf;   // разбор «самая острая проблема месяца» — для прогонов и отладки
 })();
@@ -9128,10 +9149,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const UFA = { DISTRICTS: BK.DISTRICTS, MAP: BK.MAP, CENTER_POINT: BK.CENTER_POINT };
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
-  function cityInfo(def) { // описание для движка: масштаб, конкуренция, сезон, календарь
-    if (def.builtin) return { id: def.id, name: def.name, in: def.in };
-    return { id: def.id, name: def.name, in: def.in, kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
-      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }; // особенности города (Р4)
+  function cityInfo(def) { // описание для движка: экономика, масштаб, конкуренция, сезон, календарь
+    // inc/rent/wage всегда берутся из одной записи CITIES. Первый акт читает их через BK.CITY,
+    // второй — через BK.CITY_BY_ID; одинаковый город поэтому больше не получает разные зарплаты.
+    const base = { id: def.id, name: def.name, in: def.in, inc: def.inc || 1, rent: def.rent || 1, wage: def.wage || 1 };
+    if (def.builtin) return base;
+    return Object.assign(base, { kmPerUnit: kmPerUnitOf(def) * (def.kmK || 1), compRange: COMP[def.comp].range, season: def.season || null, cal: { muslim: def.muslim != null ? def.muslim : 0.15, sab: def.sab || 0 },
+      park: def.park || null, prod2: def.prod2 || null, grow: def.grow || 0, cat: def.cat || null, hot: def.hot || null }); // особенности города (Р4)
   }
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;
@@ -11507,6 +11531,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.useCity) BK.useCity(city, seed);
     const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const dk = (k) => diffK({ difficulty }, k);
+    const cityWage = (BK.CITY && BK.CITY.wage) || 1;
+    const sellerMarket = Math.round(cfg.MARKET_SALARY_SELLER * cityWage);
+    const bakerMarket = Math.round(cfg.MARKET_SALARY_BAKER * cityWage);
     const S = {
       v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
@@ -11514,8 +11541,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
       cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
-      market: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
-      pay: { seller: cfg.MARKET_SALARY_SELLER, baker: cfg.MARKET_SALARY_BAKER },
+      market: { seller: sellerMarket, baker: bakerMarket },
+      pay: { seller: sellerMarket, baker: bakerMarket },
       alloc: { reserve: 0.15, bonus: 0.03, marketing: 0.05 },
       culture: 0, office: { hr: false, academy: false, autohireOn: true, ownerHires: 0, ownerWeek: 0, autotrainOn: true, trainTarget: 3, ownerTrains: 0, ownerTrainWeek: 0 },
       loyaltyMod: 0, lastBonusPerEmp: 0, lastMarketingPerStore: 0,
@@ -13346,7 +13373,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const daysInMonthOf = (day) => { const t = E.dateOf(day); return new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate(); };
   // «уфимский» (корпоративный) рынок зарплат: рынок активного города ÷ его индекс зарплат
-  function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = def(S.corp.active) ? def(S.corp.active).wage : 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
+  function cityDef(S, id) { // ключ `ufa` в корпорации означает домашний город, в сценарии им может быть Москва
+    const real = id === 'ufa' ? (startCityOf(S) || 'ufa') : id;
+    return def(real) || def('ufa') || {};
+  }
+  function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = cityDef(S, S.corp.active).wage || 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
 
   /* ---------------- выход в Россию ---------------- */
   function check(S) {
@@ -13358,7 +13389,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function unlock(S) {
     const ufa = { id: 'ufa', name: 'Уфа', enteredDay: 0, status: 'run', seed: S.seed | 0, mapGen: 0, rng: (S.seed ^ 0x3a1f5) | 0, aw: 1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: S.flags.storeNum || 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
-    S.corp = { unlockedDay: S.day, active: 'ufa', market0: { seller: S.market.seller, baker: S.market.baker }, cities: { ufa }, rng: (S.seed ^ 0x5eed0c) | 0, lastMonthly: S.day, aggRevP: 0 };
+    const homeWage = cityDef(S, 'ufa').wage || 1;
+    S.corp = { unlockedDay: S.day, active: 'ufa', market0: { seller: S.market.seller / homeWage, baker: S.market.baker / homeWage }, cities: { ufa }, rng: (S.seed ^ 0x5eed0c) | 0, lastMonthly: S.day, aggRevP: 0 };
     S.v = 2;
     if (BK.Dir) BK.Dir.ensure(S);
     S.notify.push({ type: 'corp' });
@@ -13594,7 +13626,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cr = S.corp, c = cr.cities[id];
     if (c.packed) settleAgg(S, c); // упакованная часть месяца — по агрегированной модели
     useCityFor(S, id, c);
-    const m0 = cr.market0, w = def(id).wage;
+    const m0 = cr.market0, w = cityDef(S, id).wage || 1;
     S.market = { seller: m0.seller * w, baker: m0.baker * w };
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
     S.flags.storeNum = c.numSeq || 0;
@@ -13634,7 +13666,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const cityIn = (id) => (def(id) || {}).in || 'в городе ' + cityName(id);
 
   /* ---------------- агрегированная модель (раз в месяц; «владелец заочно», без директора) ---------------- */
-  function salaryCity(S, c, lvl) { const m = corpMarket(S).seller * def(c.id).wage * (c.payK || 1); return m * (1 + C().EXPECT_PER_LVL * (lvl - 1)); }
+  function salaryCity(S, c, lvl) { const m = corpMarket(S).seller * (cityDef(S, c.id).wage || 1) * (c.payK || 1); return m * (1 + C().EXPECT_PER_LVL * (lvl - 1)); }
   const REP = (i) => C().REPAIRS[i || 0] || { conv: 1, check: 1 };
   function ratingMultOf(r) { const cfg = C(), d = r - cfg.RATING_START; return 1 + (d < 0 ? cfg.RATING_TRAFFIC_LO : cfg.RATING_TRAFFIC_HI) * d; }
   // цель настроения команды (как в dailyStaff движка, без усталости и характеров): зарплата к рынку, культура, премии, лояльность, уровень, нехватка людей
@@ -13683,7 +13715,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // один агрегированный расчёт города за долю периода frac (0…1); деньги — в общий S.month по обычным статьям
   function cityMonth(S, c, frac, hireBudget) {
-    const cfg = C(), K_ = K(), pl = S.macro.priceLevel, pk = c.packed, dc = def(c.id);
+    const cfg = C(), K_ = K(), pl = S.macro.priceLevel, pk = c.packed, dc = cityDef(S, c.id);
     const out = { rev: 0, profit: 0, emp: 0, stores: 0, hired: 0, fc: 0, quits: 0, trained: 0 };
     if (!pk || frac <= 0) { for (const s of (pk ? pk.stores : [])) if (s.status !== 'opening') { out.stores++; out.emp += s.staff.n; } return out; }
     const cr = S.corp, L = cr.lastMonthly, dim = daysInMonthOf(L), days = dim * frac, d0 = Math.round(S.day - days);
@@ -13883,7 +13915,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const c = remoteOf(S); if (!c) return null;
     const k = K(), cfg = C(), fz = c.supplyMode === 'frozen', D = fz ? k.DEL_FROZEN : k.DEL_FRESH;
     const km = c.supplyKm != null ? c.supplyKm : BK.roadKm(c.supplyFrom, c.id);
-    const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * ((def(c.supplyFrom) || {}).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
+    const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * (cityDef(S, c.supplyFrom).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
     const units = (st.cpd != null ? st.cpd : 150) * cfg.ITEMS_PER_CHECK;
     const bake = units / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX) * k.REMOTE_BAKE_K[fz ? 1 : 0];
     return (D[0] + D[1] * km) * S.macro.priceLevel * (S.corp.hqDelK || 1) + bake;
@@ -14121,7 +14153,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function rollingAll(S) { let s = 0; for (const x of S.history.slice(-12)) s += x.rev; return s; }
 
-  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
+  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, cityDef, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
     supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
   Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();
@@ -14230,7 +14262,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const txtG = (s, f) => String(s).replace(/\{g2?:([^|}]*)\|([^}]*)\}/g, (_, m, w) => (f ? w : m));
   function marketPay(S, d, cityId) {
-    const K_ = K(), dc = cityId ? def(cityId) : { wage: 1 };
+    const K_ = K(), dc = cityId ? CI().cityDef(S, cityId) : { wage: 1 };
     let avg = 0; for (const k of SK) avg += d.skills[k] / 4;
     return K_.DIR_SALARY[d.grade] * S.macro.priceLevel * Math.sqrt(dc.wage || 1) * (0.8 + 0.4 * avg / 100) * (dc.big ? 1.15 : 1) * (BK.HQ ? BK.HQ.priceK(d) : 1) * (d.regional ? K_.REGION_PAY : 1);
   }
@@ -14341,7 +14373,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return p;
   }
   function proposeCapex(S, c, d) { // «предложение директора»: годовой лимит открытий × средняя цена точки
-    const per = K().DIR_OPEN_COST * S.macro.priceLevel * (0.6 + 0.4 * (def(c.id).rent || 1));
+    const per = K().DIR_OPEN_COST * S.macro.priceLevel * (0.6 + 0.4 * (CI().cityDef(S, c.id).rent || 1));
     return Math.round(openLimit(S, c, d) * per / 1e6) * 1e6;
   }
   function mods(S, c) {
@@ -14402,7 +14434,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * o.area) * pl;
     const del = S.productions.length || BK.Corp.remoteOf(S) ? E.deliveryCost(S, tmp) : 40000 * pl; // выпечка из другого города — своя формула (§7.2)
     const hq = cfg.HQ_PER_STORE * pl + rev * (cfg.HQ_REV_SHARE || 0);
-    const payB = BK.Corp.corpMarket(S).baker * (def(c.id).wage || 1) * (c.payKb || c.payK || 1);
+    const payB = BK.Corp.corpMarket(S).baker * (CI().cityDef(S, c.id).wage || 1) * (c.payKb || c.payK || 1);
     const bakers = checks * cfg.ITEMS_PER_CHECK / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX);
     let cannibal = 0;
     const R = cfg.CANNIBAL_RADIUS || 26, F = cfg.CANNIBAL_F || 0.86, SK_ = cfg.SATURATION_K;
@@ -14760,7 +14792,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const variants = P[sit] || P.ok || ['Месяц прошёл по плану.'];
     const r0 = reqs[0] || {};
     const [text, sPick] = corpRng(S, () => [I.pick(S, variants), open.length ? I.pick(S, open) : null]);
-    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || (emb ? Math.round(emb * 100) + 2 : Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100))), months: 6, district: sPick ? districtName(c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
+    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || (emb ? Math.round(emb * 100) + 2 : Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100))), months: 6, district: sPick ? districtName(S, c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
     if (sit === 'ok' && /\{stores\}/.test(text)) ctx.n = open.length;
     let phrase = txtG(text, d.f); phrase = BK.corpText ? BK.corpText(phrase, ctx) : phrase;
     const opened = c.dev.mOpened || 0, closed = c.dev.mClosed || 0;
@@ -14772,9 +14804,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       leak: (() => { const ls = leakStatus(S, c.id); return ls ? { pct: +ls.leak.toFixed(3), lossM: ls.lossM, why: ls.why, fix: ls.fix, skill: ls.skill, need: ls.need } : undefined; })() });
     void it; void cfg; void h;
   }
-  function districtName(c, did) {
-    if (c.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
-    const g = BK.genCityGeo ? BK.genCityGeo(CI().def(c.id), c.seed | 0, c.mapGen) : null;
+  function districtName(S, c, did) {
+    const dc = CI().cityDef(S, c.id);
+    if (dc.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
+    const g = BK.genCityGeo ? BK.genCityGeo(dc, c.seed | 0, c.mapGen) : null;
     const d = g && g.DISTRICTS.find((x) => x.id === did); return d ? d.name : 'Центр';
   }
   // ответ на просьбу: 'yes' | 'alt' | 'no'
@@ -18794,7 +18827,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         return false;
       });
     }
-    if (monthStart(S)) sharesMonthly(S);   // доли сюжета: выплата 1-го числа
+    if (monthStart(S)) {
+      sharesMonthly(S);                    // доли сюжета: выплата 1-го числа
+      const data = D();
+      if (data && data.recordLineOfMonth) data.recordLineOfMonth(S); // реплику фиксируем один раз после месячного отчёта
+    }
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
@@ -18821,13 +18858,41 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- доли сюжета: выплаты 1-го числа ---------------- */
+  const positiveProfit = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, n) : 0; };
+  function storesAll(S) {
+    const out = [], seen = new Set();
+    const add = (list) => { for (const st of list || []) if (st && !seen.has(st)) { seen.add(st); out.push(st); } };
+    add(S && S.stores);
+    const cities = S && S.corp && S.corp.cities;
+    if (cities) for (const id of Object.keys(cities)) { const c = cities[id]; if (c && c.packed) add(c.packed.stores); }
+    return out;
+  }
+  // База доли задаётся данными сюжета: вся сеть, конкретная точка или город.
+  // store1 — старый формат пролога; новые данные могут использовать store:<id|num>.
+  function shareBase(S, sh, month) {
+    const what = String((sh && sh.what) || '');
+    if (what === 'net') return positiveProfit(month && month.profit);
+    if (what.startsWith('city:')) {
+      const id = what.slice(5), c = S && S.corp && S.corp.cities && S.corp.cities[id];
+      const row = c && Array.isArray(c.hist) && c.hist.length ? c.hist[c.hist.length - 1] : null;
+      return positiveProfit(row && row[3]);
+    }
+    let ref = null;
+    if (what === 'store1') ref = (S && S.prologue && S.prologue.carry && S.prologue.carry.store1) || 1;
+    else if (what.startsWith('store:')) ref = what.slice(6);
+    if (ref == null || ref === '') return 0;
+    const list = storesAll(S);
+    let st = list.find((x) => String(x.id) === String(ref));
+    if (!st && /^\d+$/.test(String(ref))) st = list.find((x) => Number(x.num) === Number(ref));
+    return positiveProfit(st && st.last && st.last.profit);
+  }
   function sharesMonthly(S) {
     const R = state(S); if (!R || !R.shares.length) return 0;
     const h = S.history || []; if (!h.length) return 0;
     const m = h[h.length - 1];
     let total = 0;
     for (const sh of R.shares) {
-      const base = sh.what === 'net' ? Math.max(0, m.profit) : Math.max(0, m.profit);   // доля от прибыли сети
+      const base = shareBase(S, sh, m);
       const pay = Math.round(base * (sh.pct || 0));
       if (pay > 0) total += pay;
     }
@@ -18889,7 +18954,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.Engine) wrap();
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, sharesMonthly,
+    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
   };
 })();
@@ -19456,6 +19521,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = info(st.id); if (!d || !d.start) return null;
     const s = d.start, out = [];
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
+    if (s.reserve != null) { S.reserve = Math.max(0, Math.round(s.reserve * (S.macro ? S.macro.priceLevel : 1))); out.push('резерв'); }
     if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
     if (s.city) {
       // Город истории выбран ещё при создании мира (engine.newGame: opts.city, src/ui/app.js) — предложения
@@ -21264,7 +21330,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
        job 0..2, jobM, stazh, rep, hp, mood, sk: {sales, coffee, people}, cash, box, dep, depInt,
        home, food, extra, saveRate, study, done{}, payK, rentK, cut, sickNow, fired, wantsCd{}, sale, loans[], inv[],
        rel: {rashid, gulya, oleg, elvira, family, semyon} (−100…100, как S.story.rel), sf (флаги сюжета, как S.story.f), sm (стили),
-       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift (последний итог смены), earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift (последний итог смены), shiftSchedule (сохранённые даты смен),
+       earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
    Мини-игра «Смена» идёт по расписанию (shiftAt/dueShift): смены приходят сами 5–10 раз за пролог, игрок их не выбирает
    и не может пропустить (счётчик — stats.shifts, он же в сохранении). Полка — три ряда по три позиции (SHELF_KEYS).
    Числа расписания — SHIFT_AT (место в BK.CFG.PROLOGUE, как остальные числа пролога).
@@ -21329,6 +21396,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
       won: null, carry: null,
     };
+    P.shiftSchedule = newShiftSchedule(P);
     return P;
   }
   function start(S) {
@@ -21489,10 +21557,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const canAfford = (P, v, cashOnly) => (cashOnly ? P.cash : P.cash + P.box + P.dep) >= v;
 
   /* ---------------- действия игрока ---------------- */
-  function setHome(S, k) { const P = S.prologue; if (!C().HOME[k]) return { ok: false }; P.home = k; P.extra = Math.min(P.extra, maxExtra(P)); return { ok: true }; }
+  function setHome(S, k) {
+    const P = S.prologue; if (!C().HOME[k]) return { ok: false };
+    ensureShiftSchedule(P);
+    P.home = k;
+    const extra = Math.min(P.extra, maxExtra(P));
+    if (extra !== P.extra) { P.extra = extra; reviseShiftSchedule(P); }
+    return { ok: true };
+  }
   function setFood(S, k) { const P = S.prologue; if (!C().FOOD[k]) return { ok: false }; P.food = k; return { ok: true }; }
   function setFun(S, k) { const P = S.prologue; if (!C().FUN[k]) return { ok: false }; P.fun = k; return { ok: true }; }
-  function setExtra(S, n) { const P = S.prologue; P.extra = clamp(n | 0, 0, maxExtra(P)); return { ok: true }; }
+  function setExtra(S, n) {
+    const P = S.prologue, extra = clamp(n | 0, 0, maxExtra(P));
+    ensureShiftSchedule(P); // legacy-сохранение сначала получает график в прежнем режиме
+    if (extra !== P.extra) { P.extra = extra; reviseShiftSchedule(P); }
+    return { ok: true };
+  }
   function setSaveRate(S, i) { const P = S.prologue; P.saveRate = clamp(i | 0, 0, C().SAVE_RATES.length - 1); return { ok: true }; }
   function studyWhy(P, id) {
     const c = C().COURSES[id]; if (!c) return 'Нет такого курса';
@@ -22063,11 +22143,65 @@ var BK = globalThis.BK || (globalThis.BK = {});
      Месяцы пролога (0 — февраль первого года): промежутки растут вместе с должностью, а после 26-го месяца
      сюжетная жизнь бариста уже позади — дальше только своя точка или «жизнь в найме».
      7 смен: быстрый игрок успевает 6 (≥5), долгая «жизнь в найме» — 7 (≤10). Числа — как CFG.PROLOGUE.SHIFT_AT. */
+  // Базовые даты смен. Выбранные доп. смены — настоящие смены мини-игры:
+  // 0 → 7 смен, 1 → 9, 2 → 10. График хранится в P.shiftSchedule, поэтому смена режима
+  // не переписывает уже сыгранные даты и ближайшую назначенную смену, а меняет только будущий хвост.
   const SHIFT_AT_DEF = [0, 3, 6, 10, 14, 19, 25];
-  const shiftAt = () => {
-    const a = C().SHIFT_AT;
-    return (a && a.length) ? a : SHIFT_AT_DEF;
-  };
+  const SHIFT_SCHEDULE_V = 1;
+  function baseShiftDates() {
+    const a = C().SHIFT_AT, src = (a && a.length) ? a : SHIFT_AT_DEF;
+    const out = [];
+    for (const x of src) { const m = Math.max(0, x | 0); if (!out.length || m > out[out.length - 1]) out.push(m); }
+    return out.length ? out : SHIFT_AT_DEF.slice();
+  }
+  function shiftTarget(P) {
+    const base = baseShiftDates().length, extra = clamp((P && P.extra) | 0, 0, 2);
+    return extra === 0 ? base : extra === 1 ? Math.min(9, base + 2) : Math.min(10, base + 3);
+  }
+  // Ровно count различных месяцев от start до end включительно.
+  function spreadShiftDates(start, end, count) {
+    if (count <= 0) return [];
+    start = Math.max(0, start | 0); end = Math.max(start + count - 1, end | 0);
+    if (count === 1) return [start];
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const min = i ? out[i - 1] + 1 : start, left = count - i - 1;
+      out.push(Math.max(min, Math.min(end - left, Math.round(start + (end - start) * i / (count - 1)))));
+    }
+    return out;
+  }
+  function newShiftSchedule(P) {
+    return { v: SHIFT_SCHEDULE_V, dates: baseShiftDates(), mode: clamp((P && P.extra) | 0, 0, 2), revisedAt: (P && P.m) | 0 };
+  }
+  // Старые сохранения не знали дат. Сыгранные смены восстанавливаем только для истории,
+  // а весь ещё не сыгранный хвост ставим строго после текущего месяца: загрузка не создаёт просрочку.
+  function migrateShiftSchedule(P) {
+    const done = shiftsDone(P), target = Math.max(done, shiftTarget(P)), now = Math.max(0, P.m | 0);
+    const completed = spreadShiftDates(0, Math.max(now, done - 1), done);
+    if (done && P.shift && P.shift.m >= 0 && P.shift.m <= now) completed[done - 1] = P.shift.m | 0;
+    for (let i = 1; i < completed.length; i++) if (completed[i] <= completed[i - 1]) completed[i] = completed[i - 1] + 1;
+    const left = target - completed.length, start = now + 1;
+    const future = spreadShiftDates(start, Math.max(baseShiftDates().slice(-1)[0], start + left - 1), left);
+    P.shiftSchedule = { v: SHIFT_SCHEDULE_V, dates: completed.concat(future), mode: clamp(P.extra | 0, 0, 2), revisedAt: now, migrated: 1 };
+    return P.shiftSchedule;
+  }
+  function ensureShiftSchedule(P) {
+    if (!P) return null;
+    const q = P.shiftSchedule;
+    if (!q || q.v !== SHIFT_SCHEDULE_V || !Array.isArray(q.dates) || q.dates.some((x, i) => !Number.isFinite(x) || x < 0 || (i && x <= q.dates[i - 1]))) return migrateShiftSchedule(P);
+    return q;
+  }
+  function reviseShiftSchedule(P) {
+    const q = ensureShiftSchedule(P), done = Math.min(shiftsDone(P), q.dates.length);
+    // Сыгранные даты и одна уже назначенная смена неизменны. Новые даты — не раньше следующего месяца.
+    const keep = q.dates.slice(0, Math.min(q.dates.length, done + 1));
+    const target = Math.max(keep.length, shiftTarget(P)), left = target - keep.length;
+    const start = Math.max((P.m | 0) + 1, (keep.length ? keep[keep.length - 1] : -1) + 1);
+    const future = spreadShiftDates(start, Math.max(baseShiftDates().slice(-1)[0], start + left - 1), left);
+    P.shiftSchedule = { v: SHIFT_SCHEDULE_V, dates: keep.concat(future), mode: clamp(P.extra | 0, 0, 2), revisedAt: P.m | 0 };
+    return P.shiftSchedule;
+  }
+  const shiftAt = (P) => P ? ensureShiftSchedule(P).dates.slice() : baseShiftDates();
   const shiftsDone = (P) => ((P && P.stats && P.stats.shifts) || 0) | 0;   // счётчик смен лежит в P.stats.shifts (и в сохранении)
   const SHIFT_TIRED_HP = 45;   // «к смене не готов»: не выспались после ночной (сцена П5) или совсем без сил
   function shiftTired(P) {
@@ -22078,10 +22212,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // смена, которая уже пришла и ждёт игрока: null — ждать нечего
   function dueShift(P) {
     if (!P || P.status !== 'run') return null;
-    const list = shiftAt(), n = shiftsDone(P);
+    const list = shiftAt(P), n = shiftsDone(P);
     if (n >= list.length) return null;      // расписание пройдено
     if (P.fired > 0) return null;           // без работы смен не бывает — смена дождётся возвращения
     if (P.cards.length) return null;        // сначала решение по карточке
+    if (P.shift && P.shift.m === P.m) return null; // не ставим две накопившиеся смены в один месяц
     if (P.m < list[n]) return null;         // ещё не время
     return { n: n + 1, all: list.length, month: list[n], late: P.m > list[n], first: n === 0, tired: shiftTired(P) };
   }
@@ -22089,12 +22224,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!P || P.status !== 'run') return 'Пролог окончен';
     if (P.fired > 0) return 'Сейчас вы без работы';
     if (P.cards.length) return 'Сначала решите, что делать';
-    if (!dueShift(P)) return shiftsDone(P) >= shiftAt().length ? 'Смены пролога уже прошли' : 'Эта смена ещё не пришла';
+    if (!dueShift(P)) return shiftsDone(P) >= shiftAt(P).length ? 'Смены пролога уже прошли' : 'Эта смена ещё не пришла';
     return null;
   }
   function shiftPlan(P) {
-    const c = C(), vm = V2('shiftMods', P); // усталость/болезнь/долг/отношения — хук живого сюжета v2 (docs/story-v2.md)
-    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + ((vm && vm.pat) || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P) };  }
+    const c = C(), vm = V2('shiftMods', P), due = dueShift(P); // усталость/болезнь/долг/отношения — хук живого сюжета v2 (docs/story-v2.md)
+    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + ((vm && vm.pat) || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P), shift: due };  }
   // итог смены: stats = { served, errors, upsells, lost, total }
   function shiftResult(S, st) {
     const c = C(), P = S.prologue;
@@ -22249,7 +22384,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
     feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2, // хуки живого сюжета v2 (src/data/prolog-v2.js) — имя с «2», чтобы не путать с внутренними feed/fx/rel/style
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
-    shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
+    shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, ensureShiftSchedule, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
   };
 })();
 
@@ -25156,7 +25291,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   Map.prototype.setVB = function () {
     const v = this.vb; this.el.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
-    if (this.lastS && !this.pendingR) { this.pendingR = true; requestAnimationFrame(() => { this.pendingR = false; this.render(this.lastS, this.lastSel); }); }
+    if (this.lastS && !this.pendingR) {
+      this.pendingR = true;
+      const epoch = this.cacheEpoch || 0;
+      requestAnimationFrame(() => {
+        if (epoch !== (this.cacheEpoch || 0)) return;
+        this.pendingR = false;
+        if (this.lastS) this.render(this.lastS, this.lastSel);
+      });
+    }
   };
   Map.prototype.toMap = function (cx, cy) {
     const r = this.el.getBoundingClientRect();
@@ -25174,7 +25317,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     this.vb.x = p.x - (p.x - this.vb.x) * k; this.vb.y = p.y - (p.y - this.vb.y) * k;
     this.vb.w = nw; this.vb.h = nw; this.setVB();
   };
-  Map.prototype.reset = function () { this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB(); };
+  Map.prototype.invalidate = function () {
+    this.cacheEpoch = (this.cacheEpoch || 0) + 1; this.pendingR = false;
+    this.ckey = null; this.nodes = null; this.nodeState = null; this.nodeStores = null; this.clusterById = {};
+    this.lastParts = null; this.lastKeys = null; this.lastR = null; this.lastRv = null;
+    this.lastLk = null; this.lastFar = null; this.lastPlay = null; this.lastCs = null;
+    this.lastLegend = null; this.lastSc = null; this.lastCrumb = null;
+  };
+  Map.prototype.reset = function (state) {
+    this.anim = null; this.invalidate();
+    if (arguments.length) { this.lastS = state || null; this.lastSel = null; }
+    this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB();
+  };
   Map.prototype.focus = function (x, y) {
     this.anim = null;
     if (this.vb.w > 700) { this.vb.w = this.vb.h = 600; }
@@ -25329,7 +25483,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
-    this.lastParts = null; this.lastKeys = null; this.lastR = null; this.lastRv = null; this.ckey = null;
+    this.invalidate();
     this.el.setAttribute('aria-label', `Карта: ${(BK.CITY && BK.CITY.name) || 'Уфа'}, точки сети`);
     this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.el.setAttribute('viewBox', '0 0 1000 1000');
     return true;
@@ -25349,7 +25503,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
     if (wrap) { const cs = !!(E.citySetup && E.citySetup(S)); if (cs !== this.lastCs) { wrap.classList.toggle('m-citysetup', cs); this.lastCs = cs; } } // запуск нового города (Россия)
 
-    // кластеры пересчитываем только при смене масштаба, числа точек или выделения
+    // Новая игра/загрузка может иметь столько же точек: ссылки на прошлое состояние переиспользовать нельзя.
+    if (this.nodeState !== S || this.nodeStores !== S.stores) { this.nodeState = S; this.nodeStores = S.stores; this.ckey = null; this.nodes = null; }
+    // кластеры пересчитываем только при смене состояния, масштаба, числа точек или выделения
     const ckey = upp.toFixed(3) + '|' + S.stores.length + '|' + selStore;
     // на предельном приближении кластеров нет: точки показываем все, даже если стоят вплотную
     if (ckey !== this.ckey) { this.ckey = ckey; this.nodes = this.vb.w <= MIN_W + 1 ? S.stores.map((st) => ({ x: st.x, y: st.y, items: [st] })) : clusterize(S.stores, upp, selStore, kk / upp); }
@@ -25392,7 +25548,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = BK.CFG;
     for (const n of this.nodes) {
       if (n.items.length > 1) {
-        const infos = n.items.map((st) => infoById[st.id]);
+        const infos = n.items.map((st) => infoById[st.id]).filter(Boolean);
+        if (!infos.length) continue;
         const id = n.items[0].id; this.clusterById[id] = { items: n.items, infos, x: n.x, y: n.y };
         const cnt = n.items.length, rad = clRad(cnt), rr = rad + 3, C = 2 * Math.PI * rr;
         // кольцо долей: в слое «Настроение» — по людям, в остальных — по точкам
@@ -25422,6 +25579,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         clusters.push(['c' + id, `<g class="m-cl" data-kind="cluster" data-id="${id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${k})"><circle class="bg" r="${(rr + 2.5).toFixed(1)}"/><g transform="rotate(-90)">${ring}</g><circle class="b" r="${rad.toFixed(1)}"/><text style="font-size:${(11.5 + Math.min(cnt, 20) * 0.3).toFixed(1)}px">${cnt}</text>${pr ? badge(pr, rr * 0.74, -rr * 0.74) : ''}${BK.TrainersUI ? BK.TrainersUI.clusterBadge(S, n.items, -rr * 0.74, -rr * 0.74) : ''}</g>`]);
       } else {
         const st = n.items[0], inf = infoById[st.id];
+        if (!inf) continue;
         const s1 = isSel('store', st.id);
         const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
         const meta = live && live[st.id];
@@ -31659,7 +31817,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // расписание смен: смены приходят сами (5–10 за пролог), игрок их не выбирает и не может пропустить,
   // но может оказаться не готовым. Кнопка только одна — «встать за стойку», и лишь когда смена уже ждёт.
   function shiftBlock(p) {
-    const list = PR().shiftAt(), done = Math.min(PR().shiftsDone(p), list.length);
+    const list = PR().shiftAt(p), done = Math.min(PR().shiftsDone(p), list.length);
     const due = PR().dueShift(p), tired = PR().shiftTired(p);
     const when = (m) => cap(PR().monName(p, m));
     const dots = list.map((m, i) => `<i class="${i < done ? 'on' : ''}${i === done && due ? ' now' : ''}" title="${i < done ? `Смена прошла: ${when(m)}` : `Смена: ${when(m)}`}"></i>`).join('');
@@ -32987,12 +33145,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
-    hideStart(); closeModal(); map.reset(); renderAll(); save();
+    hideStart(); closeModal(); map.reset(S); renderAll(); save();
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
-    hideStart(); closeModal(); map.reset(); renderAll();
+    hideStart(); closeModal(); map.reset(S); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
     if (BK.Stage1UI && !(BK.PrologueUI && BK.PrologueUI.active())) BK.Stage1UI.resume(); // посреди стадии 1 «Своя кофейня» — открыть кофейню

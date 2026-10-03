@@ -16,8 +16,9 @@
    Индекс «ситуация → герой» — BK.STORY.lineSituations. Проверка текстов — BK.STORY.linesCheck().
 
    В интерфейсе: BK.STORY.lineHtml(S) — готовая строка для отчёта месяца, её вставляют
-   «Сводка» и «Финансы» (хуки в src/ui/panels.js). Логика выбора — BK.STORY.lineOfMonth(S)
-   (чистые данные), разбор проблем — BK.STORY.lineProblems(S) для прогонов.
+   «Сводка» и «Финансы» (хуки в src/ui/panels.js). Реплику один раз на 1-е число
+   фиксирует BK.STORY.recordLineOfMonth(S), а lineOfMonth/lineHtml только читают её. Разбор проблем —
+   BK.STORY.lineProblems(S) для прогонов.
    Проверка поведения: node sim/story.js --lines [сидов] [лет].
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -609,8 +610,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* =====================================================================
      РЕПЛИКА МЕСЯЦА В ОТЧЁТЕ (docs/story.md §6: «реплика в отчёте выбирается
-     по самой острой проблеме месяца»). Интерфейс зовёт BK.STORY.lineHtml(S)
-     из отчёта месяца. Логика ничего не выдумывает: если на самую острую
+     по самой острой проблеме месяца»). Доменная логика зовёт
+     BK.STORY.recordLineOfMonth(S) на 1-е число, когда завершённый месяц уже записан в history.
+     Интерфейс только читает lineOfMonth/lineHtml. Логика ничего не выдумывает: если на самую острую
      ситуацию у героя нет текста (или он требует цифры, которой мы не знаем),
      берётся следующая по остроте, а если и там пусто — герой молчит.
 
@@ -766,19 +768,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return [];
   }
 
-  // Реплика месяца: null — молчим (сюжет выключен/не начат, лимит месяца, нет текста или История уже сказала).
-  function lineOfMonth(S) {
+  function lineMonthId(S) {
+    const day = numOf(S && S.day), E = BK.Engine || {};
+    if (E.dateOf) { const dt = E.dateOf(day); return dt.y + '-' + dt.m; }
+    return String(Math.floor(day / 30.44));
+  }
+
+  // Один доменный переход на месяц: выбирает и фиксирует реплику. Маркер lineMonth
+  // запоминает и молчание, поэтому повторный Story.day в тот же день ничего не пересчитывает.
+  function recordLineOfMonth(S) {
     if (!S || !S.story || !S.story.v) return null;                                   // сюжет не начат
     if (BK.CFG && BK.CFG.STORY && BK.CFG.STORY.ON === false) return null;            // сюжет выключен
     const E = BK.Engine || {}, R = S.story;
     if (R.mode === 'off') return null;
     const day = numOf(S.day), h = S.history || [], last = h.length ? h[h.length - 1] : null;
     if (!last) return null;                                                          // первого отчёта ещё нет
-    let cur = String(Math.floor(day / 30.44)), when = '';
-    if (E.dateOf) { const dt = E.dateOf(day); cur = dt.y + '-' + dt.m; }
+    const cur = lineMonthId(S); let when = '';
     if (E.MONTHS) when = E.MONTHS[last.m] + ' ' + last.y;
     const prev = R.lineM;
-    if (prev && prev.cur === cur && prev.text) return prev;                          // в этом месяце уже сказали — та же строка
+    if (R.lineMonth === cur) return prev && prev.cur === cur && prev.text ? prev : null;
+    // Старое сохранение могло уже иметь lineM, но ещё не имеет lineMonth: признаём запись, не меняя текст.
+    if (prev && prev.cur === cur && prev.text) { R.lineMonth = cur; return prev; }
+    R.lineMonth = cur;
     if (prev && day - numOf(R.lastLine) < LINE_GAP_DAYS) return null;                // не чаще раза в месяц
     const scene = lastScene(S);
     const list = problemsOf(S);
@@ -802,6 +813,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       return item;
     }
     return null;
+  }
+  // Чистое чтение текущей реплики. Старые сохранения с lineM поддерживаются без миграции при рендере.
+  function lineOfMonth(S) {
+    if (!S || !S.story || !S.story.v) return null;
+    if (BK.CFG && BK.CFG.STORY && BK.CFG.STORY.ON === false) return null;
+    if (S.story.mode === 'off') return null;
+    const L = S.story.lineM;
+    return L && L.cur === lineMonthId(S) && L.text ? L : null;
   }
   // Строка для отчёта месяца (Сводка — под блоком «История»; Финансы — под отчётом).
   function lineHtml(S) {
@@ -849,7 +868,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.STORY.lineFor = lineFor;
   BK.STORY.lineSituationsOf = situations;
   BK.STORY.linesCheck = linesCheck;
-  BK.STORY.lineOfMonth = lineOfMonth;   // реплика месяца (чистые данные; зовёт lineHtml)
+  BK.STORY.recordLineOfMonth = recordLineOfMonth; // выбор и запись в месячном тике
+  BK.STORY.lineOfMonth = lineOfMonth;   // чистое чтение реплики месяца
   BK.STORY.lineHtml = lineHtml;         // строка для отчёта месяца (Сводка / Финансы)
   BK.STORY.lineProblems = problemsOf;   // разбор «самая острая проблема месяца» — для прогонов и отладки
 })();

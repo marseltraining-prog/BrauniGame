@@ -206,7 +206,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   Map.prototype.setVB = function () {
     const v = this.vb; this.el.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
-    if (this.lastS && !this.pendingR) { this.pendingR = true; requestAnimationFrame(() => { this.pendingR = false; this.render(this.lastS, this.lastSel); }); }
+    if (this.lastS && !this.pendingR) {
+      this.pendingR = true;
+      const epoch = this.cacheEpoch || 0;
+      requestAnimationFrame(() => {
+        if (epoch !== (this.cacheEpoch || 0)) return;
+        this.pendingR = false;
+        if (this.lastS) this.render(this.lastS, this.lastSel);
+      });
+    }
   };
   Map.prototype.toMap = function (cx, cy) {
     const r = this.el.getBoundingClientRect();
@@ -224,7 +232,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     this.vb.x = p.x - (p.x - this.vb.x) * k; this.vb.y = p.y - (p.y - this.vb.y) * k;
     this.vb.w = nw; this.vb.h = nw; this.setVB();
   };
-  Map.prototype.reset = function () { this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB(); };
+  Map.prototype.invalidate = function () {
+    this.cacheEpoch = (this.cacheEpoch || 0) + 1; this.pendingR = false;
+    this.ckey = null; this.nodes = null; this.nodeState = null; this.nodeStores = null; this.clusterById = {};
+    this.lastParts = null; this.lastKeys = null; this.lastR = null; this.lastRv = null;
+    this.lastLk = null; this.lastFar = null; this.lastPlay = null; this.lastCs = null;
+    this.lastLegend = null; this.lastSc = null; this.lastCrumb = null;
+  };
+  Map.prototype.reset = function (state) {
+    this.anim = null; this.invalidate();
+    if (arguments.length) { this.lastS = state || null; this.lastSel = null; }
+    this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.setVB();
+  };
   Map.prototype.focus = function (x, y) {
     this.anim = null;
     if (this.vb.w > 700) { this.vb.w = this.vb.h = 600; }
@@ -379,7 +398,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
-    this.lastParts = null; this.lastKeys = null; this.lastR = null; this.lastRv = null; this.ckey = null;
+    this.invalidate();
     this.el.setAttribute('aria-label', `Карта: ${(BK.CITY && BK.CITY.name) || 'Уфа'}, точки сети`);
     this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.el.setAttribute('viewBox', '0 0 1000 1000');
     return true;
@@ -399,7 +418,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
     if (wrap) { const cs = !!(E.citySetup && E.citySetup(S)); if (cs !== this.lastCs) { wrap.classList.toggle('m-citysetup', cs); this.lastCs = cs; } } // запуск нового города (Россия)
 
-    // кластеры пересчитываем только при смене масштаба, числа точек или выделения
+    // Новая игра/загрузка может иметь столько же точек: ссылки на прошлое состояние переиспользовать нельзя.
+    if (this.nodeState !== S || this.nodeStores !== S.stores) { this.nodeState = S; this.nodeStores = S.stores; this.ckey = null; this.nodes = null; }
+    // кластеры пересчитываем только при смене состояния, масштаба, числа точек или выделения
     const ckey = upp.toFixed(3) + '|' + S.stores.length + '|' + selStore;
     // на предельном приближении кластеров нет: точки показываем все, даже если стоят вплотную
     if (ckey !== this.ckey) { this.ckey = ckey; this.nodes = this.vb.w <= MIN_W + 1 ? S.stores.map((st) => ({ x: st.x, y: st.y, items: [st] })) : clusterize(S.stores, upp, selStore, kk / upp); }
@@ -442,7 +463,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cfg = BK.CFG;
     for (const n of this.nodes) {
       if (n.items.length > 1) {
-        const infos = n.items.map((st) => infoById[st.id]);
+        const infos = n.items.map((st) => infoById[st.id]).filter(Boolean);
+        if (!infos.length) continue;
         const id = n.items[0].id; this.clusterById[id] = { items: n.items, infos, x: n.x, y: n.y };
         const cnt = n.items.length, rad = clRad(cnt), rr = rad + 3, C = 2 * Math.PI * rr;
         // кольцо долей: в слое «Настроение» — по людям, в остальных — по точкам
@@ -472,6 +494,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         clusters.push(['c' + id, `<g class="m-cl" data-kind="cluster" data-id="${id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${k})"><circle class="bg" r="${(rr + 2.5).toFixed(1)}"/><g transform="rotate(-90)">${ring}</g><circle class="b" r="${rad.toFixed(1)}"/><text style="font-size:${(11.5 + Math.min(cnt, 20) * 0.3).toFixed(1)}px">${cnt}</text>${pr ? badge(pr, rr * 0.74, -rr * 0.74) : ''}${BK.TrainersUI ? BK.TrainersUI.clusterBadge(S, n.items, -rr * 0.74, -rr * 0.74) : ''}</g>`]);
       } else {
         const st = n.items[0], inf = infoById[st.id];
+        if (!inf) continue;
         const s1 = isSel('store', st.id);
         const rad = st.size === 'large' ? 13 : st.size === 'small' ? 10 : 11.5;
         const meta = live && live[st.id];

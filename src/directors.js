@@ -101,7 +101,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const txtG = (s, f) => String(s).replace(/\{g2?:([^|}]*)\|([^}]*)\}/g, (_, m, w) => (f ? w : m));
   function marketPay(S, d, cityId) {
-    const K_ = K(), dc = cityId ? def(cityId) : { wage: 1 };
+    const K_ = K(), dc = cityId ? CI().cityDef(S, cityId) : { wage: 1 };
     let avg = 0; for (const k of SK) avg += d.skills[k] / 4;
     return K_.DIR_SALARY[d.grade] * S.macro.priceLevel * Math.sqrt(dc.wage || 1) * (0.8 + 0.4 * avg / 100) * (dc.big ? 1.15 : 1) * (BK.HQ ? BK.HQ.priceK(d) : 1) * (d.regional ? K_.REGION_PAY : 1);
   }
@@ -212,7 +212,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return p;
   }
   function proposeCapex(S, c, d) { // «предложение директора»: годовой лимит открытий × средняя цена точки
-    const per = K().DIR_OPEN_COST * S.macro.priceLevel * (0.6 + 0.4 * (def(c.id).rent || 1));
+    const per = K().DIR_OPEN_COST * S.macro.priceLevel * (0.6 + 0.4 * (CI().cityDef(S, c.id).rent || 1));
     return Math.round(openLimit(S, c, d) * per / 1e6) * 1e6;
   }
   function mods(S, c) {
@@ -273,7 +273,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * o.area) * pl;
     const del = S.productions.length || BK.Corp.remoteOf(S) ? E.deliveryCost(S, tmp) : 40000 * pl; // выпечка из другого города — своя формула (§7.2)
     const hq = cfg.HQ_PER_STORE * pl + rev * (cfg.HQ_REV_SHARE || 0);
-    const payB = BK.Corp.corpMarket(S).baker * (def(c.id).wage || 1) * (c.payKb || c.payK || 1);
+    const payB = BK.Corp.corpMarket(S).baker * (CI().cityDef(S, c.id).wage || 1) * (c.payKb || c.payK || 1);
     const bakers = checks * cfg.ITEMS_PER_CHECK / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX);
     let cannibal = 0;
     const R = cfg.CANNIBAL_RADIUS || 26, F = cfg.CANNIBAL_F || 0.86, SK_ = cfg.SATURATION_K;
@@ -631,7 +631,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const variants = P[sit] || P.ok || ['Месяц прошёл по плану.'];
     const r0 = reqs[0] || {};
     const [text, sPick] = corpRng(S, () => [I.pick(S, variants), open.length ? I.pick(S, open) : null]);
-    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || (emb ? Math.round(emb * 100) + 2 : Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100))), months: 6, district: sPick ? districtName(c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
+    Object.assign(ctx, { n: r0.n || open.length, amount: r0.amount ? fm(r0.amount) : fm(Math.max(1e6, row[2] * 0.01)), pct: r0.pct || (emb ? Math.round(emb * 100) + 2 : Math.max(1, Math.round(Math.abs((pf || 1) - 1) * 100))), months: 6, district: sPick ? districtName(S, c, sPick.district) : 'Центр', rival: C().RIVAL_NAME || 'Хлебный двор' });
     if (sit === 'ok' && /\{stores\}/.test(text)) ctx.n = open.length;
     let phrase = txtG(text, d.f); phrase = BK.corpText ? BK.corpText(phrase, ctx) : phrase;
     const opened = c.dev.mOpened || 0, closed = c.dev.mClosed || 0;
@@ -643,9 +643,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       leak: (() => { const ls = leakStatus(S, c.id); return ls ? { pct: +ls.leak.toFixed(3), lossM: ls.lossM, why: ls.why, fix: ls.fix, skill: ls.skill, need: ls.need } : undefined; })() });
     void it; void cfg; void h;
   }
-  function districtName(c, did) {
-    if (c.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
-    const g = BK.genCityGeo ? BK.genCityGeo(CI().def(c.id), c.seed | 0, c.mapGen) : null;
+  function districtName(S, c, did) {
+    const dc = CI().cityDef(S, c.id);
+    if (dc.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
+    const g = BK.genCityGeo ? BK.genCityGeo(dc, c.seed | 0, c.mapGen) : null;
     const d = g && g.DISTRICTS.find((x) => x.id === did); return d ? d.name : 'Центр';
   }
   // ответ на просьбу: 'yes' | 'alt' | 'no'

@@ -17,6 +17,7 @@ const issues = [];   // проблемы (вёрстка, логика) — ва
 const notes = [];    // замеры и справка
 const errors = [];   // pageerror / console.error
 const log = (...a) => console.log(...a);
+const QA_SEED = 7919;
 
 /* ---------- сохранения от бота ---------- */
 function botSave(years, seed, extra) {
@@ -87,10 +88,40 @@ async function modalReach(p, label) {
   }, label);
 }
 
+// Каждый сценарий получает новый BrowserContext, но очищаем хранилище явно: так тест не зависит
+// от сохранения, предпочтения пролога и списка уже пройденных историй даже при смене реализации context.
+async function isolateStart(p) {
+  await p.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('bk-ufa-tutorial', '0');
+  });
+  await p.reload();
+  await p.waitForSelector('#startForm button[type=submit]');
+}
+
+// Общий QA проверяет базовую игру в Уфе. Сюжетные старты имеют собственную матрицу ниже:
+// rescue законно начинает с готовой сетью в phase=play, остальные — с выбора цеха.
+async function startBaseGame(p) {
+  await p.evaluate(() => {
+    const mode = document.querySelector('#start input[name=startmode][value=net]');
+    if (mode) { mode.checked = true; mode.dispatchEvent(new Event('change', { bubbles: true })); }
+    if (BK.Scenario && !BK.Scenario.__qaBaseSet) {
+      const set = BK.Scenario.set;
+      BK.Scenario.pick = () => 'ufa';
+      BK.Scenario.set = (S, id, o) => set(S, id === 'random' ? 'ufa' : id, o);
+      BK.Scenario.__qaBaseSet = true;
+    }
+  });
+  await p.click('#startForm button[type=submit]');
+  await p.waitForFunction(() => BK.App.state && !document.querySelector('#start:not([hidden])'));
+  return p.evaluate(() => ({ phase: BK.App.state.phase, scenario: BK.App.state.story && BK.App.state.story.scenario }));
+}
+
 /* ---------- 1. все экраны × темы ---------- */
 async function screens(b, vp, theme, saves) {
   const mobile = MOBILE(vp), tag = `${vp}-${theme}`;
   const p = await openPage(b, vp, { dark: theme === 'dark', seed: 7 });
+  await isolateStart(p);
   const dir = path.join(OUT, tag); fs.mkdirSync(dir, { recursive: true });
   const shot = async (n, o = {}) => {
     await p.waitForTimeout(o.wait || 140);
@@ -113,7 +144,9 @@ async function screens(b, vp, theme, saves) {
   if ((theme === 'dark') !== /rgb\((1\d|[0-9]),/.test(bg)) issues.push(`[${tag}] тема не применилась: фон ${bg}`);
 
   await shot('00-start');
-  await p.click('#startForm button'); await shot('01-setup-prod', { full: mobile });
+  const start = await startBaseGame(p);
+  if (start.phase !== 'setup_prod' || start.scenario !== 'ufa') issues.push(`[${tag}] базовый старт: ${JSON.stringify(start)}`);
+  await shot('01-setup-prod', { full: mobile });
   await p.click('[data-act="rentProd"]:not([disabled])'); await shot('02-setup-store', { full: mobile });
   await p.click('[data-act="rent"]:not([disabled])'); await modal('03-m-tutorial');
   await p.click('#modal [data-act="closeModal"]');
@@ -193,8 +226,10 @@ async function screens(b, vp, theme, saves) {
 async function toasts(b, vp) {
   const p = await openPage(b, vp, { seed: 3 });
   const tag = `${vp} тосты`;
-  await p.evaluate(() => localStorage.clear());
-  await p.click('#startForm button'); await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])');
+  await isolateStart(p);
+  const start = await startBaseGame(p);
+  if (start.phase !== 'setup_prod' || start.scenario !== 'ufa') issues.push(`[${tag}] базовый старт: ${JSON.stringify(start)}`);
+  await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])');
   await p.waitForTimeout(100); await p.evaluate(() => BK.App.ACT.closeModal());
   const res = [];
   for (const scroll of ['top', 'panel', 'deep']) {
@@ -236,8 +271,10 @@ async function toasts(b, vp) {
 async function saves(b, sv) {
   const tag = 'сохранения';
   const p = await openPage(b, 'd1440', { seed: 11 });
-  await p.evaluate(() => localStorage.clear()); await p.reload();
-  await p.click('#startForm button'); await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])');
+  await isolateStart(p);
+  const start = await startBaseGame(p);
+  if (start.phase !== 'setup_prod' || start.scenario !== 'ufa') issues.push(`[${tag}] базовый старт: ${JSON.stringify(start)}`);
+  await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])');
   await p.evaluate(() => BK.App.ACT.closeModal());
   // поиграть ~70 дней через движок, с решениями событий и шефа
   await p.evaluate(() => { const S = BK.App.state, E = BK.Engine; for (let i = 0; i < 70; i++) { E.tick(S); if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []); } S.notify = []; BK.App.setSpeed(0); });
@@ -296,6 +333,29 @@ async function saves(b, sv) {
     errors.push(...q.errs.map((e) => `[${name}] ${e}`));
     await q.context().close();
   }
+}
+
+/* ---------- 3в. допустимая стартовая фаза каждой истории ---------- */
+async function scenarioStartPhases(b) {
+  const p = await openPage(b, 'd1440', { seed: QA_SEED });
+  await isolateStart(p);
+  const expected = { ufa: 'setup_prod', legacy: 'setup_prod', crisis: 'setup_prod', moscow: 'setup_prod', rescue: 'play' };
+  const got = [];
+  for (const [id, phase] of Object.entries(expected)) {
+    const r = await p.evaluate(({ id, seed }) => {
+      const mode = document.querySelector('#start input[name=startmode][value=net]');
+      if (mode) mode.checked = true;
+      BK.App.newGame('QA сценариев', 'normal', { scen: id, seed, rival: false });
+      const S = BK.App.state;
+      return { id, phase: S.phase, scenario: S.story && S.story.scenario, stores: S.stores.length };
+    }, { id, seed: QA_SEED });
+    got.push(`${id}:${r.phase}`);
+    if (r.phase !== phase || r.scenario !== id) issues.push(`[старт сценариев] ${id}: ожидались ${phase}/${id}, получены ${r.phase}/${r.scenario}`);
+    if (id === 'rescue' && !r.stores) issues.push('[старт сценариев] rescue: phase=play без готовой сети');
+  }
+  notes.push(`стартовые фазы сценариев: ${got.join(', ')}`);
+  errors.push(...p.errs.map((e) => `[старт сценариев] ${e}`));
+  await p.context().close();
 }
 
 /* ---------- 3б. событие при минусе на счёте: игрок не должен застревать в окне ---------- */
@@ -470,6 +530,7 @@ async function perf(b, vp, st, label, throttle) {
   for (const vp of VPS.filter(MOBILE)) { log('тосты', vp); await toasts(b, vp); }
   log('сохранения'); await saves(b, sv);
   log('событие без денег'); await eventEdge(b, sv);
+  log('стартовые фазы сценариев'); await scenarioStartPhases(b);
   for (const vp of VPS.filter((v) => v === 'd1440' || v === 'm390' || v === 'm360')) { log('карта', vp); await mapTests(b, vp, sv); }
   if (!flags.has('--no-perf')) {
     log('производительность');

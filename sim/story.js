@@ -545,11 +545,11 @@ function balance(yrs, sd) {
    проблеме месяца, подстановки настоящие, лимит «не чаще раза в месяц» соблюдён, героя из свежей
    сцены реплика не повторяет, при выключенном сюжете и без S.story — молчит вовсе. */
 function lines(yrs, sd) {
-  if (!BK.STORY || !BK.STORY.lineOfMonth) { console.log('нет BK.STORY.lineOfMonth — реплики не подключены'); return 1; }
+  if (!BK.STORY || !BK.STORY.recordLineOfMonth || !BK.STORY.lineOfMonth) { console.log('нет API реплик месяца — реплики не подключены'); return 1; }
   let bad = 0;
   const ok = (c, w, x) => { if (!c) { bad++; console.log('  ✗ ' + w + (x ? ' — ' + x : '')); } else console.log('  ✓ ' + w + (x ? ' — ' + x : '')); };
   console.log(`# Реплики в отчёте месяца (${sd} сид(ов) × ${yrs} лет)`);
-  let all = [], months = 0, dupScene = 0, midMonth = 0, gaps = 0, badText = 0, prevText = null;
+  let all = [], months = 0, dupScene = 0, midMonth = 0, gaps = 0, badText = 0, renderMutations = 0, prevText = null;
   for (let s = 0; s < sd; s++) {
     const seed = 1000 + s * 7919;
     let cur = null, prevDay = null;
@@ -560,8 +560,11 @@ function lines(yrs, sd) {
         const t = E.dateOf(S.day);
         if (t.d !== 1 || !S.history.length) return;
         months++;
+        const beforeRender = JSON.stringify(S);
         const html = BK.STORY.lineHtml(S);                       // так же зовёт панель
         const L = BK.STORY.lineOfMonth(S);
+        BK.STORY.lineHtml(S); BK.STORY.lineOfMonth(S);           // повторные рендеры не меняют state/RNG/history
+        if (beforeRender !== JSON.stringify(S)) renderMutations++;
         if (!L) return;
         all.push(L);
         if (L.cur === cur && prevText && L.text !== prevText) midMonth++;      // в одном месяце текст не меняется
@@ -584,6 +587,7 @@ function lines(yrs, sd) {
   ok(badText === 0, 'в тексте нет неподставленных {n}/{sum} и служебных заглушек');
   ok(gaps === 0, 'лимит «не чаще раза в месяц» соблюдён');
   ok(midMonth === 0, 'внутри месяца текст не меняется (перерисовка панели не подменяет реплику)');
+  ok(renderMutations === 0, 'lineOfMonth/lineHtml не меняют state, RNG и history', String(renderMutations));
   ok(dupScene === 0, 'реплика не повторяет героя из свежей сцены (блок «История»)', String(dupScene));
   ok(new Set(Object.keys(hero)).size >= 4, 'говорят все четыре героя схемы §6', Object.keys(hero).join(', '));
   ok(uniq.size >= all.length * 0.15, 'реплики не зациклились', `${uniq.size} разных из ${all.length} (${Math.round(uniq.size / Math.max(1, all.length) * 100)} %)`);

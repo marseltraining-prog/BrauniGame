@@ -8,7 +8,8 @@
        job 0..2, jobM, stazh, rep, hp, mood, sk: {sales, coffee, people}, cash, box, dep, depInt,
        home, food, extra, saveRate, study, done{}, payK, rentK, cut, sickNow, fired, wantsCd{}, sale, loans[], inv[],
        rel: {rashid, gulya, oleg, elvira, family, semyon} (−100…100, как S.story.rel), sf (флаги сюжета, как S.story.f), sm (стили),
-       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift (последний итог смены), earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift (последний итог смены), shiftSchedule (сохранённые даты смен),
+       earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
    Мини-игра «Смена» идёт по расписанию (shiftAt/dueShift): смены приходят сами 5–10 раз за пролог, игрок их не выбирает
    и не может пропустить (счётчик — stats.shifts, он же в сохранении). Полка — три ряда по три позиции (SHELF_KEYS).
    Числа расписания — SHIFT_AT (место в BK.CFG.PROLOGUE, как остальные числа пролога).
@@ -73,6 +74,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
       won: null, carry: null,
     };
+    P.shiftSchedule = newShiftSchedule(P);
     return P;
   }
   function start(S) {
@@ -233,10 +235,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const canAfford = (P, v, cashOnly) => (cashOnly ? P.cash : P.cash + P.box + P.dep) >= v;
 
   /* ---------------- действия игрока ---------------- */
-  function setHome(S, k) { const P = S.prologue; if (!C().HOME[k]) return { ok: false }; P.home = k; P.extra = Math.min(P.extra, maxExtra(P)); return { ok: true }; }
+  function setHome(S, k) {
+    const P = S.prologue; if (!C().HOME[k]) return { ok: false };
+    ensureShiftSchedule(P);
+    P.home = k;
+    const extra = Math.min(P.extra, maxExtra(P));
+    if (extra !== P.extra) { P.extra = extra; reviseShiftSchedule(P); }
+    return { ok: true };
+  }
   function setFood(S, k) { const P = S.prologue; if (!C().FOOD[k]) return { ok: false }; P.food = k; return { ok: true }; }
   function setFun(S, k) { const P = S.prologue; if (!C().FUN[k]) return { ok: false }; P.fun = k; return { ok: true }; }
-  function setExtra(S, n) { const P = S.prologue; P.extra = clamp(n | 0, 0, maxExtra(P)); return { ok: true }; }
+  function setExtra(S, n) {
+    const P = S.prologue, extra = clamp(n | 0, 0, maxExtra(P));
+    ensureShiftSchedule(P); // legacy-сохранение сначала получает график в прежнем режиме
+    if (extra !== P.extra) { P.extra = extra; reviseShiftSchedule(P); }
+    return { ok: true };
+  }
   function setSaveRate(S, i) { const P = S.prologue; P.saveRate = clamp(i | 0, 0, C().SAVE_RATES.length - 1); return { ok: true }; }
   function studyWhy(P, id) {
     const c = C().COURSES[id]; if (!c) return 'Нет такого курса';
@@ -807,11 +821,65 @@ var BK = globalThis.BK || (globalThis.BK = {});
      Месяцы пролога (0 — февраль первого года): промежутки растут вместе с должностью, а после 26-го месяца
      сюжетная жизнь бариста уже позади — дальше только своя точка или «жизнь в найме».
      7 смен: быстрый игрок успевает 6 (≥5), долгая «жизнь в найме» — 7 (≤10). Числа — как CFG.PROLOGUE.SHIFT_AT. */
+  // Базовые даты смен. Выбранные доп. смены — настоящие смены мини-игры:
+  // 0 → 7 смен, 1 → 9, 2 → 10. График хранится в P.shiftSchedule, поэтому смена режима
+  // не переписывает уже сыгранные даты и ближайшую назначенную смену, а меняет только будущий хвост.
   const SHIFT_AT_DEF = [0, 3, 6, 10, 14, 19, 25];
-  const shiftAt = () => {
-    const a = C().SHIFT_AT;
-    return (a && a.length) ? a : SHIFT_AT_DEF;
-  };
+  const SHIFT_SCHEDULE_V = 1;
+  function baseShiftDates() {
+    const a = C().SHIFT_AT, src = (a && a.length) ? a : SHIFT_AT_DEF;
+    const out = [];
+    for (const x of src) { const m = Math.max(0, x | 0); if (!out.length || m > out[out.length - 1]) out.push(m); }
+    return out.length ? out : SHIFT_AT_DEF.slice();
+  }
+  function shiftTarget(P) {
+    const base = baseShiftDates().length, extra = clamp((P && P.extra) | 0, 0, 2);
+    return extra === 0 ? base : extra === 1 ? Math.min(9, base + 2) : Math.min(10, base + 3);
+  }
+  // Ровно count различных месяцев от start до end включительно.
+  function spreadShiftDates(start, end, count) {
+    if (count <= 0) return [];
+    start = Math.max(0, start | 0); end = Math.max(start + count - 1, end | 0);
+    if (count === 1) return [start];
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const min = i ? out[i - 1] + 1 : start, left = count - i - 1;
+      out.push(Math.max(min, Math.min(end - left, Math.round(start + (end - start) * i / (count - 1)))));
+    }
+    return out;
+  }
+  function newShiftSchedule(P) {
+    return { v: SHIFT_SCHEDULE_V, dates: baseShiftDates(), mode: clamp((P && P.extra) | 0, 0, 2), revisedAt: (P && P.m) | 0 };
+  }
+  // Старые сохранения не знали дат. Сыгранные смены восстанавливаем только для истории,
+  // а весь ещё не сыгранный хвост ставим строго после текущего месяца: загрузка не создаёт просрочку.
+  function migrateShiftSchedule(P) {
+    const done = shiftsDone(P), target = Math.max(done, shiftTarget(P)), now = Math.max(0, P.m | 0);
+    const completed = spreadShiftDates(0, Math.max(now, done - 1), done);
+    if (done && P.shift && P.shift.m >= 0 && P.shift.m <= now) completed[done - 1] = P.shift.m | 0;
+    for (let i = 1; i < completed.length; i++) if (completed[i] <= completed[i - 1]) completed[i] = completed[i - 1] + 1;
+    const left = target - completed.length, start = now + 1;
+    const future = spreadShiftDates(start, Math.max(baseShiftDates().slice(-1)[0], start + left - 1), left);
+    P.shiftSchedule = { v: SHIFT_SCHEDULE_V, dates: completed.concat(future), mode: clamp(P.extra | 0, 0, 2), revisedAt: now, migrated: 1 };
+    return P.shiftSchedule;
+  }
+  function ensureShiftSchedule(P) {
+    if (!P) return null;
+    const q = P.shiftSchedule;
+    if (!q || q.v !== SHIFT_SCHEDULE_V || !Array.isArray(q.dates) || q.dates.some((x, i) => !Number.isFinite(x) || x < 0 || (i && x <= q.dates[i - 1]))) return migrateShiftSchedule(P);
+    return q;
+  }
+  function reviseShiftSchedule(P) {
+    const q = ensureShiftSchedule(P), done = Math.min(shiftsDone(P), q.dates.length);
+    // Сыгранные даты и одна уже назначенная смена неизменны. Новые даты — не раньше следующего месяца.
+    const keep = q.dates.slice(0, Math.min(q.dates.length, done + 1));
+    const target = Math.max(keep.length, shiftTarget(P)), left = target - keep.length;
+    const start = Math.max((P.m | 0) + 1, (keep.length ? keep[keep.length - 1] : -1) + 1);
+    const future = spreadShiftDates(start, Math.max(baseShiftDates().slice(-1)[0], start + left - 1), left);
+    P.shiftSchedule = { v: SHIFT_SCHEDULE_V, dates: keep.concat(future), mode: clamp(P.extra | 0, 0, 2), revisedAt: P.m | 0 };
+    return P.shiftSchedule;
+  }
+  const shiftAt = (P) => P ? ensureShiftSchedule(P).dates.slice() : baseShiftDates();
   const shiftsDone = (P) => ((P && P.stats && P.stats.shifts) || 0) | 0;   // счётчик смен лежит в P.stats.shifts (и в сохранении)
   const SHIFT_TIRED_HP = 45;   // «к смене не готов»: не выспались после ночной (сцена П5) или совсем без сил
   function shiftTired(P) {
@@ -822,10 +890,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // смена, которая уже пришла и ждёт игрока: null — ждать нечего
   function dueShift(P) {
     if (!P || P.status !== 'run') return null;
-    const list = shiftAt(), n = shiftsDone(P);
+    const list = shiftAt(P), n = shiftsDone(P);
     if (n >= list.length) return null;      // расписание пройдено
     if (P.fired > 0) return null;           // без работы смен не бывает — смена дождётся возвращения
     if (P.cards.length) return null;        // сначала решение по карточке
+    if (P.shift && P.shift.m === P.m) return null; // не ставим две накопившиеся смены в один месяц
     if (P.m < list[n]) return null;         // ещё не время
     return { n: n + 1, all: list.length, month: list[n], late: P.m > list[n], first: n === 0, tired: shiftTired(P) };
   }
@@ -833,12 +902,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!P || P.status !== 'run') return 'Пролог окончен';
     if (P.fired > 0) return 'Сейчас вы без работы';
     if (P.cards.length) return 'Сначала решите, что делать';
-    if (!dueShift(P)) return shiftsDone(P) >= shiftAt().length ? 'Смены пролога уже прошли' : 'Эта смена ещё не пришла';
+    if (!dueShift(P)) return shiftsDone(P) >= shiftAt(P).length ? 'Смены пролога уже прошли' : 'Эта смена ещё не пришла';
     return null;
   }
   function shiftPlan(P) {
-    const c = C(), vm = V2('shiftMods', P); // усталость/болезнь/долг/отношения — хук живого сюжета v2 (docs/story-v2.md)
-    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + ((vm && vm.pat) || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P) };  }
+    const c = C(), vm = V2('shiftMods', P), due = dueShift(P); // усталость/болезнь/долг/отношения — хук живого сюжета v2 (docs/story-v2.md)
+    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + ((vm && vm.pat) || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P), shift: due };  }
   // итог смены: stats = { served, errors, upsells, lost, total }
   function shiftResult(S, st) {
     const c = C(), P = S.prologue;
@@ -993,6 +1062,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
     feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2, // хуки живого сюжета v2 (src/data/prolog-v2.js) — имя с «2», чтобы не путать с внутренними feed/fx/rel/style
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
-    shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
+    shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, ensureShiftSchedule, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
   };
 })();

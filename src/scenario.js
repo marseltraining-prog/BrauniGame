@@ -83,6 +83,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = info(st.id); if (!d || !d.start) return null;
     const s = d.start, out = [];
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
+    if (s.reserve != null) { S.reserve = Math.max(0, Math.round(s.reserve * (S.macro ? S.macro.priceLevel : 1))); out.push('резерв'); }
     if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
     if (s.city) {
       // Город истории выбран ещё при создании мира (engine.newGame: opts.city, src/ui/app.js) — предложения

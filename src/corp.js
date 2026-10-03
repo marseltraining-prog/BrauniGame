@@ -28,7 +28,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const daysInMonthOf = (day) => { const t = E.dateOf(day); return new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate(); };
   // «уфимский» (корпоративный) рынок зарплат: рынок активного города ÷ его индекс зарплат
-  function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = def(S.corp.active) ? def(S.corp.active).wage : 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
+  function cityDef(S, id) { // ключ `ufa` в корпорации означает домашний город, в сценарии им может быть Москва
+    const real = id === 'ufa' ? (startCityOf(S) || 'ufa') : id;
+    return def(real) || def('ufa') || {};
+  }
+  function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = cityDef(S, S.corp.active).wage || 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
 
   /* ---------------- выход в Россию ---------------- */
   function check(S) {
@@ -40,7 +44,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function unlock(S) {
     const ufa = { id: 'ufa', name: 'Уфа', enteredDay: 0, status: 'run', seed: S.seed | 0, mapGen: 0, rng: (S.seed ^ 0x3a1f5) | 0, aw: 1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: S.flags.storeNum || 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
-    S.corp = { unlockedDay: S.day, active: 'ufa', market0: { seller: S.market.seller, baker: S.market.baker }, cities: { ufa }, rng: (S.seed ^ 0x5eed0c) | 0, lastMonthly: S.day, aggRevP: 0 };
+    const homeWage = cityDef(S, 'ufa').wage || 1;
+    S.corp = { unlockedDay: S.day, active: 'ufa', market0: { seller: S.market.seller / homeWage, baker: S.market.baker / homeWage }, cities: { ufa }, rng: (S.seed ^ 0x5eed0c) | 0, lastMonthly: S.day, aggRevP: 0 };
     S.v = 2;
     if (BK.Dir) BK.Dir.ensure(S);
     S.notify.push({ type: 'corp' });
@@ -276,7 +281,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cr = S.corp, c = cr.cities[id];
     if (c.packed) settleAgg(S, c); // упакованная часть месяца — по агрегированной модели
     useCityFor(S, id, c);
-    const m0 = cr.market0, w = def(id).wage;
+    const m0 = cr.market0, w = cityDef(S, id).wage || 1;
     S.market = { seller: m0.seller * w, baker: m0.baker * w };
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
     S.flags.storeNum = c.numSeq || 0;
@@ -316,7 +321,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const cityIn = (id) => (def(id) || {}).in || 'в городе ' + cityName(id);
 
   /* ---------------- агрегированная модель (раз в месяц; «владелец заочно», без директора) ---------------- */
-  function salaryCity(S, c, lvl) { const m = corpMarket(S).seller * def(c.id).wage * (c.payK || 1); return m * (1 + C().EXPECT_PER_LVL * (lvl - 1)); }
+  function salaryCity(S, c, lvl) { const m = corpMarket(S).seller * (cityDef(S, c.id).wage || 1) * (c.payK || 1); return m * (1 + C().EXPECT_PER_LVL * (lvl - 1)); }
   const REP = (i) => C().REPAIRS[i || 0] || { conv: 1, check: 1 };
   function ratingMultOf(r) { const cfg = C(), d = r - cfg.RATING_START; return 1 + (d < 0 ? cfg.RATING_TRAFFIC_LO : cfg.RATING_TRAFFIC_HI) * d; }
   // цель настроения команды (как в dailyStaff движка, без усталости и характеров): зарплата к рынку, культура, премии, лояльность, уровень, нехватка людей
@@ -365,7 +370,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // один агрегированный расчёт города за долю периода frac (0…1); деньги — в общий S.month по обычным статьям
   function cityMonth(S, c, frac, hireBudget) {
-    const cfg = C(), K_ = K(), pl = S.macro.priceLevel, pk = c.packed, dc = def(c.id);
+    const cfg = C(), K_ = K(), pl = S.macro.priceLevel, pk = c.packed, dc = cityDef(S, c.id);
     const out = { rev: 0, profit: 0, emp: 0, stores: 0, hired: 0, fc: 0, quits: 0, trained: 0 };
     if (!pk || frac <= 0) { for (const s of (pk ? pk.stores : [])) if (s.status !== 'opening') { out.stores++; out.emp += s.staff.n; } return out; }
     const cr = S.corp, L = cr.lastMonthly, dim = daysInMonthOf(L), days = dim * frac, d0 = Math.round(S.day - days);
@@ -565,7 +570,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const c = remoteOf(S); if (!c) return null;
     const k = K(), cfg = C(), fz = c.supplyMode === 'frozen', D = fz ? k.DEL_FROZEN : k.DEL_FRESH;
     const km = c.supplyKm != null ? c.supplyKm : BK.roadKm(c.supplyFrom, c.id);
-    const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * ((def(c.supplyFrom) || {}).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
+    const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * (cityDef(S, c.supplyFrom).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
     const units = (st.cpd != null ? st.cpd : 150) * cfg.ITEMS_PER_CHECK;
     const bake = units / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX) * k.REMOTE_BAKE_K[fz ? 1 : 0];
     return (D[0] + D[1] * km) * S.macro.priceLevel * (S.corp.hqDelK || 1) + bake;
@@ -803,7 +808,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function rollingAll(S) { let s = 0; for (const x of S.history.slice(-12)) s += x.rev; return s; }
 
-  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
+  BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, cityDef, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
     supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
   Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();

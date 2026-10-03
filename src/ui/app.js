@@ -222,12 +222,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
-    hideStart(); closeModal(); map.reset(); renderAll(); save();
+    hideStart(); closeModal(); map.reset(S); renderAll(); save();
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
-    hideStart(); closeModal(); map.reset(); renderAll();
+    hideStart(); closeModal(); map.reset(S); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
     if (BK.Stage1UI && !(BK.PrologueUI && BK.PrologueUI.active())) BK.Stage1UI.resume(); // посреди стадии 1 «Своя кофейня» — открыть кофейню

@@ -58,6 +58,8 @@ function snapshot(S) {
   const off = (S.offers || []).concat(S.prodOffers || []);
   return {
     city: (BK.CITY && BK.CITY.id) || '?', name: (BK.CITY && BK.CITY.name) || '?',
+    inc: BK.CITY && BK.CITY.inc, rentK: BK.CITY && BK.CITY.rent, wage: BK.CITY && BK.CITY.wage,
+    sellerMarket: S.market && S.market.seller, bakerMarket: S.market && S.market.baker,
     startCity: S.startCity === undefined ? '(нет поля)' : String(S.startCity),
     scen: (S.scen && S.scen.id) || '—', cash: r0(S.cash),
     n: off.length, districts: dnames(off.map((o) => o.district)), ok: onMap(off),
@@ -88,6 +90,15 @@ function starts() {
   ok(mos.city === 'moscow', 'сценарий «Старт в Москве» начинается в Москве', head(mos));
   ok(mos.ok && mos.districts.indexOf('?') < 0, 'районы предложений — московские (все есть в карте Москвы)', mos.districts);
   ok(ufa.city === 'ufa' && ufa.ok, 'обычная игра без истории — Уфа, как раньше', head(ufa));
+  ok(mos.inc === 1.8 && mos.rentK === 3 && mos.wage === 1.7,
+    'коэффициенты Москвы inc/rent/wage переданы в движок', `${mos.inc}/${mos.rentK}/${mos.wage}`);
+  ok(ufa.inc === 1 && ufa.rentK === 1 && ufa.wage === 1,
+    'базовые коэффициенты Уфы не изменились', `${ufa.inc}/${ufa.rentK}/${ufa.wage}`);
+  ok(mos.sellerMarket === Math.round(CFG.MARKET_SALARY_SELLER * 1.7)
+    && mos.bakerMarket === Math.round(CFG.MARKET_SALARY_BAKER * 1.7),
+  'зарплатный рынок Москвы учитывает wage=1,70', `${mos.sellerMarket}/${mos.bakerMarket}`);
+  ok(ufa.sellerMarket === CFG.MARKET_SALARY_SELLER && ufa.bakerMarket === CFG.MARKET_SALARY_BAKER,
+    'зарплатный рынок Уфы остался базовым', `${ufa.sellerMarket}/${ufa.bakerMarket}`);
   ok(mos.rent > ufa.rent * 2, 'аренда в Москве заметно выше уфимской', `${mos.rent} против ${ufa.rent} ₽/м² (×${(mos.rent / ufa.rent).toFixed(2)})`);
   ok(mos.solv > ufa.solv * 1.3, 'платёжеспособность районов выше (выше чек)', `${mos.solv} против ${ufa.solv} ₽ (×${(mos.solv / ufa.solv).toFixed(2)})`);
   ok(mos.cash === 10500000, 'стартовые деньги истории «всё, что было»', BK.fmtMoney(mos.cash));
@@ -293,6 +304,9 @@ russiaHome();
 storyPass();
 const P = pacePass();
 const C = cityOnlyPass();
+const mosYear = med(P.moscow.wins);
+ok(mosYear != null && mosYear >= 14 && mosYear <= 16,
+  'медиана победы сценария «Старт в Москве» — в целевом коридоре 14–16 лет', mosYear == null ? 'нет побед' : `${mosYear} года`);
 
 const m5 = P.moscow.y5, u5 = P.ufa.y5;
 console.log('\n# Итог: Москва против Уфы (год 5, бот good, сюжет выключен)');

@@ -248,7 +248,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         return false;
       });
     }
-    if (monthStart(S)) sharesMonthly(S);   // доли сюжета: выплата 1-го числа
+    if (monthStart(S)) {
+      sharesMonthly(S);                    // доли сюжета: выплата 1-го числа
+      const data = D();
+      if (data && data.recordLineOfMonth) data.recordLineOfMonth(S); // реплику фиксируем один раз после месячного отчёта
+    }
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
@@ -275,13 +279,41 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- доли сюжета: выплаты 1-го числа ---------------- */
+  const positiveProfit = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, n) : 0; };
+  function storesAll(S) {
+    const out = [], seen = new Set();
+    const add = (list) => { for (const st of list || []) if (st && !seen.has(st)) { seen.add(st); out.push(st); } };
+    add(S && S.stores);
+    const cities = S && S.corp && S.corp.cities;
+    if (cities) for (const id of Object.keys(cities)) { const c = cities[id]; if (c && c.packed) add(c.packed.stores); }
+    return out;
+  }
+  // База доли задаётся данными сюжета: вся сеть, конкретная точка или город.
+  // store1 — старый формат пролога; новые данные могут использовать store:<id|num>.
+  function shareBase(S, sh, month) {
+    const what = String((sh && sh.what) || '');
+    if (what === 'net') return positiveProfit(month && month.profit);
+    if (what.startsWith('city:')) {
+      const id = what.slice(5), c = S && S.corp && S.corp.cities && S.corp.cities[id];
+      const row = c && Array.isArray(c.hist) && c.hist.length ? c.hist[c.hist.length - 1] : null;
+      return positiveProfit(row && row[3]);
+    }
+    let ref = null;
+    if (what === 'store1') ref = (S && S.prologue && S.prologue.carry && S.prologue.carry.store1) || 1;
+    else if (what.startsWith('store:')) ref = what.slice(6);
+    if (ref == null || ref === '') return 0;
+    const list = storesAll(S);
+    let st = list.find((x) => String(x.id) === String(ref));
+    if (!st && /^\d+$/.test(String(ref))) st = list.find((x) => Number(x.num) === Number(ref));
+    return positiveProfit(st && st.last && st.last.profit);
+  }
   function sharesMonthly(S) {
     const R = state(S); if (!R || !R.shares.length) return 0;
     const h = S.history || []; if (!h.length) return 0;
     const m = h[h.length - 1];
     let total = 0;
     for (const sh of R.shares) {
-      const base = sh.what === 'net' ? Math.max(0, m.profit) : Math.max(0, m.profit);   // доля от прибыли сети
+      const base = shareBase(S, sh, m);
       const pay = Math.round(base * (sh.pct || 0));
       if (pay > 0) total += pay;
     }
@@ -343,7 +375,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.Engine) wrap();
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, sharesMonthly,
+    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
   };
 })();
