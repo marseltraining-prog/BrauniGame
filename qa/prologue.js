@@ -222,8 +222,17 @@ async function until(p, pred, stop) {
         await p.waitForFunction(() => BK.PrologueUI.active(), null, { timeout: 4000 }).catch(() => issues.push(`[${tag}] после загрузки пролог не открылся`));
         const after = await p.evaluate(() => BK.App.state.prologue.m);
         if (after !== before) issues.push(`[${tag}] после загрузки месяц ${after}, а был ${before}`);
-        await resolveCards(p);
-        // меню: помощь
+        // Меню: помощь. Перед кликом закрываем окна пролога. Смена приходит сама по расписанию, и её
+        // полноэкранный слой (#proSh, z-index 30) перекрывает кнопку «Меню» в шапке — у игрока её тоже
+        // не видно, пока смена не сыграна. Время ставим на паузу, чтобы новые окна не открылись между
+        // проверкой и кликом.
+        await p.evaluate(() => { BK.PrologueUI.ui.speed = 0; });
+        for (let k = 0; k < 4; k++) {
+          const s = await st(p);
+          if (!s || s.status !== 'run' || (!s.cards && s.mode !== 'shift')) break;
+          if (s.mode === 'shift') await playShift(p, true);
+          await resolveCards(p);
+        }
         await p.click('[data-pa=menu]'); await p.waitForSelector('#proMenu .pro-menu');
         await check(p, tag + ' меню', '#proMenu .pro-card', mobile);
         await p.click('#proMenu [data-pa=menuClose].btn');
