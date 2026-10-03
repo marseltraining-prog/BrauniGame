@@ -17,6 +17,13 @@
        «тик»-перкуссия (шум через полосовой фильтр). Никаких «пэдов» и «блеска» — они владельцу не нравились;
      — две разные темы: 'game' — фа мажор, 92 BPM, 3/4, петля 24 такта ≈ 47 с; 'prologue' — до мажор,
        84 BPM, 3/4, петля 24 такта ≈ 51 с, выше регистр, мягче тембр и тише. Форма A–A'–B с вариациями;
+      — третья тема — 'victory', ПОБЕДНАЯ, и она не фон, а момент: ре мажор, 140 BPM, 4/4, 10 тактов
+        ≈ 17 с, играется ОДИН раз от начала до конца (фанфарный подъём, кульминация и разрешение в
+        тонику), после чего сама возвращает ту тему, что звучала до неё. Включается только по большим
+        событиям: победа по обороту (S.won), «Федеральная сеть», победный финал истории и итоги
+        победившей партии. Мелкие вехи, достижения и «ленточка» открытия точки остаются как были —
+        владелец просил именно разницу между большим и мелким. Под открытым окном момент НЕ
+        приглушается (это не подложка); выключатели «Музыка» и общий уважаются, как у фоновых тем;
      — каждая нота — свой короткоживущий осциллятор: частота ставится до старта, огибающая только рампами
        (атака 24 мс, спад 90 мс), stop() — после нуля; выключение и скрытая вкладка — плавный спад шины;
        после шины стоит мягкий лимитер (DynamicsCompressor) от перегрузки;
@@ -293,7 +300,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Темп, мелодия и инструменты от этого не меняются — только то, за сколько нот мы «успели» их поставить.
     LOOK: 1.0,
     TICK: 250,           // мс: как часто планировщик просыпается (реже, чем раньше, — меньше работы в момент нажатий)
-    CUT: { game: 3000, prologue: 2300 }, // Гц: в прологе тембр мягче (меньше верхов у квадрата)
+    WIN_K: 1.15,         // победа громче фоновой темы на ~1 дБ — это момент, а не подложка
+    WIN_TAIL: 0.25,      // с: сколько ждём после последней ноты момента, прежде чем вернуть прежнюю тему
+    CUT: { game: 3000, prologue: 2300, victory: 3400 }, // Гц: в прологе тембр мягче, у победы ярче (фанфары)
   };
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);   // MIDI-номер → Гц
 
@@ -301,6 +310,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const CH = {
     F: [53, 57, 60], Bb: [58, 62, 65], C: [60, 64, 67], Dm: [50, 53, 57], Gm: [55, 58, 62],
     Am: [57, 60, 64], Em: [52, 55, 59], G: [55, 59, 62], D: [50, 54, 57],
+    A: [57, 61, 64], Bm: [59, 62, 66], // тоника/доминанта и ii ступень победной темы (ре мажор)
   };
   // Мелодия: на каждый такт — список [шаг (0..5 = восьмые в такте 3/4), MIDI, длина в шагах].
   const MUS_MEL = {
@@ -360,6 +370,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
       [[0, 79, 2], [2, 76, 1], [3, 72, 3]],
       [[0, 74, 1], [1, 76, 1], [2, 77, 2], [4, 79, 2]],
     ],
+    // ——— победа: ре мажор, 4/4, 140 BPM, 10 тактов ≈ 17 с. Это НЕ петля: подъём к кульминации
+    // (такты 1–5), утверждение (6–8) и разрешение A7 → D (9–10). Последняя нота — тоника D6.
+    victory: [
+      [[0, 62, 2], [2, 66, 1], [3, 69, 2], [6, 74, 2]],               // D: D–F#–A–D5, восход
+      [[0, 71, 2], [2, 74, 1], [3, 76, 2], [5, 79, 3]],               // G: B–D5–E5–G5
+      [[0, 78, 2], [2, 74, 1], [3, 71, 2], [5, 74, 3]],               // Bm: F#5–D5–B4–D5
+      [[0, 76, 2], [2, 73, 1], [3, 69, 2], [5, 73, 3]],               // A: E5–C#5–A4–C#5 (ведёт в D)
+      [[0, 74, 4], [4, 78, 2], [6, 81, 2]],                           // D: кульминация D5–F#5–A5
+      [[0, 83, 2], [2, 81, 1], [3, 79, 2], [5, 76, 2]],               // G: B5–A5–G5–E5
+      [[0, 73, 2], [2, 76, 1], [3, 79, 2], [5, 81, 3]],               // A7: C#5–E5–G5–A5
+      [[0, 78, 2], [2, 74, 1], [3, 71, 2], [5, 74, 3]],               // D: F#5–D5–B4–D5
+      [[0, 76, 1], [1, 78, 1], [2, 79, 2], [4, 81, 4]],               // A7: E5–F#5–G5–A5, подъём к разрешению
+      [[0, 74, 2], [2, 78, 1], [3, 81, 1], [4, 86, 4]],               // D: D5–F#5–A5–D6 — разрешение в тонику
+    ],
   };
   // Гармония по тактам (A – A' – B). Вальс: I–IV–V–I / vi–ii–V–I.
   const MUS_PROG = {
@@ -367,6 +391,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       'Bb', 'F', 'Gm', 'C', 'F', 'Dm', 'Bb', 'C'],
     prologue: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G',
       'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'G'],
+    // победа: I–IV–ii–V, потом утверждение и доминанта A7, разрешающаяся в тонику
+    victory: ['D', 'G', 'Bm', 'A', 'D', 'G', 'A', 'D', 'A', 'D'],
   };
   const MUS_THEMES = {
     game: {
@@ -377,13 +403,25 @@ var BK = globalThis.BK || (globalThis.BK = {});
       mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: MUS.CUT.prologue,
       lev: { lead: 0.272, bass: 0.208, arp: 0.049, tick: 0.025 },
     },
+    // Победа — разовая тема-момент (`once`): тот же движок, но позиция не зацикливается, а в конце
+    // музыка сама возвращается к прежней теме (musSched → musMood). Громче и ярче фона, потому что
+    // это не подложка: тромбонный квадрат ведёт, треугольный бас марширует, арпеджио и тик держат шаг.
+    victory: {
+      mood: 'victory', key: 'ре мажор', bpm: 140, beats: 4, steps: 8, once: true,
+      gain: MUS.GAIN * MUS.WIN_K, cut: MUS.CUT.victory,
+      lev: { lead: 0.40, bass: 0.25, arp: 0.075, tick: 0.05 },
+    },
   };
   Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });
-  const theme = (m) => (m === 'prologue' ? MUS_THEMES.prologue : MUS_THEMES.game);
+  // Тема по имени. Незнакомое имя — фоновая тема игры: так новая тема, добавленная рядом
+  // (например, «грустная» для тяжёлых заставок), сразу подхватывается без правок этого места.
+  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
   const stepDur = (th) => (60 / th.bpm) / (th.steps / th.beats);   // длительность восьмой, с
   const loopSec = (th) => th.bars * th.beats * 60 / th.bpm;        // длина полной петли, с
+  const totalSteps = (th) => th.bars * th.steps;                   // шагов в одном проходе темы
 
-  const mus = { on: false, gestured: false, mood: 'game', nodes: null, bus: null, gen: 0, timer: null, nextT: 0, pos: 0, duck: false };
+  const mus = { on: false, gestured: false, mood: 'game', nodes: null, bus: null, gen: 0, timer: null, nextT: 0, pos: 0, duck: false,
+    moment: 0, after: 'game', until: 0 };  // moment/after/until — разовая тема-момент (победа) и возврат к прежней
 
   // одна нота: свой осциллятор, мягкая атака, спад в ноль, и только потом stop() — щелчка на стыках нет
   function musNote(c, dest, o) {
@@ -475,11 +513,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // уровень подложки: всегда через плавный setTargetAtTime — щелчков не бывает
   function musLevel() {
     if (!mus.bus || !ctx || !mus.bus.gain || !mus.bus.gain.setTargetAtTime) return;
-    const want = (mus.on && musicWant()) ? theme(mus.mood).gain * (mus.duck ? MUS.DUCK : 1) : 0;
-    const tau = want ? (mus.duck ? 0.4 : MUS.FADE_IN) : MUS.FADE_OUT;
+    const th = theme(mus.mood);
+    // разовый момент (победа) под окном НЕ приглушается: окно открывается ровно в этот момент,
+    // а сама тема — не фон, а событие; фоновые темы ведут себя как раньше (0,45 от своей громкости)
+    const want = (mus.on && musicWant()) ? th.gain * (mus.duck && !th.once ? MUS.DUCK : 1) : 0;
+    const tau = want ? (mus.duck && !th.once ? 0.4 : MUS.FADE_IN) : MUS.FADE_OUT;
     try { mus.bus.gain.setTargetAtTime(want, ctx.currentTime, tau); } catch (e) {}
   }
-  // планировщик: держим LOOK секунд вперёд; отстали (вкладка подвисла) — не играем в прошлом, а начинаем заново
+  // планировщик: держим LOOK секунд вперёд; отстали (вкладка подвисла) — не играем в прошлом, а начинаем заново.
+  // Разовая тема (победа) не зацикливается: доиграв её до конца, возвращаем ту тему, что звучала до неё.
   function musSched() {
     if (!mus.on || !ctx || !mus.nodes) return;
     const now = ctx.currentTime;
@@ -487,8 +529,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let guard = 0;
     while (mus.nextT < now + MUS.LOOK && guard++ < 64) {
       const th = theme(mus.mood);
+      if (th.once && mus.pos >= totalSteps(th)) break;    // момент доигран — новых нот не ставим
       musStep(ctx, mus.nodes, th, mus.nextT, mus.pos);
       mus.pos++; mus.nextT += stepDur(th);
+    }
+    const cur = theme(mus.mood);
+    if (cur.once && mus.moment === mus.mood && mus.pos >= totalSteps(cur) && mus.until && now >= mus.until) {
+      // все ноты момента уже начались; последний аккорд ещё звучит и плавно уступает фоновой теме
+      musMood(mus.after && MUS_THEMES[mus.after] ? mus.after : 'game');
     }
   }
   function musStart() {
@@ -514,6 +562,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function musStop(mode) {
     if (!mus.on && !mus.nodes) return false;
     mus.gen++; mus.on = false;
+    mus.moment = 0; mus.until = 0;   // разовый момент не «висит» на паузе: после возврата играет обычная тема
+    if (theme(mus.mood).once) mus.mood = (mus.after && MUS_THEMES[mus.after]) ? mus.after : 'game';
     if (mus.timer) { clearInterval(mus.timer); mus.timer = null; }
     mus.nextT = 0; mus.pos = 0;
     const nd = mus.nodes, gen = mus.gen;
@@ -529,9 +579,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       Math.round(fade * 1000) + 120);
     return true;
   }
-  // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога
+  // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога,
+  // 'victory' — разовый момент победы (см. musMoment ниже). Любая другая тема из MUS_THEMES (например,
+  // «грустная», добавленная рядом) идёт обычным путём: так эта правка не мешает соседям.
   function musMood(m) {
-    if (m !== 'game' && m !== 'prologue') return mus.mood;
+    if (!MUS_THEMES[m]) return mus.mood;          // темы нет — ничего не трогаем
+    if (theme(m).once) return musMoment(m);       // разовый момент — своя логика с возвратом
+    if (mus.moment) { mus.moment = 0; mus.until = 0; }   // обычная тема отменяет незаконченный момент
     if (mus.mood === m) return mus.mood;
     mus.mood = m;
     const nd = mus.nodes;
@@ -544,6 +598,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return mus.mood;
   }
+  // Разовая тема-момент (победа): играет один раз от начала до конца, потом musSched возвращает
+  // ту тему, что звучала до неё. Тот же синтез, та же шина, тот же планировщик — отличается только
+  // конец (позиция не зацикливается) и то, что момент не приглушается окном. Если музыка выключена
+  // (общий выключатель или «Музыка»), момента тоже нет — тишина, как просил владелец.
+  function musMoment(name) {
+    const th = theme(name);
+    if (!th.once) return mus.mood;
+    if (mus.moment === name) return mus.mood;            // уже звучит — не начинаем заново
+    if (!musicWant()) return mus.mood;                   // музыки нет — и момента нет
+    if (mus.mood !== name && !theme(mus.mood).once) mus.after = mus.mood;   // куда вернуться
+    mus.mood = name; mus.moment = name; mus.until = 0;
+    const nd = mus.nodes;
+    if (nd && ctx) { try { nd.lp.frequency.cancelScheduledValues(ctx.currentTime); nd.lp.frequency.setTargetAtTime(th.cut, ctx.currentTime, 0.25); } catch (e) {} }
+    if (!mus.on) musStart();                             // музыка была остановлена — момент её включает
+    if (mus.on && ctx) {
+      mus.pos = 0; mus.nextT = 0;                        // момент всегда звучит с начала
+      if (mus.bus && mus.bus.gain) musLevel();
+      mus.until = ctx.currentTime + loopSec(th) + MUS.WIN_TAIL;
+      musSched();
+    }
+    return mus.mood;
+  }
   // открылось окно (пауза чтения) — приглушаем; закрылось — возвращаем. Музыка при этом не останавливается.
   function musDuck(v) { const d = !!v; if (mus.duck === d) return; mus.duck = d; if (mus.on) musLevel(); }
   function musVis() {
@@ -551,21 +627,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (document.hidden) musStop('fast');           // в скрытой вкладке — тишина и никакой работы
     else if (mus.gestured) { resume(); musStart(); }
   }
-  // справка о теме (для проверки музыки, qa/music8.js): темп, тональность, длина петли, тембр, регистр
+  // справка о теме (для проверки музыки, qa/music8.js и qa/music-win.js): темп, тональность, длина, тембр, регистр
   function musInfo(m) {
-    const th = theme(m === 'prologue' || m === 'game' ? m : mus.mood);
+    const th = theme(MUS_THEMES[m] ? m : mus.mood);
     let sum = 0, n = 0, lo = 127, hi = 0;
     th.mel.forEach((bar) => bar.forEach((v) => { sum += v[1]; n++; if (v[1] < lo) lo = v[1]; if (v[1] > hi) hi = v[1]; }));
     return { mood: th.mood, key: th.key, bpm: th.bpm, beats: th.beats, steps: th.steps, bars: th.bars,
-      loopSec: +loopSec(th).toFixed(1), cut: th.cut, gain: +th.gain.toFixed(4),
+      loopSec: +loopSec(th).toFixed(1), cut: th.cut, gain: +th.gain.toFixed(4), once: !!th.once,
       leadAvg: n ? +(sum / n).toFixed(1) : 0, leadLo: lo, leadHi: hi, leadNotes: n };
   }
-  // офлайн-рендер музыки (OfflineAudioContext) — только для проверки qa/music8.js: числа вместо «на слух».
+  // офлайн-рендер музыки (OfflineAudioContext) — только для проверки qa/music8.js и qa/music-win.js: числа вместо «на слух».
   // opts.stopAt (с) — та же плавная рампа выключения, что и в musStop: проверяем, что на стопе нет щелчка.
+  // Разовая тема (победа) не зацикливается: играем ровно её длину и гасим шину по концу момента —
+  // ровно так, как это делает живой планировщик, возвращая потом обычную музыку.
   function renderMusic(mood, seconds, srIn, opts) {
     const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
     if (!OAC) return null;
-    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    const m = MUS_THEMES[mood] ? mood : 'game', th = theme(m);
     const sr = srIn || 44100, sec = Math.max(4, Math.min(120, seconds || 44));
     const c = new OAC(1, Math.ceil(sec * sr), sr);
     const out = c.createGain();                 // как MASTER в игре — иначе замер нельзя сравнивать с живым звуком
@@ -574,17 +652,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!nd) return null;
     const end = sec - 0.3;
     const stopAt = opts && opts.stopAt > 0.5 && opts.stopAt < end - 0.5 ? opts.stopAt : 0;
+    const onceAt = th.once ? 0.12 + loopSec(th) + MUS.WIN_TAIL : 0;   // где кончается момент
+    const tail = th.once ? Math.min(end, onceAt) : end;
     let t = 0.12, pos = 0, guard = 0;
-    const planTo = (stopAt || end) - 0.2;
-    while (t < planTo && guard++ < 4000) { musStep(c, nd, th, t, pos); pos++; t += stepDur(th); }
+    const planTo = (stopAt || (th.once ? onceAt : end)) - 0.2;
+    while (t < planTo && guard++ < 4000) {
+      if (th.once && pos >= totalSteps(th)) break;
+      musStep(c, nd, th, t, pos); pos++; t += stepDur(th);
+    }
     nd.bus.gain.setValueAtTime(0, 0);                    // вход подложки — плавно
     nd.bus.gain.linearRampToValueAtTime(th.gain, 0.5);
     if (stopAt) {
       nd.bus.gain.setValueAtTime(th.gain, stopAt);
       nd.bus.gain.linearRampToValueAtTime(0, stopAt + 0.045);   // ровно как musStop('now')
     } else {
-      nd.bus.gain.setValueAtTime(th.gain, end - 0.4);           // выход подложки — плавно
-      nd.bus.gain.linearRampToValueAtTime(0, end);
+      nd.bus.gain.setValueAtTime(th.gain, tail - 0.4);          // выход подложки (или конца момента) — плавно
+      nd.bus.gain.linearRampToValueAtTime(0, tail);
     }
     return c.startRendering();
   }
@@ -720,6 +803,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return {
       ctxState: ctx ? ctx.state : null, sr: ctx ? ctx.sampleRate : 0, t: ctx ? +ctx.currentTime.toFixed(3) : 0,
       on: mus.on, mood: mus.mood, duck: mus.duck, pos: mus.pos,
+      moment: mus.moment, momentLeft: (mus.moment && mus.until && ctx) ? +Math.max(0, mus.until - ctx.currentTime).toFixed(2) : 0,
       ahead: ctx && mus.nextT ? +(mus.nextT - ctx.currentTime).toFixed(3) : 0,   // на сколько вперёд запланированы ноты
       bus: nd ? +nd.bus.gain.value.toFixed(5) : 0,
       cut: nd ? +nd.lp.frequency.value.toFixed(0) : 0,
@@ -778,7 +862,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${catRow('money', CAT_NAME.money, 'выручка, монетки 1-го числа')}
         ${catRow('notes', CAT_NAME.notes, 'открытие точки, вехи, достижения')}
         ${catRow('ui', CAT_NAME.ui, 'отклик на нажатия и окна')}
-        ${catRow('music', CAT_NAME.music, 'лёгкая 8-битная тема (игра и пролог — разные)')}
+        ${catRow('music', CAT_NAME.music, '8-битные темы: игра, пролог и победная — разные')}
       </div></div>`;
   }
 
@@ -828,7 +912,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     settingsHtml,
     tap,
     catOn, catVal, setCat, toggleCat, CATS, CAT_NAME,
-    // музыка: music('game') / music('prologue') — настроение (без аргумента — узнать текущее)
+    // музыка: music('game') / music('prologue') / music('victory') — настроение (без аргумента — узнать текущее)
     music: musMood,
     musicInfo: musInfo,       // справка о теме: темп, тональность, длина петли, тембр (проверка qa/music8.js)
     renderMusic,              // офлайн-рендер музыки в OfflineAudioContext — числа вместо «на слух»

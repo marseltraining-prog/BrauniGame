@@ -16,6 +16,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
      В скрытой вкладке и при выключенном звуке play() сам молчит. */
   function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
   let achSeen = false; // «Достижения» первый раз за сессию — искорка, дальше тихий щелчок: не надоедать
+  let winHeard = false; // итоги победившей партии — победная тема один раз за сессию: экран открывают и повторно
 
   /* =================== СЛОТЫ СОХРАНЕНИЙ ===================
      Слот 1 — прежний ключ 'bk-ufa-save-v1' (старое сохранение игрока автоматически становится слотом 1),
@@ -294,7 +295,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openSummary() {
     const S = APP().state; if (!S || !A()) return;
     A().ensure(S);
-    snd('ribbon'); // итоги игры: мягкая «ленточка» (при банкротстве «bad» уже звучал — не дублируем)
+    // Итоги победившей партии открывает победная тема-момент — один раз за сессию; у обычной партии
+    // и при банкротстве прежняя «ленточка» (на банкротстве «bad» уже сыграл из app.js).
+    if (S.won && !winHeard) { winHeard = true; if (BK.Sound) BK.Sound.music('victory'); } else snd('ribbon');
     APP().openModal(summaryHtml(S), { closable: !S.lost });
     $('#modal .modal').classList.add('wide');
     $('#sumNew').addEventListener('click', () => APP().toStart());
