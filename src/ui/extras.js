@@ -294,6 +294,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const got = A() ? A().count(S) : 0, n = A() ? A().LIST.length : 0;
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
       ${BK.Sound ? BK.Sound.settingsHtml(S) : ''}
+      ${BK.StratUI ? BK.StratUI.settingsHtml(S) : ''}
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 

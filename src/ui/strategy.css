@@ -1,2 +1,126 @@
-/* Стратегии: карточки выбора на старте и блок в «Сводке» (наполняет помощник). */
-.stratpick .spaths { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 6px; }
+/* =====================================================================
+   Стратегии: карточки «Как играем?» на старте, блок в «Сводке», окно «Как вы играете»,
+   строка в «Меню игры», тост (разметка — src/ui/strategy-ui.js).
+   Только токены темы из styles.css; светлая и тёмная тема — один набор.
+   Плюс и плата у всех путей — одной строкой (.st-pl), карточки на телефоне — в одну колонку.
+   Проверять глазами: 1440 / 390 / 360, светлая и тёмная тема.
+   ===================================================================== */
+
+/* ---------- плюс / плата одной строкой ---------- */
+.st-pl { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
+.st-pl .st-p, .st-pl .st-mm { display: inline-flex; align-items: baseline; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.st-pl svg { width: 12px; height: 12px; flex: none; transform: translateY(1px); }
+.st-pl .st-p { color: var(--good-t); }
+.st-pl .st-mm { color: var(--warn-t); }
+
+/* ---------- стартовый экран: карточки путей ---------- */
+.stratpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.stratpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.spaths { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.spath { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) 16px; gap: 2px 9px; align-items: center;
+  padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); cursor: pointer; min-width: 0; text-align: left; }
+.spath input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; } /* невидимая радиокнопка на всю карточку */
+/* колонки расставлены явно: у значков и галочки свой ряд на две строки, иначе авто-раскладка уводит текст в узкую колонку галочки */
+.spath .sp-i { grid-column: 1; grid-row: 1 / span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  font-size: 17px; line-height: 1; background: var(--surface-2); color: var(--ink-2); }
+.spath .sp-b { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.spath .sp-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.spath .sp-m { font-size: 11.5px; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.spath .sp-c { grid-column: 3; grid-row: 1 / span 2; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+.spath:hover { border-color: var(--ink-3); }
+.spath:has(input:focus-visible) { outline: 2px solid var(--crust); outline-offset: 2px; }
+.spath:has(input:checked) { border: 2px solid var(--crust); padding: 8px 9px; background: var(--crust-soft); }
+.spath:has(input:checked) .sp-i { background: var(--surface); color: var(--crust-t); box-shadow: inset 0 0 0 2px var(--crust); }
+.spath:has(input:checked) .sp-c { border-color: var(--crust); background: var(--crust); box-shadow: inset 0 0 0 3px var(--crust-soft); }
+.spath:has(input:checked) .sp-m { color: var(--ink-2); }
+.spath[disabled] { opacity: .6; cursor: not-allowed; }
+.spath[disabled] input { cursor: not-allowed; }
+
+/* пояснение выбранного пути под карточками: «плюс / плата» остаются на виду */
+.spdesc { margin: 8px 0 4px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.spdesc.on { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; background: var(--surface); }
+.spdesc .spd-n { font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.spdesc .spd-t { font-size: 12.5px; }
+
+/* ---------- блок «Стратегия» в «Сводке» (как «История» и «Инвесторы») ---------- */
+.st-h { display: inline-flex; align-items: center; gap: 6px; }
+.st-h svg { width: 14px; height: 14px; color: var(--crust); }
+.stratb .st-card, .stratb .st-hint { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
+  padding: 9px 10px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; background: var(--surface); }
+.stratb .st-card.auto { border-left-color: var(--river); }
+.stratb .st-hint { border-left-color: var(--line-2); border-style: dashed; align-items: start; }
+.st-ic, .st-qi { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; line-height: 1;
+  background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.st-card.auto .st-ic { background: var(--river-soft); color: var(--river-t); }
+.st-qi { background: var(--surface-2); color: var(--ink-3); font-family: var(--f-display); font-weight: 600; }
+.st-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.st-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.st-m { font-size: 12px; color: var(--ink-3); }
+.st-tag { font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.st-card:not(.auto) .st-tag { background: var(--crust-soft); color: var(--crust-t); }
+.st-card.auto .st-tag { background: var(--river-soft); color: var(--river-t); }
+.stratb .st-pl { margin-top: 2px; }
+.st-note { margin: 0; font-size: 12px; color: var(--ink-2); background: var(--surface-2); border-radius: 6px; padding: 6px 8px; }
+.st-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-acts .btn { flex: 1 1 auto; min-height: 34px; }        /* палец должен попадать: не меньше 34 px */
+
+/* ---------- окно «Как вы играете» ---------- */
+.strat-modal { max-width: 620px; }
+.stratm-h { padding-bottom: 8px; }
+.spaths.big { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 2px; }
+.spaths.big .spath { grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 10px 11px; }
+.spaths.big .spath .sp-i { grid-column: 1; grid-row: 1 / span 4; width: 32px; height: 32px; font-size: 18px; align-self: start; }
+.spaths.big .spath .sp-b { grid-column: 2; grid-row: 1; }
+.spaths.big .spath .sp-p, .spaths.big .spath .sp-mm { grid-column: 2; display: inline-flex; align-items: flex-start; gap: 6px;
+  font-size: 12.5px; line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
+.spaths.big .spath .sp-p { grid-row: 2; margin-top: 4px; color: var(--good-t); }
+.spaths.big .spath .sp-mm { grid-row: 3; color: var(--warn-t); }
+.spaths.big .spath .sp-p svg, .spaths.big .spath .sp-mm svg { width: 12px; height: 12px; flex: none; margin-top: 3px; }
+.spaths.big .spath .sp-go { grid-column: 2; grid-row: 4; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.spaths.big .spath.on { box-shadow: inset 0 0 0 1px var(--crust); }
+.spaths.big .spath.on .sp-go { color: var(--crust-t); }
+.spaths.big .spath[disabled] { cursor: not-allowed; }
+.sp-tag.yours { background: var(--surface); color: var(--crust-t); box-shadow: inset 0 0 0 1px var(--crust); font-weight: 700; }
+
+.strat-m .st-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.st-now, .st-mets { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 7px 12px; }
+.st-now span, .st-mets span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-now small, .st-mets small { font-size: 11px; color: var(--ink-3); }
+.st-now b, .st-mets b { font-size: 13.5px; overflow-wrap: anywhere; }
+.st-mets { margin: 0; }
+.st-mets b { font-family: var(--f-mono); }
+.st-reset { margin-top: 2px; }
+
+/* ---------- строка в «Меню игры» ---------- */
+.strat-set { flex-wrap: wrap; gap: 8px; }
+.strat-set .btn { white-space: normal; text-align: left; }
+.strat-set small { display: block; margin-top: 2px; }
+
+/* ---------- тост «Сложилась стратегия» (как sttoast / invtoast) ---------- */
+.toast.strtoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.strtoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.strtoast .mi svg { width: 18px; height: 18px; }
+.strtoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.strtoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.strtoast b { margin: 0; }
+.strtoast .md { color: var(--ink-2); font-size: 12px; }
+
+/* ---------- телефон 390 / 360: одна колонка, кнопки не меньше 34 px, текст не обрезается ---------- */
+@media (max-width: 560px) {
+  .spaths { grid-template-columns: minmax(0, 1fr); }        /* карточки в одну колонку и не разъезжаются */
+  .spaths.big { grid-template-columns: minmax(0, 1fr); }
+  .spath { padding: 10px; }
+  .spath:has(input:checked) { padding: 9px; }
+  .stratb .st-acts .btn, .strat-m .st-reset, .strat-set .btn { min-height: 34px; }
+  .st-now, .st-mets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stratb .st-card, .stratb .st-hint { gap: 8px; padding: 9px; }
+  .st-ic, .st-qi { width: 30px; height: 30px; font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .spath .sp-i { width: 26px; height: 26px; font-size: 15px; }
+  .spath .sp-n { font-size: 13.5px; }
+  .spath .sp-m { font-size: 11px; }
+  .stratb .st-n { font-size: 13.5px; }
+  .stratb .st-pl { font-size: 12px; gap: 3px 9px; }
+  .strat-m .st-now, .strat-m .st-mets { grid-template-columns: minmax(0, 1fr); }
+}
