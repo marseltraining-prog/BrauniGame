@@ -100,6 +100,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (s.mood != null) for (const st2 of (S.stores || [])) { st2.mood = s.mood; }   // уставшая команда
       if (s.rating != null) for (const st2 of (S.stores || [])) { st2.rating = s.rating; }
     }
+    if (typeof s.setup === 'function') {
+      // история может начаться не с нуля: своя сеть, цех, люди (например, «Спаси сеть»)
+      try { const r = s.setup(S); out.push(r && r.stores ? `сеть: ${r.stores}` : 'сеть'); } catch (e) {}
+    }
     if (s.crisis) { S.ev = S.ev || {}; S.ev.nextCrisis = (S.day || 0) + (s.crisisIn || 60); S.ev.forcedCrisis = s.crisis; out.push('кризис'); }
     if (s.trafficK) { S.mods.push({ t: 'traffic', m: s.trafficK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('спрос'); }
     if (s.foodcostK) { S.mods.push({ t: 'foodcost', m: s.foodcostK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('мука'); }
