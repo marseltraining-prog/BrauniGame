@@ -79,6 +79,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function start(S) {
     const P = S.prologue = create((S.seed || 1) ^ 0x6b2a91);
+    // Местный слой (src/data/story-cast.js): город партии для текстов пролога. В Уфе поля нет вовсе —
+    // партия и сохранение прежние, а swap() для Уфы возвращает строку как есть.
+    if (S.startCity && S.startCity !== 'ufa') P.city = S.startCity;
     P.cards.push({ id: 'p01', v: {} });
     schedule(P);
     feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
@@ -86,6 +89,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     syncStory(S);
     return P;
   }
+  /* ---------- местный слой: «Калач», «Семь рек», Рашид, улица Пушкина — по городу партии ----------
+     Одна точка подстановки для всех текстов пролога (карточки, лента, крючок, перенос в сеть):
+     BK.STORY_CAST.swap заменяет уфимские имена, названия и топонимы на местные. Для Уфы
+     возвращается строка как есть, поэтому тексты и прогоны ботов в Уфе побайтно прежние. */
+  function castState(P) { return (P && P.city) ? { startCity: P.city } : null; }
+  function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
+  const subP = (P, t) => sub(castState(P), t);
   // --- живой сюжет пролога (src/data/prolog-v2.js): 8 историй, 16 дилемм, нити, правила показателей ---
   // дилеммы зовут наружу функции с «2» (feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2) —
   // они определены ниже и экспортированы, потому что сборка грузит data/prolog-v2.js раньше prologue.js
@@ -111,7 +121,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Иначе звук пришлось бы определять по русскому тексту записи — это хрупко.
   // Вариант может задать тон сам (fx.k, feed.k), тогда он важнее общего правила.
   const FEED_K = { good: 'pos', bad: 'neg' };
-  function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
+  function feed(P, t, k) { P.feed.push({ m: P.m, t: subP(P, t), k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
   function fx(P, kind, v, where) { P.fx.push({ kind, v: Math.round(v), where: where || '' }); if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30); }
 
   /* ---------------- хуки живого сюжета: функции *2 (src/data/prolog-v2.js) ----------------
@@ -129,7 +139,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function feed2(P, t, k) { // запись в ленту пролога с тем же тоном, что у bridge()
     if (!P || !P.feed || typeof P.feed.push !== 'function') return;
     const kk = k || 'info';
-    P.feed.push({ m: P.m, t: t == null ? '' : String(t), k: kk, tone: kk === 'good' ? 'pos' : kk === 'bad' ? 'neg' : kk === 'hero' ? 'hero' : '' });
+    P.feed.push({ m: P.m, t: subP(P, t == null ? '' : String(t)), k: kk, tone: kk === 'good' ? 'pos' : kk === 'bad' ? 'neg' : kk === 'hero' ? 'hero' : '' });
     if (P.feed.length > 40) P.feed.shift();
   }
   function fx2(P, kind, v, where) { // значок в «Что изменилось»
@@ -654,7 +664,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     const t0 = typeof d.text === 'function' ? d.text(P, q.v) : d.text;
-    return { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: HEROES[d.who] || HEROES.life, title: V2('title', P, q.id, d.title(P, q.v)) || d.title(P, q.v), text: V2('storyText', P, q.id) || t0, choices: ch };
+    // местный слой: подписи и роли героев, заголовок, текст и варианты — по городу партии
+    const h0 = HEROES[d.who] || HEROES.life;
+    const cv = { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: localHero(S, d.who, h0), title: V2('title', P, q.id, d.title(P, q.v)) || d.title(P, q.v), text: V2('storyText', P, q.id) || t0, choices: ch };
+    cv.title = sub(S, cv.title); cv.text = sub(S, cv.text);
+    for (const c of cv.choices) { c.label = sub(S, c.label); c.desc = sub(S, c.desc); if (typeof c.why === 'string') c.why = sub(S, c.why); }
+    return cv;
+  }
+  // герой по городу партии: имена, роли и инициал на аватаре берутся из BK.STORY_CAST (для Уфы — как было)
+  function localHero(S, who, h0) {
+    const C = BK.STORY_CAST;
+    const role = C && C.HERO_ROLE ? C.HERO_ROLE[who] : null;
+    if (!C || !role || C.cityOf(S) === 'ufa') return h0;
+    const p = C.personOf(C.cityOf(S), role); if (!p) return h0;
+    const out = Object.assign({}, h0, { name: p.name });
+    out.role = p.role || h0.role;
+    out.ini = String(p.name).trim().charAt(0).toUpperCase() || h0.ini;
+    return out;
   }
   // определение дилеммы из живого сюжета (тот же формат, что CARDS ядра — интерфейс не меняется)
   function DIL(id) {
@@ -954,7 +980,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     feed(P, 'Своя точка! Пролог окончен.', 'good');
   }
   // крючок пролога — СМС ночью с неизвестного номера (docs/story.md, после П8)
-  function hookSms(P) { return P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'; }
+  function hookSms(P) { return subP(P, P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'); }
   const MENTOR = { friend: 'Рашид — друг и советчик', cold: 'С Рашидом — честно и холодно', enemy: 'Рашид — обиженный соперник', partner: 'Рашид — партнёр, точка №1 под вывеской «Калач»', intern: 'Стажировка у Олега — «Школа Двора»' };
   const PERKS = { machine: 'Старая кофемашина Рашида: оборудование первой точки на 8 % дешевле', dvorSchool: '«Школа Двора»: себестоимость −3 % навсегда', regulars: 'Постоянные гости ушли за вами: +гости первой точки на полгода' };
   function trait(P) {
@@ -977,7 +1003,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const s of rank) out.skills[k.SKILL_MAP[s]] = 1;
     const over = Math.max(0, savings(P) - C().GOAL);
     out.bonus = Math.round(Math.min(over * k.BONUS_MULT, cash * k.BONUS_MAX) / 1e4) * 1e4;
-    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: 'Гульнара Сафина', lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
+    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: sub(S, 'Гульнара Сафина'), lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
     if (P.sf.mentor === 'friend') out.perks.push('machine');
     if (P.sf.mentor === 'intern') out.perks.push('dvorSchool');
     if (P.sf.mentor === 'enemy' && P.sf.regulars > 0) { out.perks.push('regulars'); out.regulars = P.sf.regulars; }
@@ -1003,8 +1029,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (skn.length) parts.push(`навыки: ${skn.join(', ')} 1`);
       if (cr.baker) parts.push(`${cr.baker.name} придёт в первую точку (уровень ${cr.baker.lvl})`);
       if (cr.trait) parts.push(`черта «${TRAITS[cr.trait].name}»`);
-      for (const x of cr.perks) parts.push(PERKS[x].split(':')[0]);
-      I.log(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`, 'good');
+      for (const x of cr.perks) parts.push(sub(S, PERKS[x].split(':')[0]));
+      I.log(S, sub(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`), 'good');
     }
     return cr;
   }
@@ -1031,12 +1057,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (cr.baker && !cr.bakerDone && st.incoming && st.incoming.length) { // Гуля из «Калача» — первый сотрудник первой точки
         const e = st.incoming[0].p; e.name = cr.baker.name; e.lvl = cr.baker.lvl; e.mood = 78; e.trait = Math.max(e.trait, 4); e.patience = 10; e.fromPrologue = 1;
         cr.bakerDone = st.id;
-        if (Eng._int) Eng._int.log(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`, 'good');
+        if (Eng._int) Eng._int.log(S, sub(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`), 'good');
       }
       if (!cr.store1) { // первая точка: кофемашина Рашида, постоянные гости
         cr.store1 = st.id;
         const pl = (S.macro && S.macro.priceLevel) || 1;
-        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`, 'good'); }
+        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, sub(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`), 'good'); }
         if (cr.perks.includes('regulars')) S.mods.push({ t: 'traffic', m: 1 + k.REGULARS_TRAFFIC * Math.min(1, (cr.regulars || 0) / 3), until: (st.openDay || S.day) + 180, scope: 'store', target: st.id, src: 'prologue' });
       }
       if (cr.trait === 'thrift') { // Бережливый: 3 % от отделки и оборудования возвращаются
@@ -1056,6 +1082,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
   wrap();
+  // Местный слой «кто есть кто» (src/data/story-cast.js) доустанавливает свои обёртки движка:
+  // город партии для имени сети-соперника (CFG.RIVAL_NAME → S.rival.name) и местные тексты событий.
+  // prologue.js грузится после engine.js и corp.js и в браузере, и в Node — это самая ранняя такая точка.
+  if (BK.STORY_CAST && BK.STORY_CAST.install) { try { BK.STORY_CAST.install(); } catch (e) { /* игра важнее */ } }
 
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,

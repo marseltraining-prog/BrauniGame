@@ -60,7 +60,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const running = (S) => !!(S && S.stage1 && (S.stage1.status === 'run' || S.stage1.status === 'ready'));
   function store(S) { const T = T0(S); return T && T.storeId ? S.stores.find((x) => x.id === T.storeId) || null : null; }
   function hero(S) { const st = store(S); return st ? st.staff.find((e) => e.hero) || null : null; }
-  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
+  /* ---------- местный слой (src/data/story-cast.js): «Калач», «Семь рек», Рашид, ул. Пушкина ----------
+     Тексты стадии 1 идут через эти три точки (лента, СМС, журнал) — и читаются местно, если партия
+     начата не в Уфе. Для Уфы swap() возвращает строку как есть: партия побайтно прежняя. */
+  function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
+  function subT(T, t) { return sub({ startCity: (T && T.city) || null }, t); }
+  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t: subT(T, t), k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
   // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
@@ -68,8 +73,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const td = st.today || {};
     return [S.day, T.status, T.hp | 0, T.aware.toFixed(3), T.reg | 0, Math.round(td.checks || 0), Math.round(td.rev || 0), td.closed ? 1 : 0, st.status, st.staff.length, st.incoming.length, T.months.length, st.repair, T.hired, T.days.length, st.rating ? +st.rating.toFixed(2) : ''].join('|');
   }
-  function fx(T, kind, v, extra) { T.fx.push(Object.assign({ kind, v }, extra || {})); if (T.fx.length > 30) T.fx.splice(0, T.fx.length - 30); }
-  function log(S, text, kind) { if (I()) I().log(S, text, kind || 'info'); }
+  function fx(T, kind, v, extra) {
+    let ex = extra || {};
+    if (kind === 'sms' && ex) ex = Object.assign({}, ex, { who: subT(T, ex.who), text: subT(T, ex.text) }); // СМС из «Калача» — по городу партии
+    T.fx.push(Object.assign({ kind, v }, ex)); if (T.fx.length > 30) T.fx.splice(0, T.fx.length - 30);
+  }
+  function log(S, text, kind) { if (I()) I().log(S, sub(S, text), kind || 'info'); }
   function setMod(S, key, t, m, scope, target, until) { // один модификатор стадии 1 по ключу (обновляется, не копится)
     let x = S.mods.find((z) => z.s1 === key);
     if (!x) { x = { t, m, until: until || 1e9, scope: scope || 'global', target: target || null, src: 's1', s1: key }; S.mods.push(x); }
@@ -126,6 +135,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       days: [], ms: {}, cards: [], seen: {}, flags: {}, evNext: 0, feed: [], fx: [], months: [], streak: 0, loanMax: 0, lastScene: -99, lastDay: S.day,
       keep: { ev: Math.max(30, S.ev.next - S.day), crisis: Math.max(365, S.ev.nextCrisis - S.day) }, next: null, hired: 0, share: 0,
     };
+    if (S.startCity && S.startCity !== 'ufa') T.city = S.startCity; // местный слой: город партии (в Уфе поля нет)
     // деньги: накопления пролога (+ кредит, если открывались «950 тыс. + банк»); партнёрство с Рашидом — его 40 %
     const sav = P ? BK.Prologue.savings(P) : BK.CFG.PROLOGUE.GOAL;
     let cash = sav;
@@ -201,7 +211,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (add) {
       if (n >= c.MENU_MAX) return `На островке помещается ${c.MENU_MAX} позиций`;
       const p = E().byId(BK.PRODUCTS, id);
-      if (T0(S).flags.pact && p && (p.cat === 'bread' || p.cat === 'pies')) return 'Договор с Олегом: хлеб и пироги — у «Двора»';
+      if (T0(S).flags.pact && p && (p.cat === 'bread' || p.cat === 'pies')) return sub(S, 'Договор с Олегом: хлеб и пироги — у «Двора»');
       return null;
     }
     if (n <= c.MENU_MIN) return `Нужно хотя бы ${c.MENU_MIN} позиций`;
@@ -222,9 +232,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function hireWhy(S) { const st = store(S); if (!st) return 'Нет точки'; if (st.staff.length + st.incoming.length + (T0(S).hero ? 1 : 0) >= BK.CFG.SIZES.small.staffMax) return `За стойкой островка помещается ${BK.CFG.SIZES.small.staffMax} человека`; return null; }
   function inviteGulya(S) {
     const T = T0(S), w = hireWhy(S); if (w) return { ok: false, msg: w };
-    if (!gulyaAvail(S)) return { ok: false, msg: 'Гуля осталась в «Калаче»' };
-    addPerson(S, 'Гульнара Сафина', gulyaLvl(S), 3, { mood: 80, trait: 6, patience: 12, fromPrologue: 1, gulya: 1 });
-    T.flags.gulyaIn = 1; hired(S, 'Гуля');
+    if (!gulyaAvail(S)) return { ok: false, msg: sub(S, 'Гуля осталась в «Калаче»') };
+    addPerson(S, sub(S, 'Гульнара Сафина'), gulyaLvl(S), 3, { mood: 80, trait: 6, patience: 12, fromPrologue: 1, gulya: 1 });
+    T.flags.gulyaIn = 1; hired(S, sub(S, 'Гуля'));
     rel(S, { gulya: 5 });
     return { ok: true };
   }
@@ -242,8 +252,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function loanRoom(S) { const T = T0(S); return Math.max(0, T.loanMax - S.loan); }
   function loanWhy(S) {
     const T = T0(S);
-    if (storyF(S).noBank && T.openDay != null && S.day - T.openDay < C().LOAN_WAIT_NOBANK) return 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы';
-    if (storyF(S).noBank && T.openDay == null) return 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы';
+    if (storyF(S).noBank && T.openDay != null && S.day - T.openDay < C().LOAN_WAIT_NOBANK) return sub(S, 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы');
+    if (storyF(S).noBank && T.openDay == null) return sub(S, 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы');
     if (loanRoom(S) <= 0) return 'Банк больше не даёт: лимит для одной кофейни исчерпан';
     return null;
   }
@@ -577,7 +587,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const who = typeof d.who === 'function' ? d.who(S) : d.who;
     const ch = d.choices(S, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || S.cash >= c.cost), why: c.dis || (c.cost && S.cash < c.cost ? 'Не хватает денег' : '') }));
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
-    return { id: q.id, v: q.v, kind: d.kind, who, hero: HEROES[who] || HEROES.life, title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
+    // местный слой (src/data/story-cast.js): подписи героев, заголовки, тексты и варианты — по городу партии
+    const cv = { id: q.id, v: q.v, kind: d.kind, who, hero: localHero(S, who, HEROES[who] || HEROES.life), title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
+    cv.title = sub(S, cv.title); cv.text = sub(S, cv.text);
+    for (const c of cv.choices) { c.label = sub(S, c.label); c.desc = sub(S, c.desc); if (typeof c.why === 'string') c.why = sub(S, c.why); }
+    return cv;
+  }
+  // герой по городу партии: имя, роль и инициал аватара — из BK.STORY_CAST (для Уфы — как было)
+  function localHero(S, who, h0) {
+    const C = BK.STORY_CAST;
+    const role = C && C.HERO_ROLE ? C.HERO_ROLE[who] : null;
+    if (!C || !role || C.cityOf(S) === 'ufa') return h0;
+    const p = C.personOf(C.cityOf(S), role); if (!p) return h0;
+    const out = Object.assign({}, h0, { name: p.name });
+    out.role = p.role || h0.role;
+    out.ini = String(p.name).trim().charAt(0).toUpperCase() || h0.ini;
+    return out;
   }
   function choose(S, i) {
     const T = T0(S), cv = card(S); if (!cv) return { ok: false };
@@ -648,7 +673,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (T.flags.kalachMine) { // сцена 1.7 «Продайте мне»: «Калач» — точка №2 (особое помещение)
       const d = E().byId(BK.DISTRICTS, 'center');
       const o = In.makeStoreOffer(S, { district: 'center', size: 'standard' });
-      Object.assign(o, { address: 'ул. Пушкина, 14 · «Калач»', special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
+      Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
       S.offers.push(o);
     }
     if (S.tutorial) S.tutorial.on = !!T.flags.tutOn;
@@ -693,7 +718,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     w('rentStore', (o) => function (S, offerId) {
       const off = S && S.offers ? S.offers.find((x) => x.id === offerId) : null, k = off && off.kalach;
       const r = o.apply(this, arguments);
-      if (k && r && r.ok && r.store) { r.store.rating = 4.5; r.store.kalach = 1; S.mods.push({ t: 'traffic', m: 1.15, until: 1e9, scope: 'store', target: r.store.id, src: 'kalach' }); if (I()) I().log(S, '«Калач» Рашида — теперь точка сети. Старые гости остались.', 'good'); }
+      if (k && r && r.ok && r.store) { r.store.rating = 4.5; r.store.kalach = 1; S.mods.push({ t: 'traffic', m: 1.15, until: 1e9, scope: 'store', target: r.store.id, src: 'kalach' }); if (I()) I().log(S, sub(S, '«Калач» Рашида — теперь точка сети. Старые гости остались.'), 'good'); }
       return r;
     });
   }

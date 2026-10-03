@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 17:59 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 18:00 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3884,6 +3884,32 @@ BK.CFG.GROWTH = {
   CAT_TEAM: 3e6, CAT_TEAM_MONTH: 0.45e6, CAT_TEAM_K: 1.3, // своя команда кейтеринга: заказов и объёма ×1,3
 };
 
+/* =====================================================================
+   Имя сети-соперника — по городу партии (местный слой «кто есть кто»,
+   src/data/story-cast.js): в Уфе «Хлебный двор», в Москве «Столичный хлеб»,
+   в Казани «Тандыр». Значение — свойство-геттер, поэтому и движок
+   (S.rival.name в newGame), и интерфейс (вкладка «Рынок», второй акт) видят
+   одно и то же имя. Для Уфы возвращается ровно прежняя строка: её партии,
+   тексты и прогоны ботов побайтно прежние. BK_CFG='{"RIVAL_NAME":"…"}'
+   по-прежнему переопределяет константу (через set).
+   ===================================================================== */
+(function () {
+  const DEF = BK.CFG.RIVAL_NAME;
+  let forced = null;
+  try {
+    Object.defineProperty(BK.CFG, 'RIVAL_NAME', {
+      configurable: true, enumerable: true,
+      get() {
+        if (forced != null) return forced;
+        const C = BK.STORY_CAST;
+        return (C && C.rivalNow) ? C.rivalNow() : DEF;
+      },
+      set(v) { forced = v; },
+    });
+  } catch (e) { /* старый браузер — остаётся прежняя строка */ }
+  BK.CFG.RIVAL_NAME_DEFAULT = DEF;
+})();
+
 /* data/story.js */
 /* =====================================================================
    СЮЖЕТ: данные (BK.STORY). Тексты, герои, сцены, перки, концовки.
@@ -4494,25 +4520,40 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s0 = pickStreet(st), s1 = bareStreet(st[1] || st[0]);
     const main = st.find((s) => /пр\.|проспект|шоссе/i.test(s)) || st[0];
     const sleep = (ds.find((d) => d[1] === 'sleep') || ds[ds.length - 1] || ['Центр'])[0];
-    const f = forms(sleep, 'inan');
+    // второй район — только для текстов, где Уфа названа двумя районами сразу («от Черниковки до Дёмы»)
+    const far = (ds.find((d) => d[1] === 'far' && d[0] !== sleep) || ds.find((d) => d[0] !== sleep) || [sleep])[0];
+    const f = forms(sleep, 'inan'), f2 = forms(far, 'inan');
+    const mainNom = bareStreet(main);
     return { street: s0, streetIn: /(ая|яя)$/.test(s0) ? wordOne(s0, 'p', 'inan-f') : s0, route: s0 + ' — ' + s1,
-      mainIn: prepStreet(main), districtNom: sleep, districtGen: f.g, districtAcc: f.a, districtIns: f.i, districtPre: f.p };
+      mainIn: prepStreet(main), mainNom: mainNom,
+      districtNom: sleep, districtGen: f.g, districtAcc: f.a, districtIns: f.i, districtPre: f.p,
+      district2Nom: far, district2Gen: f2.g, district2Acc: f2.a, district2Pre: f2.p };
   }
   const TOPO_KEYS = (t) => [
     ['Пушкина — Ленина', t.route],
     ['улица Пушкина', 'улица ' + t.street],
     ['На Пушкина', 'На ' + t.streetIn],
     ['на Пушкина', 'на ' + t.streetIn],
+    ['проспект Октября', 'проспект ' + t.mainNom],
+    ['Проспект Октября', 'Проспект ' + t.mainNom],
     ['проспекте Октября', t.mainIn],
+    ['Проспекте Октября', t.mainIn],
+    ['от Черниковки до Дёмы', 'от ' + t.districtGen + ' до ' + (t.district2Gen || t.districtGen)],
     ['Черниковки', t.districtGen],
     ['Черниковке', t.districtPre],
     ['Черниковку', t.districtAcc || t.districtNom],
     ['Черниковкой', t.districtIns || t.districtNom],
     ['Черниковка', t.districtNom],
+    ['Дёмы', t.district2Gen || t.districtGen],
+    ['Дёме', t.district2Pre || t.districtPre],
+    ['Дёму', t.district2Acc || t.districtNom],
+    ['Дёма', t.district2Nom || t.districtNom],
     ['из Сипайлово', 'из ' + t.districtGen],
     ['Сипайлова', t.districtGen],
     ['Сипайлове', t.districtPre],
     ['Сипайлово', t.districtNom],
+    ['Инорс', t.districtNom],
+    ['Шакша', t.district2Nom || t.districtNom],
     ['Пушкина', t.street],
   ];
 
@@ -4553,6 +4594,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return 'ufa';
   }
   function resolve(S) { return record(cityOf(S)); }
+
+  /* ---------- город партии, когда состояния под рукой нет (пролог, стадия 1, стартовый экран) ----------
+     homeId ставит install() на входе в новую игру (BK.Engine.newGame) и при загрузке сохранения
+     (BK.Corp.applyGlobals): так во втором акте, где активный город меняется, «свой» город остаётся
+     прежним. Если игры ещё нет вовсе (стартовый экран) — смотрим BK.CITY (там, как и раньше, Уфа). */
+  let homeId = null;
+  function noteHome(id) {
+    const by = CITY_DEF();
+    const c = id && by[id] ? id : null;
+    if (c) homeId = c === 'ufa' ? null : c;
+  }
+  function cityIdNow() {
+    if (homeId && CITY_DEF()[homeId]) return homeId;
+    const c = (BK.CITY && BK.CITY.id) || null;
+    const by = CITY_DEF();
+    if (c && by[c] && (c === 'ufa' || MANUAL[c] || REGION[c])) return c;
+    return 'ufa';
+  }
+  const chainName = (id) => record(id || 'ufa').chains.rivalChain;
+  const chainShortName = (id) => { const r = record(id || 'ufa').chains; return r.chainShort || r.rivalChain; };
+  const bankName = (id) => record(id || 'ufa').chains.bank;
+  const shopName = (id) => record(id || 'ufa').chains.shop;
+  const personOf = (id, role) => (record(id || 'ufa').people[role] || null);
+  // Имя сети-соперника для интерфейса вне сюжета (вкладка «Рынок», CFG.RIVAL_NAME, второй акт)
+  const rivalNow = () => chainName(cityIdNow());
+
 
   // Активный город сцены (как subCity в src/ui/story-ui.js): чужой, если сеть уже в других городах.
   function sceneCity(S) {
@@ -4632,26 +4699,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
       put(lastWord(a) + ' ' + a.short, lastWord(b) + ' ' + b.short);
     }
     for (const k of ['rivalChain', 'chainShort', 'bank', 'shop']) both(chainForms(src.chains[k] || ''), chainForms(dst.chains[k] || ''));
-    both(CITY_FORMS.ufa, CITY_FORMS[id] || CITY_FORMS.ufa);
+    // Формы города: у Уфы дательный и предложный совпадают («Уфе»), поэтому для местных названий
+    // берём предложный — он и стоит в текстах («в Уфе», «районах Уфы»); дательный — только с «к».
+    const cf = CITY_FORMS[id] || CITY_FORMS.ufa;
+    put(CITY_FORMS.ufa.n, cf.n); put(CITY_FORMS.ufa.g, cf.g); put(CITY_FORMS.ufa.a, cf.a);
+    put(CITY_FORMS.ufa.i, cf.i); put(CITY_FORMS.ufa.p, cf.p);
+    put('к Уфе', 'к ' + cf.d); put('К Уфе', 'К ' + cf.d);
     if (dst.topo) for (const [a, b] of TOPO_KEYS(dst.topo)) put(a, b);
     out.sort((x, y) => y[0].length - x[0].length || (x[0] < y[0] ? -1 : 1));
     const map = Object.create(null), keys = [];
     for (const [a, b] of out) if (!(a in map) && !/[[\](){}*+?.^$|\\]/.test(a)) { map[a] = b; keys.push(a); }
     if (!keys.length) return null;
+    /* Слова местных имён, названий и топонимов («значения» замены). Текст проходит слой не всегда
+       один раз: пролог и стадия 1 подставляют имена при записи, а интерфейс — ещё раз при отрисовке;
+       летопись и «Рынок» тоже смотрят на один и тот же текст. Без этого правила второй проход
+       принимал бы местное имя за уфимское («Юрий Аркадьевич» → «Юрий Ратнер»). Поэтому слово,
+       которое уже есть среди местных, не заменяется: подстановка идемпотентна. */
+    const local = Object.create(null);
+    for (const x of out) for (const w of String(x[1]).split(/[^0-9A-Za-zА-Яа-яЁё]+/)) if (w.length > 2) local[w] = 1;
     const re = new RegExp('(^|[^0-9A-Za-zА-Яа-яЁё])(' + keys.join('|') + ')(?![0-9A-Za-zА-Яа-яЁё])', 'g');
-    return { re, map };
+    return { re, map, local };
   }
   const pairCache = {};
-  function swap(S, txt) {
+  function swapBy(id, txt) {
     let s = String(txt == null ? '' : txt);
-    if (!s) return s;
-    const id = cityOf(S);
-    if (id === 'ufa') return s;
+    if (!s || !id || id === 'ufa') return s;
     let P = pairCache[id];
     if (P === undefined) P = pairCache[id] = pairsFor(id);
     if (!P) return s;
-    return s.replace(P.re, (m, pre, w) => pre + (P.map[w] || w));
+    return s.replace(P.re, (m, pre, w) => pre + ((P.local[w] || !(w in P.map)) ? w : P.map[w]));
   }
+  function swap(S, txt) { return swapBy(cityOf(S), txt); }
+  // то же, но когда состояния под рукой нет (пролог, стадия 1, стартовый экран): город — из homeId/BK.CITY
+  function swapNow(txt) { return swapBy(cityIdNow(), txt); }
 
   /* ---------- герой по городу: подпись говорящего и роль ---------- */
   const GUEST_IDS = { maltsev: 1, albina: 1, radik: 1, nina: 1, aliya: 1, zoya: 1, gabdullai: 1, artur: 1 };
@@ -4667,10 +4747,94 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return out;
   }
 
+  /* =====================================================================
+     8. ПОДКЛЮЧЕНИЕ К ДВИЖКУ (install) — вызывается из src/prologue.js, который
+     грузится после engine.js и corp.js и в браузере, и в Node.
+     Три обёртки, ни одна не трогает числа, ГСЧ и состояние Уфы:
+       • newGame            — запомнить город партии до rivalInit (имя сети-соперника
+                              берётся из CFG.RIVAL_NAME → он спрашивает rivalNow());
+       • Corp.applyGlobals  — то же при загрузке сохранения и при переезде во втором акте
+                              (активный город меняется, «свой» остаётся прежним);
+       • tick / resolveEvent — тексты событий (заголовок, текст, журнал) проходят swap,
+                              поэтому «ценовая война „Хлебного двора“» и «карантин в Уфе»
+                              читаются местно. Для Уфы swap возвращает строку как есть —
+                              тексты и прогоны ботов побайтно прежние.
+     ===================================================================== */
+  function swapEvent(S, ev) {
+    if (!ev || typeof ev !== 'object') return;
+    if (typeof ev.title === 'string') ev.title = swap(S, ev.title);
+    if (typeof ev.text === 'string') ev.text = swap(S, ev.text);
+  }
+  function swapFreshLog(S, head) {
+    const log = S && S.log; if (!log || !log.length) return;
+    for (let i = 0; i < log.length; i++) {
+      const it = log[i];
+      if (it === head) break;
+      if (it && typeof it.text === 'string') it.text = swap(S, it.text);
+    }
+  }
+  function localizeAfter(S, head) {
+    if (!S || cityOf(S) === 'ufa') return;                 // Уфа — эталон: ничего не меняем
+    try {
+      if (S.ev && S.ev.pending) swapEvent(S, S.ev.pending);
+      if (S.notify && S.notify.length) for (const n of S.notify) if (n && n.type === 'event' && n.ev) swapEvent(S, n.ev);
+      swapFreshLog(S, head);
+    } catch (e) { /* тексты не должны ломать день игры */ }
+  }
+  function install() {
+    const E = BK.Engine, Co = BK.Corp;
+    if (!E || typeof E.newGame !== 'function' || E.__castHome) return false;
+    E.__castHome = 1;
+    const origNew = E.newGame;
+    E.newGame = function (opts) {
+      noteHome((opts && opts.city) || 'ufa');              // город известен до rivalInit и до генерации предложений
+      return origNew.apply(this, arguments);
+    };
+    if (Co && typeof Co.applyGlobals === 'function' && !Co.__castHome) {
+      Co.__castHome = 1;
+      const origApp = Co.applyGlobals;
+      Co.applyGlobals = function (S) { noteHome((S && S.startCity) || 'ufa'); return origApp.apply(this, arguments); };
+    }
+    if (typeof E.tick === 'function' && !E.__castTick) {
+      E.__castTick = 1;
+      const origTick = E.tick;
+      E.tick = function (S) {
+        const head = S && S.log && S.log.length ? S.log[0] : null;
+        const r = origTick.apply(this, arguments);
+        localizeAfter(S, head);
+        return r;
+      };
+    }
+    // Летопись в окне «Летопись» (src/ui/story-ui.js) берёт названия глав из BK.Story.history —
+    // там «Уфа на двоих». Обёртка делает их местными; для Уфы swap возвращает строку как есть.
+    const ST = BK.Story;
+    if (ST && typeof ST.history === 'function' && !ST.__castHist) {
+      ST.__castHist = 1;
+      const origHist = ST.history;
+      ST.history = function (S) {
+        const h = origHist.apply(this, arguments);
+        try { if (h && h.chapters && cityOf(S) !== 'ufa') for (const c of h.chapters) c.name = swap(S, c.name); } catch (e) { /* летопись важнее */ }
+        return h;
+      };
+    }
+    if (typeof E.resolveEvent === 'function' && !E.__castEv) {
+      E.__castEv = 1;
+      const origEv = E.resolveEvent;
+      E.resolveEvent = function (S) {
+        const head = S && S.log && S.log.length ? S.log[0] : null;
+        const r = origEv.apply(this, arguments);
+        localizeAfter(S, head);
+        return r;
+      };
+    }
+    return true;
+  }
+
   BK.STORY_CAST = {
     CITY_FORMS, UFA, MANUAL, POOLS, REGION, ALL_ROLES, HERO_ROLE, GUEST_IDS,
     cityOf, resolve, record, hero, render, swap, vars, forms, wordOne,
     sceneCity, bestStore, districtOf, topoFor,
+    cityIdNow, noteHome, swapNow, chainName, chainShortName, bankName, shopName, personOf, rivalNow, install,
   };
 })();
 
@@ -23453,6 +23617,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function start(S) {
     const P = S.prologue = create((S.seed || 1) ^ 0x6b2a91);
+    // Местный слой (src/data/story-cast.js): город партии для текстов пролога. В Уфе поля нет вовсе —
+    // партия и сохранение прежние, а swap() для Уфы возвращает строку как есть.
+    if (S.startCity && S.startCity !== 'ufa') P.city = S.startCity;
     P.cards.push({ id: 'p01', v: {} });
     schedule(P);
     feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
@@ -23460,6 +23627,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     syncStory(S);
     return P;
   }
+  /* ---------- местный слой: «Калач», «Семь рек», Рашид, улица Пушкина — по городу партии ----------
+     Одна точка подстановки для всех текстов пролога (карточки, лента, крючок, перенос в сеть):
+     BK.STORY_CAST.swap заменяет уфимские имена, названия и топонимы на местные. Для Уфы
+     возвращается строка как есть, поэтому тексты и прогоны ботов в Уфе побайтно прежние. */
+  function castState(P) { return (P && P.city) ? { startCity: P.city } : null; }
+  function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
+  const subP = (P, t) => sub(castState(P), t);
   // --- живой сюжет пролога (src/data/prolog-v2.js): 8 историй, 16 дилемм, нити, правила показателей ---
   // дилеммы зовут наружу функции с «2» (feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2) —
   // они определены ниже и экспортированы, потому что сборка грузит data/prolog-v2.js раньше prologue.js
@@ -23485,7 +23659,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Иначе звук пришлось бы определять по русскому тексту записи — это хрупко.
   // Вариант может задать тон сам (fx.k, feed.k), тогда он важнее общего правила.
   const FEED_K = { good: 'pos', bad: 'neg' };
-  function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
+  function feed(P, t, k) { P.feed.push({ m: P.m, t: subP(P, t), k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
   function fx(P, kind, v, where) { P.fx.push({ kind, v: Math.round(v), where: where || '' }); if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30); }
 
   /* ---------------- хуки живого сюжета: функции *2 (src/data/prolog-v2.js) ----------------
@@ -23503,7 +23677,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function feed2(P, t, k) { // запись в ленту пролога с тем же тоном, что у bridge()
     if (!P || !P.feed || typeof P.feed.push !== 'function') return;
     const kk = k || 'info';
-    P.feed.push({ m: P.m, t: t == null ? '' : String(t), k: kk, tone: kk === 'good' ? 'pos' : kk === 'bad' ? 'neg' : kk === 'hero' ? 'hero' : '' });
+    P.feed.push({ m: P.m, t: subP(P, t == null ? '' : String(t)), k: kk, tone: kk === 'good' ? 'pos' : kk === 'bad' ? 'neg' : kk === 'hero' ? 'hero' : '' });
     if (P.feed.length > 40) P.feed.shift();
   }
   function fx2(P, kind, v, where) { // значок в «Что изменилось»
@@ -24028,7 +24202,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     const t0 = typeof d.text === 'function' ? d.text(P, q.v) : d.text;
-    return { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: HEROES[d.who] || HEROES.life, title: V2('title', P, q.id, d.title(P, q.v)) || d.title(P, q.v), text: V2('storyText', P, q.id) || t0, choices: ch };
+    // местный слой: подписи и роли героев, заголовок, текст и варианты — по городу партии
+    const h0 = HEROES[d.who] || HEROES.life;
+    const cv = { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: localHero(S, d.who, h0), title: V2('title', P, q.id, d.title(P, q.v)) || d.title(P, q.v), text: V2('storyText', P, q.id) || t0, choices: ch };
+    cv.title = sub(S, cv.title); cv.text = sub(S, cv.text);
+    for (const c of cv.choices) { c.label = sub(S, c.label); c.desc = sub(S, c.desc); if (typeof c.why === 'string') c.why = sub(S, c.why); }
+    return cv;
+  }
+  // герой по городу партии: имена, роли и инициал на аватаре берутся из BK.STORY_CAST (для Уфы — как было)
+  function localHero(S, who, h0) {
+    const C = BK.STORY_CAST;
+    const role = C && C.HERO_ROLE ? C.HERO_ROLE[who] : null;
+    if (!C || !role || C.cityOf(S) === 'ufa') return h0;
+    const p = C.personOf(C.cityOf(S), role); if (!p) return h0;
+    const out = Object.assign({}, h0, { name: p.name });
+    out.role = p.role || h0.role;
+    out.ini = String(p.name).trim().charAt(0).toUpperCase() || h0.ini;
+    return out;
   }
   // определение дилеммы из живого сюжета (тот же формат, что CARDS ядра — интерфейс не меняется)
   function DIL(id) {
@@ -24328,7 +24518,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     feed(P, 'Своя точка! Пролог окончен.', 'good');
   }
   // крючок пролога — СМС ночью с неизвестного номера (docs/story.md, после П8)
-  function hookSms(P) { return P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'; }
+  function hookSms(P) { return subP(P, P.sf.mentor === 'intern' ? 'Три месяца — и хватит. Ты не мой человек, ты свой. Удачи. Она понадобится. — О.' : 'Слышал, ты уходишь от Рашида. Правильно. Он тоже когда-то выгнал лучшего. — О.'); }
   const MENTOR = { friend: 'Рашид — друг и советчик', cold: 'С Рашидом — честно и холодно', enemy: 'Рашид — обиженный соперник', partner: 'Рашид — партнёр, точка №1 под вывеской «Калач»', intern: 'Стажировка у Олега — «Школа Двора»' };
   const PERKS = { machine: 'Старая кофемашина Рашида: оборудование первой точки на 8 % дешевле', dvorSchool: '«Школа Двора»: себестоимость −3 % навсегда', regulars: 'Постоянные гости ушли за вами: +гости первой точки на полгода' };
   function trait(P) {
@@ -24351,7 +24541,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const s of rank) out.skills[k.SKILL_MAP[s]] = 1;
     const over = Math.max(0, savings(P) - C().GOAL);
     out.bonus = Math.round(Math.min(over * k.BONUS_MULT, cash * k.BONUS_MAX) / 1e4) * 1e4;
-    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: 'Гульнара Сафина', lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
+    if (P.sf.gulya === 'with' || P.sf.gulya === 'share') out.baker = { name: sub(S, 'Гульнара Сафина'), lvl: P.rel.gulya >= k.BAKER_L3 ? 3 : 2 };
     if (P.sf.mentor === 'friend') out.perks.push('machine');
     if (P.sf.mentor === 'intern') out.perks.push('dvorSchool');
     if (P.sf.mentor === 'enemy' && P.sf.regulars > 0) { out.perks.push('regulars'); out.regulars = P.sf.regulars; }
@@ -24377,8 +24567,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (skn.length) parts.push(`навыки: ${skn.join(', ')} 1`);
       if (cr.baker) parts.push(`${cr.baker.name} придёт в первую точку (уровень ${cr.baker.lvl})`);
       if (cr.trait) parts.push(`черта «${TRAITS[cr.trait].name}»`);
-      for (const x of cr.perks) parts.push(PERKS[x].split(':')[0]);
-      I.log(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`, 'good');
+      for (const x of cr.perks) parts.push(sub(S, PERKS[x].split(':')[0]));
+      I.log(S, sub(S, `Пролог «Бариста» пройден за ${P.won.m} мес.${parts.length ? ': ' + parts.join('; ') : ''}.`), 'good');
     }
     return cr;
   }
@@ -24405,12 +24595,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (cr.baker && !cr.bakerDone && st.incoming && st.incoming.length) { // Гуля из «Калача» — первый сотрудник первой точки
         const e = st.incoming[0].p; e.name = cr.baker.name; e.lvl = cr.baker.lvl; e.mood = 78; e.trait = Math.max(e.trait, 4); e.patience = 10; e.fromPrologue = 1;
         cr.bakerDone = st.id;
-        if (Eng._int) Eng._int.log(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`, 'good');
+        if (Eng._int) Eng._int.log(S, sub(S, `${cr.baker.name}, пекарь из «Калача», выходит в точку №${st.num} (уровень ${cr.baker.lvl}).`), 'good');
       }
       if (!cr.store1) { // первая точка: кофемашина Рашида, постоянные гости
         cr.store1 = st.id;
         const pl = (S.macro && S.macro.priceLevel) || 1;
-        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`, 'good'); }
+        if (cr.perks.includes('machine')) { const v = Math.round(BK.CFG.STORE_EQUIP[st.size] * pl * k.MACHINE / 1000) * 1000; S.cash += v; if (S.month) S.month.capex = (S.month.capex || 0) - v; cr.machine = v; if (Eng._int) Eng._int.log(S, sub(S, `Рашид отдал старую кофемашину «Калача»: сэкономлено ${fm(v)}.`), 'good'); }
         if (cr.perks.includes('regulars')) S.mods.push({ t: 'traffic', m: 1 + k.REGULARS_TRAFFIC * Math.min(1, (cr.regulars || 0) / 3), until: (st.openDay || S.day) + 180, scope: 'store', target: st.id, src: 'prologue' });
       }
       if (cr.trait === 'thrift') { // Бережливый: 3 % от отделки и оборудования возвращаются
@@ -24430,6 +24620,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
   wrap();
+  // Местный слой «кто есть кто» (src/data/story-cast.js) доустанавливает свои обёртки движка:
+  // город партии для имени сети-соперника (CFG.RIVAL_NAME → S.rival.name) и местные тексты событий.
+  // prologue.js грузится после engine.js и corp.js и в браузере, и в Node — это самая ранняя такая точка.
+  if (BK.STORY_CAST && BK.STORY_CAST.install) { try { BK.STORY_CAST.install(); } catch (e) { /* игра важнее */ } }
 
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
@@ -26488,7 +26682,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const running = (S) => !!(S && S.stage1 && (S.stage1.status === 'run' || S.stage1.status === 'ready'));
   function store(S) { const T = T0(S); return T && T.storeId ? S.stores.find((x) => x.id === T.storeId) || null : null; }
   function hero(S) { const st = store(S); return st ? st.staff.find((e) => e.hero) || null : null; }
-  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
+  /* ---------- местный слой (src/data/story-cast.js): «Калач», «Семь рек», Рашид, ул. Пушкина ----------
+     Тексты стадии 1 идут через эти три точки (лента, СМС, журнал) — и читаются местно, если партия
+     начата не в Уфе. Для Уфы swap() возвращает строку как есть: партия побайтно прежняя. */
+  function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
+  function subT(T, t) { return sub({ startCity: (T && T.city) || null }, t); }
+  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t: subT(T, t), k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
   // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
@@ -26496,8 +26695,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const td = st.today || {};
     return [S.day, T.status, T.hp | 0, T.aware.toFixed(3), T.reg | 0, Math.round(td.checks || 0), Math.round(td.rev || 0), td.closed ? 1 : 0, st.status, st.staff.length, st.incoming.length, T.months.length, st.repair, T.hired, T.days.length, st.rating ? +st.rating.toFixed(2) : ''].join('|');
   }
-  function fx(T, kind, v, extra) { T.fx.push(Object.assign({ kind, v }, extra || {})); if (T.fx.length > 30) T.fx.splice(0, T.fx.length - 30); }
-  function log(S, text, kind) { if (I()) I().log(S, text, kind || 'info'); }
+  function fx(T, kind, v, extra) {
+    let ex = extra || {};
+    if (kind === 'sms' && ex) ex = Object.assign({}, ex, { who: subT(T, ex.who), text: subT(T, ex.text) }); // СМС из «Калача» — по городу партии
+    T.fx.push(Object.assign({ kind, v }, ex)); if (T.fx.length > 30) T.fx.splice(0, T.fx.length - 30);
+  }
+  function log(S, text, kind) { if (I()) I().log(S, sub(S, text), kind || 'info'); }
   function setMod(S, key, t, m, scope, target, until) { // один модификатор стадии 1 по ключу (обновляется, не копится)
     let x = S.mods.find((z) => z.s1 === key);
     if (!x) { x = { t, m, until: until || 1e9, scope: scope || 'global', target: target || null, src: 's1', s1: key }; S.mods.push(x); }
@@ -26554,6 +26757,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       days: [], ms: {}, cards: [], seen: {}, flags: {}, evNext: 0, feed: [], fx: [], months: [], streak: 0, loanMax: 0, lastScene: -99, lastDay: S.day,
       keep: { ev: Math.max(30, S.ev.next - S.day), crisis: Math.max(365, S.ev.nextCrisis - S.day) }, next: null, hired: 0, share: 0,
     };
+    if (S.startCity && S.startCity !== 'ufa') T.city = S.startCity; // местный слой: город партии (в Уфе поля нет)
     // деньги: накопления пролога (+ кредит, если открывались «950 тыс. + банк»); партнёрство с Рашидом — его 40 %
     const sav = P ? BK.Prologue.savings(P) : BK.CFG.PROLOGUE.GOAL;
     let cash = sav;
@@ -26629,7 +26833,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (add) {
       if (n >= c.MENU_MAX) return `На островке помещается ${c.MENU_MAX} позиций`;
       const p = E().byId(BK.PRODUCTS, id);
-      if (T0(S).flags.pact && p && (p.cat === 'bread' || p.cat === 'pies')) return 'Договор с Олегом: хлеб и пироги — у «Двора»';
+      if (T0(S).flags.pact && p && (p.cat === 'bread' || p.cat === 'pies')) return sub(S, 'Договор с Олегом: хлеб и пироги — у «Двора»');
       return null;
     }
     if (n <= c.MENU_MIN) return `Нужно хотя бы ${c.MENU_MIN} позиций`;
@@ -26650,9 +26854,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function hireWhy(S) { const st = store(S); if (!st) return 'Нет точки'; if (st.staff.length + st.incoming.length + (T0(S).hero ? 1 : 0) >= BK.CFG.SIZES.small.staffMax) return `За стойкой островка помещается ${BK.CFG.SIZES.small.staffMax} человека`; return null; }
   function inviteGulya(S) {
     const T = T0(S), w = hireWhy(S); if (w) return { ok: false, msg: w };
-    if (!gulyaAvail(S)) return { ok: false, msg: 'Гуля осталась в «Калаче»' };
-    addPerson(S, 'Гульнара Сафина', gulyaLvl(S), 3, { mood: 80, trait: 6, patience: 12, fromPrologue: 1, gulya: 1 });
-    T.flags.gulyaIn = 1; hired(S, 'Гуля');
+    if (!gulyaAvail(S)) return { ok: false, msg: sub(S, 'Гуля осталась в «Калаче»') };
+    addPerson(S, sub(S, 'Гульнара Сафина'), gulyaLvl(S), 3, { mood: 80, trait: 6, patience: 12, fromPrologue: 1, gulya: 1 });
+    T.flags.gulyaIn = 1; hired(S, sub(S, 'Гуля'));
     rel(S, { gulya: 5 });
     return { ok: true };
   }
@@ -26670,8 +26874,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function loanRoom(S) { const T = T0(S); return Math.max(0, T.loanMax - S.loan); }
   function loanWhy(S) {
     const T = T0(S);
-    if (storyF(S).noBank && T.openDay != null && S.day - T.openDay < C().LOAN_WAIT_NOBANK) return 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы';
-    if (storyF(S).noBank && T.openDay == null) return 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы';
+    if (storyF(S).noBank && T.openDay != null && S.day - T.openDay < C().LOAN_WAIT_NOBANK) return sub(S, 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы');
+    if (storyF(S).noBank && T.openDay == null) return sub(S, 'Вы сказали Эльвире «я без банков» — кредит только через 3 месяца работы');
     if (loanRoom(S) <= 0) return 'Банк больше не даёт: лимит для одной кофейни исчерпан';
     return null;
   }
@@ -27005,7 +27209,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const who = typeof d.who === 'function' ? d.who(S) : d.who;
     const ch = d.choices(S, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || S.cash >= c.cost), why: c.dis || (c.cost && S.cash < c.cost ? 'Не хватает денег' : '') }));
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
-    return { id: q.id, v: q.v, kind: d.kind, who, hero: HEROES[who] || HEROES.life, title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
+    // местный слой (src/data/story-cast.js): подписи героев, заголовки, тексты и варианты — по городу партии
+    const cv = { id: q.id, v: q.v, kind: d.kind, who, hero: localHero(S, who, HEROES[who] || HEROES.life), title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
+    cv.title = sub(S, cv.title); cv.text = sub(S, cv.text);
+    for (const c of cv.choices) { c.label = sub(S, c.label); c.desc = sub(S, c.desc); if (typeof c.why === 'string') c.why = sub(S, c.why); }
+    return cv;
+  }
+  // герой по городу партии: имя, роль и инициал аватара — из BK.STORY_CAST (для Уфы — как было)
+  function localHero(S, who, h0) {
+    const C = BK.STORY_CAST;
+    const role = C && C.HERO_ROLE ? C.HERO_ROLE[who] : null;
+    if (!C || !role || C.cityOf(S) === 'ufa') return h0;
+    const p = C.personOf(C.cityOf(S), role); if (!p) return h0;
+    const out = Object.assign({}, h0, { name: p.name });
+    out.role = p.role || h0.role;
+    out.ini = String(p.name).trim().charAt(0).toUpperCase() || h0.ini;
+    return out;
   }
   function choose(S, i) {
     const T = T0(S), cv = card(S); if (!cv) return { ok: false };
@@ -27076,7 +27295,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (T.flags.kalachMine) { // сцена 1.7 «Продайте мне»: «Калач» — точка №2 (особое помещение)
       const d = E().byId(BK.DISTRICTS, 'center');
       const o = In.makeStoreOffer(S, { district: 'center', size: 'standard' });
-      Object.assign(o, { address: 'ул. Пушкина, 14 · «Калач»', special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
+      Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
       S.offers.push(o);
     }
     if (S.tutorial) S.tutorial.on = !!T.flags.tutOn;
@@ -27121,7 +27340,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     w('rentStore', (o) => function (S, offerId) {
       const off = S && S.offers ? S.offers.find((x) => x.id === offerId) : null, k = off && off.kalach;
       const r = o.apply(this, arguments);
-      if (k && r && r.ok && r.store) { r.store.rating = 4.5; r.store.kalach = 1; S.mods.push({ t: 'traffic', m: 1.15, until: 1e9, scope: 'store', target: r.store.id, src: 'kalach' }); if (I()) I().log(S, '«Калач» Рашида — теперь точка сети. Старые гости остались.', 'good'); }
+      if (k && r && r.ok && r.store) { r.store.rating = 4.5; r.store.kalach = 1; S.mods.push({ t: 'traffic', m: 1.15, until: 1e9, scope: 'store', target: r.store.id, src: 'kalach' }); if (I()) I().log(S, sub(S, '«Калач» Рашида — теперь точка сети. Старые гости остались.'), 'good'); }
       return r;
     });
   }
@@ -27785,6 +28004,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const dname = (id) => (E().byId(BK.DISTRICTS, id) || {}).name || id;
   const lname = (id) => (E().byId(BK.LANDMARKS, id) || {}).name || id;
+  // имя домашнего города партии (в Уфе — «Уфа»): тексты интерфейса не должны говорить «в Уфе» чужим городам
+  const homeName = (S) => { const W = BK.STORY_CAST; const id = (W && W.cityOf) ? W.cityOf(S) : 'ufa'; return ((BK.CITY_BY_ID || {})[id] || {}).name || 'Уфа'; };
   const km = (a, b) => (E().dist(a, b) * E().kmPerUnit()).toFixed(1).replace('.', ',');
   const stars = (l) => `<span class="stars" title="Уровень ${l} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= l ? 'on' : ''}"></i>`).join('')}</span>`;
   const btn = (act, label, o = {}) => `<button class="btn ${o.cls || ''}" data-act="${act}"${o.arg != null ? ` data-arg="${esc(o.arg)}"` : ''}${o.arg2 != null ? ` data-arg2="${esc(o.arg2)}"` : ''}${o.dis ? ' disabled' : ''}${o.title ? ` title="${esc(o.title)}"` : ''}>${label}${o.cost != null ? ` <span class="cost">${fm(o.cost)}</span>` : ''}</button>`;
@@ -28313,7 +28534,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `</div><div class="sec">${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     } else {
       const rc = BK.Corp && BK.Corp.remoteOf && BK.Corp.remoteOf(S); // Р4: снабжение из другого города
-      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
+      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в ${esc(homeName(S))}, пока город к вам не привыкнет.</p>`;
       s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
     }
     return s;
@@ -28750,10 +28971,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s + `</div>`;
   }
 
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   /* ---------- сеть-соперник ---------- */
   function rivalChip(S, o) { // «рядом конкурент: N точек» — в карточке точки и помещения
     const r = E().rivalNear ? E().rivalNear(S, o) : null; if (!r || !r.n) return '';
-    const name = E().rivalSummary(S).name;
+    const name = rivalName(S);
     return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * E().kmPerUnit()).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
   }
   function rivalBlock(S) { // «Конкурент: Хлебный двор — N точек, растёт/слабеет» (вкладка «Рынок»; можно вставить и в «Сводку»)
@@ -28761,7 +28987,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const per = r.months >= 12 ? 'за год' : 'с начала игры';
     const trend = r.delta > 0 ? `<span class="negc">растёт: +${r.delta} ${per}</span>` : r.delta < 0 ? `<span class="pos">слабеет: −${-r.delta} ${per}</span>` : `<span class="hint">без изменений ${per}</span>`;
     const hit = S.stores.filter((st) => st.status !== 'opening' && E().rivalNear(S, st).n).length;
-    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(r.name)}»</small></h3>
+    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(rivalName(S))}»</small></h3>
       <div class="rival-sum"><i class="rv-mark" aria-hidden="true"></i><div><b>${nw(r.n, 'точка', 'точки', 'точек')}</b> · ${trend}
       <div class="hint">Рядом с соперником ${hit ? nw(hit, 'ваша точка', 'ваши точки', 'ваших точек') : 'ни одной вашей точки'}. Занял помещений с рынка: ${r.grabbed}, закрыл точек из-за вас: ${r.closed}. Высокий рейтинг точки снижает потери гостей, а где у вас несколько сильных точек, соперник уходит.</div></div></div></div>`;
   }
@@ -31413,6 +31639,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const ST = () => BK.Story, APP = () => BK.App, E = () => BK.Engine;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const nw = (n, a, b, c) => (BK.UIH ? BK.UIH.nw(n, a, b, c) : `${Math.round(n)} ${c}`);
+  /* Местный слой (src/data/story-cast.js): книга Семёна, эпилоги и подпись «Уфа жуёт» читаются
+     по городу партии — в Москве «Москва жуёт», Рашид становится местным наставником и т. д.
+     Для Уфы swap() возвращает строку как есть, поэтому её итоги и картинка прежние. */
+  const sub = (S, t) => { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } };
+  // Летописец: имя с фамилией («Семён Аркадьевич Литвак») — целиком по городу партии, иначе подстановка
+  // оставила бы уфимскую фамилию рядом с местным именем.
+  const NARRATOR_UFA = 'Семён Аркадьевич Литвак';
+  const narrator = (S) => { const C = BK.STORY_CAST; if (!C || !C.personOf) return NARRATOR_UFA;
+    const id = C.cityOf(S); if (id === 'ufa') return NARRATOR_UFA;
+    const p = C.personOf(id, 'chronicler'); return (p && p.name) || NARRATOR_UFA; };
 
   /* ---------------- 1. ЛЕТОПИСЬ: главы и записи ---------------- */
   // Подписи сцен, у которых в журнале нет title (пролог и глава 1) — чтобы в летописи
@@ -31427,12 +31663,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ready: 'Пора расти', s1fail: 'Кофейня закрылась',
   };
   // Одна запись летописи → { дата, что случилось, ваше решение }
-  function norm(it) {
+  function norm(it, S) {
     const id = String(it.id == null ? '' : it.id);
-    let title = it.title || TITLES[id] || '';
-    let choice = typeof it.choice === 'string' ? it.choice : null;
-    if (!title) title = it.line || id;
-    else if (!choice && it.line && it.line !== title) choice = it.line;
+    let title = sub(S, it.title || TITLES[id] || '');
+    let choice = typeof it.choice === 'string' ? sub(S, it.choice) : null;
+    if (!title) title = sub(S, it.line || id);
+    else if (!choice && it.line && it.line !== title) choice = sub(S, it.line);
     // Пролог и глава 1 не пишут поле chapter — достраиваем по факту: записи пролога идут
     // без дня игры, у главы 1 день уже есть.
     const chapter = it.chapter || (it.day == null ? 'prologue' : 'own');
@@ -31444,12 +31680,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return '';
   }
   // Список летописи → главы (подряд идущие записи одной главы — одна глава)
-  function chaptersOf(h) {
+  function chaptersOf(h, S) {
     const out = [];
     for (const raw of (h.list || [])) {
-      const it = norm(raw);
+      const it = norm(raw, S);
       let c = out[out.length - 1];
-      if (!c || c.id !== it.chapter) { c = { id: it.chapter, name: ST().chapterName(it.chapter), items: [] }; out.push(c); }
+      if (!c || c.id !== it.chapter) { c = { id: it.chapter, name: sub(S, ST().chapterName(it.chapter)), items: [] }; out.push(c); }
       c.items.push(it);
     }
     return out;
@@ -31542,12 +31778,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp');
   }
   // > = 10 — «сидит за столом», иначе — «стул пустой, но с деталью» (docs/story.md §7, Ф2)
-  function epilogues(R) {
+  function epilogues(R, S) {
     const rel = (R && R.rel) || {}, f = (R && R.f) || {};
     const out = [];
     for (const x of HEROES) {
       if (!met(x.id, rel, f)) continue;
-      out.push({ id: x.id, name: x.name, at: (rel[x.id] || 0) >= 10, text: x.text(f, rel), detail: DETAIL[x.id] || 'что-то очень личное', px: heroPx(x.id) });
+      out.push({ id: x.id, name: sub(S, x.name), at: (rel[x.id] || 0) >= 10, text: sub(S, x.text(f, rel)), detail: sub(S, DETAIL[x.id] || 'что-то очень личное'), px: heroPx(x.id) });
     }
     return out;
   }
@@ -31571,7 +31807,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const yy = years < 1 ? 'меньше года' : nw(Math.max(1, Math.round(years)), 'год', 'года', 'лет');
     const f = (R && R.f) || {};
     const p = [];
-    p.push(`Меня зовут Семён Аркадьевич Литвак. Двадцать лет пишу про еду в Уфе и всё это время искал, в чём подвох. В «${company}» подвоха не нашёл — только муку на рукаве.`);
+    p.push(`Меня зовут ${narrator(S)}. Двадцать лет пишу про еду в Уфе и всё это время искал, в чём подвох. В «${company}» подвоха не нашёл — только муку на рукаве.`);
     p.push(`Начиналось всё с одной точки и очень нервного хозяина. Спустя ${yy} в сети стало ${nw(Math.max(1, stores), 'точка', 'точки', 'точек')}. Я проверил каждую. Дважды, если считать эчпочмаки.`);
     if (f.scandal === 'admit') p.push('Когда случилась та история, вы не стали юлить. Я это запомнил. Город — тоже.');
     else if (f.scandal === 'hide') p.push('Про ту историю вы молчали. Я тоже. Из уважения к хорошему эчпочмаку.');
@@ -31580,7 +31816,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (e) p.push(`Чем кончилось — вы знаете: ${e.name}. Только не пересказывайте вслух, у меня эксклюзив.`);
     else p.push('Чем кончилось — не скажу: история ещё пишется, а я не люблю спойлеры.');
     p.push('Могло быть хуже. Могло быть лучше. Но американо у вас честный, и это я написал без взятки.');
-    return { title: BOOK_TITLES[(e && e.id) || ''] || 'Хлебная карта', company, lines: p, ending: e };
+    return { title: sub(S, BOOK_TITLES[(e && e.id) || ''] || 'Хлебная карта'), company, lines: p.map((t) => sub(S, t)), ending: e };
   }
 
   /* ---------------- 4. РАЗДЕЛ «ИСТОРИЯ» В ИТОГАХ ---------------- */
@@ -31599,8 +31835,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!R || !((R.log && R.log.length) || R.ending)) return '';   // летописи нет — раздела нет
       if (HAS_DOM) styles();
       const book = bookOf(S, R, h);
-      const chs = chaptersOf(h);
-      const eps = epilogues(R);
+      const chs = chaptersOf(h, S);
+      const eps = epilogues(R, S);
       let s = `<div class="sec sh-sec" id="shSec"><h3><span>История</span><small>летопись и книга Семёна</small></h3>`;
       s += `<div class="sh-book"><span class="sh-eyebrow">Книга Семёна Аркадьевича Литвака</span><b class="sh-bt">«${esc(book.title)}»</b><div class="sh-bl">${book.lines.map((t) => `<p>${esc(t)}</p>`).join('')}</div>`;
       if (book.ending) s += `<div class="sh-end"><b>${esc(book.ending.name)}</b><span>${esc(book.ending.text)}</span></div>`;
@@ -31664,7 +31900,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const l of wrap(ctx, str, maxW || MW)) { ctx.fillText(l, X, y); y += gap; }
     };
     const room = (n) => y + n <= LIM;
-    const book = bookOf(S, R, h), chs = chaptersOf(h), eps = epilogues(R);
+    const book = bookOf(S, R, h), chs = chaptersOf(h, S), eps = epilogues(R, S);
     put('ЛЕТОПИСЬ · КНИГА СЕМЁНА АРКАДЬЕВИЧА', `600 21px ${FONT}`, SOFT, 34);
     y += 22;
     put(`«${book.title}»`, `700 50px ${FONT}`, INK, 60);
@@ -31722,7 +31958,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (away.length && room(70)) put(`Пустые стулья: ${away.map((x) => x.name).join(', ')} — но с деталями.`, `400 21px ${FONT}`, SOFT, 32);
     }
     ctx.font = `400 20px ${FONT}`; ctx.fillStyle = SOFT;
-    ctx.fillText('Семён Аркадьевич Литвак · «Уфа жуёт»', X, H - 62);
+    ctx.fillText(sub(S, narrator(S) + ' · «Уфа жуёт»'), X, H - 62);
     ctx.textAlign = 'right'; ctx.fillText(book.company, X2, H - 62); ctx.textAlign = 'left';
     return cv.toDataURL('image/png');
   }
@@ -32438,6 +32674,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const E = () => BK.Engine, H = () => BK.UIH, C = () => BK.CFG;
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const P = (lon, lat) => BK.cityProj(lon, lat);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
@@ -32673,10 +32914,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.tip.style.left = x + 'px'; view.tip.style.top = y + 'px';
   }
   const popTxt = (p) => (p >= 1 ? String(p.toFixed(p >= 10 ? 1 : 2)).replace('.', ',') + ' млн' : Math.round(p * 1000) + ' тыс.') + ' жителей';
+  // Расстояния в данных считаются от Уфы (src/data/cities.js); в партии из другого города показываем
+  // расстояние от домашнего города. Для Уфы строка прежняя: «… км от Уфы».
+  const homeIdOf = (S) => (BK.STORY_CAST && BK.STORY_CAST.cityOf ? BK.STORY_CAST.cityOf(S) : 'ufa');
+  const cityGen = (id) => { const f = (BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS) || {}; return (f[id] && f[id].g) || 'Уфы'; };
+  const kmFrom = (S, d) => { const home = homeIdOf(S); const km = home === 'ufa' ? d.km : (BK.roadKm ? BK.roadKm(home, d.id) : d.km);
+    return km ? ` · ${H().n0(km)} км от ${cityGen(home)}` : ''; };
   function tipFor(S, id) {
     const d = BK.CITY_BY_ID[id], st = BK.Corp.cityStats(S, id);
     if (!d) return '';
-    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.km ? ` · ${H().n0(d.km)} км от Уфы` : ''}`;
+    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.id === homeIdOf(S) ? '' : kmFrom(S, d)}`;
     if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
     else {
       const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`;
@@ -32902,7 +33149,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function cityCard(S, id) {
     const d = BK.CITY_BY_ID[id]; if (!d) return '';
     const h = H(), c = BK.Corp.cityStats(S, id);
-    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.km ? ` · ${h.n0(d.km)} км от Уфы` : ' · родной город'} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
+    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.id === homeIdOf(S) ? ' · родной город' : kmFrom(S, d)} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
     s += chips(d);
     if (d.feat) s += `<div class="hint">${esc(d.feat)}</div>`;
     if (c) {
@@ -32921,7 +33168,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const lock = E().enterLock(S, id), cost = E().enterCost(S, id), aw = BK.Corp.awStart(S, id);
       const pk = S.corp.perks && S.corp.perks[id], pre = S.corp.prePressure && S.corp.prePressure[id];
       if (pk && pk.until >= S.day) s += `<div class="perk">Приглашение губернатора до ${esc(E().fmtDate(pk.until))}: регистрация бесплатно, цех ${Math.round((1 - pk.prodRent) * 100)} % дешевле</div>`;
-      if (pre) s += `<div class="hint warnc">«${esc(C().RIVAL_NAME)}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
+      if (pre) s += `<div class="hint warnc">«${esc(rivalName(S))}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
       if (BK.CorpUI && BK.CorpUI.hqLoadHtml) s += BK.CorpUI.hqLoadHtml(S, { extra: 1 }) + `<p class="hint" style="margin:0">${esc(BK.CorpUI.enterCostNote(S))}.</p>`; // Р4 ч. 2: цена входа и штаб
       s += `<div class="grid2">${h.kv('Вход: регистрация, маркетинг, штаб города', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
       s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Запустите город сами (переезд) или поручите директору — тогда вы останетесь, где были.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
@@ -32964,7 +33211,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function freeRow(S, id, sel) {
     const h = H(), d = BK.CITY_BY_ID[id], lock = E().enterLock(S, id);
-    return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)} · ${h.n0(d.km)} км от Уфы · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
+    return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)}${kmFrom(S, d)} · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
   }
   function citiesTab(S, ui) {
     if (!BK.Corp.on(S)) return '';
@@ -33000,6 +33247,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const E = () => BK.Engine, H = () => BK.UIH, C = () => BK.CFG, K = () => BK.CFG.CORP, D = () => BK.Dir;
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
   const cname = (id) => (BK.CITY_BY_ID[id] || {}).name || id;
@@ -33219,7 +33471,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (D().leakStatus) s += leakBox(S, id, D().leakStatus(S, id)); // Р4: денежный риск
     // конкуренты: местные сети и федеральный «Хлебный двор»
-    if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(C().RIVAL_NAME)}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
+    if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(rivalName(S))}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
     // план / факт
     if (d && c.plan) {
       const st = BK.Corp.cityStats(S, id), pf = D().planFact(S, c);
@@ -33594,7 +33846,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const PR = () => BK.Prologue, C = () => BK.CFG.PROLOGUE, APP = () => BK.App;
   const $ = (s, el) => (el || document).querySelector(s);
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc0 = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  /* Местный слой (src/data/story-cast.js): в прологе вместо «Калача», «Семи рек» и Рашида читаются
+     наставник, банк и пекарня города партии. Для Уфы swap() возвращает строку как есть. */
+  const SW = (t) => { const C = BK.STORY_CAST; if (!C || t == null) return t; try { return C.swapNow ? C.swapNow(String(t)) : C.swap(S(), String(t)); } catch (e) { return t; } };
+  const esc = (s) => esc0(SW(s));
   const fm = (v) => BK.fmtMoney(Math.round(v));
   const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
   const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
@@ -33700,7 +33956,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function startOpt() {
     const v = pref();
     const opt = (k, ic, t, d) => `<label class="pro-pk${v === k ? ' on' : ''}"><input type="radio" name="startmode" value="${k}"${v === k ? ' checked' : ''}><span class="pk-i" aria-hidden="true">${ic}</span><span class="pk-t"><b>${t}</b><small>${d}</small></span></label>`;
-    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', '15–30 мин · вы за стойкой у Рашида и копите на свою точку')}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
+    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', SW('15–30 мин · вы за стойкой у Рашида и копите на свою точку'))}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
   }
   function bindStart(el) {
     const btn = () => el.querySelector('#startForm button[type=submit]');
@@ -33875,7 +34131,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   function top(p) {
     const age = PR().age(p), job = C().JOBS[p.job].name;
-    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>пролог · «Калач» на Пушкина</small></span></div>
+    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>${esc0(SW('пролог · «Калач» на Пушкина'))}</small></span></div>
       <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
       <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
@@ -33891,7 +34147,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function hpHint(p) { return p.hp < C().SICK_HP ? 'Силы на исходе: можно заболеть, начальник замечает ошибки. Ешьте нормально, меньше подработок.' : p.hp < 50 ? 'Устаёте. Нормальная еда и меньше подработок вернут силы.' : 'Силы в порядке.'; }
   function moodHint(p) { return p.mood < C().SPLURGE_MOOD ? 'Настроение на нуле — легко сорваться на покупку. Деньги в копилке и на вкладе целее.' : p.mood < 45 ? 'Грустно. Развлечения, отдых и удачные смены поднимут настроение.' : 'Настроение хорошее.'; }
-  function repHint(p) { return p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'; }
+  function repHint(p) { return SW(p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'); }
   const beans = (v) => { const n = Math.min(5, 1 + Math.floor(v / 20)); return `<span class="pro-beans" aria-label="уровень ${n} из 5">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`; };
 
   // стойка «Калача» в пикселях (src/pixel/scenes.js): герой — настроение и силы, Рашид — мнение о вас, огонь и пар живые
@@ -33901,7 +34157,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function monthScene() {
     const slot = document.getElementById('proPxSlot'), p = Pp(); if (!slot || !p || !PX()) return;
     const d = { mode: 'month', heroEmo: heroEmo(p), heroDrop: p.hp < 45, job: p.job, rashidEmo: p.rep >= 72 ? 'smile' : p.rep < 38 ? 'angry' : 'neutral', gulyaEmo: (p.rel && p.rel.gulya > 20) ? 'happy' : 'smile' };
-    if (!ui.pxMonth) ui.pxMonth = BK.Px.stage({ cls: 'pro-pxc', fps: 8, label: 'Пекарня «Калач»: вы за стойкой, Рашид у печи, Гуля с противнем', height: (W) => (W < 200 ? 112 : 128), scale: (a) => (a >= 760 ? 3 : 2), minW: 150, maxW: 300, active: () => !ui.mode || ui.mode === 'card', draw: (b, t, W, H, dd) => BK.Px.scenes.kalach(b, t, W, H, dd) });
+    if (!ui.pxMonth) ui.pxMonth = BK.Px.stage({ cls: 'pro-pxc', fps: 8, label: SW('Пекарня «Калач»: вы за стойкой, Рашид у печи, Гуля с противнем'), height: (W) => (W < 200 ? 112 : 128), scale: (a) => (a >= 760 ? 3 : 2), minW: 150, maxW: 300, active: () => !ui.mode || ui.mode === 'card', draw: (b, t, W, H, dd) => BK.Px.scenes.kalach(b, t, W, H, dd) });
     const k = JSON.stringify(d);
     if (ui.pxMonth.slot !== slot || !ui.pxMonth.cv.isConnected) { ui.pxMonth.data = d; ui.pxMonth.attach(slot); }
     else if (k !== ui.pxMonthKey) ui.pxMonth.set(d);
@@ -33969,7 +34225,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else note = `Следующая смена придёт сама — <b>${when(list[done])}</b>. К ней можно быть не готовым.`;
     if (tired && done < list.length) note += ' Вы не выспались: гости будут нетерпеливее.';
     return `<div class="pro-shift" id="proShiftAnchor">
-      <div class="ps-top"><span class="ps-t"><span aria-hidden="true">☕</span> Смены в «Калаче»</span><span class="ps-c">${done} из ${list.length}</span></div>
+      <div class="ps-top"><span class="ps-t"><span aria-hidden="true">☕</span> ${esc0(SW('Смены в «Калаче»'))}</span><span class="ps-c">${done} из ${list.length}</span></div>
       <div class="ps-dots" role="img" aria-label="Смен пройдено: ${done} из ${list.length}">${dots}</div>
       <p class="ps-w">${note}</p>
       ${due ? `<button type="button" class="btn primary block pro-big pro-shiftbtn ready" data-pa="shift">Встать за стойку<small>смена ждёт вас · ${C().SHIFT_SEC} с</small></button>` : ''}
@@ -34126,7 +34382,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
       h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
         ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🏪</div>'}<span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
-        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
+        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} ${esc0(SW('вы уходите из «Калача»'))} с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
         <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
         <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
         <details class="pf-det"><summary>Куда уходили деньги</summary><p class="pro-note">Заработано ${fm(sm.earned)}, отложено ${fm(sm.sav)}.</p>${where}</details>
@@ -34141,7 +34397,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!tips.length) tips.push('Копилка и вклад защищают деньги от срывов, а «Смена» и учёба быстрее ведут к повышению.');
       h = `<div class="pro-ovbg"><div class="pro-card pro-final life" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
         ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🕰️</div>'}<span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
-        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, а Семён Аркадьевич всё так же берёт американо и правду. Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
+        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, ${esc0(SW('а Семён Аркадьевич всё так же берёт американо и правду.'))} Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
         <h3>Куда ушли деньги</h3>${where}
         <ul class="pf-tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
         <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="retry">Попробовать заново</button><button type="button" class="btn block pro-big2" data-pa="skipMain">Начать сразу со своей сети</button></div></div></div>`;
@@ -34158,7 +34414,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = won ? { gulya: p.sf && (p.sf.gulya === 'with' || p.sf.gulya === 'share'), rashid: p.sf && p.sf.mentor === 'partner' }
       : { mode: 'life', light: 'night', old: true, job: p.job, heroEmo: 'tired', rashidEmo: 'neutral', gulya: false, fill: 0.2 };
     if (ui.pxFin) ui.pxFin.destroy();
-    ui.pxFin = BK.Px.stage({ cls: 'pro-pxf', fps: 8, data: d, label: won ? 'Своя точка: вывеска, ленточка у входа, вы машете' : 'Поздний вечер в «Калаче»: вы за той же стойкой', height: (W) => (W < 200 ? 104 : 120), scale: () => 2, minW: 150, maxW: 320, draw: (b, t, W, H, dd) => (won ? BK.Px.scenes.own(b, t, W, H, dd) : BK.Px.scenes.kalach(b, t, W, H, dd)) });
+    ui.pxFin = BK.Px.stage({ cls: 'pro-pxf', fps: 8, data: d, label: won ? 'Своя точка: вывеска, ленточка у входа, вы машете' : SW('Поздний вечер в «Калаче»: вы за той же стойкой'), height: (W) => (W < 200 ? 104 : 120), scale: () => 2, minW: 150, maxW: 320, draw: (b, t, W, H, dd) => (won ? BK.Px.scenes.own(b, t, W, H, dd) : BK.Px.scenes.kalach(b, t, W, H, dd)) });
     ui.pxFin.attach(slot);
   }
   // переход в основную игру (стадия 2) с переносом бонусов
@@ -34185,7 +34441,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let o = $('#proMenu');
     const h = `<div class="pro-ovbg" data-pa="menuClose"><div class="pro-card pro-menu" role="dialog" aria-modal="true" aria-labelledby="proMenuT" tabindex="-1">
       <h2 id="proMenuT">Пролог «Бариста»</h2>
-      <p class="pcd-t">Вы — бариста у Рашида в «Калаче». Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
+      <p class="pcd-t">${esc0(SW('Вы — бариста у Рашида в «Калаче».'))} Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
       <ul class="pf-tips"><li>«Как живу» — жильё, еда, развлечения, подработки: чем дешевле, тем быстрее копится, но силы и настроение не бесконечны.</li><li>Копилка и вклад защищают деньги от срывов на покупки.</li><li>«Смена» раз в месяц — чаевые, навык и мнение начальника.</li></ul>
       ${ui.ask === 'skip' ? `<div class="confirm">Пролог закончится без бонусов, начнётся обычная игра. <button type="button" class="btn sm danger" data-pa="skipYes">Пропустить</button><button type="button" class="btn sm" data-pa="askNo">Отмена</button></div>` : ''}
       <div class="pf-btns"><button type="button" class="btn primary block" data-pa="menuClose">Вернуться</button>${ui.ask === 'skip' ? '' : '<button type="button" class="btn block" data-pa="skipAsk">Пропустить пролог — сразу своя сеть</button>'}<button type="button" class="btn block" data-pa="toStart">К списку игр</button></div></div></div>`;
@@ -34249,7 +34505,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sh = ui.sh, p = Pp(); if (!sh) return;
     let h;
     if (sh.state === 'intro') {
-      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : sh.auto ? 'Смена пришла сама' : 'Смена в «Калаче»'}</h2>
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : sh.auto ? 'Смена пришла сама' : esc0(SW('Смена в «Калаче»'))}</h2>
         ${sh.auto ? '<p class="pro-note">Бариста не выбирает, когда работать: смена пришла сама, и пропустить её нельзя.</p>' : ''}
         <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
         ${sh.tired ? '<p class="pro-note">Вы не выспались: гости покажутся нетерпеливее.</p>' : ''}
@@ -34286,7 +34542,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сцена «Смены»: гости-пиксели в очереди с пузырями заказов и шкалой терпения, герой за стойкой, Рашид у печи, Гуля
   function shiftScene() {
     const slot = document.getElementById('shScene'); if (!slot) return;
-    if (!ui.pxShift) ui.pxShift = BK.Px.stage({ cls: 'pro-pxs', fps: 10, label: 'Очередь в «Калаче»: гости с заказами, вы за стойкой', height: (W) => (W < 200 ? 100 : 124), scale: (a) => (a >= 900 ? 3 : 2), minW: 150, maxW: 360, active: () => ui.mode === 'shift', draw: (b, t, W, H) => {
+    if (!ui.pxShift) ui.pxShift = BK.Px.stage({ cls: 'pro-pxs', fps: 10, label: SW('Очередь в «Калаче»: гости с заказами, вы за стойкой'), height: (W) => (W < 200 ? 100 : 124), scale: (a) => (a >= 900 ? 3 : 2), minW: 150, maxW: 360, active: () => ui.mode === 'shift', draw: (b, t, W, H) => {
       const sh = ui.sh, now = performance.now();
       const d = { mode: 'shift', gulya: true, pos: ui.pxPos || (ui.pxPos = {}), queue: [], heroEmo: 'smile', rashidEmo: 'neutral' };
       if (sh) {
@@ -34458,7 +34714,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const S1 = () => BK.Stage1, E = () => BK.Engine, C = () => BK.CFG.STAGE1, APP = () => BK.App;
   const $ = (s, el) => (el || document).querySelector(s);
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc0 = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  /* Местный слой (src/data/story-cast.js): в «Своей кофейне» вместо «Калача», «Семи рек» и Рашида
+     читаются наставник, банк и пекарня города партии. Для Уфы swap() возвращает строку как есть. */
+  const SW = (t) => { const C = BK.STORY_CAST; if (!C || t == null) return t; try { return C.swapNow ? C.swapNow(String(t)) : C.swap(S(), String(t)); } catch (e) { return t; } };
+  const esc = (s) => esc0(SW(s));
   const fm = (v) => BK.fmtMoney(Math.round(v));
   const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
   const rub = (v) => Math.round(v).toLocaleString('ru-RU') + ' ₽';
@@ -34765,11 +35025,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <dl class="sp-dl"><div><dt>Площадь</dt><dd>${sp.area} м²</dd></div><div><dt>Аренда</dt><dd>${fm(sp.area * sp.rentM2)}/мес</dd></div><div><dt>Поток мимо</dt><dd>${sp.traffic.toLocaleString('ru-RU')} чел./день</dd></div><div><dt>Кошелёк района</dt><dd>${rub(sp.solv * pl())} на чек</dd></div>
           <div><dt>Гостей в день</dt><dd>≈ ${pv.guests} <small>через 5 мес.</small></dd></div><div><dt>Средний чек</dt><dd>≈ ${rub(pv.check)}</dd></div></dl>
         <div class="sp-dp" aria-label="Когда идут люди: утро ${Math.round(dp.m * 100)} %, обед ${Math.round(dp.d * 100)} %, вечер ${Math.round(dp.e * 100)} %">${bar('m', 'утро')}${bar('d', 'обед')}${bar('e', 'вечер')}<span class="sp-hrs">Часы: ${sp.hours.map((h) => esc(C().HOURS[h].name)).join(' / ')}</span></div>
-        <div class="sp-cost"><span>Отделка ${fm(c.fit)} · оборудование ${fm(c.equip)}${c.machine ? ` <em>(кофемашина Рашида −${fm(c.machine)})</em>` : ''} · депозит ${fm(c.rent)} · закупка ${fm(c.stock)}${c.thrift ? ` · торг −${fm(c.thrift)}` : ''}</span><b>Открыть: ${fm(c.total)}</b><span class="${c.left < 200000 ? 'dn' : ''}">Останется: ${fm(c.left)}${c.left < 200000 ? ' — мало на первые месяцы' : ''}</span></div>
+        <div class="sp-cost"><span>Отделка ${fm(c.fit)} · оборудование ${fm(c.equip)}${c.machine ? ` <em>(${esc0(SW('кофемашина Рашида'))} −${fm(c.machine)})</em>` : ''} · депозит ${fm(c.rent)} · закупка ${fm(c.stock)}${c.thrift ? ` · торг −${fm(c.thrift)}` : ''}</span><b>Открыть: ${fm(c.total)}</b><span class="${c.left < 200000 ? 'dn' : ''}">Останется: ${fm(c.left)}${c.left < 200000 ? ' — мало на первые месяцы' : ''}</span></div>
         <button type="button" class="btn primary block" data-s1="pick" data-v="${i}" ${c.left < 0 ? `disabled title="Не хватает ${fm(-c.left)}"` : ''}>${c.left < 0 ? `Не хватает ${fm(-c.left)}` : 'Открыть здесь'}</button></article>`;
     }).join('');
     const f = (s.story && s.story.f) || {};
-    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2><p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — кредит «Семь рек»)` : ''}${t.flags.rashidIn ? ` — с долей Рашида ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', Гуля ждёт звонка' : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
+    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2><p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — ${esc0(SW('кредит «Семь рек»'))})` : ''}${t.flags.rashidIn ? ` — ${esc0(SW('с долей Рашида'))} ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', ' + esc0(SW('Гуля ждёт звонка')) : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
   }
 
   /* ---- основной экран ---- */
@@ -34786,10 +35046,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="s1-shop" id="s1Shop"><div class="s1-shopov" id="s1ShopOv">${shopOv(t, st, s)}</div></div>
       <div class="s1-q"><span>${td.closed ? 'Сегодня закрыто' : `загрузка ${Math.round(load * 100)} %`}${lost ? ' · ' + lost : ''}</span><span>${esc(C().HOURS[t.hours].name)}</span></div>
       <div class="s1-cards"><section class="pc s1-hours"><h3>Сегодня по частям дня <small>гостей</small></h3><div class="s1-hbs">${bars}</div>${load > 1 ? '<p class="s1-note dn">В пик очередь теряет гостей — нужен ещё человек за стойкой.</p>' : ''}</section>
-      <section class="pc s1-th"><h3>Мысли гостей</h3><ul class="s1-thl">${th || '<li class="muted">Пока никого</li>'}</ul>${t.flags.dvorOpen ? `<p class="s1-note">Напротив — «Хлебный двор»${storyLenin(s)}</p>` : t.dvorDay ? '<p class="s1-note">На пустой витрине напротив: «Хлебный двор. Скоро!»</p>' : ''}</section>
+      <section class="pc s1-th"><h3>Мысли гостей</h3><ul class="s1-thl">${th || '<li class="muted">Пока никого</li>'}</ul>${t.flags.dvorOpen ? `<p class="s1-note">${esc0(SW('Напротив — «Хлебный двор»'))}${storyLenin(s)}</p>` : t.dvorDay ? `<p class="s1-note">${esc0(SW('На пустой витрине напротив: «Хлебный двор. Скоро!»'))}</p>` : ''}</section>
       <section class="pc s1-feed"><h3>Что происходит</h3><ul>${fd}</ul></section></div>`;
   }
-  function storyLenin(s) { const l = s.story && s.story.f.lenin; return l === 'pact' ? ' · договор с Олегом: хлеб и пироги — у них' : l === 'fight' ? ' · «битва на улице»' : ''; }
+  function storyLenin(s) { const l = s.story && s.story.f.lenin; return l === 'pact' ? SW(' · договор с Олегом: хлеб и пироги — у них') : l === 'fight' ? SW(' · «битва на улице»') : ''; }
   const TABS = [['shop', 'Точка'], ['menu', 'Меню'], ['team', 'Команда'], ['money', 'Деньги']];
   function rightHtml(s) {
     const tabs = `<nav class="s1-tabs" role="tablist">${TABS.map(([k, n]) => `<button type="button" role="tab" data-s1="tab" data-v="${k}" aria-selected="${ui.tab === k}">${n}</button>`).join('')}</nav>`;
@@ -34810,7 +35070,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <h4>Вечерняя скидка</h4>${seg('disc', W.disc, BK.CFG.EVE_DISCOUNTS.map((d, i) => [i, d ? `−${Math.round(d * 100)} %` : 'Нет']))}</section>
       <section class="s1-sec s1-kv"><div><span>Рейтинг на картах</span><b>${rt.toFixed(2).replace('.', ',')}★</b></div><div><span>Постоянные гости</span><b>${Math.round(t.reg)}</b></div><div><span>О вас знают</span><b>${Math.round(t.aware * 100)} %</b></div><div><span>Ремонт</span><b>${st.repair ? esc(BK.CFG.REPAIRS[st.repair].name) : 'нет'}</b></div></section>
       ${rep ? `<section class="s1-sec"><button type="button" class="btn block" data-s1="repair" ${st.status !== 'open' || s.cash < rc ? 'disabled' : ''}>Ремонт «${esc(rep.name)}» · ${fm(rc)} · ${rep.days} дн. закрыто</button><p class="s1-hint">Уютнее — выше рейтинг и чек.</p></section>` : ''}
-      <section class="s1-sec s1-second"><h4>Вторая вывеска</h4><p class="s1-hint">${sw ? esc(sw) : 'Эльвира готова: деньги на цех и вторую точку. Кофейня станет точкой №1 сети.'}</p><button type="button" class="btn ${sw ? '' : 'primary '}block" data-s1="second" ${sw ? 'disabled' : ''}>Открыть вторую точку</button></section>`;
+      <section class="s1-sec s1-second"><h4>Вторая вывеска</h4><p class="s1-hint">${sw ? esc(sw) : esc0(SW('Эльвира готова: деньги на цех и вторую точку. Кофейня станет точкой №1 сети.'))}</p><button type="button" class="btn ${sw ? '' : 'primary '}block" data-s1="second" ${sw ? 'disabled' : ''}>Открыть вторую точку</button></section>`;
   }
   function tabMenu(s) {
     const t = s.stage1, sum = BK.ProdStats ? BK.ProdStats.summary(s) : null, rows = {};
@@ -34836,7 +35096,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       : `<li class="s1-emp"><span class="s1-av sm" style="--h:${(e.name.charCodeAt(0) * 37) % 360}">${esc(e.name[0])}</span><div><b>${esc(e.name)}</b><small>${esc(BK.STAFF_LVL_NAMES[e.lvl])} · ${fm(E().salaryOf(s, e.lvl))}/мес</small></div><span class="face" title="Настроение ${Math.round(e.mood)}">${face(e.mood)}</span>${e.lvl < BK.CFG.MAX_LVL ? `<button type="button" class="btn sm" data-s1="train" data-v="${e.id}" ${s.cash < E().trainCost(s, e.lvl + 1) ? 'disabled' : ''}>Учить · ${fm(E().trainCost(s, e.lvl + 1))}</button>` : ''}</li>`).join('');
     const inc = st.incoming.map((x) => `<li class="s1-emp inc"><span class="s1-av sm" style="--h:200">${esc(x.p.name[0])}</span><div><b>${esc(x.p.name)}</b><small>выходит через ${Math.max(0, x.day - s.day)} дн.</small></div></li>`).join('');
     const sick = t.hero ? `<li class="s1-emp inc">${portrait('hero')}<div><b>Вы болеете</b><small>вернётесь через ${Math.max(0, t.sick - s.day)} дн.</small></div></li>` : '';
-    const gl = S1().gulyaAvail(s) ? `<li class="s1-cand gulya">${portrait('gulya')}<div><b>Гульнара Сафина</b><small>из «Калача» · уровень ${S1().gulyaLvl(s)} · ждёт звонка${s.story && s.story.f.gulya === 'share' ? ' · совладелица 10 %' : ''}</small></div><button type="button" class="btn sm primary" data-s1="gulya" ${hw ? `disabled title="${esc(hw)}"` : ''}>Позвать</button></li>` : '';
+    const gl = S1().gulyaAvail(s) ? `<li class="s1-cand gulya">${portrait('gulya')}<div><b>${esc0(SW('Гульнара Сафина'))}</b><small>${esc0(SW('из «Калача»'))} · уровень ${S1().gulyaLvl(s)} · ждёт звонка${s.story && s.story.f.gulya === 'share' ? ' · совладелица 10 %' : ''}</small></div><button type="button" class="btn sm primary" data-s1="gulya" ${hw ? `disabled title="${esc(hw)}"` : ''}>Позвать</button></li>` : '';
     const cands = s.candidates.slice(0, 4).map((c) => `<li class="s1-cand"><span class="s1-av sm" style="--h:${(c.name.charCodeAt(0) * 53) % 360}">${esc(c.name[0])}</span><div><b>${esc(c.name)}</b><small>${esc(BK.STAFF_LVL_NAMES[c.lvl])} · ${fm(E().salaryOf(s, c.lvl))}/мес</small></div><button type="button" class="btn sm" data-s1="hire" data-v="${c.id}" ${hw || s.cash < E().hireCost(s, c.lvl) ? `disabled title="${esc(hw || 'Не хватает денег')}"` : ''}>Нанять · ${fm(E().hireCost(s, c.lvl))}</button></li>`).join('');
     const pk = s.pay.seller / s.market.seller;
     return `<section class="s1-sec"><h4>За стойкой <small>${st.staff.length} из ${BK.CFG.SIZES.small.staffMax}</small></h4><ul class="s1-el">${rows}${sick}${inc}</ul>
@@ -34851,7 +35111,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const mon = t.months.slice(-6).map((m) => `<li><span>${cap(E().MONTHS[m.m]).slice(0, 3)}</span><span class="mb"><i class="${m.profit >= 0 ? 'up' : 'dn'}" style="width:${Math.min(100, Math.abs(m.profit) / 4000).toFixed(0)}%"></i></span><b class="${m.profit >= 0 ? 'up' : 'dn'}">${fmS(m.profit)}</b></li>`).join('');
     const lw = S1().loanWhy(s);
     return `<section class="s1-sec s1-kv"><div><span>Счёт</span><b class="${s.cash < 0 ? 'dn' : ''}">${fm(s.cash)}</b></div><div><span>Резерв</span><b>${fm(s.reserve)}</b></div><div><span>Кредит</span><b>${fm(s.loan)}</b></div><div><span>Ставка</span><b>${(E().loanRate(s) * 100).toFixed(1).replace('.', ',')} %</b></div></section>
-      <section class="s1-sec"><h4>Кредит «Семь рек» <small>лимит для одной кофейни ${fm(t.loanMax)}</small></h4><div class="s1-row"><button type="button" class="btn" data-s1="loan" ${lw ? `disabled title="${esc(lw)}"` : ''}>Взять ${fm(Math.min(200000, S1().loanRoom(s)) || 0)}</button><button type="button" class="btn" data-s1="repay" ${s.loan > 0 && s.cash > 0 ? '' : 'disabled'}>Погасить ${fm(Math.min(200000, s.loan))}</button></div>${lw ? `<p class="s1-hint">${esc(lw)}</p>` : ''}</section>
+      <section class="s1-sec"><h4>${esc0(SW('Кредит «Семь рек»'))} <small>лимит для одной кофейни ${fm(t.loanMax)}</small></h4><div class="s1-row"><button type="button" class="btn" data-s1="loan" ${lw ? `disabled title="${esc(lw)}"` : ''}>Взять ${fm(Math.min(200000, S1().loanRoom(s)) || 0)}</button><button type="button" class="btn" data-s1="repay" ${s.loan > 0 && s.cash > 0 ? '' : 'disabled'}>Погасить ${fm(Math.min(200000, s.loan))}</button></div>${lw ? `<p class="s1-hint">${esc(lw)}</p>` : ''}</section>
       <section class="s1-sec"><h4>Прошлый месяц</h4>${pnl}${t.share ? `<p class="s1-hint">Доли партнёров (${Math.round(t.share * 100)} % прибыли) списываются 1-го числа.</p>` : ''}</section>
       ${mon ? `<section class="s1-sec"><h4>По месяцам</h4><ul class="s1-mon">${mon}</ul></section>` : ''}`;
   }
@@ -34928,7 +35188,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (snd.msId !== f.id) { snd.msId = f.id; play('sparkle'); } // веха главы — искорка (один раз на веху)
     const last = t.months[t.months.length - 1];
     const big = f.id === 'plus' && last ? `<div class="s1-msv up">${fmS(last.profit)}<small>прибыль за ${esc(E().MONTHS[last.m])}</small></div>` : f.id === 'g100' ? '<div class="s1-msv">100<small>гостей за день</small></div>' : f.id === 'r45' ? '<div class="s1-msv">4,5★<small>на картах</small></div>' : '';
-    const sms = { plus: ['Мама', 'Я видела, у вас очередь была. Горжусь. Покушай.'], g100: ['Семён Аркадьевич', 'Сто человек за день? Это уже не кофейня, это остановка. Рекомендую.'], r45: ['Эльвира', 'Четыре с половиной звезды. Банки такое тоже читают.'], hire: ['Мама', 'Теперь ты начальник? Не обижай людей. И покушай.'], open: ['Ильдар', 'Открылись! Я уже выложил сторис.'], streak: ['Эльвира', 'Три месяца в плюсе. Приходите — поговорим о второй точке.'] }[f.id];
+    const sms0 = { plus: ['Мама', 'Я видела, у вас очередь была. Горжусь. Покушай.'], g100: ['Семён Аркадьевич', 'Сто человек за день? Это уже не кофейня, это остановка. Рекомендую.'], r45: ['Эльвира', 'Четыре с половиной звезды. Банки такое тоже читают.'], hire: ['Мама', 'Теперь ты начальник? Не обижай людей. И покушай.'], open: ['Ильдар', 'Открылись! Я уже выложил сторис.'], streak: ['Эльвира', 'Три месяца в плюсе. Приходите — поговорим о второй точке.'] }[f.id];
+    const sms = sms0 ? [SW(sms0[0]), SW(sms0[1])] : sms0; // СМС вехи — от местных людей
     const nxt = S1().MS.find((m) => t.ms[m.id] == null);
     $('#s1Ov').innerHTML = `<div class="s1-ovbg" data-s1="msClose"><div class="s1-card s1-msc" role="dialog" aria-modal="true" aria-labelledby="s1MsT" tabindex="-1"><span class="s1-star" aria-hidden="true">★</span>
       <span class="s1-ey pos">Веха главы · ${n} из ${L}</span><h2 id="s1MsT">${esc(f.name)}</h2>${big}
@@ -34965,7 +35226,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rw = BK.RewindUI ? BK.RewindUI.blockHtml(s, true) : '';
     $('#s1Ov').innerHTML = `<div class="s1-ovbg"><div class="s1-card s1-final" role="dialog" aria-modal="true" aria-labelledby="s1FinT" tabindex="-1">
       <span class="s1-ey neg">Глава 1 · ${L.length} ${plural(L.length, 'месяц', 'месяца', 'месяцев')} работы</span><h2 id="s1FinT">Кофейня закрылась</h2>
-      <p class="s1-ct">Деньги кончились, банк больше не даёт. Мама: «Ничего. Рашид тоже не с первого раза. Приходи ужинать». Это не конец истории — можно вернуться назад и сыграть иначе.</p>
+      <p class="s1-ct">Деньги кончились, банк больше не даёт. ${esc0(SW('Мама: «Ничего. Рашид тоже не с первого раза. Приходи ужинать».'))} Это не конец истории — можно вернуться назад и сыграть иначе.</p>
       <ul class="s1-tips">${tips.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
       ${rw}
       <div class="s1-fb"><button type="button" class="btn block" data-s1="retry">Открыть кофейню заново</button><button type="button" class="btn block" data-s1="skipNet">Начать сразу со своей сети</button></div></div></div>`;
@@ -34977,7 +35238,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (snd.fin !== 'main') { snd.fin = 'main'; play('fanfare'); } // глава пройдена — фанфары, дальше своя сеть
     close();
     APP().refresh(); APP().save();
-    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1. На счёте ${fm(nx.cash)}${nx.fund ? ` (программа «Семь рек» ${fm(nx.fund)})` : ''}. Выберите помещение под цех.`, 'good');
+    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1. На счёте ${fm(nx.cash)}${nx.fund ? ` (${SW('программа «Семь рек»')} ${fm(nx.fund)})` : ''}. Выберите помещение под цех.`, 'good');
   }
   function restart(skipNet) {
     const s = S(); if (!s) return;

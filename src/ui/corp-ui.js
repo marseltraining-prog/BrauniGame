@@ -4,6 +4,11 @@
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const E = () => BK.Engine, H = () => BK.UIH, C = () => BK.CFG, K = () => BK.CFG.CORP, D = () => BK.Dir;
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
   const cname = (id) => (BK.CITY_BY_ID[id] || {}).name || id;
@@ -223,7 +228,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (D().leakStatus) s += leakBox(S, id, D().leakStatus(S, id)); // Р4: денежный риск
     // конкуренты: местные сети и федеральный «Хлебный двор»
-    if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(C().RIVAL_NAME)}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
+    if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(rivalName(S))}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
     // план / факт
     if (d && c.plan) {
       const st = BK.Corp.cityStats(S, id), pf = D().planFact(S, c);

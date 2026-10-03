@@ -14,6 +14,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const ST = () => BK.Story, APP = () => BK.App, E = () => BK.Engine;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const nw = (n, a, b, c) => (BK.UIH ? BK.UIH.nw(n, a, b, c) : `${Math.round(n)} ${c}`);
+  /* Местный слой (src/data/story-cast.js): книга Семёна, эпилоги и подпись «Уфа жуёт» читаются
+     по городу партии — в Москве «Москва жуёт», Рашид становится местным наставником и т. д.
+     Для Уфы swap() возвращает строку как есть, поэтому её итоги и картинка прежние. */
+  const sub = (S, t) => { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } };
+  // Летописец: имя с фамилией («Семён Аркадьевич Литвак») — целиком по городу партии, иначе подстановка
+  // оставила бы уфимскую фамилию рядом с местным именем.
+  const NARRATOR_UFA = 'Семён Аркадьевич Литвак';
+  const narrator = (S) => { const C = BK.STORY_CAST; if (!C || !C.personOf) return NARRATOR_UFA;
+    const id = C.cityOf(S); if (id === 'ufa') return NARRATOR_UFA;
+    const p = C.personOf(id, 'chronicler'); return (p && p.name) || NARRATOR_UFA; };
 
   /* ---------------- 1. ЛЕТОПИСЬ: главы и записи ---------------- */
   // Подписи сцен, у которых в журнале нет title (пролог и глава 1) — чтобы в летописи
@@ -28,12 +38,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ready: 'Пора расти', s1fail: 'Кофейня закрылась',
   };
   // Одна запись летописи → { дата, что случилось, ваше решение }
-  function norm(it) {
+  function norm(it, S) {
     const id = String(it.id == null ? '' : it.id);
-    let title = it.title || TITLES[id] || '';
-    let choice = typeof it.choice === 'string' ? it.choice : null;
-    if (!title) title = it.line || id;
-    else if (!choice && it.line && it.line !== title) choice = it.line;
+    let title = sub(S, it.title || TITLES[id] || '');
+    let choice = typeof it.choice === 'string' ? sub(S, it.choice) : null;
+    if (!title) title = sub(S, it.line || id);
+    else if (!choice && it.line && it.line !== title) choice = sub(S, it.line);
     // Пролог и глава 1 не пишут поле chapter — достраиваем по факту: записи пролога идут
     // без дня игры, у главы 1 день уже есть.
     const chapter = it.chapter || (it.day == null ? 'prologue' : 'own');
@@ -45,12 +55,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return '';
   }
   // Список летописи → главы (подряд идущие записи одной главы — одна глава)
-  function chaptersOf(h) {
+  function chaptersOf(h, S) {
     const out = [];
     for (const raw of (h.list || [])) {
-      const it = norm(raw);
+      const it = norm(raw, S);
       let c = out[out.length - 1];
-      if (!c || c.id !== it.chapter) { c = { id: it.chapter, name: ST().chapterName(it.chapter), items: [] }; out.push(c); }
+      if (!c || c.id !== it.chapter) { c = { id: it.chapter, name: sub(S, ST().chapterName(it.chapter)), items: [] }; out.push(c); }
       c.items.push(it);
     }
     return out;
@@ -143,12 +153,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp');
   }
   // > = 10 — «сидит за столом», иначе — «стул пустой, но с деталью» (docs/story.md §7, Ф2)
-  function epilogues(R) {
+  function epilogues(R, S) {
     const rel = (R && R.rel) || {}, f = (R && R.f) || {};
     const out = [];
     for (const x of HEROES) {
       if (!met(x.id, rel, f)) continue;
-      out.push({ id: x.id, name: x.name, at: (rel[x.id] || 0) >= 10, text: x.text(f, rel), detail: DETAIL[x.id] || 'что-то очень личное', px: heroPx(x.id) });
+      out.push({ id: x.id, name: sub(S, x.name), at: (rel[x.id] || 0) >= 10, text: sub(S, x.text(f, rel)), detail: sub(S, DETAIL[x.id] || 'что-то очень личное'), px: heroPx(x.id) });
     }
     return out;
   }
@@ -172,7 +182,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const yy = years < 1 ? 'меньше года' : nw(Math.max(1, Math.round(years)), 'год', 'года', 'лет');
     const f = (R && R.f) || {};
     const p = [];
-    p.push(`Меня зовут Семён Аркадьевич Литвак. Двадцать лет пишу про еду в Уфе и всё это время искал, в чём подвох. В «${company}» подвоха не нашёл — только муку на рукаве.`);
+    p.push(`Меня зовут ${narrator(S)}. Двадцать лет пишу про еду в Уфе и всё это время искал, в чём подвох. В «${company}» подвоха не нашёл — только муку на рукаве.`);
     p.push(`Начиналось всё с одной точки и очень нервного хозяина. Спустя ${yy} в сети стало ${nw(Math.max(1, stores), 'точка', 'точки', 'точек')}. Я проверил каждую. Дважды, если считать эчпочмаки.`);
     if (f.scandal === 'admit') p.push('Когда случилась та история, вы не стали юлить. Я это запомнил. Город — тоже.');
     else if (f.scandal === 'hide') p.push('Про ту историю вы молчали. Я тоже. Из уважения к хорошему эчпочмаку.');
@@ -181,7 +191,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (e) p.push(`Чем кончилось — вы знаете: ${e.name}. Только не пересказывайте вслух, у меня эксклюзив.`);
     else p.push('Чем кончилось — не скажу: история ещё пишется, а я не люблю спойлеры.');
     p.push('Могло быть хуже. Могло быть лучше. Но американо у вас честный, и это я написал без взятки.');
-    return { title: BOOK_TITLES[(e && e.id) || ''] || 'Хлебная карта', company, lines: p, ending: e };
+    return { title: sub(S, BOOK_TITLES[(e && e.id) || ''] || 'Хлебная карта'), company, lines: p.map((t) => sub(S, t)), ending: e };
   }
 
   /* ---------------- 4. РАЗДЕЛ «ИСТОРИЯ» В ИТОГАХ ---------------- */
@@ -200,8 +210,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!R || !((R.log && R.log.length) || R.ending)) return '';   // летописи нет — раздела нет
       if (HAS_DOM) styles();
       const book = bookOf(S, R, h);
-      const chs = chaptersOf(h);
-      const eps = epilogues(R);
+      const chs = chaptersOf(h, S);
+      const eps = epilogues(R, S);
       let s = `<div class="sec sh-sec" id="shSec"><h3><span>История</span><small>летопись и книга Семёна</small></h3>`;
       s += `<div class="sh-book"><span class="sh-eyebrow">Книга Семёна Аркадьевича Литвака</span><b class="sh-bt">«${esc(book.title)}»</b><div class="sh-bl">${book.lines.map((t) => `<p>${esc(t)}</p>`).join('')}</div>`;
       if (book.ending) s += `<div class="sh-end"><b>${esc(book.ending.name)}</b><span>${esc(book.ending.text)}</span></div>`;
@@ -265,7 +275,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const l of wrap(ctx, str, maxW || MW)) { ctx.fillText(l, X, y); y += gap; }
     };
     const room = (n) => y + n <= LIM;
-    const book = bookOf(S, R, h), chs = chaptersOf(h), eps = epilogues(R);
+    const book = bookOf(S, R, h), chs = chaptersOf(h, S), eps = epilogues(R, S);
     put('ЛЕТОПИСЬ · КНИГА СЕМЁНА АРКАДЬЕВИЧА', `600 21px ${FONT}`, SOFT, 34);
     y += 22;
     put(`«${book.title}»`, `700 50px ${FONT}`, INK, 60);
@@ -323,7 +333,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (away.length && room(70)) put(`Пустые стулья: ${away.map((x) => x.name).join(', ')} — но с деталями.`, `400 21px ${FONT}`, SOFT, 32);
     }
     ctx.font = `400 20px ${FONT}`; ctx.fillStyle = SOFT;
-    ctx.fillText('Семён Аркадьевич Литвак · «Уфа жуёт»', X, H - 62);
+    ctx.fillText(sub(S, narrator(S) + ' · «Уфа жуёт»'), X, H - 62);
     ctx.textAlign = 'right'; ctx.fillText(book.company, X2, H - 62); ctx.textAlign = 'left';
     return cv.toDataURL('image/png');
   }
