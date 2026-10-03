@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Стадия 4 «Холдинг» — схема холдинга</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: var(--paper); }
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: 1000px minmax(0, 1fr); min-height: 0; }
+  .canvas { position: relative; overflow: hidden; background: var(--map-land); }
+  .canvas > svg { position: absolute; inset: 0; }
+  .node { position: absolute; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 12px; padding: 11px 13px; box-shadow: 0 4px 0 rgba(24,34,58,.08); }
+  .node .hd { display: flex; align-items: center; gap: 8px; }
+  .node .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+  .node .ic svg { width: 17px; height: 17px; }
+  .node b { font-size: 13.5px; display: block; line-height: 1.2; }
+  .node small { font-size: 11px; color: var(--ink-3); display: block; }
+  .node .big { font-family: var(--f-mono); font-size: 17px; font-weight: 700; margin-top: 8px; }
+  .node .big span { font-size: 11px; font-weight: 500; color: var(--ink-3); font-family: var(--f-body); margin-left: 4px; }
+  .node .ln { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+  .node .ln b { font-family: var(--f-mono); font-size: 11.5px; display: inline; font-weight: 600; }
+  .node .lb { height: 5px; border-radius: 3px; background: var(--surface-3); margin-top: 6px; position: relative; overflow: hidden; }
+  .node .lb i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+  .node.own .ic { background: var(--crust-soft); color: var(--crust-t); }
+  .node.prod .ic { background: var(--ink); color: var(--surface); }
+  .node.ext .ic { background: var(--good-soft); color: var(--good-t); }
+  .node.fr .ic { background: var(--river-soft); color: var(--river-t); }
+  .node.rv { border-color: var(--rival); border-style: dashed; background: var(--rival-soft); }
+  .node.rv b { color: var(--rival-t); }
+  .node.tr { border-width: 2px; background: linear-gradient(180deg, var(--gold-soft), var(--surface) 80%); }
+  .tag { position: absolute; font-family: var(--f-mono); font-size: 11px; font-weight: 600; background: var(--surface); border-radius: 6px; padding: 2px 7px; border: 1px solid var(--line-2); white-space: nowrap; }
+  .tag.fl { color: var(--rye); border-color: color-mix(in srgb, var(--rye) 40%, transparent); }
+  .tag.mn { color: var(--good-t); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+  .title { position: absolute; left: 24px; top: 20px; width: 470px; }
+  .title .caps { color: var(--crust-t); }
+  .title h1 { font-family: var(--f-display); font-size: 24px; font-weight: 700; line-height: 1.2; margin: 6px 0 8px; }
+  .title p { font-size: 13px; color: var(--ink-2); }
+  .legend { position: absolute; left: 24px; top: 150px; display: flex; gap: 16px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .plate { left: 24px; bottom: 22px; width: 250px; }
+
+  aside { min-width: 0; background: var(--surface); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+  .pane { padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; }
+  .seg { display: grid; grid-template-columns: 1fr 76px 52px; gap: 4px 10px; font-size: 12.5px; align-items: center; }
+  .seg .h { font-size: 10.5px; color: var(--ink-3); }
+  .seg .v { font-family: var(--f-mono); font-weight: 600; text-align: right; }
+  .seg .m { font-family: var(--f-mono); text-align: right; color: var(--ink-2); }
+  .seg .bar3 { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--surface-3); position: relative; margin-bottom: 5px; }
+  .seg .bar3 i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+  .seg .tot { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 600; }
+  .risk { display: grid; grid-template-columns: 26px 1fr; gap: 8px; font-size: 12.5px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .risk .ic { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; }
+  .risk .ic svg { width: 14px; height: 14px; }
+  .risk b { display: block; font-size: 13px; }
+  .risk small { color: var(--ink-3); font-size: 11.5px; }
+  .dec { border: 1.5px solid var(--crust); border-radius: 12px; padding: 12px 14px; background: var(--crust-soft); }
+  .dec .caps { color: var(--crust-t); }
+  .dec h4 { font-size: 15px; font-weight: 700; margin: 5px 0 4px; }
+  .dec p { font-size: 12.5px; color: var(--ink-2); }
+  .dec .row { display: flex; gap: 6px; margin-top: 10px; }
+  .dec .say { margin-top: 10px; grid-template-columns: auto 1fr; gap: 8px; font-size: 12px; font-style: italic; color: var(--ink-2); align-items: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <div class="canvas" id="cv">
+      <svg id="flows" width="1000" height="836" viewBox="0 0 1000 836"></svg>
+      <div class="title"><span class="caps">Стадия 4 · холдинг</span><h1>Как ходят мука и деньги</h1><p>От поля до полки — всё своё. Толщина линии — объём: тонны муки или рубли в год.</p></div>
+      <div class="legend"><span><svg width="30" height="10"><path d="M0 5H30" stroke="var(--rye)" stroke-width="6" stroke-linecap="round" opacity=".7"/></svg>мука и выпечка, т/год</span><span><svg width="30" height="10"><path d="M0 5H30" stroke="var(--good)" stroke-width="3" stroke-dasharray="6 4"/></svg>деньги, млрд ₽/год</span><span><svg width="14" height="14" viewBox="-7 -7 14 14"><rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="rotate(45)" fill="var(--rival)"/></svg>соперник</span></div>
+      <div id="nodes"></div>
+      <div class="plate"><div class="h"><span class="caps">Генплан холдинга</span><b>РОССИЯ · ЛИСТ 3</b></div>
+        <div class="r"><div><span class="caps">Городов</span><span class="mono">19 + 41 франш.</span></div><div><span class="caps">Дата</span><span class="mono">04.2046</span></div></div></div>
+    </div>
+    <aside>
+      <nav class="tabs"><span class="on">Холдинг</span><span>Сеть</span><span>Франшиза</span><span>Производство</span><span>Совет</span></nav>
+      <div class="pane">
+        <div><div class="sec-h"><h3>Сегменты · 12 мес.</h3><span class="muted">выручка / маржа</span></div><div class="seg" id="seg"></div></div>
+        <div><div class="sec-h"><h3>Риски квартала</h3><span class="muted">2</span></div><div id="risks"></div></div>
+        <div class="dec" id="dec"></div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px"><span id="ep"></span><div><b style="font-size:13px;display:block">Совет директоров · 14 апреля</b><span class="muted" style="font-size:12px">Эльвира вынесет вопрос о бирже</span></div><span class="btn">Повестка ›</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('hud').innerHTML = ART.hud({
+    brand: 'Холдинг «Тёплый угол»', sub: 'Хлебная карта', stage: 'Холдинг', date: 'апрель 2046', speed: 1,
+    metrics: [
+      { l: 'Выручка · 12 мес.', v: '47,0 млрд ₽', spark: [31, 33, 34, 36, 37, 39, 40, 41, 43, 44, 45.6, 47], d: '▲ 18 % за год', dc: 'up' },
+      { l: 'EBITDA', v: '6,8 млрд ₽', d: 'маржа 14,5 %' },
+      { l: 'Точки', v: '486 + 212', d: 'своих + франшиза' },
+    ],
+    goal: { l: 'Оценка холдинга', pct: 78, v: '54 млрд ₽', note: 'IPO от 60', ms: [50], w: 220 },
+  });
+
+  // ---- узлы ----
+  const N = [
+    ['fields', 'ext', 24, 372, 196, 'wheat', 'Поля Башкирии', 'контракты с 14 хозяйствами', '62 тыс. т', 'зерна в год', [['запас', '4 мес.']]],
+    ['mill', 'prod', 256, 350, 200, 'mill', 'Мельница «Кармаскалы»', 'своя · с 2041 года', '210 т', 'муки в сутки', [['загрузка', '86 %']], 86],
+    ['fact', 'prod', 494, 214, 222, 'factory', 'Фабрика «Уфа-Юг»', 'заморозка, хлеб, полуфабрикаты', '120 т', 'в сутки', [['+ цеха в городах', '31']], 92],
+    ['side', 'ext', 494, 470, 222, 'bag', 'Мука на сторону', 'пекарни Урала и Поволжья', '1,6 млрд', '₽ в год', [['доля помола', '29 %']]],
+    ['own', 'own', 764, 22, 214, 'store', 'Своя сеть', '486 точек · 19 городов', '34,2 млрд', '₽ в год', [['маржа', '16,1 %']]],
+    ['fr', 'fr', 764, 218, 214, 'handshake', 'Франшиза', '212 точек · 41 город', '0,71 млрд', 'роялти 6 %', [['поставки фабрики', '3,1 млрд']]],
+    ['shelf', 'ext', 764, 414, 214, 'cart', 'Полки супермаркетов', '3 400 магазинов · 5 сетей', '7,4 млрд', '₽ в год', [['доля полки', '9 %']]],
+  ];
+  $('nodes').innerHTML = N.map(([id, c, x, y, w, ic, t, s, big, u, lines, load]) => `<div class="node ${c}" id="n-${id}" style="left:${x}px;top:${y}px;width:${w}px"><div class="hd"><span class="ic">${IC[ic]}</span><div><b>${t}</b><small>${s}</small></div></div><div class="big">${big}<span>${u}</span></div>${lines.map(([a, b]) => `<div class="ln"><span>${a}</span><b>${b}</b></div>`).join('')}${load ? `<div class="lb"><i style="width:${load}%;background:${load > 90 ? 'var(--warn)' : 'var(--good)'}"></i></div>` : ''}</div>`).join('') +
+    `<div class="node rv" id="n-rv" style="left:764px;top:640px;width:214px"><b>◆ «Хлебный двор» на полках</b><small style="margin-top:3px">цена на 12 % ниже · Олег демпингует в 2 сетях</small></div>` +
+    `<div class="node tr" id="n-tr" style="left:300px;top:676px;width:416px"><div class="hd"><span class="ic" style="background:var(--gold-soft);color:var(--gold)">${IC.bank}</span><div><b>Казна холдинга</b><small>EBITDA за 12 мес. · фонд «Уральская высота» — 25 %</small></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px"><span class="big" style="margin:0">6,8 млрд <span>₽ в год</span></span><span class="num" style="font-size:12px;color:var(--gold)">капвложения 2,1 млрд</span></div></div>`;
+
+  // ---- потоки: считаем якоря по настоящим карточкам ----
+  const cvr = $('cv').getBoundingClientRect();
+  const A = (id) => { const r = $('n-' + id).getBoundingClientRect(); const o = { l: r.left - cvr.left, t: r.top - cvr.top, r: r.right - cvr.left, b: r.bottom - cvr.top }; o.cx = (o.l + o.r) / 2; o.cy = (o.t + o.b) / 2; return o; };
+  const bz = (x1, y1, x2, y2) => { const dx = (x2 - x1) * .5; return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`; };
+  let f = `<defs><pattern id="g1" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="var(--grid-minor)" stroke-width=".6"/></pattern><pattern id="g5" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="url(#g1)"/><path d="M50 0H0V50" fill="none" stroke="var(--grid-major)" stroke-width="1"/></pattern>
+    <marker id="ar" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10Z" fill="var(--good)"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10Z" fill="var(--gold)"/></marker></defs><rect width="1000" height="836" fill="url(#g5)"/>`;
+  const tags = [];
+  const tag = (cls, x, y, t) => tags.push(`<span class="tag ${cls}" style="left:${x}px;top:${y}px">${t}</span>`);
+  const flour = (a, ay, b, by, w, t, tx, ty) => { const x1 = A(a).r, x2 = A(b).l; f += `<path d="${bz(x1, ay, x2, by)}" stroke="var(--rye)" stroke-width="${w}" fill="none" opacity=".5"/>`; if (t) tag('fl', tx, ty, t); };
+  const F = A('fields'), M = A('mill'), FA = A('fact'), SI = A('side'), OW = A('own'), FR = A('fr'), SH = A('shelf'), TR = A('tr'), RV = A('rv');
+  flour('fields', F.cy, 'mill', M.cy, 26, '62 тыс. т', F.r - 84, F.t - 30);
+  flour('mill', M.cy - 22, 'fact', FA.cy, 18, '54 тыс. т', M.r - 84, M.t - 30);
+  flour('mill', M.cy + 24, 'side', SI.cy, 9, '');
+  tag('fl', M.l + 96, M.b + 8, '22 тыс. т');
+  flour('fact', FA.cy - 30, 'own', OW.cy, 14, '');
+  flour('fact', FA.cy, 'fr', FR.cy, 7, '');
+  flour('fact', FA.cy + 30, 'shelf', SH.cy, 9, '');
+  // деньги: шина справа от фабрики → казна
+  const BX = 738;
+  [[OW, 3.6, '34,2 млрд'], [FR, 1.8, '3,8 млрд'], [SH, 2.4, '7,4 млрд']].forEach(([c, w, t]) => {
+    f += `<path d="M${c.l},${c.b - 18} H${BX}" stroke="var(--good)" stroke-width="${w}" stroke-dasharray="7 5" fill="none"/><circle cx="${BX}" cy="${c.b - 18}" r="3.6" fill="var(--good)"/>`;
+    tag('mn', c.l + 8, c.b + 5, '→ казна ' + t);
+  });
+  f += `<path d="M${BX},${OW.b - 18} V${TR.cy - 8} Q${BX},${TR.cy} ${BX - 8},${TR.cy} H${TR.r + 9}" stroke="var(--good)" stroke-width="4" stroke-dasharray="7 5" fill="none" marker-end="url(#ar)"/>`;
+  f += `<path d="M${SI.cx},${SI.b} V${TR.t - 8}" stroke="var(--good)" stroke-width="1.6" stroke-dasharray="7 5" fill="none" marker-end="url(#ar)"/>`;
+  tag('mn', SI.cx + 8, SI.b + 16, '1,6 млрд');
+  // капвложения
+  f += `<path d="M${TR.l + 40},${TR.t} C${TR.l + 40},${TR.t - 60} ${M.l + 50},${M.b + 70} ${M.l + 50},${M.b + 8}" stroke="var(--gold)" stroke-width="2" stroke-dasharray="3 4" fill="none" marker-end="url(#ag)"/>`;
+  tag('', TR.l - 40, TR.t - 86, '<span style="color:var(--gold)">капвложения: вторая линия помола</span>');
+  // соперник давит на полки
+  f += `<path d="M${RV.cx},${RV.t} V${SH.b + 4}" stroke="var(--rival)" stroke-width="2.4" stroke-dasharray="2 3"/>`;
+  $('flows').innerHTML = f;
+  $('cv').insertAdjacentHTML('beforeend', tags.join(''));
+
+  // ---- панель ----
+  const S = [['Своя сеть', '34,2 млрд', '16,1 %', 73, 'var(--crust)'], ['Полки супермаркетов', '7,4 млрд', '9,8 %', 16, 'var(--good)'], ['Франшиза (роялти + поставки)', '3,8 млрд', '31 %', 8, 'var(--river)'], ['Мука на сторону', '1,6 млрд', '7,2 %', 3, 'var(--rye)']];
+  $('seg').innerHTML = `<span class="h">Сегмент</span><span class="h" style="text-align:right">Выручка</span><span class="h" style="text-align:right">Маржа</span>` +
+    S.map(([n, v, m, w, c]) => `<span>${n}</span><span class="v">${v}</span><span class="m">${m}</span><span class="bar3"><i style="width:${w}%;background:${c}"></i></span>`).join('') +
+    `<span class="tot">Холдинг</span><span class="v tot">47,0 млрд</span><span class="m tot">14,5 %</span>`;
+  $('risks').innerHTML =
+    `<div class="risk"><span class="ic" style="background:var(--warn-soft);color:var(--warn-t)">${IC.wheat}</span><div><b>Засуха-2046: зерно +18 %</b><small>запаса на 4 мес. · фиксировать цену с хозяйствами до июня?</small></div></div>` +
+    `<div class="risk"><span class="ic" style="background:var(--bad-soft);color:var(--bad-t)">${IC.star}</span><div><b>Франчайзи в Перми: 3,6 ★</b><small>7 точек тянут бренд вниз · аудит или отзыв лицензии</small></div></div>`;
+  $('ep').innerHTML = ART.portrait('elvira', 38);
+  $('dec').innerHTML = `<span class="caps">Решение месяца</span><h4>Вторая мельница — в Самаре?</h4><p>3,8 млрд ₽ · окупаемость ≈ 4,2 года · мука для Поволжья без 1 100 км дороги, фудкост там −2 п. п.</p>
+    <div style="margin-top:8px">${ART.fx([['rub', -2], ['cost', 2], ['risk', -1], ['who', 1, 'Гуля']])}</div>
+    <div class="row"><span class="btn primary">Строить</span><span class="btn">Отложить на год</span></div>
+    <div class="say">${ART.portrait('gulya', 34)}<span>«Мельница — это не бизнес, это спокойный сон. Строй»</span></div>`;
+</script>
+</body>
+</html>

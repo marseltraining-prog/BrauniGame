@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Стадия 1 «Своя точка» — вид вблизи</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: var(--paper); }
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: 1000px minmax(0, 1fr); min-height: 0; }
+  .left { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--line); }
+  .scene { position: relative; height: 604px; overflow: hidden; border-bottom: 1.5px solid var(--ink); }
+  .scene > svg { display: block; position: absolute; left: 0; top: -38px; }
+  .scene .thought { z-index: 2; }
+  .pop { z-index: 2; }
+  .tag { position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px; padding: 3px 9px 3px 6px; box-shadow: var(--shadow); }
+  .tag svg { width: 13px; height: 13px; }
+  .tag.warn { color: var(--warn-t); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+  .strip { flex: 1; display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; padding: 14px 16px; min-height: 0; }
+  .card { padding: 12px 14px; box-shadow: var(--shadow); }
+  .sec-h { margin-bottom: 6px; }
+  .hours text { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-3); }
+  .th { display: flex; gap: 8px; align-items: center; font-size: 12.5px; padding: 4px 0; }
+  .th .b { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; border: 1.3px solid var(--ink); border-radius: 12px; padding: 2px 9px 2px 7px; background: var(--surface); font-size: 12px; }
+  .th .b svg { width: 12px; height: 12px; }
+  .th .b.good { color: var(--good-t); } .th .b.bad { color: var(--bad-t); } .th .b.warn { color: var(--warn-t); }
+  .th .n { font-family: var(--f-mono); font-weight: 600; color: var(--ink-2); }
+  .th .why { color: var(--ink-3); font-size: 11.5px; flex: 1; }
+  aside { min-width: 0; background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+  .tabs span { font-size: 13px; }
+  .pane { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .mrow { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+  .mrow:first-of-type { border-top: 0; }
+  .mrow svg.pic { width: 30px; height: 30px; }
+  .mrow b { font-size: 13px; font-weight: 600; display: block; }
+  .mrow small { font-size: 11px; color: var(--ink-3); }
+  .mrow small.bad { color: var(--bad-t); font-weight: 600; }
+  .step { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 7px; overflow: hidden; }
+  .step span { width: 22px; height: 26px; display: grid; place-items: center; color: var(--ink-3); }
+  .step span svg { width: 12px; height: 12px; }
+  .step b { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; min-width: 42px; text-align: center; display: block; }
+  .sold { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); min-width: 44px; text-align: right; }
+  .advice { display: grid; grid-template-columns: auto 1fr; gap: 10px; background: var(--warn-soft); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; }
+  .advice b { display: block; font-size: 13px; margin-bottom: 2px; }
+  .advice .btns { display: flex; gap: 6px; margin-top: 8px; }
+  .team { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .team b { font-size: 13px; display: block; }
+  .team small { font-size: 11.5px; color: var(--ink-3); }
+  .fat { height: 6px; border-radius: 3px; background: var(--surface-3); margin-top: 5px; position: relative; overflow: hidden; }
+  .fat i { position: absolute; inset: 0 auto 0 0; width: 41%; background: var(--warn); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <div class="left">
+      <div class="scene" id="scn"><svg id="scene" width="1000" height="646" viewBox="0 0 960 620"></svg></div>
+      <div class="strip">
+        <div class="card"><div class="sec-h"><h3>Сегодня по часам</h3><span class="muted">выручка, тыс. ₽</span></div><svg class="hours" id="hours" width="100%" height="150" viewBox="0 0 520 118"></svg></div>
+        <div class="card"><div class="sec-h"><h3>Мысли гостей · неделя</h3><span class="muted">412 гостей</span></div><div id="thoughts"></div></div>
+      </div>
+    </div>
+    <aside>
+      <nav class="tabs"><span>Точка</span><span class="on">Меню</span><span>Команда</span><span>Деньги</span></nav>
+      <div class="pane">
+        <div class="sec-h" style="margin:0"><h3>Меню и цены</h3><span class="muted">продано сегодня</span></div>
+        <div id="menu"></div>
+        <div class="advice" id="adv"></div>
+        <div class="team" id="team"></div>
+        <div id="goals"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('hud').innerHTML = ART.hud({
+    brand: '«Тёплый угол»', sub: 'кофейня · ул. Ленина, 28', stage: 'Глава 1',
+    date: '12 апр. 2027 <small>· 8:42</small>', speed: 1,
+    metrics: [
+      { l: 'Сегодня', v: '18 460 ₽', d: 'к 21:00 ≈ 41 000 ₽' },
+      { l: 'Апрель', v: '−14 300 ₽', d: 'до плюса ≈ 9 дн.', dc: 'down' },
+
+      { l: 'Счёт', v: '612 400 ₽', d: 'кредит 900 тыс.' },
+    ],
+    goal: { l: 'Веха · 100 гостей в день', pct: 96, v: '96 гостей', note: 'к 8:42 · ещё 4', w: 220 },
+  });
+  const sc = ART.shopScene({ hero: 'tired', queue: 6, winLabel: '', lowShelf: false });
+  const pop = (x, y, t, c, sz, op) => `<text x="${x}" y="${y}" font-family="var(--f-display)" font-weight="700" font-size="${sz}" fill="${c}" stroke="var(--surface)" stroke-width="5" paint-order="stroke" opacity="${op || 1}" text-anchor="middle">${t}</text>`;
+  $('scene').innerHTML = sc + pop(392, 344, '+275 ₽', 'var(--good-t)', 20) + pop(410, 316, '+180 ₽', 'var(--good-t)', 14, .5) + pop(398, 294, '+95 ₽', 'var(--good-t)', 11, .25);
+  // мысли гостей над головами (координаты сцены × 1000/960, сдвиг −38)
+  const k = 1000 / 960, place = (x, y) => [x * k, y * k - 38];
+  const T = [
+    [312, 408, 'good', 'heart', 'вкусно!', ''], [236, 352, 'bad', 'rub', 'дорого?', ''], [156, 420, 'warn', 'guests', 'нет моих круассанов', ''],
+    [92, 352, 'bad', 'clock', 'очередь…', ''],
+  ];
+  $('scn').insertAdjacentHTML('beforeend', T.map(([x, y, c, ic, t]) => { const [px, py] = place(x - 20, y); return `<span class="thought ${c}" style="left:${px}px;top:${py}px">${IC[ic]}${t}</span>`; }).join(''));
+  const [hx, hy] = place(760, 300);
+  $('scn').insertAdjacentHTML('beforeend', `<span class="tag warn" style="left:${hx}px;top:${hy}px">${IC.bolt}вы · силы 41 %</span>`);
+  const [qx, qy] = place(10, 610);
+  $('scn').insertAdjacentHTML('beforeend', `<span class="tag" style="left:${qx}px;top:${qy - 24}px">${IC.guests}очередь 6 · ушли не купив: 7</span>`);
+
+  // выручка по часам
+  const H = [[7, 2.1], [8, 6.8], [9, 4.2], [10, 2.4], [11, 2.0], [12, 3.6], [13, 4.1], [14, 2.2], [15, 1.8], [16, 2.0], [17, 3.0], [18, 3.4], [19, 2.2], [20, 1.2]];
+  let hs = '', bw = 30;
+  H.forEach(([h, v], i) => {
+    const x = 14 + i * 36, y = 92 - v * 11, now = h === 8, fut = h > 8;
+    hs += `<rect x="${x}" y="${y}" width="${bw}" height="${92 - y}" rx="3" fill="${now ? 'var(--crust)' : fut ? 'none' : 'var(--river)'}" ${fut ? 'stroke="var(--line-2)" stroke-dasharray="3 3"' : ''} opacity="${fut ? 1 : .85}"/>`;
+    hs += `<text x="${x + bw / 2}" y="108" text-anchor="middle">${h}</text>`;
+  });
+  hs += `<path d="M0 92.5H520" stroke="var(--line-2)"/><text x="${14 + 36 + 15}" y="${92 - 6.8 * 11 - 6}" text-anchor="middle" style="fill:var(--crust-t);font-weight:700">6,8</text>`;
+  hs += `<rect x="100" y="12" width="10" height="4" rx="2" fill="var(--bad)" opacity=".7"/><text x="116" y="17" style="fill:var(--bad-t)">пик 8–9 — очередь теряет гостей</text>`;
+  $('hours').innerHTML = hs;
+  const TH = [['good', 'heart', 'вкусно!', 41, 'эчпочмак и раф'], ['bad', 'clock', 'очередь', 28, 'утром один человек'], ['warn', 'guests', 'нет круассанов', 17, 'кончаются к 8:30']];
+  $('thoughts').innerHTML = TH.map(([c, ic, t, n, w]) => `<div class="th"><span class="b ${c}">${IC[ic]}${t}</span><span class="why">${w}</span><span class="n">×${n}</span></div>`).join('');
+
+  const pic = (k) => `<svg class="pic" viewBox="-16 -16 32 32">${ART.pastry(k, 0, 0, 1.05)}</svg>`;
+  const step = (p) => `<span class="step"><span>${IC.minus}</span><b>${p}</b><span>${IC.plus}</span></span>`;
+  const M = [
+    ['cup', 'Капучино 0,3', 'маржа 72 %', '180', '31'], ['mug', 'Раф ванильный', 'хит недели', '240', '22'], ['croissant', 'Круассан', 'закончился в 8:31', '140', '24', 'bad'],
+    ['echpochmak', 'Эчпочмак', 'маржа 58 %', '95', '19'], ['bun', 'Булочка с корицей', 'маржа 61 %', '110', '12'], ['tea', 'Чай облепиховый', 'маржа 78 %', '160', '6'],
+  ];
+  $('menu').innerHTML = M.map(([k, n, s, p, q, c]) => `<div class="mrow">${pic(k)}<div><b>${n}</b><small class="${c || ''}">${s}</small></div>${step(p)}<span class="sold">${q} шт.</span></div>`).join('');
+  $('adv').innerHTML = `${ART.portrait('rashid', 36)}<div><b>Совет наставника</b>«Круассаны кончились в полдевятого, а люди идут до десяти. Пеки утром на 15 штук больше»<div class="btns"><span class="btn primary">+15 круассанов утром</span><span class="btn">Позже</span></div></div>`;
+  const gl = [['ok', 'Открыться', ''], ['ok', 'Рейтинг 4,0 ★', ''], ['now', '100 гостей в день', '96'], ['', 'Первый месяц в плюсе', '−14 тыс.'], ['', 'Вторая точка', '']];
+  $('goals').innerHTML = `<div class="sec-h" style="margin:2px 0 6px"><h3>Вехи главы</h3><span class="muted">2 из 5</span></div>` + gl.map(([s, t, v]) => `<div style="display:flex;align-items:center;gap:9px;font-size:12.5px;padding:3px 0;${s === 'ok' ? 'color:var(--ink-3)' : ''}"><span style="width:18px;height:18px;border-radius:50%;display:grid;place-items:center;flex:none;${s === 'ok' ? 'background:var(--good);color:#fff' : s === 'now' ? 'border:2px solid var(--crust)' : 'border:1.5px dashed var(--line-2)'}">${s === 'ok' ? IC.check.replace('<svg', '<svg width="11" height="11"') : ''}</span><span style="flex:1;${s === 'ok' ? 'text-decoration:line-through' : s === 'now' ? 'font-weight:600' : ''}">${t}</span><span class="num" style="font-size:11.5px;color:var(--ink-3)">${v}</span></div>`).join('');
+  $('thoughts').insertAdjacentHTML('afterend', `<div style="margin-top:8px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--rival-t);background:var(--rival-soft);border-radius:8px;padding:7px 10px"><span style="width:10px;height:10px;transform:rotate(45deg);background:var(--rival);border-radius:2px;flex:none"></span>Напротив откроется «Хлебный двор» — через ≈ 20 дней</div>`);
+  $('team').innerHTML = `${ART.portrait('hero', 40)}<div><b>Команда: вы один</b><small>смена 7:00–21:00 · пик не вытянуть</small><div class="fat"><i></i></div></div><span class="btn">Нанять</span>`;
+</script>
+</body>
+</html>

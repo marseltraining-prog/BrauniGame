@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Хлебная карта: этапы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #efe9df; --surface: #fbf9f5; --surface-2: #f4efe7;
+    --ink: #18223a; --ink-2: #4a5570; --ink-3: #5d6576;
+    --line: #e0d7c9; --line-2: #cbbfac;
+    --crust: #c46f17; --crust-t: #94500b; --crust-soft: #f4dfc2;
+    --river-t: #235f6b; --river-soft: #cfe3e4;
+    --good-t: #1e6b41; --good-soft: #d9ecdf;
+    --rival: #9580a8;
+    --grid: rgba(107, 74, 46, .07);
+    --shadow: 0 1px 2px rgba(60, 44, 24, .08), 0 8px 24px rgba(60, 44, 24, .10);
+    --f-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+    --f-body: 'Golos Text', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0f141c; --surface: #1a202b; --surface-2: #222a37;
+      --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0;
+      --line: #2d3645; --line-2: #3d4a5e;
+      --crust: #e8963d; --crust-t: #efa555; --crust-soft: #3a2a18;
+      --river-t: #6cc0cf; --river-soft: #16303a;
+      --good-t: #5cc28a; --good-soft: #17352a;
+      --rival: #a893c0;
+      --grid: rgba(120, 160, 200, .05);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0f141c; --surface: #1a202b; --surface-2: #222a37;
+    --ink: #e7eaf0; --ink-2: #b8c0cf; --ink-3: #939cb0;
+    --line: #2d3645; --line-2: #3d4a5e;
+    --crust: #e8963d; --crust-t: #efa555; --crust-soft: #3a2a18;
+    --river-t: #6cc0cf; --river-soft: #16303a;
+    --good-t: #5cc28a; --good-soft: #17352a;
+    --rival: #a893c0;
+    --grid: rgba(120, 160, 200, .05);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background-color: var(--paper);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 48px 24px 80px; }
+  .caps { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--crust-t); }
+  header.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; padding-bottom: 28px; border-bottom: 1.5px solid var(--ink); }
+  h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 5vw, 48px); line-height: 1.08; letter-spacing: -.01em; margin: 10px 0 12px; }
+  .lead { max-width: 640px; color: var(--ink-2); font-size: 17px; }
+  .plate { border: 1.5px solid var(--ink); box-shadow: 0 0 0 3px var(--paper), 0 0 0 4.5px var(--ink); background: var(--surface); font-size: 12px; min-width: 250px; }
+  .plate .h { padding: 8px 12px; }
+  .plate .h b { display: block; font-family: var(--f-display); font-size: 15px; letter-spacing: .08em; margin-top: 2px; }
+  .plate .r { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ink); }
+  .plate .r > div { padding: 6px 12px 7px; }
+  .plate .r > div + div { border-left: 1px solid var(--ink); }
+  .plate .k { font-family: var(--f-display); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); display: block; }
+  .plate .v { font-family: var(--f-mono); font-size: 12px; }
+
+  nav.path { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 8px; }
+  nav.path a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 999px; padding: 7px 14px 7px 8px; font-size: 14px; font-weight: 500; }
+  nav.path a i { font-style: normal; font-family: var(--f-mono); font-size: 12px; font-weight: 600; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); }
+  nav.path a.live i { background: var(--good-soft); color: var(--good-t); }
+  nav.path a.story i { background: var(--river-soft); color: var(--river-t); }
+  .legend { font-size: 13px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; }
+  .legend span { display: inline-flex; gap: 6px; align-items: center; }
+
+  section.stage { margin-top: 64px; scroll-margin-top: 20px; }
+  .sh { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 18px; align-items: start; margin-bottom: 22px; }
+  .num { width: 64px; height: 64px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--surface); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 26px; color: var(--crust-t); box-shadow: var(--shadow); }
+  .stage.live .num { color: var(--good-t); }
+  .stage.story .num { color: var(--river-t); font-size: 20px; }
+  h2 { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-weight: 700; line-height: 1.15; margin: 4px 0 8px; }
+  .sh p { color: var(--ink-2); max-width: 720px; }
+  .badge { display: inline-block; font-family: var(--f-display); font-size: 9.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; vertical-align: 3px; margin-left: 6px; }
+  .badge.new { background: var(--crust-soft); color: var(--crust-t); }
+  .badge.game { background: var(--good-soft); color: var(--good-t); }
+  .badge.st { background: var(--river-soft); color: var(--river-t); }
+
+  .grid { display: grid; gap: 22px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.phone { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+  figure { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  figure a { display: block; line-height: 0; background: var(--surface-2); }
+  figure img { display: block; width: 100%; max-width: 100%; height: auto; }
+  figure.tel a { padding: 18px 18px 0; }
+  figure.tel img { border-radius: 22px 22px 0 0; border: 1px solid var(--line-2); border-bottom: 0; }
+  figcaption { padding: 12px 16px 14px; font-size: 14.5px; color: var(--ink-2); border-top: 1px solid var(--line); }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  figcaption .t { display: inline-block; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-right: 8px; }
+  .stack { display: grid; gap: 22px; }
+
+  footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line-2); font-size: 14px; color: var(--ink-3); }
+  footer code { font-family: var(--f-mono); font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .grid.two, .grid.phone { grid-template-columns: minmax(0, 1fr); }
+    .grid.phone figure.tel { max-width: 340px; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 28px 16px 56px; }
+    header.top { grid-template-columns: minmax(0, 1fr); }
+    .plate { min-width: 0; }
+    .sh { grid-template-columns: 44px minmax(0, 1fr); gap: 12px; }
+    .num { width: 44px; height: 44px; font-size: 18px; }
+    .stage.story .num { font-size: 14px; }
+    section.stage { margin-top: 48px; }
+    .lead { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <span class="caps">Хлебная карта · видение 2.0</span>
+      <h1>От бариста до империи</h1>
+      <p class="lead">Пять стадий одной истории: от смены за чужой стойкой в «Калаче» до совета директоров холдинга. Новые стадии показаны макетами, стадии 2 и 3 — скриншотами игры, какая она сейчас.</p>
+    </div>
+    <div class="plate">
+      <div class="h"><span class="k">Генплан пути</span><b>ЭТАПЫ · ЛИСТ 0</b></div>
+      <div class="r"><div><span class="k">Стадий</span><span class="v">5</span></div><div><span class="k">Кадров</span><span class="v">15</span></div></div>
+      <div class="r"><div><span class="k">Макеты</span><span class="v">9</span></div><div><span class="k">Дата</span><span class="v">30.09.2026</span></div></div>
+    </div>
+  </header>
+
+  <nav class="path" aria-label="Стадии">
+    <a href="#s0"><i>0</i>Бариста</a>
+    <a href="#s1"><i>1</i>Своя точка</a>
+    <a href="#story" class="story"><i>★</i>Сюжет</a>
+    <a href="#s2" class="live"><i>2</i>Сеть в Уфе</a>
+    <a href="#s3" class="live"><i>3</i>Россия</a>
+    <a href="#s4"><i>4</i>Холдинг</a>
+  </nav>
+  <div class="legend"><span><span class="badge new" style="margin:0">макет</span>новое, пока только на картинке</span><span><span class="badge game" style="margin:0">в игре</span>скриншот текущей версии</span></div>
+
+  <section class="stage" id="s0">
+    <div class="sh"><div class="num">0</div><div>
+      <h2>Бариста <span class="badge new">макет</span></h2>
+      <p>Симулятор жизни молодого бариста в «Калаче» на Пушкина: месяц идёт сам, решения — карточками. Деньги, силы, настроение и соблазны против цели — накопить на свою точку.</p>
+    </div></div>
+    <div class="stack">
+      <figure>
+        <a href="img/p0-month.png"><img src="img/p0-month.png" width="1440" height="900" loading="lazy" alt="Экран месяца жизни бариста: герой, шкалы, решения по жилью, еде, соблазну и вкладу, кошелёк и цель"></a>
+        <figcaption><span class="t">1440</span><b>Месяц жизни.</b> Азат, 21 год: силы, настроение, навыки, свои люди. Решения месяца — жильё, еда от «голодать» до «кафе», соблазн «кроссовки −30 %», вклад под 17 %. Справа кошелёк и цель — 1,5 млн на свою точку.</figcaption>
+      </figure>
+      <div class="grid phone">
+        <figure>
+          <a href="img/p0-shift.png"><img src="img/p0-shift.png" width="1440" height="900" loading="lazy" alt="Мини-игра «Смена»: очередь гостей с заказами-пузырями за стойкой «Калача», сборка заказа и допродажа"></a>
+          <figcaption><span class="t">1440</span><b>Мини-игра «Смена».</b> Час пик за стойкой «Калача»: заказы в пузырях над гостями, терпение тает, заказ собирается кнопками. «Предложить круассан?» — чаевые и оценка Рашида.</figcaption>
+        </figure>
+        <figure class="tel">
+          <a href="img/p0-mobile.png"><img src="img/p0-mobile.png" width="390" height="844" loading="lazy" alt="Телефон: месяц жизни и событие «Бабушка подарила 5 000 ₽»"></a>
+          <figcaption><span class="t">390</span><b>Телефон.</b> Месяц жизни и событие «Бабушка подарила 5 000 ₽»: «На мечту. Не на кроссовки».</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="s1">
+    <div class="sh"><div class="num">1</div><div>
+      <h2>Своя точка <span class="badge new">макет</span></h2>
+      <p>Одна кофейня «Тёплый угол» на Ленина, всё видно вблизи: витрина, очередь, мысли гостей, меню и цены. Первые вехи и первый человек в команде.</p>
+    </div></div>
+    <div class="grid two">
+      <figure>
+        <a href="img/s1-shop.png"><img src="img/s1-shop.png" width="1440" height="900" loading="lazy" alt="Своя кофейня вблизи: очередь, мысли гостей, выручка по часам, меню с ценами"></a>
+        <figcaption><span class="t">1440</span><b>Точка вблизи.</b> Хозяин один за стойкой, силы 41 %. Мысли гостей: «дорого?», «очередь…», «нет моих круассанов». За окном — «Хлебный двор. Скоро!».</figcaption>
+      </figure>
+      <figure>
+        <a href="img/s1-milestone.png"><img src="img/s1-milestone.png" width="1440" height="900" loading="lazy" alt="Веха «Первый месяц в плюсе» и сцена с Гулей о первом найме"></a>
+        <figcaption><span class="t">1440</span><b>Веха и сцена.</b> «Первый месяц в плюсе: +12 400 ₽», СМС мамы. Гуля: «Будешь звать или мне самой напрашиваться?» — оклад, доля или «останься с Рашидом».</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage story" id="story">
+    <div class="sh"><div class="num">★</div><div>
+      <h2>Сюжет: «Увидимся на карте» <span class="badge st">сцена</span></h2>
+      <p>Кульминация главы 1. Вторая точка открыта, камера впервые отдаляется на всю Уфу — и на карте двенадцать сиреневых ромбов «Хлебного двора».</p>
+    </div></div>
+    <figure>
+      <a href="img/story-sms.png"><img src="img/story-sms.png" width="1440" height="900" loading="lazy" alt="Ночная сцена: СМС от Олега поверх карты Уфы с ромбами «Хлебного двора»"></a>
+      <figcaption><span class="t">1440 · тёмная</span><b>СМС от Олега.</b> «Две точки. Мило. У меня двенадцать. Увидимся на карте». Рядом пост Семёна в «Уфа жуёт» и штамп генплана: 2 против 12.</figcaption>
+    </figure>
+  </section>
+
+  <section class="stage live" id="s2">
+    <div class="sh"><div class="num">2</div><div>
+      <h2>Сеть в Уфе <span class="badge game">в игре</span></h2>
+      <p>Нынешний первый акт: карта-генплан, точки, цеха, команда, события, финансы, тренеры. Добавим живость в духе Nintendo: человечков в очереди, пар над хлебом, мысли гостей и маленькие вехи каждые 3–5 минут.</p>
+    </div></div>
+    <div class="stack">
+      <figure>
+        <a href="img/s2-alive.png"><img src="img/s2-alive.png" width="1440" height="900" loading="lazy" alt="Макет живой карты: точка вблизи с очередью и продавцами, мысли гостей, веха недели"></a>
+        <figcaption><span class="t">1440 · макет</span><b>Живая карта.</b> Слой «Живая карта»: человечки у точек (их число — загрузка), мысли гостей, «Дзынь! №10 открыта». Точка №3 вблизи: очередь, уставшая продавщица, курьер. Веха недели «Накорми 1000 гостей» — 742 из 1000.</figcaption>
+      </figure>
+      <div class="grid two">
+        <figure>
+          <a href="img/s2-dash.png"><img src="img/s2-dash.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: карта Уфы и сводка"></a>
+          <figcaption><span class="t">в игре</span><b>Карта и сводка.</b> Слой «Настроение», кластеры, «Хлебный двор», цель 5 млрд.</figcaption>
+        </figure>
+        <figure>
+          <a href="img/s2-finance.png"><img src="img/s2-finance.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: вкладка «Финансы»"></a>
+          <figcaption><span class="t">в игре</span><b>Финансы.</b> От выручки до прибыли и таблица точек с маржой, рейтингом и штатом.</figcaption>
+        </figure>
+        <figure>
+          <a href="img/s2-event.png"><img src="img/s2-event.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: событие с выбором"></a>
+          <figcaption><span class="t">в игре</span><b>Событие с выбором.</b> Варианты А/Б/В, цена сразу и значки последствий.</figcaption>
+        </figure>
+        <figure>
+          <a href="img/s2-trainers.png"><img src="img/s2-trainers.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: подсказки личного тренера"></a>
+          <figcaption><span class="t">в игре</span><b>Личные тренеры.</b> «Требует внимания» с подсказками третьего уровня: причина, цифры и что сделать.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage live" id="s3">
+    <div class="sh"><div class="num">3</div><div>
+      <h2>Россия <span class="badge game">в игре</span></h2>
+      <p>Второй акт: 19 городов, директора вместо ручного управления, штаб и университет, логистика и федеральный «Хлебный двор».</p>
+    </div></div>
+    <div class="grid two">
+      <figure>
+        <a href="img/s3-corp.png"><img src="img/s3-corp.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: корпорация и сравнение городов"></a>
+        <figcaption><span class="t">в игре</span><b>Корпорация.</b> Отделы штаба, университет, сравнение городов и директоров.</figcaption>
+      </figure>
+      <figure>
+        <a href="img/s3-russia-supply.png"><img src="img/s3-russia-supply.png" width="1440" height="900" loading="lazy" alt="Скриншот игры: карта России со снабжением"></a>
+        <figcaption><span class="t">в игре</span><b>Карта России.</b> Города сети и пунктир снабжения из цеха и фабрики заморозки.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage" id="s4">
+    <div class="sh"><div class="num">4</div><div>
+      <h2>Холдинг <span class="badge new">макет</span></h2>
+      <p>Финал: всё своё, от поля до полки. Мельница, фабрика, франшиза, полки супермаркетов — и совет директоров, где решается, звонить ли в колокол на бирже.</p>
+    </div></div>
+    <div class="grid two">
+      <figure>
+        <a href="img/s4-holding.png"><img src="img/s4-holding.png" width="1440" height="900" loading="lazy" alt="Схема холдинга: потоки муки и денег между мельницей, фабрикой, сетью, франшизой и полками"></a>
+        <figcaption><span class="t">1440</span><b>Генплан холдинга.</b> Мука идёт с полей через мельницу «Кармаскалы» и фабрику в сеть, франшизу и на полки. Деньги стекаются в казну: 47 млрд выручки, 6,8 млрд EBITDA.</figcaption>
+      </figure>
+      <figure>
+        <a href="img/s4-ipo.png"><img src="img/s4-ipo.png" width="1440" height="900" loading="lazy" alt="Совет директоров: Эльвира, Гуля, Рашид, кривая капитализации и решение о выходе на биржу"></a>
+        <figcaption><span class="t">1440 · тёмная</span><b>Совет директоров и IPO.</b> Эльвира «за», Гуля думает, Рашид против: «Хлеб на бирже не растёт». Кривая капитализации до 54 млрд и выбор: биржа, фонд или семейный бизнес.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <footer>Макеты — статичный HTML в <code>docs/mockups/vision/</code>, снимки делает <code>node docs/mockups/vision/shoot.js</code>. Сюжет и герои — <code>docs/story.md</code>, план — <code>docs/vision-plan.md</code>.</footer>
+</div>
+</body>
+</html>

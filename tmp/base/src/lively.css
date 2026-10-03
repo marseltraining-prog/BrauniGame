@@ -1,0 +1,93 @@
+/* «Живость» (этап В2): вехи, «что говорят гости», звук и монетки на 1-е число. См. src/ui/lively-ui.js. */
+
+/* ---------- вехи ---------- */
+.sec.mil .mil-h3, .sec.talk .talk-h3 { display: inline-flex; align-items: center; gap: 6px; }
+.sec.mil .mil-h3 svg, .sec.talk .talk-h3 svg { width: 14px; height: 14px; color: var(--crust); }
+.sec.talk .talk-h3 small { margin-left: 2px; }
+.sec.mil .count { font-family: var(--f-mono); font-size: 11px; font-weight: 600; background: var(--crust-soft); color: var(--crust-t); border-radius: 9px; padding: 1px 7px; margin-left: 6px; }
+.mil-lead { margin: 0; }
+.mil-cur { border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; padding: 9px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
+.mil-cur.soon { border-left-color: var(--warn); }
+.mil-cur.big { padding: 11px 12px; }
+.mil-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mil-h b { font-size: 13px; }
+.mil-tag { flex: none; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--crust-t); background: var(--crust-soft); border-radius: 6px; padding: 2px 6px; }
+.mil-left { margin-left: auto; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.mil-d { font-size: 12px; color: var(--ink-2); }
+.mil-m { height: 8px; }
+.mil-f { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.mil-val { font-family: var(--f-mono); font-weight: 600; }
+.mil-rw { color: var(--good-t); font-size: 11px; }
+.mil-empty { font-size: 13px; color: var(--ink-3); padding: 6px 0; }
+.mil-bonus { display: flex; flex-wrap: wrap; gap: 5px; }
+.mil-bonus .chip { font-size: 11px; }
+.mil-acts { margin-top: 2px; }
+.mil-stat { display: flex; gap: 16px; font-size: 13px; }
+.mil-stat span { display: flex; align-items: baseline; gap: 5px; color: var(--ink-2); }
+.mil-stat b { font-family: var(--f-mono); font-size: 15px; color: var(--ink); }
+.mil-groups { display: flex; flex-direction: column; gap: 8px; }
+.mil-g { display: flex; flex-direction: column; gap: 4px; }
+.mil-g > b { font-size: 12px; color: var(--ink-2); }
+.mil-ks { display: flex; flex-wrap: wrap; gap: 5px; }
+.mil-k { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.mil-k.now { background: var(--crust-soft); color: var(--crust-t); font-weight: 600; }
+.mil-hist { display: flex; flex-direction: column; }
+.mil-hl { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.mil-hl:first-child { border-top: 0; }
+.mil-hl b { color: var(--ink-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.mil-bl { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.mil-bl:first-child { border-top: 0; }
+.mil-bonus-sec { gap: 4px; }
+
+/* ---------- тост вехи ---------- */
+/* Без этих правил тост рисовался без оформления: значок-svg раздувался на пол-экрана. */
+.toast.miltoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.miltoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--crust-t); flex: none; }
+.miltoast .mi svg { width: 18px; height: 18px; }
+.miltoast.done .mi { background: var(--good-soft); color: var(--good-t); }
+.miltoast.fail .mi { background: var(--surface-2); color: var(--ink-3); }
+.miltoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.miltoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.miltoast.done .ey { color: var(--good-t); } .miltoast.fail .ey { color: var(--ink-3); }
+.miltoast b { margin: 0; }
+.miltoast .md { color: var(--ink-2); font-size: 12px; }
+
+/* ---------- что говорят гости ---------- */
+.talk-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.talk-l li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.talk-l li:first-child { border-top: 0; }
+.talk-i { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-3); }
+.talk-i svg { width: 15px; height: 15px; }
+.talk-bad .talk-i { background: var(--bad-soft); color: var(--bad-t); }
+.talk-good .talk-i { background: var(--good-soft); color: var(--good-t); }
+.talk-tx { min-width: 0; }
+.talk-tx b { display: block; font-size: 13px; font-weight: 600; }
+.talk-tx small { display: block; font-size: 12px; color: var(--ink-3); }
+.talk-foot { margin: 0; }
+
+/* ---------- монетки на 1-е число ---------- */
+#coins { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+#coins .coin { position: fixed; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd98a, var(--crust) 70%); border: 1px solid #a8641a;
+  animation: coinpop 1.25s cubic-bezier(.22,.7,.3,1) forwards; }
+@keyframes coinpop {
+  0% { transform: translate(0, 0) scale(.4); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0), -58px) scale(1.05); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { #coins { display: none; } }
+
+/* ---------- звук ---------- */
+.snd-row > span { display: flex; flex-direction: column; gap: 1px; }
+.snd-row .hint { font-size: 11px; }
+.hud .iconbtn[data-act="sound"][aria-pressed="false"] { color: var(--ink-3); opacity: .75; }
+
+/* лента открытия точки на карте: короткая вспышка у нового маркера */
+@keyframes ribbonfin { 0% { opacity: 0; transform: scale(.4); } 40% { opacity: .9; } 100% { opacity: 0; transform: scale(1.9); } }
+.markers .m-store.fresh .halo { animation: ribbonfin 1.6s ease-out 1; }
+
+@media (max-width: 560px) {
+  .talk-l li { grid-template-columns: 24px minmax(0, 1fr); }
+  .talk-l li .linkbtn { grid-column: 2; justify-self: start; }
+  .mil-stat { gap: 12px; }
+}

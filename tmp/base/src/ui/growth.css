@@ -1,0 +1,82 @@
+/* Рост вглубь (src/ui/growth-ui.js) */
+.tabs.t9 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.gr-h { display: inline-flex; align-items: center; gap: 7px; } .gr-h svg { width: 16px; height: 16px; color: var(--crust-t); flex: none; }
+.gr-lead { margin: 0; }
+.gr-head .kpis { margin-top: 2px; }
+.gr-sec { scroll-margin-top: 8px; }
+.gr-card { display: flex; flex-direction: column; gap: 8px; padding: 11px 12px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: var(--r); background: var(--surface); }
+.gr-card + .gr-card { margin-top: 8px; }
+.gr-ct { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.gr-ct b { font-size: 14px; overflow-wrap: anywhere; }
+.gr-ct .hint { flex: 1 1 160px; min-width: 0; }
+.gr-left { margin-left: auto; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.gr-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+.gr-facts span { display: flex; flex-direction: column; gap: 1px; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+.gr-facts small { font-size: 11px; color: var(--ink-3); }
+.gr-facts b { font: 600 13px var(--f-mono); overflow-wrap: anywhere; }
+.gr-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.gr-fx { display: flex; flex-wrap: wrap; gap: 5px; }
+.gr-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.gr-cap { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.35; padding: 5px 8px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); }
+.gr-cap svg { width: 14px; height: 14px; flex: none; }
+.gr-cap.ok svg { color: var(--good-t); } .gr-cap.warn { background: var(--warn-soft); color: var(--warn-t); } .gr-cap.bad { background: var(--bad-soft); color: var(--bad-t); }
+.gr-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); padding: 2px 10px; background: var(--surface); }
+.gr-list > .hint { padding: 6px 0 2px; }
+.gr-li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; font-size: 13px; min-width: 0; }
+.gr-li + .gr-li { border-top: 1px solid var(--line); }
+.gr-li > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow-wrap: anywhere; }
+.gr-li small { font-size: 11.5px; color: var(--ink-3); }
+.gr-li > b { font: 600 13px var(--f-mono); white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; }
+.gr-li > b small { font: 400 11px var(--f-body); }
+.gr-ctl { display: flex; flex-direction: column; gap: 6px; }
+.gr-ctl .seg { align-self: flex-start; }
+.gr-seg4 { flex-wrap: wrap; }
+.gr-capbar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.gr-capbar i { display: block; height: 100%; }
+.c-ret { background: var(--crust); } .c-cat { background: var(--warn); } .c-fr { background: var(--river); } .c-semi { background: var(--good); }
+.gr-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-2); align-items: center; }
+.gr-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.gr-legend .hint { margin-left: auto; }
+.gr-strk { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .gr-strk i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .gr-strk i.on { background: var(--bad); }
+.gr-stars { display: inline-flex; gap: 2px; vertical-align: -1px; } .gr-stars i { width: 9px; height: 9px; border-radius: 2px; background: var(--line-2); transform: rotate(45deg) scale(.8); }
+.gr-stars i.on { background: var(--crust); } .gr-stars i.half { background: linear-gradient(90deg, var(--crust) 50%, var(--line-2) 50%); }
+.gr-next { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 10px 12px; }
+.gr-next .gr-h svg { color: var(--ink-3); }
+/* окно «Новая возможность» */
+.gr-mh { border-top: 4px solid var(--crust); border-radius: 14px 14px 0 0; }
+.gr-op { display: flex; flex-direction: column; gap: 6px; }
+.gr-op + .gr-op { border-top: 1px solid var(--line); padding-top: 10px; }
+.gr-op-h { display: flex; align-items: center; gap: 8px; }
+.gr-op-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.gr-op-ic svg { width: 20px; height: 20px; }
+.gr-op p { margin: 0; line-height: 1.45; }
+.gr-pm { display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.4; }
+.gr-pm > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+/* карта */
+.m-gfac, .m-gflag, .m-gfr, .m-gsite { cursor: pointer; }
+.m-gfac rect { fill: var(--crust); stroke: var(--surface); stroke-width: 2; }
+.m-gfac path { fill: var(--surface); }
+.m-gfac.build rect { fill: var(--surface); stroke: var(--crust); stroke-dasharray: 4 3; }
+.m-gfac.build path { fill: var(--crust); }
+.m-gfac.down rect { fill: var(--ink-3); }
+.m-gfac.sel rect, .m-gflag.sel circle:not(.ring) { stroke: var(--ink); stroke-width: 3; }
+.m-gflag circle { fill: var(--crust); stroke: var(--surface); stroke-width: 2; }
+.m-gflag .ring { fill: none; stroke: var(--crust); stroke-width: 1.5; stroke-dasharray: 3 3; opacity: .7; }
+.m-gflag path { fill: var(--surface); }
+.m-gflag.build circle:not(.ring) { fill: var(--surface); stroke: var(--crust); stroke-dasharray: 4 3; }
+.m-gflag.build path { fill: var(--crust); }
+.m-gfr circle { fill: var(--surface); stroke: var(--crust); stroke-width: 2; stroke-dasharray: 3 2; }
+.m-gfr text { font: 700 9px var(--f-body); fill: var(--crust-t); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.m-gfr.opening circle { opacity: .55; }
+.m-gfr.sel circle { stroke: var(--ink); stroke-dasharray: none; }
+.m-gsite rect, .m-gsite circle { fill: color-mix(in srgb, var(--crust) 10%, transparent); stroke: var(--crust); stroke-width: 1.8; stroke-dasharray: 4 3; }
+.m-gsite path { fill: var(--crust); }
+.m-gsite.sel rect, .m-gsite.sel circle { stroke: var(--ink); }
+.far .m-gfr text { display: none; }
+@media (max-width: 560px) {
+  .gr-acts { flex: 1 1 100%; }
+  .gr-acts .btn { flex: 1 1 0; min-height: 40px; }
+  .gr-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gr-left { margin-left: 0; flex-basis: 100%; }
+  .gr-legend .hint { margin-left: 0; flex-basis: 100%; }
+}

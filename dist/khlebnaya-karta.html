@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 18:56 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 18:57 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3594,7 +3594,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.3', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.4', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -10411,8 +10411,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       districts: [['Центр', 'center'], ['Москва-Сити', 'biz'], ['Павелецкая', 'biz'], ['Белорусская', 'biz'], ['Хамовники', 'prestige'], ['Юго-Запад', 'prestige'], ['Север', 'sleep'], ['Северо-Восток', 'sleep'], ['Восток', 'sleep'], ['Юг', 'far'], ['Новая Москва', 'outskirts'], ['Юго-Восток', 'industrial']],
       streets: ['ул. Тверская', 'ул. Арбат', 'ул. Мясницкая', 'пр. Мира', 'Ленинский пр.', 'Кутузовский пр.'] },
     { id: 'spb', name: 'Санкт-Петербург', short: 'Петербург', in: 'в Петербурге', pop: 5.6, inc: 1.40, rent: 1.90, wage: 1.40, comp: 'vhigh', km: 2050, cap: 150, lat: 59.9, lon: 30.3,
-      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; белые ночи (июнь–июль +15%)',
-      season: [1, 1, 1, 1, 1, 1.15, 1.15, 1, 1, 1, 1, 1], cat: { sweet: 0.12 },
+      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; короткое лето: белые ночи (июнь–июль +16%), сырое межсезонье и зима −5%',
+      season: [0.95, 0.95, 1.0, 1.03, 1.07, 1.16, 1.16, 1.06, 1.0, 0.98, 0.95, 0.95], cat: { sweet: 0.12 },
       districts: [['Центральный', 'center'], ['Адмиралтейский', 'biz'], ['Василеостровский', 'biz'], ['Петроградский', 'prestige'], ['Московский', 'sleep'], ['Приморский', 'sleep'], ['Невский', 'sleep'], ['Калининский', 'sleep'], ['Выборгский', 'student'], ['Красносельский', 'far'], ['Кировский', 'industrial']],
       streets: ['Невский пр.', 'ул. Рубинштейна', 'Большой пр. П. С.', 'Литейный пр.', 'Московский пр.', 'ул. Марата'] },
     { id: 'nsk', name: 'Новосибирск', in: 'в Новосибирске', pop: 1.63, inc: 1.05, rent: 0.95, wage: 1.05, comp: 'mid', km: 2100, cap: 60, lat: 55.0, lon: 82.9,
@@ -10629,6 +10629,44 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const UFA = { DISTRICTS: BK.DISTRICTS, MAP: BK.MAP, CENTER_POINT: BK.CENTER_POINT };
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
+
+  /* ---------- проектные карты Москвы и Санкт-Петербурга (PLAN.md, этап 8.3) ----------
+     Районы, улицы, соседство и схема карты нарисованы руками — src/data/cities-big.js
+     (как Уфа в src/data/world.js). Числа районов там записаны в УФИМСКОМ масштабе, а
+     городские коэффициенты rent/inc и плотность dens применяются здесь — тем же способом,
+     что в genCityGeo(), поэтому Москва получает аренду ×3,00 и чек ×1,80 из CITIES
+     (это стережёт sim/city-coefficients.js), а не «свои» числа. Генератор остальных
+     городов и Уфа не затрагиваются. */
+  function bigGeo(def) {
+    const big = BK.CITY_BIG[def.id];
+    const dens = clamp(1 + 0.08 * Math.log(def.pop / 1.16), 0.85, 1.25);
+    const DISTRICTS = big.districts.map((d) => {
+      const a = ARCH[d.arch];
+      return { id: d.id, name: d.name, x: d.x, y: d.y, arch: d.arch, ring: a.ring, w: a.w,
+        kind: d.kind, lm: (d.lm || []).slice(),
+        sizeW: d.sizeW || null, lx: d.lx || 0, ly: d.ly || 0,
+        rent: d.rent.map((v) => rnd10(v * def.rent, 10)),
+        solv: d.solv.map((v) => rnd10(v * def.inc, 5)),
+        traffic: d.traffic.map((v) => rnd10(v * dens, 50)),
+        prodRent: d.prodRent.map((v) => rnd10(v * def.rent, 10)),
+        streets: (d.streets && d.streets.length ? d.streets : COMMON_STREETS).slice() };
+    });
+    const pois = []; // соседство районов одной лентой — карта рисует их точками с подписью
+    for (const d of big.districts) for (const p of (d.pois || [])) pois.push({ x: d.x + p[0], y: d.y + p[1], kind: p[2], name: p[3] || '', lbl: !!p[4], d: d.id });
+    const ids = (f) => DISTRICTS.filter(f).map((d) => d.id);
+    let g0 = ids((d) => ARCH[d.arch].grp === 0), g1 = ids((d) => ARCH[d.arch].grp === 1), g2 = ids((d) => ARCH[d.arch].grp === 2).concat(ids((d) => d.arch === 'far').slice(0, 1));
+    if (!g1.length) g1 = g0; if (!g2.length) g2 = g1;
+    const c = DISTRICTS.find((d) => d.ring === 0) || DISTRICTS[0];
+    const MAP = Object.assign({}, big.map, { sea: big.map.sea || [], prodGroups: [g0, g1, g2], pois,
+      hq: { x: c.x + 40, y: c.y - 28 } });
+    return { DISTRICTS, MAP, CENTER_POINT: { x: c.x, y: c.y } };
+  }
+  const bigGeoCache = {};
+  function geoOf(def, seed, mapGen) {
+    if (!(BK.CITY_BIG && BK.CITY_BIG[def.id])) return genCityGeo(def, seed, mapGen);
+    return bigGeoCache[def.id] || (bigGeoCache[def.id] = bigGeo(def)); // рукописная карта от зерна не зависит
+  }
+
   function cityInfo(def) { // описание для движка: экономика, масштаб, конкуренция, сезон, календарь
     // inc/rent/wage всегда берутся из одной записи CITIES. Первый акт читает их через BK.CITY,
     // второй — через BK.CITY_BY_ID; одинаковый город поэтому больше не получает разные зарплаты.
@@ -10640,7 +10678,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;
     if (def.builtin) { BK.DISTRICTS = UFA.DISTRICTS; BK.MAP = UFA.MAP; BK.CENTER_POINT = UFA.CENTER_POINT; }
-    else { const g = genCityGeo(def, seed | 0, mapGen); BK.DISTRICTS = g.DISTRICTS; BK.MAP = g.MAP; BK.CENTER_POINT = g.CENTER_POINT; }
+    else { const g = geoOf(def, seed | 0, mapGen); BK.DISTRICTS = g.DISTRICTS; BK.MAP = g.MAP; BK.CENTER_POINT = g.CENTER_POINT; }
     BK.CITY = cityInfo(def);
     return BK.CITY;
   }
@@ -13600,13 +13638,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
   }
+  /* Соседство района (PLAN.md этап 8.3): у Москвы и Петербурга районы знают своих соседей —
+     поле `lm` в src/data/cities-big.js (повторы = вес: «Москва-Сити» почти всегда у бизнес-центра,
+     спальный район — у школы и рынка). У Уфы и остальных городов поля нет — прежний случайный
+     выбор из всех BK.LANDMARKS, поэтому их партии не меняются. */
+  function districtLandmarks(d) {
+    if (!d || !d.lm || !d.lm.length) return BK.LANDMARKS;
+    const out = [];
+    for (const id of d.lm) { const l = byId(BK.LANDMARKS, id); if (l) out.push(l); }
+    return out.length ? out : BK.LANDMARKS;
+  }
   function makeStoreOffer(S, opts) { // opts (опц.): { district, lm, size } — для помещений из событий
     const cfg = C();
     const d = (opts && opts.district && byId(BK.DISTRICTS, opts.district)) || wpick(S, BK.DISTRICTS, (x) => districtWeight(S, x));
-    const sizeKey = (opts && cfg.SIZES[opts.size] && opts.size) || wpick(S, ['small', 'standard', 'large'], (k) => ({ small: 0.3, standard: 0.5, large: 0.2 })[k]);
+    // типичный размер помещения района: центр — большие залы, частный сектор — маленькие (cities-big.js);
+    // у Уфы и сгенерированных городов поля нет — прежние веса
+    const szw = (d.sizeW && d.sizeW.small != null) ? d.sizeW : { small: 0.3, standard: 0.5, large: 0.2 };
+    const sizeKey = (opts && cfg.SIZES[opts.size] && opts.size) || wpick(S, ['small', 'standard', 'large'], (k) => szw[k]);
     const sz = cfg.SIZES[sizeKey];
     const area = ri(S, sz.min, sz.max);
-    const lms = [(opts && opts.lm && byId(BK.LANDMARKS, opts.lm)) || pick(S, BK.LANDMARKS)];
+    const lms = [(opts && opts.lm && byId(BK.LANDMARKS, opts.lm)) || pick(S, districtLandmarks(d))];
     if (rnd(S) < 0.45) { const l2 = pick(S, BK.LANDMARKS); if (l2.id !== lms[0].id) lms.push(l2); }
     let tr = 1, sv = 1, rm = 1;
     for (const l of lms) { tr *= l.tr; sv *= l.solv; rm *= l.rent; }
@@ -27763,6 +27814,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сдвиги подписей районов, чтобы не садились на скопления точек (как в макете)
   const LABEL_DY = { center: -46, zaton: -46, dema: -48, nizh: -36, glumilino: -44, inors: -44 };
   const LABEL_DX = { zaton: -20, glumilino: 20 };
+  // цвет точки притяжения по типу соседства (id из BK.LANDMARKS и «промзона»)
+  const POI_COL = { station: 'var(--map-rail)', bc: 'var(--crust)', mall: 'var(--crust)', market: 'var(--warn)',
+    park: 'var(--good)', uni: 'var(--good)', fitness: 'var(--good)', theatre: 'var(--crust)', lux: 'var(--crust)',
+    clinic: 'var(--map-rail)', school: 'var(--map-label)', sleep: 'var(--map-label)', industrial: 'var(--ink-3)' };
 
   function staticLayer(opts) {
     const M = BK.MAP, id = opts.id;
@@ -27778,9 +27833,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // миллиметровка: один элемент с паттерном поверх земли и районов
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#${id}-g5)" pointer-events="none"/>`;
     s += `<path class="m-city-edge" d="${city}"/>`;
+    // магистрали и кольца (Москва и Петербург — данные в cities-big.js): тонкий штрих «чертежа»,
+    // реки рисуются поверх — мосты читаются сами
+    for (const rd of M.roads || []) {
+      s += `<path class="m-road${rd.ring ? ' ring' : ''}" style="fill:none;stroke:${rd.ring ? 'var(--map-edge)' : 'var(--map-label)'};stroke-width:${(rd.w || 1).toFixed(1)};opacity:${rd.ring ? '.5' : '.32'}" d="${smooth(rd.pts)}"/>`;
+    }
     for (const p of M.parks) s += `<circle class="m-park" cx="${p.x}" cy="${p.y}" r="${p.r}"/>`;
-    s += `<path class="m-rail" d="${smooth(M.rail)}"/>`;
-    // море / залив (сгенерированные города у воды)
+    for (const rl of (M.rails || (M.rail ? [M.rail] : []))) s += `<path class="m-rail" d="${smooth(rl)}"/>`;
+    // море / залив (сгенерированные города и Петербург у воды)
     for (const w of M.sea || []) s += `<path class="m-sea" d="${pathOf(w.pts, true)}"/><path class="m-coast" d="${pathOf(w.pts.slice(0, -2))}"/>`;
     // реки: мягкий «разлив» и русло
     if (M.rivers) {
@@ -27790,10 +27850,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
       s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
     }
+    // точки притяжения — соседство районов (вокзалы, БЦ, метро, рынки, вузы, парки)
+    for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
-      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (LABEL_DX[d.id] || 0)}" y="${d.y + (LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      // характер района мелкой строкой под названием (центр, спальный, промзона, частный сектор)
+      for (const d of BK.DISTRICTS) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
       for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
+      // подписи соседства — отдельным слоем: их показывает только приближение (см. render)
+      let pl = '';
+      for (const p of M.pois || []) if (p.lbl && p.name) pl += `<text class="m-small" x="${p.x + 5}" y="${p.y + 3.5}">${p.name}</text>`;
+      if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
     return s;
@@ -27879,6 +27947,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = el.querySelector('.routes'); this.gM = el.querySelector('.markers');
+    this.gPoi = el.querySelector('.m-poilabels'); // подписи соседства районов: видны только вблизи
     this.cityId = (BK.CITY && BK.CITY.id) || 'ufa'; this.cityMap = BK.MAP;
     this.wrap = el.parentNode;
     this.px = { w: 800, h: 800 };
@@ -28118,6 +28187,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
+    this.gPoi = this.el.querySelector('.m-poilabels'); this.lastPoiL = null;
     this.invalidate();
     this.el.setAttribute('aria-label', `Карта: ${(BK.CITY && BK.CITY.name) || 'Уфа'}, точки сети`);
     this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.el.setAttribute('viewBox', '0 0 1000 1000');
@@ -28134,6 +28204,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lk = Math.max(0.45, Math.min(1.6, upp * 0.95)).toFixed(2);
     if (lk !== this.lastLk) { this.el.style.setProperty('--lk', lk); this.lastLk = lk; }
     const far = upp > 1.9; if (far !== this.lastFar) { this.el.classList.toggle('far', far); this.lastFar = far; }
+    // подписи соседства (вокзалы, БЦ, метро, рынки) показываем только при приближении — иначе карта рябит
+    if (this.gPoi) { const showPoi = this.vb.w <= 620; if (showPoi !== this.lastPoiL) { this.gPoi.style.display = showPoi ? '' : 'none'; this.lastPoiL = showPoi; } }
     const wrap = this.wrap;
     if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
     if (wrap) { const cs = !!(E.citySetup && E.citySetup(S)); if (cs !== this.lastCs) { wrap.classList.toggle('m-citysetup', cs); this.lastCs = cs; } } // запуск нового города (Россия)
@@ -37677,6 +37749,301 @@ var BK = globalThis.BK || (globalThis.BK = {});
     play, show: play, finish, active: () => stage.on,
     T,
     get scene() { return stage.el; },
+  };
+})();
+
+/* data/cities-big.js */
+/* =====================================================================
+   ПРОЕКТНЫЕ КАРТЫ МОСКВЫ И САНКТ-ПЕТЕРБУРГА (PLAN.md, этап 8.3).
+
+   Зачем файл. У остальных 17 городов карта строится генератором (genCityGeo в
+   src/data/cities.js): кольца районов, река сбоку, вокзал между центром и промзоной.
+   Для Уфы карта нарисована руками в src/data/world.js. Москва и Петербург — особые
+   города (открываются со второго прохождения, у них самая дорогая аренда и самые
+   большие расстояния), поэтому у них карта тоже нарисована руками — как у Уфы:
+   центр, кольца, радиальные магистрали, река (Москва, Нева с дельтой), залив,
+   железные дороги, парки и точки притяжения (вокзалы, БЦ, метро, рынки, вузы).
+
+   ЧТО ЗДЕСЬ ЛЕЖИТ (только данные, вся сборка — bigGeo() в src/data/cities.js):
+     centers  — центр карты (Кремль, Адмиралтейство) в координатах 1000×1000, север сверху;
+     districts — 12 районов Москвы и 11 Петербурга. id у них moscow0…moscow11 и spb0…spb10 —
+       ТЕ ЖЕ, что у генератора: они лежат в сохранениях игроков и в активных партиях;
+       arch — архетип (center/biz/prestige/student/sleep/far/industrial/outskirts) — от него
+       берутся кольцо, вес района в предложениях и группы цехов (BK.CITY_ARCH);
+       kind — характер района для карты («исторический центр», «спальный», «промзона»…);
+       rent/solv/traffic/prodRent — числа в УФИМСКОМ масштабе (как архетипы в cities.js):
+       городские коэффициенты rent/inc и плотность dens применяет bigGeo(), поэтому
+       Москва получает аренду ×3,00 и чек ×1,80 из CITIES, а не «свои» числа;
+       sizeW — типичный размер помещения района (веса small/standard/large, как в CFG.SIZES):
+       в центре чаще большие залы, в частном секторе — маленькие;
+       lm — соседство района для движка: из чего движок выбирает ПЕРВОГО соседа точки
+       (id из BK.LANDMARKS; повторы = вес). Так «Москва-Сити» почти всегда встаёт у
+       бизнес-центра, а спальный район — у школы и рынка. Средние множители по городу
+       подобраны так, чтобы совпадать со средним по всем соседям (см. проверку в sim/scencity.js);
+       pois — [dx, dy, kind, name] — что реально рядом (координаты от центра района):
+       вокзалы, бизнес-центры, метро, рынки, парки, вузы. bigGeo() собирает их в MAP.pois,
+       и карта рисует их точками с подписью;
+       streets — 4–6 реальных улиц района: из них движок берёт адрес точки;
+       lx/ly — сдвиг подписи района на карте (если подпись садится на воду или на соседа).
+
+     map      — схема города: rivers (Москва и Яуза; Нева, Большая Невка, Обводный канал),
+       sea (Финский залив), roads (Садовое кольцо, ТТК, МКАД, радиальные магистрали),
+       rails (радиальные железные дороги + МЦК), rail (одна нитка — если rails нет),
+       station, city (контур города), parks, labels (подписи воды и магистралей), pois.
+
+   ВАЖНО: Уфа (src/data/world.js) не меняется, и генератор остальных городов тоже —
+   bigGeo() вызывается только для moscow и spb. Порядок районов, их число, arch и вес
+   сохранены прежними, поэтому поток случайных чисел партии Москвы тот же, что раньше.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  /* Кольца Москвы — окружности вокруг Кремля (470, 525):
+     Садовое кольцо ≈ 62 ед. ≈ 3,4 км в поперечнике, ТТК ≈ 105, МЦК ≈ 135, МКАД ≈ 320. */
+  const ring = (cx, cy, r, n, ph) => {
+    const pts = [];
+    for (let i = 0; i < n; i++) { const a = (ph || 0) + i / n * Math.PI * 2; pts.push([Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)]); }
+    pts.push(pts[0].slice());
+    return pts;
+  };
+
+  BK.CITY_BIG = {
+    /* ======================= МОСКВА =======================
+       Река Москва петлёй обходит Хамовники и Замоскворечье; Садовое, ТТК и МКАД —
+       три кольца; восемь радиальных магистралей и четыре железные дороги сходятся
+       к центру; Новая Москва — за МКАД на юго-запад. */
+    moscow: {
+      center: { x: 470, y: 505 },
+      districts: [
+        { id: 'moscow0', name: 'Центр', arch: 'center', kind: 'исторический центр', x: 470, y: 505, ly: -54,
+          rent: [2600, 4600], solv: [430, 640], traffic: [6500, 12500], prodRent: [1250, 1650],
+          sizeW: { small: 0.22, standard: 0.46, large: 0.32 },
+          lm: ['theatre', 'bc', 'mall', 'station'],
+          pois: [[-58, -26, 'theatre', 'Большой театр', 1], [-14, -58, 'bc', 'Никольская, ГУМ'], [20, -58, 'mall', 'ЦУМ', 1], [56, 46, 'station', 'Курский вокзал', 1]],
+          streets: ['ул. Тверская', 'ул. Никольская', 'ул. Арбат', 'ул. Пятницкая', 'ул. Маросейка', 'ул. Петровка'] },
+        { id: 'moscow1', name: 'Москва-Сити', arch: 'biz', kind: 'деловой, небоскрёбы', x: 300, y: 470, ly: -46,
+          rent: [2240, 3920], solv: [400, 560], traffic: [6300, 12100], prodRent: [900, 1250],
+          sizeW: { small: 0.2, standard: 0.45, large: 0.35 },
+          lm: ['bc', 'bc', 'mall', 'fitness'],
+          pois: [[26, -14, 'bc', 'Москва-Сити', 1], [86, -56, 'mall', 'Экспоцентр'], [-30, 40, 'park', 'набережная Москвы-реки'], [8, 86, 'lux', 'Пресня']],
+          streets: ['Пресненская наб.', 'ул. Красная Пресня', 'Шмитовский пр.', 'ул. Мантулинская', 'ул. 1905 года'] },
+        { id: 'moscow2', name: 'Замоскворечье', arch: 'biz', kind: 'деловой, вокзал', x: 490, y: 610, lx: 72, ly: 8,
+          rent: [2000, 3500], solv: [360, 505], traffic: [6000, 11500], prodRent: [900, 1250],
+          sizeW: { small: 0.3, standard: 0.5, large: 0.2 },
+          lm: ['bc', 'theatre', 'market', 'station'],
+          pois: [[14, 16, 'station', 'Павелецкий вокзал', 1], [-44, -12, 'theatre', 'Третьяковская галерея', 1], [46, -34, 'bc', 'Балчуг'], [-36, 44, 'market', 'Болотный рынок']],
+          streets: ['ул. Пятницкая', 'ул. Большая Ордынка', 'ул. Большая Серпуховская', 'ул. Бахрушина', 'Павелецкая пл.'] },
+        { id: 'moscow3', name: 'Белорусская', arch: 'biz', kind: 'вокзал, деловые улицы', x: 455, y: 415, ly: -46,
+          rent: [2000, 3500], solv: [370, 520], traffic: [6000, 11500], prodRent: [900, 1250],
+          sizeW: { small: 0.28, standard: 0.5, large: 0.22 },
+          lm: ['station', 'bc', 'mall', 'clinic'],
+          pois: [[6, 12, 'station', 'Белорусский вокзал', 1], [40, -34, 'bc', 'Тверская-Ямская', 1], [-42, -30, 'mall', 'ТЦ «Атриум»'], [52, 30, 'clinic', 'Боткинская']],
+          streets: ['ул. 1-я Тверская-Ямская', 'Ленинградский пр.', 'ул. Грузинский Вал', 'Бутырская ул.', 'ул. Лесная'] },
+        { id: 'moscow4', name: 'Хамовники', arch: 'prestige', kind: 'престижный, набережные', x: 415, y: 610, ly: -46,
+          rent: [1900, 3100], solv: [390, 540], traffic: [4200, 8500], prodRent: [950, 1300],
+          sizeW: { small: 0.3, standard: 0.5, large: 0.2 },
+          lm: ['lux', 'park', 'theatre', 'clinic'],
+          pois: [[-15, 40, 'fitness', 'Лужники', 1], [46, 60, 'uni', 'МГУ на Воробьёвых', 1], [-46, -30, 'lux', 'Остоженка'], [30, -46, 'theatre', 'Художественный театр']],
+          streets: ['Пречистенская наб.', 'ул. Остоженка', 'Комсомольский пр.', 'ул. Льва Толстого', 'Фрунзенская наб.'] },
+        { id: 'moscow5', name: 'Юго-Запад', arch: 'prestige', kind: 'престижный, вузы', x: 320, y: 700, ly: 52,
+          rent: [1900, 3100], solv: [390, 540], traffic: [4200, 8500], prodRent: [950, 1300],
+          sizeW: { small: 0.3, standard: 0.5, large: 0.2 },
+          lm: ['uni', 'lux', 'park', 'clinic'],
+          pois: [[64, -18, 'uni', 'МГУ, Ленинские горы', 1], [-30, -52, 'theatre', 'Дом музыки'], [30, 42, 'lux', 'Академический'], [-30, 60, 'school', 'школы Юго-Запада']],
+          streets: ['Ленинский пр.', 'Ломоносовский пр.', 'ул. Вавилова', 'пр. Вернадского', 'ул. Профсоюзная'] },
+        { id: 'moscow6', name: 'Тимирязевский', arch: 'sleep', kind: 'спальный, агровуз', x: 470, y: 330, ly: -46,
+          rent: [1350, 2200], solv: [310, 420], traffic: [4200, 8500], prodRent: [650, 920],
+          sizeW: { small: 0.32, standard: 0.5, large: 0.18 },
+          lm: ['sleep', 'school', 'clinic', 'market'],
+          pois: [[-30, -22, 'uni', 'Тимирязевская академия', 1], [24, -38, 'park', 'парк «Дубки»'], [-46, 30, 'market', 'Коптевский рынок'], [40, 34, 'school', 'школы Савёловского']],
+          streets: ['Дмитровское шоссе', 'ул. Тимирязевская', 'пр. Соломенной Сторожки', 'Коптевская ул.', 'ул. Вучетича'] },
+        { id: 'moscow7', name: 'Медведково', arch: 'sleep', kind: 'спальный, окраина СВАО', x: 700, y: 355, ly: -46,
+          rent: [1350, 2200], solv: [310, 420], traffic: [4200, 8500], prodRent: [650, 920],
+          sizeW: { small: 0.32, standard: 0.5, large: 0.18 },
+          lm: ['sleep', 'school', 'park', 'market'],
+          pois: [[-6, -6, 'station', 'метро «Медведково»', 1], [-44, 30, 'park', 'парк «Торфянка»'], [34, 40, 'market', 'рынок на Полярной'], [22, -24, 'school', 'школы Медведкова']],
+          streets: ['ул. Грекова', 'пр. Шокальского', 'ул. Полярная', 'Ярославское шоссе', 'ул. Молодцова'] },
+        { id: 'moscow8', name: 'Измайлово', arch: 'sleep', kind: 'спальный, парки', x: 760, y: 545, ly: -46,
+          rent: [1310, 2130], solv: [310, 420], traffic: [4000, 8100], prodRent: [650, 920],
+          sizeW: { small: 0.32, standard: 0.5, large: 0.18 },
+          lm: ['sleep', 'park', 'school', 'fitness'],
+          pois: [[-34, -34, 'park', 'Измайловский парк', 1], [-16, 18, 'market', 'рынок «Измайлово»'], [36, 30, 'fitness', 'стадион «Измайлово»'], [40, -24, 'school', 'школы Первомайской']],
+          streets: ['Измайловское шоссе', 'ул. Первомайская', 'ул. 9-я Парковая', 'Щёлковское шоссе', 'ул. Никитинская'] },
+        { id: 'moscow9', name: 'Ясенево', arch: 'far', kind: 'спальный, дальний юг', x: 430, y: 810, ly: 52,
+          rent: [1000, 1700], solv: [295, 390], traffic: [3000, 6400], prodRent: [470, 680],
+          sizeW: { small: 0.38, standard: 0.48, large: 0.14 },
+          lm: ['market', 'sleep', 'school', 'clinic'],
+          pois: [[-30, -34, 'station', 'метро «Ясенево»', 1], [30, 36, 'market', 'рынок «Ясенево»'], [-44, 26, 'clinic', 'поликлиника'], [52, -54, 'fitness', 'спорткомплекс']],
+          streets: ['ул. Ясногорская', 'Новоясеневский пр.', 'ул. Тарусская', 'ул. Паустовского', 'Литовский бул.'] },
+        { id: 'moscow10', name: 'Новая Москва', arch: 'outskirts', kind: 'частный сектор, новостройки', x: 230, y: 870, ly: 52,
+          rent: [540, 900], solv: [220, 285], traffic: [1350, 3400], prodRent: [260, 400],
+          sizeW: { small: 0.5, standard: 0.42, large: 0.08 },
+          lm: ['sleep', 'park', 'school', 'clinic'],
+          pois: [[40, -30, 'mall', 'ТЦ «Коммунарка»', 1], [-30, 30, 'school', 'школы Коммунарки'], [46, 26, 'park', 'парк в Коммунарке'], [-44, -24, 'clinic', 'поликлиника']],
+          streets: ['Калужское шоссе', 'Варшавское шоссе', 'ул. Александры Монаховой', 'Киевское шоссе', 'ул. Центральная'] },
+        { id: 'moscow11', name: 'Люблино', arch: 'industrial', kind: 'промзона, склады', x: 705, y: 690, ly: -46,
+          rent: [800, 1250], solv: [250, 320], traffic: [1800, 4500], prodRent: [330, 480],
+          sizeW: { small: 0.45, standard: 0.45, large: 0.1 },
+          lm: ['market', 'station', 'clinic', 'sleep'],
+          pois: [[-34, -20, 'station', 'метро «Люблино»', 1], [-26, 30, 'market', 'рынок «Люблино»'], [30, 26, 'clinic', 'поликлиника'], [38, -26, 'school', 'школы Марьина']],
+          streets: ['ул. Люблинская', 'Волгоградский пр.', 'ул. Перерва', 'Краснодарская ул.', 'ул. Ставропольская'] },
+      ],
+      map: {
+        rivers: [
+          { w: 14, name: 'р. Москва', pts: [[140, 260], [250, 310], [330, 380], [370, 460], [360, 540], [330, 620], [360, 690], [430, 720], [500, 690], [530, 620], [510, 545], [520, 470], [575, 440], [640, 455], [690, 510], [720, 580], [780, 630], [860, 680], [950, 730]] },
+          { w: 6, name: 'р. Яуза', pts: [[905, 325], [845, 360], [785, 410], [742, 460], [712, 495]] },
+        ],
+        roads: [
+          { ring: true, w: 2.4, name: 'Садовое кольцо', pts: ring(470, 505, 62, 12) },
+          { ring: true, w: 2.0, name: 'ТТК', pts: ring(470, 505, 105, 12, 0.12) },
+          { ring: true, w: 2.2, name: 'МКАД', pts: ring(470, 505, 320, 12, 0.22) },
+          { w: 1.2, name: 'Ленинградский пр.', pts: [[470, 525], [440, 470], [400, 400], [350, 320], [320, 215]] },
+          { w: 1.2, name: 'Кутузовский пр.', pts: [[470, 525], [410, 505], [340, 470], [260, 430], [175, 395]] },
+          { w: 1.2, name: 'Ленинский пр.', pts: [[470, 525], [480, 590], [500, 660], [520, 740], [540, 850]] },
+          { w: 1.2, name: 'Волгоградский пр.', pts: [[470, 525], [540, 570], [620, 620], [700, 670], [765, 712]] },
+          { w: 1.2, name: 'Рязанский пр.', pts: [[470, 525], [560, 530], [650, 545], [740, 565], [820, 585]] },
+          { w: 1.2, name: 'Ярославское шоссе', pts: [[470, 525], [550, 480], [630, 420], [710, 350], [740, 320]] },
+          { w: 1.2, name: 'Дмитровское шоссе', pts: [[470, 525], [490, 450], [510, 370], [530, 290], [545, 215]] },
+        ],
+        rails: [
+          ring(470, 505, 135, 12, 0.3),
+          [[470, 520], [430, 440], [350, 340], [260, 240], [150, 120]],
+          [[470, 520], [560, 600], [660, 720], [760, 830], [880, 930]],
+          [[470, 520], [600, 470], [720, 400], [820, 330], [940, 240]],
+          [[470, 520], [500, 620], [520, 720], [530, 840], [540, 940]],
+        ],
+        station: { x: 545, y: 480, name: 'Ж/д вокзалы' },
+        city: [[815, 505], [790, 640], [745, 760], [649, 855], [540, 885], [430, 885], [340, 920], [230, 935], [140, 875], [130, 775], [170, 700], [195, 640], [200, 560], [175, 470], [160, 380], [200, 290], [291, 233], [390, 190], [470, 180], [560, 190], [649, 233], [769, 360]],
+        labels: [
+          { x: 336, y: 502, text: 'р. Москва', rot: 84 },
+          { x: 792, y: 400, text: 'р. Яуза', rot: 32 },
+          { x: 470, y: 226, text: 'МКАД', rot: 0 },
+          { x: 470, y: 428, text: 'Садовое кольцо', rot: 0 },
+        ],
+        parks: [
+          { x: 455, y: 700, r: 22, name: 'Воробьёвы горы' },
+          { x: 480, y: 592, r: 14, name: 'Парк Горького' },
+          { x: 700, y: 430, r: 22, name: 'Сокольники' },
+          { x: 400, y: 782, r: 26, name: 'Битцевский лес' },
+          { x: 620, y: 350, r: 17, name: 'ВДНХ' },
+          { x: 726, y: 618, r: 15, name: 'Кузьминки' },
+        ],
+      },
+    },
+
+    /* ==================== САНКТ-ПЕТЕРБУРГ ====================
+       Нева идёт с востока на запад и впадает в Финский залив; дельта — Большая Невка
+       и Обводный канал; КАД кольцом вокруг города; Невский, Лиговский, Московский
+       проспекты и проспект Стачек — радиальные магистрали. */
+    spb: {
+      center: { x: 455, y: 470 },
+      districts: [
+        { id: 'spb0', name: 'Центральный', arch: 'center', kind: 'исторический центр', x: 455, y: 470, lx: 56, ly: -8,
+          rent: [2600, 4600], solv: [430, 640], traffic: [6500, 12500], prodRent: [1250, 1650],
+          sizeW: { small: 0.24, standard: 0.48, large: 0.28 },
+          lm: ['theatre', 'station', 'lux', 'mall'],
+          pois: [[50, -10, 'theatre', 'Александринский театр', 1], [50, -34, 'station', 'Московский вокзал', 1], [-44, 34, 'lux', 'Мойка и Фонтанка'], [40, 40, 'mall', 'Гостиный двор', 1]],
+          streets: ['Невский пр.', 'ул. Рубинштейна', 'Литейный пр.', 'ул. Марата', 'ул. Жуковского', 'наб. реки Фонтанки'] },
+        { id: 'spb1', name: 'Адмиралтейский', arch: 'biz', kind: 'деловой, туризм', x: 555, y: 450, lx: 64, ly: -6,
+          rent: [2000, 3500], solv: [370, 520], traffic: [6000, 11500], prodRent: [900, 1250],
+          sizeW: { small: 0.26, standard: 0.5, large: 0.24 },
+          lm: ['bc', 'theatre', 'mall', 'station'],
+          pois: [[-30, 26, 'theatre', 'Исаакиевский собор', 1], [30, -30, 'bc', 'Мариинский дворец'], [44, 30, 'mall', 'Сенная площадь'], [-6, -30, 'lux', 'Адмиралтейство', 1]],
+          streets: ['Невский пр.', 'Исаакиевская пл.', 'Гороховая ул.', 'наб. реки Мойки', 'Садовая ул.'] },
+        { id: 'spb2', name: 'Василеостровский', arch: 'biz', kind: 'остров: вузы и БЦ', x: 310, y: 390, ly: -46,
+          rent: [2000, 3500], solv: [370, 520], traffic: [6000, 11500], prodRent: [900, 1250],
+          sizeW: { small: 0.3, standard: 0.5, large: 0.2 },
+          lm: ['uni', 'bc', 'lux', 'mall'],
+          pois: [[16, 30, 'uni', 'СПбГУ, Биржа', 1], [40, -30, 'bc', 'Морская столица'], [46, 20, 'mall', 'ТЦ на Среднем'], [-20, -40, 'lux', 'Стрелка', 1]],
+          streets: ['Большой пр. В. О.', 'Средний пр. В. О.', 'Университетская наб.', '10-я линия В. О.', 'Малый пр. В. О.'] },
+        { id: 'spb3', name: 'Петроградский', arch: 'prestige', kind: 'престижный, острова', x: 430, y: 345, lx: 74, ly: 12,
+          rent: [1900, 3100], solv: [390, 540], traffic: [4200, 8500], prodRent: [950, 1300],
+          sizeW: { small: 0.28, standard: 0.5, large: 0.22 },
+          lm: ['lux', 'park', 'theatre', 'clinic'],
+          pois: [[-26, -30, 'theatre', 'Петропавловская крепость', 1], [40, 24, 'park', 'зоопарк и планетарий', 1], [-46, 30, 'fitness', 'Крестовский остров'], [64, 20, 'school', 'школы Петроградки']],
+          streets: ['Большой пр. П. С.', 'Каменноостровский пр.', 'Кронверкский пр.', 'ул. Ленина', 'Мытнинская наб.'] },
+        { id: 'spb4', name: 'Московский', arch: 'sleep', kind: 'спальный, юг', x: 620, y: 640, ly: 50,
+          rent: [1350, 2200], solv: [325, 440], traffic: [4200, 8500], prodRent: [650, 920],
+          sizeW: { small: 0.35, standard: 0.49, large: 0.16 },
+          lm: ['sleep', 'school', 'park', 'market'],
+          pois: [[34, -30, 'station', 'метро «Московская»', 1], [-38, 30, 'market', 'рынок на Типанова'], [40, 34, 'school', 'школы Купчино'], [-20, -56, 'bc', 'Электросила']],
+          streets: ['Московский пр.', 'ул. Типанова', 'пр. Юрия Гагарина', 'Пулковское шоссе', 'Витебский пр.'] },
+        { id: 'spb5', name: 'Приморский', arch: 'sleep', kind: 'спальный, у залива', x: 400, y: 215, ly: -46,
+          rent: [1390, 2270], solv: [325, 440], traffic: [4400, 8900], prodRent: [670, 950],
+          sizeW: { small: 0.35, standard: 0.49, large: 0.16 },
+          lm: ['sleep', 'park', 'mall', 'clinic'],
+          pois: [[40, -24, 'mall', 'Лахта Молл', 1], [-40, -34, 'bc', 'Лахта-центр', 1], [36, 34, 'clinic', 'поликлиника № 100'], [10, -46, 'fitness', 'яхт-клуб']],
+          streets: ['Приморский пр.', 'ул. Савушкина', 'Богатырский пр.', 'Ланское шоссе', 'ул. Оптиков'] },
+        { id: 'spb6', name: 'Невский', arch: 'sleep', kind: 'спальный, за Невой', x: 800, y: 450, ly: 50,
+          rent: [1350, 2200], solv: [325, 440], traffic: [4200, 8500], prodRent: [650, 920],
+          sizeW: { small: 0.36, standard: 0.48, large: 0.16 },
+          lm: ['sleep', 'school', 'clinic', 'market'],
+          pois: [[-30, -30, 'station', 'метро «Ломоносовская»', 1], [36, -26, 'park', 'парк Куракина дача'], [-34, 34, 'market', 'рынок «Невский»'], [40, 30, 'school', 'школы Обухово']],
+          streets: ['пр. Обуховской Обороны', 'ул. Бабушкина', 'Дальневосточный пр.', 'пр. Елизарова', 'ул. Седова'] },
+        { id: 'spb7', name: 'Калининский', arch: 'sleep', kind: 'спальный, север', x: 630, y: 330, ly: -46,
+          rent: [1350, 2200], solv: [325, 440], traffic: [4200, 8500], prodRent: [650, 920],
+          sizeW: { small: 0.35, standard: 0.49, large: 0.16 },
+          lm: ['sleep', 'school', 'market', 'park'],
+          pois: [[36, -26, 'station', 'метро «Академическая»', 1], [-34, 30, 'clinic', 'поликлиника № 76'], [-30, -34, 'market', 'Муринский рынок'], [30, 62, 'school', 'школы Гражданки']],
+          streets: ['пр. Просвещения', 'Гражданский пр.', 'ул. Руставели', 'Пискарёвский пр.', 'пр. Науки'] },
+        { id: 'spb8', name: 'Выборгский', arch: 'student', kind: 'студенческий, вузы', x: 570, y: 220, ly: -46,
+          rent: [1200, 2100], solv: [305, 410], traffic: [4500, 9000], prodRent: [600, 850],
+          sizeW: { small: 0.36, standard: 0.48, large: 0.16 },
+          lm: ['uni', 'sleep', 'park', 'school'],
+          pois: [[-24, 30, 'uni', 'Политехнический университет', 1], [46, -32, 'fitness', 'бассейн «Политехник»'], [-36, -30, 'school', 'школы Выборгской'], [30, -30, 'clinic', 'поликлиника']],
+          streets: ['пр. Энгельса', 'Выборгское шоссе', 'ул. Сикейроса', 'пр. Тореза', 'Парголовская ул.'] },
+        { id: 'spb9', name: 'Красносельский', arch: 'far', kind: 'спальный, дальний юго-запад', x: 320, y: 760, ly: 52,
+          rent: [1000, 1700], solv: [295, 390], traffic: [3000, 6400], prodRent: [470, 680],
+          sizeW: { small: 0.42, standard: 0.46, large: 0.12 },
+          lm: ['market', 'sleep', 'school', 'clinic'],
+          pois: [[40, -30, 'park', 'Южно-Приморский парк', 1], [-32, -30, 'station', 'метро «Проспект Ветеранов»', 1], [-36, 34, 'market', 'рынок на Ветеранов'], [38, 30, 'school', 'школы Красноселья']],
+          streets: ['пр. Ветеранов', 'ул. Пионерстроя', 'Петергофское шоссе', 'пр. Маршала Жукова', 'ул. Здоровцева'] },
+        { id: 'spb10', name: 'Кировский', arch: 'industrial', kind: 'промзона, заводы', x: 520, y: 810, ly: 50,
+          rent: [800, 1250], solv: [260, 335], traffic: [1710, 4275], prodRent: [330, 480],
+          sizeW: { small: 0.46, standard: 0.44, large: 0.1 },
+          lm: ['station', 'market', 'sleep', 'clinic'],
+          pois: [[-36, -26, 'station', 'метро «Кировский завод»', 1], [-34, 30, 'market', 'рынок «Кировский»'], [38, 26, 'clinic', 'поликлиника'], [40, -30, 'school', 'школы Автово']],
+          streets: ['пр. Стачек', 'ул. Зайцева', 'Корабельная ул.', 'пр. Маршала Говорова', 'ул. Васи Алексеева'] },
+      ],
+      map: {
+        rivers: [
+          { w: 20, name: 'р. Нева', pts: [[1010, 320], [900, 332], [800, 342], [700, 355], [620, 372], [555, 390], [510, 408], [478, 428], [435, 440], [375, 446], [300, 442], [220, 428], [150, 410], [100, 396], [40, 384]] },
+          { w: 8, name: 'Большая Невка', pts: [[555, 390], [530, 350], [485, 320], [425, 296], [355, 286], [285, 296], [212, 310]] },
+          { w: 6, name: 'Обводный канал', pts: [[415, 516], [468, 536], [520, 544], [558, 558], [570, 592], [540, 630], [490, 648], [440, 642], [400, 618], [388, 578], [398, 540], [415, 516]] },
+        ],
+        sea: [{ name: 'Финский залив', pts: [[250, 0], [230, 120], [200, 240], [215, 340], [255, 430], [290, 520], [300, 620], [270, 720], [250, 820], [280, 1000], [-220, 1000], [-220, 0]] }],
+        roads: [
+          { ring: true, w: 2.2, name: 'КАД', pts: [[850, 430], [790, 640], [640, 810], [470, 865], [320, 800], [300, 660], [300, 470], [330, 320], [430, 225], [600, 190], [760, 250], [850, 430]] },
+          { w: 1.4, name: 'Невский пр.', pts: [[430, 486], [492, 470], [555, 450], [610, 428], [660, 402], [700, 375]] },
+          { w: 1.2, name: 'Лиговский пр.', pts: [[558, 472], [610, 512], [660, 566], [700, 622], [730, 680]] },
+          { w: 1.2, name: 'Московский пр.', pts: [[492, 540], [520, 610], [560, 685], [600, 760], [630, 830]] },
+          { w: 1.1, name: 'Садовая ул.', pts: [[446, 540], [520, 528], [600, 512], [660, 500], [720, 488]] },
+          { w: 1.1, name: 'пр. Стачек', pts: [[420, 600], [430, 700], [450, 800], [470, 880]] },
+        ],
+        rails: [
+          [[450, 500], [460, 400], [470, 300], [480, 200], [490, 110]],
+          [[450, 500], [470, 600], [500, 700], [530, 800], [560, 900]],
+          [[450, 500], [560, 540], [680, 580], [800, 620], [900, 650]],
+          [[450, 500], [380, 500], [300, 500], [220, 510], [160, 520]],
+        ],
+        station: { x: 508, y: 462, name: 'Московский вокзал' },
+        city: [[250, 120], [330, 90], [430, 80], [540, 95], [640, 110], [740, 120], [860, 150], [930, 220], [930, 330], [880, 420], [900, 520], [860, 620], [890, 720], [840, 820], [760, 880], [640, 910], [520, 930], [400, 930], [300, 930], [260, 870], [255, 780], [280, 690], [300, 600], [300, 500], [260, 420], [220, 330], [230, 220]],
+        labels: [
+          { x: 880, y: 300, text: 'р. Нева', rot: 8 },
+          { x: 320, y: 268, text: 'Большая Невка', rot: 14 },
+          { x: 462, y: 676, text: 'Обводный канал', rot: 26 },
+          { x: 155, y: 620, text: 'Финский залив', rot: 0, sea: true },
+          { x: 832, y: 520, text: 'КАД', rot: 74 },
+        ],
+        parks: [
+          { x: 352, y: 190, r: 16, name: 'Парк 300-летия' },
+          { x: 600, y: 262, r: 19, name: 'Сосновка' },
+          { x: 600, y: 690, r: 20, name: 'Парк Победы' },
+          { x: 505, y: 452, r: 12, name: 'Летний сад' },
+          { x: 400, y: 620, r: 14, name: 'Екатерингоф' },
+          { x: 452, y: 282, r: 15, name: 'Елагин остров' },
+        ],
+      },
+    },
   };
 })();
 

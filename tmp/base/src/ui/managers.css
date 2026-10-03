@@ -1,0 +1,50 @@
+/* Управляющие точек (src/ui/managers-ui.js) */
+.mgr-h { display: inline-flex; align-items: center; gap: 7px; } .mgr-h svg { width: 15px; height: 15px; color: var(--river-t); }
+.mgr-h .count { margin-left: 2px; }
+.mgr-lead { margin: 0; }
+.mgr-card { display: flex; flex-direction: column; gap: 7px; padding: 12px; border: 1px solid var(--line); border-left: 3px solid var(--river); border-radius: var(--r); background: var(--surface); }
+.mgr-card + .mgr-card { margin-top: 8px; }
+.mgr-ch { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mgr-av { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--river-soft); color: var(--river-t); font: 600 11.5px var(--f-body); letter-spacing: .02em; }
+.mgr-av.lg { width: 38px; height: 38px; font-size: 14px; }
+.mgr-who { display: flex; flex-direction: column; min-width: 0; font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+.mgr-who small { font-weight: 400; color: var(--ink-3); font-size: 11.5px; }
+.mgr-left { margin-left: auto; flex: none; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.mgr-left.soon { color: var(--warn-t); font-weight: 600; }
+.mgr-t { font-weight: 600; font-size: 14.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.mgr-why { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.mgr-fact { font-size: 12px; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 6px 8px; line-height: 1.4; overflow-wrap: anywhere; }
+.mgr-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mgr-price { display: inline-flex; gap: 14px; }
+.mgr-price span { display: flex; flex-direction: column; line-height: 1.2; }
+.mgr-price small { font-size: 11px; color: var(--ink-3); }
+.mgr-price b { font: 600 13px var(--f-mono); white-space: nowrap; }
+.mgr-fx { display: flex; flex-wrap: wrap; gap: 5px; }
+.mgr-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mgr-acts .btn { min-width: 120px; min-height: 36px; }
+.mgr-line { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+.mgr-line + .mgr-line { border-top: 1px solid var(--line); }
+.mgr-line .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mgr-line .tx b { font-size: 13px; }
+.mgr-dots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; } .mgr-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .mgr-dots i.on { background: var(--river); }
+.mgr-person { border: 1px solid var(--line); border-radius: var(--r); padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.mgr-person + .mgr-person { margin-top: 8px; }
+.mgr-ph { display: flex; gap: 10px; align-items: flex-start; }
+.mgr-ph .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.mgr-sal { flex: none; display: flex; flex-direction: column; align-items: flex-end; font: 600 13.5px var(--f-mono); white-space: nowrap; }
+.mgr-sal small { font: 400 11px var(--f-body); color: var(--ink-3); }
+.mgr-q { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.mgr-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.mgr-stats span { display: flex; flex-direction: column; font-size: 11px; color: var(--ink-3); line-height: 1.25; background: var(--surface-2); border-radius: 8px; padding: 6px; min-width: 0; }
+.mgr-stats b { font: 600 13px var(--f-mono); color: var(--ink); overflow-wrap: anywhere; }
+.mgr-stats .pos b { color: var(--good-t); } .mgr-stats .negc b { color: var(--bad-t); } .mgr-stats .mut b { color: var(--ink-3); }
+.mgr-hl { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.mgr-hl .chip { font-size: 11px; }
+.mgr-store .mgr-card { border-left-width: 3px; }
+@media (max-width: 560px) {
+  .mgr-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mgr-acts .btn { flex: 1 1 0; min-width: 0; min-height: 42px; }
+  .mgr-acts .linkbtn { flex-basis: 100%; text-align: left; }
+  .mgr-card { padding: 10px; }
+  .mgr-hl { grid-template-columns: minmax(0, 1fr) auto; } .mgr-hl > .hint { grid-column: 1 / -1; }
+}

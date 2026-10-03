@@ -131,13 +131,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
   }
+  /* Соседство района (PLAN.md этап 8.3): у Москвы и Петербурга районы знают своих соседей —
+     поле `lm` в src/data/cities-big.js (повторы = вес: «Москва-Сити» почти всегда у бизнес-центра,
+     спальный район — у школы и рынка). У Уфы и остальных городов поля нет — прежний случайный
+     выбор из всех BK.LANDMARKS, поэтому их партии не меняются. */
+  function districtLandmarks(d) {
+    if (!d || !d.lm || !d.lm.length) return BK.LANDMARKS;
+    const out = [];
+    for (const id of d.lm) { const l = byId(BK.LANDMARKS, id); if (l) out.push(l); }
+    return out.length ? out : BK.LANDMARKS;
+  }
   function makeStoreOffer(S, opts) { // opts (опц.): { district, lm, size } — для помещений из событий
     const cfg = C();
     const d = (opts && opts.district && byId(BK.DISTRICTS, opts.district)) || wpick(S, BK.DISTRICTS, (x) => districtWeight(S, x));
-    const sizeKey = (opts && cfg.SIZES[opts.size] && opts.size) || wpick(S, ['small', 'standard', 'large'], (k) => ({ small: 0.3, standard: 0.5, large: 0.2 })[k]);
+    // типичный размер помещения района: центр — большие залы, частный сектор — маленькие (cities-big.js);
+    // у Уфы и сгенерированных городов поля нет — прежние веса
+    const szw = (d.sizeW && d.sizeW.small != null) ? d.sizeW : { small: 0.3, standard: 0.5, large: 0.2 };
+    const sizeKey = (opts && cfg.SIZES[opts.size] && opts.size) || wpick(S, ['small', 'standard', 'large'], (k) => szw[k]);
     const sz = cfg.SIZES[sizeKey];
     const area = ri(S, sz.min, sz.max);
-    const lms = [(opts && opts.lm && byId(BK.LANDMARKS, opts.lm)) || pick(S, BK.LANDMARKS)];
+    const lms = [(opts && opts.lm && byId(BK.LANDMARKS, opts.lm)) || pick(S, districtLandmarks(d))];
     if (rnd(S) < 0.45) { const l2 = pick(S, BK.LANDMARKS); if (l2.id !== lms[0].id) lms.push(l2); }
     let tr = 1, sv = 1, rm = 1;
     for (const l of lms) { tr *= l.tr; sv *= l.solv; rm *= l.rent; }

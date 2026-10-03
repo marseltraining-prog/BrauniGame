@@ -1,0 +1,18 @@
+const BK = require('./sim/load'); const E = BK.Engine, CFG = BK.CFG;
+const { play } = require('./sim/bot');
+const city = process.argv[2], seed = +process.argv[3];
+const orig = E.newGame;
+E.newGame = function (o) { return orig.call(this, Object.assign({}, o || {}, { city })); };
+const S0 = E.newGame({ seed });
+const dn = (id) => (BK.DISTRICTS.find((d) => d.id === id) || {}).name;
+console.log(`${city} seed ${seed}: счёт ${BK.fmtMoney(S0.cash)}, рынок ${S0.market.seller}/${S0.market.baker}`);
+for (const o of S0.offers) console.log(`  оффер ${o.id} ${dn(o.district).padEnd(16)} ${o.address.padEnd(30)} ${String(o.area).padStart(3)} м² ${String(o.rentM2).padStart(5)} ₽/м² чек ${o.solv} поток ${o.traffic} соседи ${o.landmarks.map((l) => (BK.LANDMARKS.find((x) => x.id === l) || {}).name).join('+')} comp ${o.comp}`);
+const op = S0.prodOffers.map((o) => ({ o, c: E.prodOpenCost(S0, o).total }));
+for (const x of op) console.log(`  цех ${x.o.id} ${dn(x.o.district).padEnd(16)} ${x.o.address.padEnd(28)} ${x.o.area} м² ${x.o.rentM2} ₽/м² открытие ${BK.fmtMoney(x.c)}`);
+const log = [];
+const r = play({ level: 'good', seed, years: 5, onDay: (S) => { const t = E.dateOf(S.day); if (t.d === 1) { const h = S.history[S.history.length - 1]; if (h) log.push([`${t.y}-${String(t.m + 1).padStart(2, '0')}`, Math.round(h.rev / 1e6), Math.round(h.profit / 1e6), h.stores, Math.round(S.cash / 1e6), Math.round(S.loan / 1e6)]); } } });
+console.log('месяц | выручка млн | прибыль млн | точек | счёт млн | кредит млн');
+for (const l of log.slice(0, 30)) console.log('  ' + l.join(' | '));
+console.log('итог:', r.won ? 'победа ' + r.won.year : r.lostYear ? 'банкрот ' + r.lostYear + ' (день ' + r.lostDay + ')' : 'без победы');
+console.log('точки: ' + r.S.stores.map((s) => `${s.num} ${dn(s.district)} ${s.area}м² ${s.status}${s.last ? ' прибыль ' + Math.round(s.last.profit / 1e6) + ' млн' : ''}`).join('; '));
+E.newGame = orig;

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Город и директор — макет</title>
+<link rel="stylesheet" href="common.css">
+<style id="hud2css"></style>
+<style>
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: 452px 412px minmax(0, 1fr); min-height: 0; }
+  .col { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .col + .col { border-left: 1px solid var(--line); }
+  .c-city { background: var(--surface); }
+  .c-dir { background: var(--surface); }
+  .c-rep { background: var(--paper); }
+  .c-dir .pad { padding-top: 12px; padding-bottom: 10px; }
+  .pad { padding: 16px 20px; }
+  h1 { font-family: var(--f-display); font-size: 24px; font-weight: 600; letter-spacing: -.005em; }
+  .cityhead { display: grid; grid-template-columns: 1fr 170px; gap: 14px; }
+  .cityhead .sub { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; line-height: 1.45; }
+  .cityhead .sub b { color: var(--ink-2); font-weight: 600; }
+  .thumb { position: relative; height: 104px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--district); }
+  .thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .thumb span { position: absolute; left: 6px; bottom: 5px; font-family: var(--f-display); font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 2px 5px; border-radius: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chips .chip { height: 24px; font-size: 11.5px; gap: 4px; padding: 0 7px; }
+  .chips { gap: 5px !important; flex-wrap: nowrap !important; }
+  .chips .chip b { font-family: var(--f-mono); font-weight: 600; color: var(--ink); font-size: 11.5px; }
+  .chips .chip.hi b { color: var(--bad-t); }
+  .aw { margin-top: 12px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+  .aw .tr { position: relative; height: 6px; border-radius: 3px; background: var(--surface-3); }
+  .aw .tr i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--crust); }
+  .aw .tr em { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--ink-2); border-radius: 1px; }
+  .aw b { font-family: var(--f-mono); font-weight: 600; color: var(--ink); }
+  .feat { margin-top: 10px; font-size: 12px; color: var(--ink-3); line-height: 1.45; display: flex; flex-direction: column; gap: 3px; }
+  .feat span:before { content: '— '; color: var(--crust); }
+  .hr { height: 1px; background: var(--line); margin: 0 20px; }
+  .kgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .k { background: var(--surface-2); border-radius: 10px; padding: 9px 11px 8px; }
+  .k .lab { font-size: 11.5px; color: var(--ink-3); }
+  .k .v { font-family: var(--f-mono); font-size: 16px; font-weight: 600; margin: 2px 0 1px; letter-spacing: -.02em; white-space: nowrap; }
+  .k .row { display: flex; justify-content: space-between; align-items: center; }
+  .pf { display: grid; grid-template-columns: 64px 1fr 124px; gap: 6px 10px; align-items: center; font-size: 12.5px; }
+  .pf .n { color: var(--ink-2); }
+  .pf .t { position: relative; height: 8px; border-radius: 4px; background: var(--surface-3); }
+  .pf .t i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+  .pf .t em { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--ink); border-radius: 1px; }
+  .pf .r { font-family: var(--f-mono); font-size: 11.5px; text-align: right; color: var(--ink-2); white-space: nowrap; }
+  .pf .r b { color: var(--ink); font-weight: 600; }
+  .bud { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; font-size: 12px; }
+  .bud .it { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding: 5px 0; color: var(--ink-3); }
+  .bud .it b { font-family: var(--f-mono); color: var(--ink); font-weight: 600; font-size: 12px; }
+  .seg { display: flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+  .seg span { flex: 1; height: 26px; display: grid; place-items: center; font-size: 12.5px; color: var(--ink-2); border-radius: 6px; font-weight: 500; }
+  .seg span.on { background: var(--surface-3); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--crust); }
+  .actions { margin-top: auto; display: flex; gap: 8px; padding: 14px 20px 16px; border-top: 1px solid var(--line); }
+  .actions .btn { height: 36px; font-size: 13px; padding: 0 14px; }
+  .actions .btn svg { width: 15px; height: 15px; }
+
+  /* директор */
+  .dhead { display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: center; }
+  .photo { width: 76px; height: 76px; border-radius: 16px; position: relative; overflow: hidden; background: repeating-linear-gradient(135deg, var(--surface-2) 0 7px, var(--surface-3) 7px 8px); border: 1px solid var(--line-2); display: grid; place-items: center; }
+  .photo b { font-family: var(--f-display); font-size: 22px; font-weight: 600; color: var(--crust-t); letter-spacing: .02em; }
+  .photo small { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 8.5px; color: var(--ink-3); font-family: var(--f-display); letter-spacing: .14em; text-transform: uppercase; }
+  .dname { font-family: var(--f-display); font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+  .dsub { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .grade { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; font-size: 12px; color: var(--ink-2); }
+  .grade .pips { display: inline-flex; gap: 3px; }
+  .grade .pips i { width: 14px; height: 5px; border-radius: 2px; background: var(--surface-3); }
+  .grade .pips i.on { background: var(--crust); }
+  .skills { display: grid; grid-template-columns: 84px 1fr 30px; gap: 7px 10px; align-items: center; font-size: 12.5px; }
+  .skills .n { color: var(--ink-2); }
+  .skills .t { position: relative; height: 8px; border-radius: 4px; background: var(--surface-3); }
+  .skills .t i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--river); }
+  .skills .t i.plus { background: var(--good); opacity: .65; }
+  .skills .t em { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--ink-3); border-radius: 1px; }
+  .skills .v { font-family: var(--f-mono); font-weight: 600; text-align: right; }
+  .note { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .note i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; font-weight: 500; border: 1px solid var(--line-2); color: var(--ink-2); }
+  .tag.style { background: var(--crust-soft); border-color: color-mix(in srgb, var(--crust) 45%, transparent); color: var(--crust-t); font-weight: 600; }
+  .tag.q { border-style: dashed; color: var(--ink-3); }
+  .tag.q b { font-family: var(--f-mono); }
+  .dl { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .dl:first-child { border-top: 0; padding-top: 0; }
+  .dl .k2 { color: var(--ink-2); }
+  .dl .v2 { font-family: var(--f-mono); font-weight: 600; text-align: right; white-space: nowrap; }
+  .dl .s2 { grid-column: 1 / -1; font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+  .loy { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; }
+  .loy .t { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--bad) 0 30%, var(--warn) 30% 55%, var(--good) 55% 100%); opacity: .9; }
+  .loy .t em { position: absolute; top: -4px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--surface); border: 3px solid var(--good); }
+  .loy .big { font-family: var(--f-mono); font-size: 18px; font-weight: 600; }
+  .kpis3 { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
+  .kpis3 span { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink-2); }
+  .kpis3 i { width: 8px; height: 8px; border-radius: 50%; }
+  .vest { display: flex; gap: 3px; margin-top: 6px; }
+  .vest i { flex: 1; height: 6px; border-radius: 3px; background: var(--surface-3); }
+  .vest i.on { background: var(--crust); }
+  .dactions { margin-top: auto; display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; padding: 14px 20px 16px; border-top: 1px solid var(--line); }
+  .dactions .btn { height: 34px; padding: 0 8px; }
+  .btn.danger { color: var(--bad-t); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: transparent; }
+
+  .yrs { display: grid; grid-template-columns: 1fr auto auto auto; gap: 0 16px; font-size: 12.5px; }
+  .yrs span { padding: 6px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+  .yrs span:nth-child(-n+4) { border-top: 0; }
+  .yrs .num { text-align: right; }
+  /* отчёт */
+  .rephead { display: flex; align-items: center; gap: 10px; padding: 16px 20px 12px; }
+  .rephead h2 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+  .rephead .count { font-family: var(--f-mono); font-size: 11px; font-weight: 600; background: var(--bad-soft); color: var(--bad-t); border-radius: 9px; padding: 1px 7px; }
+  .rephead .muted { margin-left: auto; font-size: 12px; }
+  .report { margin: 0 20px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .report .top { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); border-top: 3px solid var(--crust); }
+  .report .av { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-family: var(--f-display); font-size: 12px; font-weight: 600; color: var(--crust-t); }
+  .report .who { font-weight: 600; font-size: 14px; }
+  .report .when { font-size: 12px; color: var(--ink-3); }
+  .need { font-size: 11px; font-weight: 600; color: var(--bad-t); background: var(--bad-soft); border-radius: 10px; padding: 3px 9px; white-space: nowrap; }
+  .mx { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+  .mx .m { padding: 9px 8px 8px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .mx .m:nth-child(4n) { border-right: 0; }
+  .mx .m:nth-child(n+5) { border-bottom: 0; }
+  .mx .lab { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+  .mx .lab i { width: 7px; height: 7px; border-radius: 50%; }
+  .mx .v { font-family: var(--f-mono); font-size: 15px; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+  .mx .d { font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); margin-top: 1px; white-space: nowrap; }
+  .quote { margin: 12px 16px 4px; padding: 10px 14px; border-left: 3px solid var(--crust); background: var(--surface-2); border-radius: 0 8px 8px 0; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+  .quote small { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+  .req { margin: 10px 16px 0; border: 1px solid var(--line-2); border-radius: 10px; padding: 11px 13px 12px; }
+  .req .rt { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; }
+  .req .rt .n { font-family: var(--f-display); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--crust-t); font-weight: 600; }
+  .req .rt .sum { margin-left: auto; font-family: var(--f-mono); font-size: 13px; }
+  .req .rd { font-size: 12px; color: var(--ink-3); margin-top: 3px; line-height: 1.45; }
+  .req .rd b { color: var(--ink-2); font-weight: 600; }
+  .req .bs { display: flex; gap: 6px; margin-top: 9px; align-items: center; }
+  .req .bs .btn { height: 32px; }
+  .req .bs .btn small { font-family: var(--f-mono); font-size: 11px; font-weight: 500; opacity: .8; }
+  .req .bs .btn.no { color: var(--ink-2); }
+  .req .bs .btn.no small { color: var(--bad-t); opacity: 1; }
+  .rfoot { display: flex; align-items: center; gap: 10px; padding: 12px 16px 13px; margin-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+  .rfoot .btn { margin-left: auto; }
+  .rfoot .btn svg { width: 14px; height: 14px; color: var(--crust-t); }
+  .older { margin: 12px 20px 0; display: flex; flex-direction: column; }
+  .older .o { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 8px 2px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); }
+  .older .o:first-child { border-top: 0; }
+  .older .o span.muted { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <!-- ================= Город ================= -->
+    <section class="col c-city">
+      <div class="pad">
+        <div class="cityhead">
+          <div>
+            <span class="caps">Город №3 · лист 3</span>
+            <h1>Казань</h1>
+            <div class="sub"><b>1,32 млн</b> жителей · <b>525 км</b> от Уфы<br>В сети с апреля 2038 · свой цех</div>
+          </div>
+          <div class="thumb"><svg id="thumb"></svg><span>Россия</span></div>
+        </div>
+        <div class="chips">
+          <span class="chip">Доход <b>1,08</b></span><span class="chip">Аренда <b>1,10</b></span><span class="chip">Зарплаты <b>1,05</b></span><span class="chip hi">Конкуренты <b>высоко</b></span>
+        </div>
+        <div class="aw"><span>Узнаваемость</span><span class="tr"><i style="width:46%"></i><em style="left:58%"></em></span><span><b>46 %</b> <span class="muted">→ 58</span></span></div>
+        <div class="feat">
+          <span>Татарский календарь: Ураза- и Курбан-байрам, Сабантуй</span>
+          <span>Сильные местные пекарни: без эчпочмака рейтинг ≤ 4,3★</span>
+          <span>«Хлебный двор» в городе с 2039 года · давление 0,6</span>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="pad" style="padding-bottom:10px">
+        <div class="sec-h"><h3>Показатели</h3><span class="muted">12 мес. · к прошлому году</span></div>
+        <div class="kgrid" id="kg"></div>
+      </div>
+      <div class="pad" style="padding-top:6px;padding-bottom:10px">
+        <div class="sec-h"><h3>План / факт 2040</h3><span class="muted">| — где должны быть сейчас</span></div>
+        <div class="pf">
+          <span class="n">Точки</span><span class="t"><i style="width:84.6%;background:var(--warn)"></i><em style="left:88.5%"></em></span><span class="r"><b>22</b> из 26 · <span style="color:var(--warn-t)">−1</span></span>
+          <span class="n">Выручка</span><span class="t"><i style="width:64.5%;background:var(--good)"></i><em style="left:66.4%"></em></span><span class="r"><b>1,58</b> из 2,45 млрд</span>
+          <span class="n">Маржа</span><span class="t"><i style="width:100%;background:var(--good)"></i><em style="left:93.8%"></em></span><span class="r"><b>16,0 %</b> · план 15 %</span>
+        </div>
+      </div>
+      <div class="pad" style="padding-top:6px;padding-bottom:0">
+        <div class="sec-h"><h3>Бюджет и цели</h3><span class="muted">согласовано в январе</span></div>
+        <div class="bud">
+          <span class="it">Капвложения<b>118 / 180 млн</b></span><span class="it">Маркетинг<b>6,2 млн/мес</b></span>
+          <span class="it">Зарплаты<b>+8 % к рынку</b></span><span class="it">Обучение<b>до уровня 3</b></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px"><span style="font-size:12px;color:var(--ink-3);white-space:nowrap">Приоритет</span><div class="seg" style="flex:1"><span>Рост</span><span>Прибыль</span><span class="on">Качество</span></div></div>
+      </div>
+      <div class="actions"><span class="btn primary" id="enter"></span><span class="btn">Аудит · 6,9 млн</span><span class="btn">Все отчёты</span></div>
+    </section>
+
+    <!-- ================= Директор ================= -->
+    <section class="col c-dir">
+      <div class="pad">
+        <div class="sec-h" style="margin-bottom:12px"><h3>Директор города</h3><span class="muted">в сети 29 мес.</span></div>
+        <div class="dhead">
+          <div class="photo"><b>ГХ</b><small>фото</small></div>
+          <div>
+            <div class="dname">Гульнара Хасанова</div>
+            <div class="dsub">Нанята через хедхантера · потенциал ★★☆</div>
+            <div class="grade"><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>Грейд 3 · Сильный директор</div>
+          </div>
+        </div>
+      </div>
+      <div class="pad" style="padding-top:2px">
+        <div class="skills" id="sk"></div>
+        <div class="note"><span><i style="background:var(--river)"></i>навык</span><span><i style="background:var(--good);opacity:.65"></i>от черты</span><span><i style="background:var(--ink-3);width:2px"></i>потолок грейда · 80</span></div>
+      </div>
+      <div class="pad" style="padding-top:2px">
+        <div class="tags">
+          <span class="tag style">Стиль: Сервис · совпадает с приоритетом, +5 %</span>
+          <span class="tag">Надёжная</span><span class="tag">Харизматичная</span><span class="tag q"><b>?</b> скрытая черта не проверена</span>
+        </div>
+      </div>
+      <div class="pad" style="padding-top:4px">
+        <div class="dl" style="border-top:0;padding-top:0"><div class="loy" style="grid-column:1/-1">
+          <span class="k2" style="font-size:12.5px;color:var(--ink-2)">Лояльность</span><span><span class="big">72</span> <span class="delta up">▲ +0,9/мес</span></span>
+          <span class="t"><em style="left:72%"></em></span>
+          <span class="s2" style="grid-column:1/-1;font-size:11.5px;color:var(--ink-3)">Приоритет совпадает +0,5 · опционы +1 · надёжная +0,5 · тянется к 60 −0,6 · переманят: 0,4 % в мес.</span>
+        </div></div>
+        <div class="dl"><span class="k2">Оклад</span><span class="v2">860 тыс. ₽/мес</span><span class="s2">Рынок 840 тыс. · <span class="up">+2 % к рынку</span> · в год с взносами 13,4 млн ₽</span></div>
+        <div class="dl"><span class="k2">Премия за KPI · 40 % оклада</span><span class="v2">≈ 1,0 млн за кв.</span>
+          <span class="s2"><span class="kpis3"><span><i style="background:var(--good)"></i>Выручка 40 %</span><span><i style="background:var(--good)"></i>Рейтинг 30 %</span><span><i style="background:var(--warn)"></i>Текучка 30 %</span></span></span></div>
+        <div class="dl"><span class="k2">Опцион корпорации · 0,3 %</span><span class="v2">≈ 13 млн ₽</span>
+          <span class="s2"><span class="vest"><i class="on"></i><i></i><i></i></span><span style="display:flex;justify-content:space-between;margin-top:4px"><span>Созрела 1/3 · март 2040</span><span>следующая — март 2041</span></span></span></div>
+      </div>
+      <div class="pad" style="padding-top:0">
+        <div class="sec-h"><h3>Результаты по годам</h3><span class="muted">план · премия</span></div>
+        <div class="yrs" id="yrs"></div>
+      </div>
+      <div class="dactions"><span class="btn primary">Мотивация</span><span class="btn">Учиться</span><span class="btn">Перевести</span><span class="btn danger">Уволить</span></div>
+    </section>
+
+    <!-- ================= Отчёт ================= -->
+    <section class="col c-rep">
+      <div class="rephead"><h2>Отчёты · Казань</h2><span class="count">1</span><span class="muted">Все города →</span></div>
+      <div class="report">
+        <div class="top">
+          <span class="av">ГХ</span>
+          <div><div class="who">Отчёт за август 2040</div><div class="when">Гульнара Хасанова · пришёл 1 сентября</div></div>
+          <span class="need">Нужен ответ · 2</span>
+        </div>
+        <div class="mx" id="mx"></div>
+        <div class="quote">«Сабантуй в парке Горького дал рекордный июль, а Ново-Савиновский просит ещё три точки. Дайте 48 млн — окупим за 20 месяцев, и стандарты не просядут».<small>Прогноз директора · точность оценки ±15 % (без финансового департамента)</small></div>
+        <div class="req">
+          <div class="rt"><span class="n">Просьба 1</span>Бюджет на 3 точки в Ново-Савиновском<span class="sum">+48 млн ₽</span></div>
+          <div class="rd">Остаток бюджета года <b>118 млн</b> · окупаемость ≈ <b>20 мес.</b> · план точек станет <b>25 из 26</b></div>
+          <div class="bs"><span class="btn primary">Дать 48 млн</span><span class="btn">32 млн · 2 точки</span><span class="btn no">Отказать <small>лояльность −2</small></span></div>
+        </div>
+        <div class="req">
+          <div class="rt"><span class="n">Просьба 2</span>Поднять зарплаты персоналу на 5 %<span class="sum">+3,1 млн ₽/мес</span></div>
+          <div class="rd">Настроение команды <b>+4</b> · текучка ≈ <b>−2 п. п.</b> · станет +13 % к рынку Казани</div>
+          <div class="bs"><span class="btn primary">Согласовать</span><span class="btn">+3 % вместо 5</span><span class="btn no">Отказать <small>лояльность −2</small></span></div>
+        </div>
+        <div class="rfoot"><span>Нет ответа до 1 октября — отказ по умолчанию (−1 лояльности)</span><span class="btn" id="mark"></span></div>
+      </div>
+      <div class="older">
+        <div class="o"><span>Июль 2040 · план выполнен, премия за квартал 1,1 млн</span><span class="muted">отмечен ★</span></div>
+        <div class="o"><span>Июнь 2040 · просьба: вечерний формат обучения</span><span class="muted">согласовано</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script src="map.js"></script>
+<script src="russia.js"></script>
+<script>
+  document.getElementById('hud2css').textContent = RU.HUD2_CSS;
+  document.getElementById('hud').innerHTML = RU.HUD2({ city: 'Казань', cityTag: 'только просмотр', cityRev: 'Казань 2,31 млрд' });
+  const K = RU.C.kazan;
+  RU.render(document.getElementById('thumb'), { vb: [K.x - 150, K.y - 100, 300, 208], k: 1.1, lk: 1.3, labels: false, badges: false, logistics: true, kmLabels: false, sel: 'kazan', sheetEdge: false, par: 'xMidYMid slice' });
+  document.getElementById('enter').innerHTML = RU.GLOBE.replace('<svg', '<svg style="display:none"') + 'Зайти в город';
+  const kg = [
+    ['Выручка', '2,31 млрд', '▲ 38 %', 'up', [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.31]],
+    ['Прибыль', '370 млн', '▲ 52 %', 'up', [150, 170, 190, 210, 230, 250, 270, 290, 310, 330, 350, 370]],
+    ['Маржа', '16,0 %', '▲ 1,2 п. п.', 'up', [12.5, 13, 13.4, 13.9, 14.2, 14.6, 14.9, 15.1, 15.4, 15.6, 15.8, 16]],
+    ['Точки', '22', '+6 за год', 'up', [16, 16, 17, 17, 18, 18, 19, 19, 20, 21, 21, 22]],
+    ['Рейтинг', '4,5 ★', '▲ 0,1', 'up', [4.3, 4.3, 4.35, 4.4, 4.4, 4.4, 4.45, 4.45, 4.5, 4.5, 4.5, 4.5]],
+    ['Текучка', '18 %/год', '▼ 3 п. п.', 'up', [22, 22, 21, 21, 20, 20, 19, 19, 19, 18, 18, 18]],
+  ];
+  document.getElementById('kg').innerHTML = kg.map(([l, v, d, c, h]) => `<div class="k"><div class="lab">${l}</div><div class="v">${v}</div><div class="row"><span class="delta ${c}">${d}</span>${MK.spark(h, 44, 16)}</div></div>`).join('');
+  const SK = [['Операции', 74, 0], ['Экономия', 58, 0], ['Рост', 61, 0], ['Люди', 72, 10]];
+  document.getElementById('sk').innerHTML = SK.map(([n, v, p]) => `<span class="n">${n}</span><span class="t"><i style="width:${v}%"></i>${p ? `<i class="plus" style="left:${v}%;width:${p}%"></i>` : ''}<em style="left:80%"></em></span><span class="v">${v + p}</span>`).join('');
+  const MX = [
+    ['Выручка', '206 млн', '▲ 4,1 % · план 198', 'good'], ['Прибыль', '34,6 млн', '▲ 6,8 % · план 31', 'good'], ['Маржа', '16,8 %', '▲ 0,4 · план 15,0', 'good'], ['Точки', '22', '+1 · план 23', 'warn'],
+    ['Рейтинг', '4,5 ★', '= · план 4,5', 'good'], ['Текучка', '1,4 %/мес', '▼ 0,3 · план 1,5', 'good'], ['Бюджет', '118 млн', 'остаток из 180', 'good'], ['Персонал', '176 чел.', 'нехватка 3', 'warn'],
+  ];
+  document.getElementById('mx').innerHTML = MX.map(([l, v, d, c]) => `<div class="m"><div class="lab"><i style="background:var(--${c})"></i>${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  document.getElementById('yrs').innerHTML = [['2038 · 9 мес.', '0,52 млрд', '104 %', '0,8 млн'], ['2039', '1,72 млрд', '101 %', '3,6 млн'], ['2040 · 8 мес.', '1,58 млрд', '97 % графика', '2,1 млн']]
+    .map(([y, r, p, b]) => `<span>${y}</span><span class="num">${r}</span><span class="num ${p.startsWith('97') ? '' : 'up'}" style="${p.startsWith('97') ? 'color:var(--warn-t)' : ''}">${p}</span><span class="num muted">${b}</span>`).join('');
+  document.getElementById('mark').innerHTML = IC.starFill + 'Отметить · +2';
+</script>
+</body>
+</html>

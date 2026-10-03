@@ -1,0 +1,44 @@
+/* Инвесторы (src/ui/investors-ui.js). Только интерфейс: условия и выплаты — в src/investors.js. */
+
+.inv-h { display: inline-flex; align-items: center; gap: 6px; }
+.inv-h svg { width: 14px; height: 14px; color: var(--good); }
+
+/* карточка инвестора и сделки */
+.inv-card { border: 1px solid var(--line); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 11px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.inv-card.deal { border-left-color: var(--river); }
+.inv-who { display: flex; flex-direction: column; gap: 1px; }
+.inv-who b { font-size: 14px; }
+.inv-who span { font-size: 12px; color: var(--ink-3); }
+.inv-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 7px 12px; }
+.inv-nums.big { margin: 4px 0 2px; }
+.inv-nums span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.inv-nums small { font-size: 11px; color: var(--ink-3); }
+.inv-nums b { font-family: var(--f-mono); font-size: 13px; }
+.inv-perk { font-size: 12px; color: var(--good-t); background: var(--good-soft); border-radius: 6px; padding: 6px 8px; }
+.inv-last { font-size: 12px; color: var(--warn-t); background: var(--warn-soft); border-radius: 6px; padding: 7px 9px; }
+.inv-warn { font-size: 12px; color: var(--bad-t); background: var(--bad-soft); border-radius: 6px; padding: 8px 10px; }
+.inv-list { display: flex; flex-direction: column; gap: 8px; }
+.inv-foot { font-size: 12px; color: var(--ink-2); }
+.inv-foot b { font-family: var(--f-mono); }
+.inv-offer { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; border: 1px solid var(--good); border-radius: 8px; padding: 9px 10px; background: var(--good-soft); }
+.inv-offer b { font-size: 13px; color: var(--good-t); }
+.inv-offer span { font-size: 12px; color: var(--ink-2); }
+.inv-acts { gap: 8px; }
+.inv-m .inv-card { margin: 4px 0 2px; }
+
+/* тост */
+.toast.invtoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.invtoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--good-soft); color: var(--good-t); }
+.invtoast.warn .mi { background: var(--warn-soft); color: var(--warn-t); }
+.invtoast .mi svg { width: 18px; height: 18px; }
+.invtoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.invtoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--good-t); }
+.invtoast.warn .ey { color: var(--warn-t); }
+.invtoast b { margin: 0; }
+.invtoast .md { color: var(--ink-2); font-size: 12px; }
+
+@media (max-width: 560px) {
+  .inv-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inv-acts { flex-direction: column; align-items: stretch; }
+  .inv-acts .btn { width: 100%; }
+}

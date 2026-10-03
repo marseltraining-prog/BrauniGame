@@ -88,8 +88,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       districts: [['Центр', 'center'], ['Москва-Сити', 'biz'], ['Павелецкая', 'biz'], ['Белорусская', 'biz'], ['Хамовники', 'prestige'], ['Юго-Запад', 'prestige'], ['Север', 'sleep'], ['Северо-Восток', 'sleep'], ['Восток', 'sleep'], ['Юг', 'far'], ['Новая Москва', 'outskirts'], ['Юго-Восток', 'industrial']],
       streets: ['ул. Тверская', 'ул. Арбат', 'ул. Мясницкая', 'пр. Мира', 'Ленинский пр.', 'Кутузовский пр.'] },
     { id: 'spb', name: 'Санкт-Петербург', short: 'Петербург', in: 'в Петербурге', pop: 5.6, inc: 1.40, rent: 1.90, wage: 1.40, comp: 'vhigh', km: 2050, cap: 150, lat: 59.9, lon: 30.3,
-      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; белые ночи (июнь–июль +15%)',
-      season: [1, 1, 1, 1, 1, 1.15, 1.15, 1, 1, 1, 1, 1], cat: { sweet: 0.12 },
+      shape: 'bay', water: 'bay', rivers: [['р. Нева', 22]], sea: 'Финский залив', muslim: 0.15, sab: 0, big: true, feat: 'Культура пышечных — сладкая выпечка в чеке +12%; короткое лето: белые ночи (июнь–июль +16%), сырое межсезонье и зима −5%',
+      season: [0.95, 0.95, 1.0, 1.03, 1.07, 1.16, 1.16, 1.06, 1.0, 0.98, 0.95, 0.95], cat: { sweet: 0.12 },
       districts: [['Центральный', 'center'], ['Адмиралтейский', 'biz'], ['Василеостровский', 'biz'], ['Петроградский', 'prestige'], ['Московский', 'sleep'], ['Приморский', 'sleep'], ['Невский', 'sleep'], ['Калининский', 'sleep'], ['Выборгский', 'student'], ['Красносельский', 'far'], ['Кировский', 'industrial']],
       streets: ['Невский пр.', 'ул. Рубинштейна', 'Большой пр. П. С.', 'Литейный пр.', 'Московский пр.', 'ул. Марата'] },
     { id: 'nsk', name: 'Новосибирск', in: 'в Новосибирске', pop: 1.63, inc: 1.05, rent: 0.95, wage: 1.05, comp: 'mid', km: 2100, cap: 60, lat: 55.0, lon: 82.9,
@@ -306,6 +306,44 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const UFA = { DISTRICTS: BK.DISTRICTS, MAP: BK.MAP, CENTER_POINT: BK.CENTER_POINT };
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
+
+  /* ---------- проектные карты Москвы и Санкт-Петербурга (PLAN.md, этап 8.3) ----------
+     Районы, улицы, соседство и схема карты нарисованы руками — src/data/cities-big.js
+     (как Уфа в src/data/world.js). Числа районов там записаны в УФИМСКОМ масштабе, а
+     городские коэффициенты rent/inc и плотность dens применяются здесь — тем же способом,
+     что в genCityGeo(), поэтому Москва получает аренду ×3,00 и чек ×1,80 из CITIES
+     (это стережёт sim/city-coefficients.js), а не «свои» числа. Генератор остальных
+     городов и Уфа не затрагиваются. */
+  function bigGeo(def) {
+    const big = BK.CITY_BIG[def.id];
+    const dens = clamp(1 + 0.08 * Math.log(def.pop / 1.16), 0.85, 1.25);
+    const DISTRICTS = big.districts.map((d) => {
+      const a = ARCH[d.arch];
+      return { id: d.id, name: d.name, x: d.x, y: d.y, arch: d.arch, ring: a.ring, w: a.w,
+        kind: d.kind, lm: (d.lm || []).slice(),
+        sizeW: d.sizeW || null, lx: d.lx || 0, ly: d.ly || 0,
+        rent: d.rent.map((v) => rnd10(v * def.rent, 10)),
+        solv: d.solv.map((v) => rnd10(v * def.inc, 5)),
+        traffic: d.traffic.map((v) => rnd10(v * dens, 50)),
+        prodRent: d.prodRent.map((v) => rnd10(v * def.rent, 10)),
+        streets: (d.streets && d.streets.length ? d.streets : COMMON_STREETS).slice() };
+    });
+    const pois = []; // соседство районов одной лентой — карта рисует их точками с подписью
+    for (const d of big.districts) for (const p of (d.pois || [])) pois.push({ x: d.x + p[0], y: d.y + p[1], kind: p[2], name: p[3] || '', lbl: !!p[4], d: d.id });
+    const ids = (f) => DISTRICTS.filter(f).map((d) => d.id);
+    let g0 = ids((d) => ARCH[d.arch].grp === 0), g1 = ids((d) => ARCH[d.arch].grp === 1), g2 = ids((d) => ARCH[d.arch].grp === 2).concat(ids((d) => d.arch === 'far').slice(0, 1));
+    if (!g1.length) g1 = g0; if (!g2.length) g2 = g1;
+    const c = DISTRICTS.find((d) => d.ring === 0) || DISTRICTS[0];
+    const MAP = Object.assign({}, big.map, { sea: big.map.sea || [], prodGroups: [g0, g1, g2], pois,
+      hq: { x: c.x + 40, y: c.y - 28 } });
+    return { DISTRICTS, MAP, CENTER_POINT: { x: c.x, y: c.y } };
+  }
+  const bigGeoCache = {};
+  function geoOf(def, seed, mapGen) {
+    if (!(BK.CITY_BIG && BK.CITY_BIG[def.id])) return genCityGeo(def, seed, mapGen);
+    return bigGeoCache[def.id] || (bigGeoCache[def.id] = bigGeo(def)); // рукописная карта от зерна не зависит
+  }
+
   function cityInfo(def) { // описание для движка: экономика, масштаб, конкуренция, сезон, календарь
     // inc/rent/wage всегда берутся из одной записи CITIES. Первый акт читает их через BK.CITY,
     // второй — через BK.CITY_BY_ID; одинаковый город поэтому больше не получает разные зарплаты.
@@ -317,7 +355,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function useCity(id, seed, mapGen) {
     const def = byId[id || 'ufa'] || byId.ufa;
     if (def.builtin) { BK.DISTRICTS = UFA.DISTRICTS; BK.MAP = UFA.MAP; BK.CENTER_POINT = UFA.CENTER_POINT; }
-    else { const g = genCityGeo(def, seed | 0, mapGen); BK.DISTRICTS = g.DISTRICTS; BK.MAP = g.MAP; BK.CENTER_POINT = g.CENTER_POINT; }
+    else { const g = geoOf(def, seed | 0, mapGen); BK.DISTRICTS = g.DISTRICTS; BK.MAP = g.MAP; BK.CENTER_POINT = g.CENTER_POINT; }
     BK.CITY = cityInfo(def);
     return BK.CITY;
   }

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>«Наследство» — после нотариуса (пиксели)</title>
+<link rel="stylesheet" href="pixel.css">
+<style>
+  body { background: #05070f; }
+  .sub { position: absolute; left: 44px; top: 100px; font-size: 13px; color: #c9b8a0; letter-spacing: .01em; text-shadow: 0 1px 0 #000; }
+  .sub b { color: #f2b066; font-weight: 600; }
+  .skip { position: absolute; right: 24px; top: 22px; display: flex; gap: 8px; }
+  .skip span { font-size: 12px; color: #9fb0cc; padding: 5px 10px; background: rgba(10,14,28,.6); box-shadow: inset 0 0 0 1px #2a3450; }
+
+  .dlg { position: absolute; left: 24px; right: 24px; bottom: 20px; height: 274px; display: grid; grid-template-columns: 1fr 590px; gap: 22px; padding: 20px 22px 18px;
+    --pxb: rgba(14, 18, 34, .93); --pxo: #05070f; --pxi: #3b4870; }
+  .letter { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; min-width: 0; }
+  .letter .pf { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .letter .fr { background: #05070f; padding: 3px; box-shadow: 0 0 0 1px #3b4870; }
+  .letter .fr canvas { display: block; image-rendering: pixelated; }
+  .letter .pf small { font-size: 11px; color: #9fb0cc; text-align: center; line-height: 1.3; }
+  .nm { font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #f2b066; margin-bottom: 8px; }
+  .nm em { font-family: var(--f-body); font-style: italic; text-transform: none; letter-spacing: 0; font-weight: 400; color: #9fb0cc; font-size: 12px; margin-left: 6px; }
+  .paper { background: #f3e7cf; color: #2e2218; padding: 12px 18px 10px; font-size: 16px; line-height: 1.55; position: relative;
+    box-shadow: inset 0 0 0 3px #d9c49c, 3px 3px 0 #05070f; }
+  .paper::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 25px, rgba(59, 72, 112, .14) 25px 26px); pointer-events: none; }
+  .paper i { font-style: italic; }
+  .paper .sig { display: block; text-align: right; font-style: italic; margin-top: 2px; }
+  .tap { margin-top: 8px; font-size: 11.5px; color: #7f8db0; display: flex; gap: 12px; }
+  .ch h4 { font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #9fb0cc; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .ch h4 span { font-family: var(--f-body); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; color: #7f8db0; }
+  .ch { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .opt.px { padding: 7px 12px 8px; gap: 1px 12px; }
+  .opt .t { font-size: 13.5px; }
+  .opt .d { font-size: 12px; }
+  .opt .row { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 3px; }
+  .opt .row .d { margin: 0; min-width: 0; }
+  .opt .fx { flex: none; flex-wrap: nowrap; }
+  .opt .L { grid-column: 1; grid-row: 1 / 3; } .opt .t { grid-column: 2; grid-row: 1; } .opt .cost { grid-column: 3; grid-row: 1; } .opt .row { grid-row: 2; }
+  .opt .cost small { display: inline; margin-left: 4px; }
+  .fxc { border-radius: 0; height: 20px; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <canvas class="scene" id="cv"></canvas>
+  <div class="sub"><b>Поворот сценария</b> · Нижегородка, пекарня «Бәлеш» · 23:40, печь впервые за год тёплая</div>
+  <div class="skip"><span>Журнал</span><span>Пропустить сцену · Esc</span></div>
+
+  <div class="dlg pxbox pxshadow">
+    <div class="letter">
+      <div class="pf"><div class="fr" id="saniaP"></div><small>Бабушка Сания<br>письмо к завещанию</small></div>
+      <div>
+        <div class="nm">Письмо әби <em>— нотариус Лилия Ринатовна отдала его отдельно, «лично в руки»</em></div>
+        <div class="paper">
+          Умники сбежали. Оставили долги за аренду, налоги и печь, которая дымит. Я с этим уже не справилась бы, а ты — справишься.<br>
+          <i>Тетрадь у тебя. Лук режь крупнее.</i>
+          <span class="sig">Твоя әби.</span>
+        </div>
+        <div class="tap"><span>долг «Бәлеша» — 1,8 млн ₽</span><span>6 месяцев, чтобы спасти</span><span>тетрадь: открыт 1 рецепт из 12</span></div>
+      </div>
+    </div>
+    <div class="ch">
+      <h4>Что дальше? <span>▲ — лучше, ▼ — хуже, стрелок больше — сильнее</span></h4>
+      <div class="opt px on"><div class="L">А</div><div class="t">«Я справлюсь, әби». Берусь за «Бәлеш»</div><div class="cost">1,8 млн ₽<small>долг</small></div>
+        <div class="row"><span class="d">6 месяцев на спасение, рецепт әби — в меню</span><span class="fx"><span class="fxc dn">₽ <span class="ar">▼▼</span></span><span class="fxc up">Семья <span class="ar">▲▲</span></span><span class="fxc dn">Риск <span class="ar">▼</span></span></span></div></div>
+      <div class="opt px"><div class="L">Б</div><div class="t">Сначала — к Эльвире: реструктуризация</div><div class="cost">0 ₽<small>сразу</small></div>
+        <div class="row"><span class="d">Долг ФНС в рассрочку под залог точки №1</span><span class="fx"><span class="fxc up">₽ <span class="ar">▲</span></span><span class="fxc who">Эльвира <span class="ar">▲</span></span><span class="fxc dn">Риск <span class="ar">▼▼</span></span></span></div></div>
+      <div class="opt px"><div class="L">В</div><div class="t">Посидеть ещё немного</div><div class="cost">—</div>
+        <div class="row"><span class="d">Ничего не решать сегодня. Завтра — печь.</span><span class="fx"><span class="fxc zero">без последствий</span></span></div></div>
+    </div>
+  </div>
+</div>
+<script src="px.js"></script>
+<script src="cast.js"></script>
+<script>
+const { Buf, mix, bay, rng, text, relight, point, inPoly } = PX;
+const W = 480, H = 300, b = new Buf(W, H), R = rng(21);
+
+// ---------- база (в «дневных» цветах, потом переосвещаем) ----------
+const WALL = ['#cdbb9e', '#bba886', '#ddd0b8', '#a8946f'];
+// стена
+b.rect(0, 0, W, 200, WALL[0]);
+for (let i = 0; i < 1600; i++) { const x = R() * W | 0, y = R() * 180 | 0; b.set(x, y, R() > .5 ? WALL[1] : WALL[2]); }
+// осыпавшаяся штукатурка → кирпич
+function bricks(x0, y0, w, h, shape) {
+  for (let y = y0; y < y0 + h; y += 4) for (let x = x0 - ((y / 4) % 2) * 4; x < x0 + w; x += 8) for (let j = 0; j < 3; j++) for (let i = 0; i < 7; i++) {
+    const px = x + i, py = y + j; if (px < x0 || px >= x0 + w || (shape && !shape(px, py))) continue;
+    b.set(px, py, j === 0 ? '#b8704c' : i === 6 ? '#7a3e28' : '#9c5638');
+  }
+}
+bricks(250, 20, 50, 40, (x, y) => ((x - 275) / 25) ** 2 + ((y - 40) / 18) ** 2 < 1 - R() * .15);
+bricks(430, 120, 50, 40, (x, y) => ((x - 460) / 26) ** 2 + ((y - 145) / 22) ** 2 < 1);
+// трещины
+[[40, 20, 58, 44], [300, 90, 316, 112], [440, 60, 452, 90]].forEach(([a, c, d, e]) => { let x = a, y = c; while (y < e) { b.set(x, y, WALL[3]); y++; x += R() > .5 ? 1 : 0; } });
+// нижняя панель и плинтус
+b.rect(0, 160, W, 30, '#6a4a34'); b.hl(0, 160, W, '#8a6448'); for (let x = 0; x < W; x += 20) b.vl(x, 161, 29, '#4a3222');
+// пол
+for (let y = 190; y < H; y++) { const row = Math.floor((y - 190) / 6); b.hl(0, y, W, ['#7a5a40', '#6e503a', '#846248'][row % 3]); if ((y - 190) % 6 === 0) b.hl(0, y, W, '#4e3828'); }
+for (let row = 0; row < 18; row++) for (let x = (row * 29) % 50; x < W; x += 44 + (R() * 30 | 0)) b.vl(x, 191 + row * 6, 5, '#4e3828');
+
+// ---------- полка с банками и травы ----------
+b.rect(300, 118, 26, 3, '#8a6448'); b.hl(300, 118, 26, '#a88060');
+[[302, 108, '#7fa0b8'], [309, 110, '#c9b8a0'], [316, 107, '#8f9f6a']].forEach(([x, y, c]) => { b.rect(x, y, 6, 10, c); b.hl(x, y, 6, mix(c, '#ffffff', .3)); b.rect(x + 1, y - 2, 4, 2, '#5a4a3a'); });
+b.vl(276, 34, 10, '#5a4a3a'); for (let i = 0; i < 9; i++) b.line(276, 44, 271 + i, 60 + (i % 3) * 3, i % 2 ? '#7a8a50' : '#9aa86a');
+
+// ---------- фото бабушки с дедом у той же печи ----------
+function photo(x, y) {
+  b.rect(x, y, 22, 18, '#5a3a24'); b.rect(x + 2, y + 2, 18, 14, '#e8dcc0');
+  b.rect(x + 3, y + 3, 16, 12, '#b8a888'); b.rect(x + 11, y + 5, 7, 10, '#e8e0d0'); b.rect(x + 13, y + 9, 3, 3, '#8a4a2e');
+  // дед
+  b.rect(x + 5, y + 4, 3, 3, '#d9b890'); b.rect(x + 4, y + 7, 5, 7, '#6a5a4a'); b.hl(x + 5, y + 4, 3, '#4a3a2a');
+  // бабушка в платке
+  b.rect(x + 9, y + 5, 3, 3, '#d9b890'); b.rect(x + 8, y + 4, 5, 2, '#8a2f3a'); b.set(x + 8, y + 6, '#8a2f3a'); b.set(x + 12, y + 6, '#8a2f3a'); b.rect(x + 8, y + 8, 5, 6, '#3f6b5a');
+  b.set(x + 10, y - 3, '#3a2a1a'); b.line(x + 10, y - 3, x + 3, y, '#3a2a1a'); b.line(x + 10, y - 3, x + 18, y, '#3a2a1a');
+}
+photo(304, 66);
+
+// ---------- окно ----------
+const WX = 344, WY = 30, WW = 80, WH = 86;
+b.rect(WX - 5, WY - 5, WW + 10, WH + 10, '#5a3e2a'); b.hl(WX - 5, WY - 5, WW + 10, '#7a5a3e');
+b.rect(WX - 8, WY + WH + 3, WW + 16, 5, '#8a6448'); b.hl(WX - 8, WY + WH + 3, WW + 16, '#a88060');
+
+// ---------- печь ----------
+const OX = 40, OY = 40;
+// труба
+b.rect(OX + 60, 0, 34, OY + 6, '#e0d8c8'); b.rect(OX + 84, 0, 10, OY + 6, '#bfb4a0');
+// тело печи
+b.rect(OX, OY + 6, 196, 150, '#e8e0d0');
+b.rect(OX + 150, OY + 6, 46, 150, '#c8bca8');
+b.hl(OX, OY + 6, 196, '#f4efe4');
+// карниз
+b.rect(OX - 4, OY + 2, 204, 6, '#d8ceba'); b.hl(OX - 4, OY + 2, 204, '#f4efe4'); b.hl(OX - 4, OY + 7, 204, '#a89c86');
+// лежанка-ступень справа
+b.rect(OX + 196, OY + 70, 26, 86, '#d8ceba'); b.hl(OX + 196, OY + 70, 26, '#f4efe4'); b.vl(OX + 221, OY + 70, 86, '#a89c86');
+// облупившаяся побелка → кирпич
+bricks(OX + 8, OY + 20, 40, 30, (x, y) => ((x - OX - 26) / 18) ** 2 + ((y - OY - 34) / 12) ** 2 < 1 - R() * .2);
+bricks(OX + 160, OY + 100, 30, 40, (x, y) => ((x - OX - 175) / 14) ** 2 + ((y - OY - 120) / 18) ** 2 < 1 - R() * .2);
+// шесток
+b.rect(OX + 30, OY + 108, 120, 8, '#d8ceba'); b.hl(OX + 30, OY + 108, 120, '#f4efe4'); b.hl(OX + 30, OY + 115, 120, '#8f846e');
+// жерло (арка)
+const MX = OX + 90, MY = OY + 80;
+b.rect(MX - 30, MY - 6, 60, 34, '#3a2a22'); b.ellipse(MX, MY - 6, 30, 16, '#3a2a22');
+b.rect(MX - 26, MY - 4, 52, 32, '#1a0e0a'); b.ellipse(MX, MY - 4, 26, 13, '#1a0e0a');
+// кирпичная арка вокруг жерла
+for (let k = 0; k < 15; k++) { const a = Math.PI * (k / 14); const x = MX - Math.cos(a) * 34, y = MY - 6 - Math.sin(a) * 20; b.rect(Math.round(x) - 2, Math.round(y) - 2, 5, 4, k % 2 ? '#9c5638' : '#b8704c'); b.set(Math.round(x) - 2, Math.round(y) - 2, '#c98a64'); }
+b.rect(MX - 36, MY - 6, 5, 34, '#9c5638'); b.rect(MX + 31, MY - 6, 5, 34, '#9c5638'); for (let y = MY - 6; y < MY + 28; y += 4) { b.hl(MX - 36, y, 5, '#7a3e28'); b.hl(MX + 31, y, 5, '#7a3e28'); }
+// сажа над жерлом
+for (let y = OY + 14; y < MY - 18; y++) for (let x = MX - 32; x < MX + 32; x++) { const t = 1 - Math.abs(x - MX) / 32 - (MY - 18 - y) / 44; if (t > 0) b.set(x, y, '#5a524a', Math.min(.85, Math.round(t * 5) / 5)); }
+// ухват и чугунок
+b.line(OX + 162, OY + 44, OX + 186, OY + 150, '#6a4a34'); b.line(OX + 163, OY + 44, OX + 187, OY + 150, '#8a6448'); b.line(OX + 158, OY + 38, OX + 166, OY + 46, '#4a4a4a'); b.line(OX + 168, OY + 38, OX + 162, OY + 46, '#4a4a4a');
+b.ellipse(OX + 44, OY + 101, 11, 8, '#2a2a2e'); b.rect(OX + 35, OY + 92, 18, 3, '#3a3a40'); b.hl(OX + 37, OY + 94, 10, '#5a5a62');
+// мешки с мукой
+function sack(x, y, w, h) { b.ellipse(x + w / 2, y + h * .55, w / 2, h * .5, '#d8c8a0'); b.ellipse(x + w / 2 + 2, y + h * .6, w / 2 - 2, h * .4, '#c4b288'); b.rect(x + w / 2 - 3, y, 6, 4, '#c4b288'); b.hl(x + w / 2 - 4, y + 4, 8, '#8a6448'); }
+sack(236, 170, 20, 26); sack(252, 176, 18, 22);
+// старая вывеска «БӘЛЕШ», прислонена к стене
+b.poly([[380, 148], [458, 142], [462, 186], [384, 190]], '#3f6b5a');
+b.poly([[383, 151], [455, 145], [458, 183], [386, 187]], '#2d4e42');
+text(b, 395, 157, 'БӘЛЕШ', '#e8d49a', 2);
+for (let i = 0; i < 40; i++) b.set(386 + R() * 70 | 0, 150 + R() * 36 | 0, '#6a8a70');
+b.ellipse(420, 192, 44, 3, '#2a1a12', .4);
+
+// ---------- герой сидит на табурете, читает тетрадь ----------
+function sitter() {
+  const s = new Buf(34, 44);
+  const sk = '#f4cfa6', skS = '#dca47c', hair = '#4a3024', hairS = '#2f1d17', jk = '#6a7a9a', jkS = '#4a5878', pn = '#3a3a48', pnS = '#282833';
+  // табурет
+  s.rect(15, 30, 13, 3, '#8a6448'); s.hl(15, 30, 13, '#a88060'); s.vl(16, 33, 10, '#6a4a34'); s.vl(26, 33, 10, '#6a4a34'); s.hl(17, 38, 9, '#6a4a34');
+  // ноги
+  s.poly([[7, 25], [24, 24], [25, 31], [7, 31]], pn); s.hl(7, 30, 17, pnS);
+  s.rect(5, 30, 6, 10, pn); s.vl(10, 30, 10, pnS);
+  s.rect(2, 40, 9, 3, '#3a2a2a'); s.hl(2, 40, 9, '#5a4a4a');
+  // туловище, наклонено к тетради
+  s.poly([[12, 13], [21, 12], [25, 27], [12, 27]], jk); s.poly([[19, 12], [21, 12], [25, 27], [21, 27]], jkS);
+  s.hl(12, 26, 13, jkS);
+  // голова (склонена влево-вниз)
+  s.ellipse(13, 9, 6, 6, sk); s.set(7, 10, sk); s.set(7, 11, skS);
+  s.ellipse(15.5, 7, 5.6, 5.4, hair); s.ellipse(17, 8, 3.8, 4.4, hairS); s.hl(10, 3, 5, hair); s.set(9, 4, hair); s.set(11, 2, hair);
+  s.set(13, 3, '#7a5238'); s.set(14, 3, '#7a5238'); s.set(12, 4, '#7a5238');
+  s.set(15, 10, skS); s.set(15, 11, skS); // ухо
+  s.hl(9, 10, 2, '#2a1a1c'); // глаз опущен
+  s.set(9, 13, '#9b4a3c'); s.set(8, 12, skS);
+  s.hl(10, 15, 3, skS); // шея в тени
+  // рука к тетради
+  s.line(18, 15, 11, 22, jk); s.line(19, 16, 12, 23, jk); s.line(19, 17, 12, 24, jkS);
+  s.rect(9, 22, 3, 2, sk);
+  // тетрадь на коленях (раскрыта)
+  s.poly([[2, 23], [8, 22], [8, 25], [2, 26]], '#f5efe3'); s.poly([[8, 22], [14, 22], [14, 25], [8, 25]], '#e8dcc4');
+  s.hl(3, 24, 4, '#9fb0cc'); s.hl(9, 23, 4, '#9fb0cc'); s.hl(2, 26, 12, '#8a2f3a');
+  return s.outline('#1a1016', .6);
+}
+const hero = sitter(); const HX = 206, HY = 158;
+b.ellipse(HX + 18, HY + 43, 15, 3, '#1a1010', .5);
+b.blit(hero, HX, HY);
+
+// ---------- переосвещение ----------
+// лунный луч из окна вниз-влево
+const beamPoly = [[WX, WY], [WX + WW, WY], [WX + WW, WY + WH], [WX + WW - 96, 212], [WX - 116, 212], [WX - 20, WY + 40]];
+const mouth = (x, y) => { const v = point(MX, MY + 14, 190, 1.7, 120)(x, y); return v; };
+relight(b, '#2a3150', [
+  { c: '#ff9a4a', i: 1.9, f: mouth },
+  { c: '#ffcf8a', i: .9, f: point(MX, MY + 10, 60, 1.2, 40) },
+  { c: '#a8c4ff', i: .75, f: (x, y) => (inPoly(beamPoly, x, y) ? .55 + .45 * (1 - (y - WY) / 190) : 0) },
+  { c: '#6a7ab0', i: .25, f: point(WX + 40, WY + 40, 160, 1.2) },
+  { c: '#ffb070', i: .9, f: point(HX + 10, HY + 22, 46, 1.3) },
+], { steps: 12, dither: .55, max: 1.3, skip: (x, y) => x >= WX && x < WX + WW && y >= WY && y < WY + WH });
+// лунное пятно на полу с тенью рам
+for (let y = 192; y < 212; y++) for (let x = 180; x < 420; x++) {
+  const t = (y - 192) / 20, x0 = WX - 50 - t * 60, x1 = WX + WW - 40 - t * 50;
+  if (x < x0 || x > x1) continue; const u = (x - x0) / (x1 - x0);
+  if (Math.abs(u - .5) < .03 || Math.abs(t - .45) < .08) continue;
+  b.light(x, y, '#cfe0ff', bay(x, y) < .8 ? .28 : .12);
+}
+
+// ---------- окно: небо со звёздами и месяцем (самосветящееся) ----------
+for (let y = WY; y < WY + WH; y++) { const t = (y - WY) / WH; for (let x = WX; x < WX + WW; x++) b.set(x, y, bay(x, y) < t * 1.2 ? '#1d2a5a' : bay(x, y) < t * 2 ? '#15204a' : '#0e1636'); }
+PX.stars(b, WX, WY, WW, WH - 20, 60, 5);
+// месяц
+b.ellipse(WX + 58, WY + 20, 9, 9, '#fff3c8'); b.ellipse(WX + 62, WY + 17, 8, 8, '#0e1636');
+b.glow(WX + 56, WY + 21, 22, '#bcd0ff', .35, { steps: 4 });
+// крыши и дерево в окне
+b.poly([[WX, WY + 70], [WX + 18, WY + 60], [WX + 36, WY + 70], [WX + 36, WY + WH], [WX, WY + WH]], '#080c1e');
+b.rect(WX + 40, WY + 66, 40, 20, '#0a0f24'); b.rect(WX + 52, WY + 70, 4, 4, '#ffcf6b'); b.rect(WX + 64, WY + 72, 4, 3, '#e8a04a');
+b.line(WX + WW, WY + 30, WX + 60, WY + 44, '#05070f'); b.line(WX + 70, WY + 36, WX + 66, WY + 28, '#05070f');
+// рама окна
+b.rect(WX + WW / 2 - 2, WY, 4, WH, '#2e2430'); b.rect(WX, WY + WH / 2 - 2, WW, 4, '#2e2430'); b.vl(WX + WW / 2 - 2, WY, WH, '#4a3e52');
+b.rect(WX, WY, WW, 2, '#241c26'); b.rect(WX, WY, 2, WH, '#241c26');
+for (let i = 0; i < 16; i++) { b.set(WX + 6 + i, WY + 30 - i, '#ffffff', .12); }
+
+// ---------- самосветящееся: угли и огонь в жерле ----------
+for (let y = MY - 16; y < MY + 28; y++) for (let x = MX - 26; x < MX + 26; x++) {
+  if (!(y >= MY - 4 || ((x - MX) / 26) ** 2 + ((y - MY + 4) / 13) ** 2 < 1)) continue;
+  const d = Math.hypot((x - MX) / 26, (y - MY - 22) / 30);
+  const v = 1 - d + (bay(x, y) - .5) * .25;
+  if (v > .72) b.set(x, y, '#ffe9a8'); else if (v > .55) b.set(x, y, '#ffb347'); else if (v > .38) b.set(x, y, '#e8652a'); else if (v > .2) b.set(x, y, '#8a2a1a'); else b.set(x, y, '#2a0e0a');
+}
+// угли — пиксели
+for (let i = 0; i < 40; i++) { const x = MX - 20 + R() * 40, y = MY + 18 + R() * 9; b.set(x, y, R() > .5 ? '#ffd46b' : '#ff7b2e'); }
+// летящие искры
+for (let i = 0; i < 18; i++) { const x = MX - 10 + R() * 60, y = MY - 30 - R() * 60; b.set(x, y, '#ffb347', .9); if (R() > .6) b.light(x + 1, y, '#ff7b2e', .6); }
+b.glow(MX, MY + 14, 70, '#ff8a3a', .35, { ry: 46, steps: 10, dither: .5 });
+b.glow(MX, MY + 18, 30, '#ffd08a', .3, { ry: 18, steps: 4 });
+// тетрадь чуть светится в тёплом свете
+b.glow(HX + 8, HY + 24, 14, '#ffe6b0', .45, { steps: 4 });
+// лунный объём и пылинки
+b.beam(beamPoly, '#9fb8ff', (x, y) => { const t = (y - WY) / 180; const a = .13 * (1 - t * .6); return bay(x, y) < .5 ? a : a * .6; });
+PX.motes(b, [WX - 110, WY + 10, 200, 190], 140, 33, '#e8f0ff', (x, y) => inPoly(beamPoly, x, y));
+PX.motes(b, [MX - 50, MY - 60, 110, 80], 30, 34, '#ffd08a');
+
+// ---------- мягкая виньетка ----------
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - W * .45) / (W * .6), dy = (y - H * .4) / (H * .6), d = dx * dx + dy * dy; if (d > .6) b.shade(x, y, '#05070f', Math.min(.6, (d - .6) * .7)); }
+
+// ---------- пиксельный заголовок ----------
+text(b, 14, 12, 'НАСЛЕДСТВО', '#f2b066', 2, { shadow: '#05070f' });
+b.hl(14, 29, 118, '#f2b066', .5);
+
+PX.show(b, document.getElementById('cv'), 3);
+PX.show(PX.portrait(CAST.sania.p, 'smile'), document.getElementById('saniaP'), 2);
+</script>
+</body>
+</html>

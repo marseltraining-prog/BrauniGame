@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Финал «Лодочная станция» — встреча на Белой (пиксели)</title>
+<link rel="stylesheet" href="pixel.css">
+<style>
+  body { background: #05070f; }
+  .sub { position: absolute; left: 44px; top: 100px; font-size: 13px; color: #aebbd8; text-shadow: 0 1px 0 #000; }
+  .sub b { color: #f2b066; font-weight: 600; }
+  .skip { position: absolute; right: 24px; top: 22px; display: flex; gap: 8px; }
+  .skip span { font-size: 12px; color: #9fb0cc; padding: 5px 10px; background: rgba(10,14,28,.6); box-shadow: inset 0 0 0 1px #2a3450; }
+
+  .dlg { position: absolute; left: 24px; right: 24px; bottom: 20px; height: 264px; display: grid; grid-template-columns: 1fr 640px; gap: 24px; padding: 20px 22px 18px;
+    --pxb: rgba(10, 14, 30, .9); --pxo: #05070f; --pxi: #3b4870; }
+  .say2 { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; min-width: 0; }
+  .pf { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fr { background: #05070f; padding: 3px; box-shadow: 0 0 0 1px #3b4870; }
+  .fr canvas { display: block; image-rendering: pixelated; }
+  .rel { display: flex; flex-direction: column; gap: 4px; width: 102px; }
+  .rel span { font-size: 10.5px; color: #9fb0cc; display: flex; justify-content: space-between; }
+  .rel i { display: block; height: 4px; background: #1f2740; position: relative; }
+  .rel i b { position: absolute; inset: 0 auto 0 0; background: #a893c0; }
+  .rel i.r b { background: #f2b066; }
+  .nm { font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #c3b0da; margin-bottom: 10px; }
+  .nm em { font-family: var(--f-body); font-style: italic; text-transform: none; letter-spacing: 0; font-weight: 400; color: #8b98b8; font-size: 12px; margin-left: 6px; }
+  .line { font-size: 19px; line-height: 1.5; color: #eef0f6; }
+  .line .p { color: #8b98b8; font-style: italic; font-size: 15px; display: block; margin-top: 10px; }
+  .next { margin-top: 12px; font-size: 11.5px; color: #7f8db0; display: flex; gap: 10px; align-items: center; }
+  .next .dots { display: flex; gap: 4px; } .next .dots i { width: 7px; height: 7px; background: #3b4870; } .next .dots i.on { background: #c3b0da; }
+  .ch { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ch h4 { font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #9fb0cc; margin-bottom: 2px; display: flex; justify-content: space-between; }
+  .ch h4 span { font-family: var(--f-body); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; color: #7f8db0; }
+  .opt.px { padding: 7px 12px 8px; gap: 1px 12px; }
+  .opt .L { grid-column: 1; grid-row: 1 / 3; } .opt .t { grid-column: 2; grid-row: 1; font-size: 13.5px; } .opt .cost { grid-column: 3; grid-row: 1; font-size: 12.5px; }
+  .opt .cost small { display: inline; margin-left: 4px; }
+  .opt .row { grid-column: 2 / -1; grid-row: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 3px; }
+  .opt .row .d { font-size: 12px; margin: 0; min-width: 0; }
+  .opt .fx { flex: none; flex-wrap: nowrap; }
+  .fxc { border-radius: 0; height: 20px; font-size: 10.5px; }
+  .lockrow { font-size: 12px; color: #8b98b8; padding: 5px 12px; box-shadow: inset 0 0 0 1px #2a3450; background: rgba(5,7,15,.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lockrow b { color: #c9a45a; font-weight: 600; }
+  .lockrow .L { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; background: #1f2740; font-family: var(--f-display); font-size: 10px; color: #7f8db0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <canvas class="scene" id="cv"></canvas>
+  <div class="sub"><b>Финал · «Лодочная станция»</b> · река Белая, 22:15 · «Мне нужно встретиться. Не в офисе.»</div>
+  <div class="skip"><span>Журнал</span><span>Пропустить сцену · Esc</span></div>
+
+  <div class="dlg pxbox pxshadow">
+    <div class="say2">
+      <div class="pf"><div class="fr" id="olegP"></div>
+        <div class="rel"><span>Олег <b style="font-weight:600;color:#c3b0da">34</b></span><i><b style="width:34%"></b></i><span>Рашид <b style="font-weight:600;color:#f2b066">32</b></span><i class="r"><b style="width:32%"></b></i></div>
+      </div>
+      <div>
+        <div class="nm">Олег Кравцов <em>— смотрит на воду, не на тебя</em></div>
+        <div class="line">«Фонд забрал деньги. Две тысячи человек. Я не прошу пожалеть — я прошу посчитать.»
+          <span class="p">Двадцать лет назад он три месяца один тянул «Калач». Сейчас у «Двора» 212 точек — и ни одной своей печи.</span></div>
+        <div class="next"><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>реплика 3 из 4 · пробел — дальше</div>
+        <div class="lockrow" style="margin-top:14px"><span class="L">Г</span>🔒 <b>Позвонить Рашиду: «Приезжай на Белую»</b> — нужно: Рашид ≥ 40, сейчас 32</div>
+      </div>
+    </div>
+    <div class="ch">
+      <h4>Ответить <span>▲ — лучше, ▼ — хуже · стрелок больше — сильнее</span></h4>
+      <div class="opt px on"><div class="L">А</div><div class="t">«Давай посчитаем вместе». Слияние «Две корки»</div><div class="cost">0 ₽</div>
+        <div class="row"><span class="d">Его точки — союзники, 50 % выручки</span><span class="fx"><span class="fxc who">Олег <span class="ar">▲▲</span></span><span class="fxc up">Город <span class="ar">▲▲</span></span><span class="fxc dn">₽ <span class="ar">▼</span></span></span></div></div>
+      <div class="opt px"><div class="L">Б</div><div class="t">Купить «Хлебный двор»</div><div class="cost">3,2 млрд ₽<small>сразу</small></div>
+        <div class="row"><span class="d">Олег остаётся директором дискаунтеров</span><span class="fx"><span class="fxc dn">₽ <span class="ar">▼▼▼</span></span><span class="fxc up">Гости <span class="ar">▲▲</span></span><span class="fxc dn">Команда <span class="ar">▼</span></span></span></div></div>
+      <div class="opt px"><div class="L">В</div><div class="t">«Пусть падает»</div><div class="cost">—</div>
+        <div class="row"><span class="d">«Двор» тает за 12 месяцев, Олег уезжает</span><span class="fx"><span class="fxc dn">Олег <span class="ar">▼▼▼</span></span><span class="fxc dn">Честность <span class="ar">▼▼</span></span></span></div></div>
+      
+    </div>
+  </div>
+</div>
+<script src="px.js"></script>
+<script src="cast.js"></script>
+<script>
+const { Buf, mix, bay, rng, text, relight, point } = PX;
+const W = 480, H = 300, b = new Buf(W, H), R = rng(77);
+const MOON = [294, 50], HOR = 146;
+
+// ---------- небо ----------
+const SKY = ['#070b1c', '#0b1128', '#101a38', '#16234a', '#1d2d5c', '#27396e', '#33477e'];
+for (let y = 0; y < HOR; y++) for (let x = 0; x < W; x++) {
+  let t = y / HOR; t += .12 * Math.max(0, 1 - Math.hypot(x - MOON[0], (y - MOON[1]) * 1.4) / 160);
+  const k = Math.min(SKY.length - 1, Math.floor(t * (SKY.length - 1) + (bay(x, y) - .5) * .7 + .5));
+  b.set(x, y, SKY[Math.max(0, k)]);
+}
+// млечный путь — едва заметная полоса
+for (let i = 0; i < 700; i++) { const u = R(); const x = u * W, y = 10 + u * 70 + (R() - .5) * 40; b.light(x, y, '#9fb4e8', .12 + R() * .12); }
+PX.stars(b, 0, 0, W, HOR - 20, 260, 9);
+// облака, подсвеченные луной
+function cloud(x, y, w, seed) { const r = rng(seed); for (let i = 0; i < 7; i++) { const cx = x + r() * w, rx = 10 + r() * 16; b.ellipse(cx, y + r() * 3, rx, 3 + r() * 2, '#1a2548'); b.hl(cx - rx * .7, y - 2 + r() * 2, rx * 1.3, '#3d5090'); } }
+cloud(210, 70, 70, 3); cloud(360, 84, 90, 4); cloud(40, 40, 60, 5);
+// луна
+b.glow(MOON[0], MOON[1], 110, '#7f96d8', .28, { steps: 12, dither: .6, pow: 2.2 });
+b.glow(MOON[0], MOON[1], 42, '#c9d6ff', .35, { steps: 8, dither: .6 });
+b.ellipse(MOON[0], MOON[1], 15, 15, '#fff6d6');
+b.ellipse(MOON[0] + 4, MOON[1] + 3, 11, 11, '#f7ebc4');
+[[MOON[0] - 5, MOON[1] - 4, 3], [MOON[0] + 4, MOON[1] + 5, 2.5], [MOON[0] + 6, MOON[1] - 6, 1.6], [MOON[0] - 3, MOON[1] + 7, 1.5]].forEach(([x, y, r]) => { b.ellipse(x, y, r, r, '#e4d6a8'); b.set(x - 1, y - 1, '#fff9e4'); });
+b.hl(MOON[0] - 8, MOON[1] - 12, 6, '#ffffff');
+
+// ---------- дальний берег: обрыв, памятник, город ----------
+function ridge(x) { return HOR - 18 - 26 * Math.exp(-(((x - 120) / 70) ** 2)) - 10 * Math.exp(-(((x - 400) / 120) ** 2)) + Math.sin(x / 9) * 1.5; }
+for (let x = 0; x < W; x++) { const top = Math.round(ridge(x)); for (let y = top; y < HOR + 4; y++) b.set(x, y, y < top + 2 ? '#1a2446' : '#0c1128'); }
+// дома и окна
+const Rh = rng(12);
+for (let x = 170; x < W; x += 6 + (Rh() * 10 | 0)) {
+  const top = Math.round(ridge(x)), hh = 5 + Rh() * 16 | 0, ww = 5 + Rh() * 9 | 0;
+  b.rect(x, top - hh, ww, hh + 2, Rh() > .5 ? '#0e1430' : '#111838');
+  for (let wy = top - hh + 2; wy < top; wy += 3) for (let wx = x + 1; wx < x + ww - 1; wx += 2) if (Rh() > .62) b.set(wx, wy, Rh() > .3 ? '#ffcf6b' : '#ffe9b0');
+}
+// мечеть «Ляля-Тюльпан»: два минарета-тюльпана
+[[392, 0], [404, 1]].forEach(([x]) => { const top = Math.round(ridge(x)); b.rect(x, top - 30, 3, 30, '#141c3e'); b.poly([[x - 1, top - 30], [x + 4, top - 30], [x + 1.5, top - 37]], '#141c3e'); b.set(x + 1, top - 22, '#9fe0ff'); });
+b.poly([[394, ridge(398) - 10], [402, ridge(398) - 16], [410, ridge(398) - 10]], '#141c3e'); b.rect(394, ridge(398) - 10, 16, 10, '#141c3e');
+// памятник Салавату Юлаеву на обрыве
+(() => {
+  const x = 116, top = Math.round(ridge(x));
+  b.rect(x - 4, top - 8, 9, 8, '#141c3e'); b.hl(x - 5, top - 8, 11, '#1f2a52');
+  const S = ['......##....', '.....###....', '......#.....', '.....###.#..', '....#####...', '...######...', '.##########.', '###########.', '#..#....#.#.', '#..#....#..#', '.#..#....#..'];
+  b.map(x - 6, top - 19, S, { '#': '#141c3e' });
+  b.glow(x, top - 12, 18, '#6f86c8', .12, { steps: 3 });
+})();
+// мост слева: арки и фонари
+for (let x = 0; x < 110; x++) { b.set(x, HOR - 6, '#141c3e'); b.set(x, HOR - 5, '#0c1128'); }
+for (let i = 0; i < 5; i++) { const x = 6 + i * 24; for (let a = 0; a <= 20; a++) { const yy = HOR - 5 + Math.sin(a / 20 * Math.PI) * -0 + (1 - Math.sin(a / 20 * Math.PI)) * 6; b.set(x + a, Math.round(yy), '#141c3e'); } b.vl(x, HOR - 5, 7, '#141c3e'); }
+for (let x = 4; x < 110; x += 12) { b.set(x, HOR - 9, '#ffd98a'); b.light(x, HOR - 8, '#ffb347', .5); b.vl(x, HOR - 8, 2, '#141c3e'); }
+// дымка у берега
+for (let y = HOR - 14; y < HOR + 14; y++) for (let x = 0; x < W; x++) { const t = 1 - Math.abs(y - HOR) / 14; if (bay(x, y) < t * .5) b.light(x, y, '#5a6fa8', .25); }
+
+// ---------- вода ----------
+const WATER = ['#0a1230', '#0d1838', '#112044', '#162a52'];
+for (let y = HOR; y < H; y++) { const t = (y - HOR) / (H - HOR); for (let x = 0; x < W; x++) { const k = Math.min(3, Math.floor(t * 4 + (bay(x, y) - .5) * .6)); b.set(x, y, WATER[3 - Math.max(0, k)]); } }
+// рябь
+const Rw = rng(31);
+for (let i = 0; i < 520; i++) { const y = HOR + 2 + Math.pow(Rw(), 1.3) * (H - HOR), x = Rw() * W, w = 2 + (y - HOR) / 12 + Rw() * 6; b.hl(x, y, w, '#1f3564', .8); }
+// лунная дорожка: широкие штрихи у горизонта светлее, к зрителю — реже и шире
+for (let y = HOR + 1; y < H; y++) {
+  const t = (y - HOR) / (H - HOR), half = 4 + t * 40, n = 4 + (t * 10 | 0);
+  if (y % 2 && t > .15) continue;
+  for (let k = 0; k < n; k++) {
+    if (Rw() > .8) continue;
+    const u = (Rw() + Rw() - 1), x = MOON[0] + u * half, w = 1 + Rw() * (3 + t * 12);
+    const core = Math.abs(u) < .3;
+    b.hl(x, y, w, core ? '#fff3c8' : Rw() > .5 ? '#c9d6ff' : '#8fa6e0', core ? .95 : .6 + (1 - t) * .3);
+  }
+}
+b.glow(MOON[0], HOR + 30, 70, '#6f86c8', .18, { ry: 40, steps: 8, dither: .6 });
+// отражения огней города
+const Rr = rng(40);
+for (let i = 0; i < 44; i++) { const x = 160 + Rr() * 320 | 0; if (Math.abs(x - MOON[0]) < 30) continue; const L = 2 + Rr() * Rr() * 22; for (let y = HOR + 1; y < HOR + L; y += 2) b.hl(x + (Rr() > .5 ? 1 : 0), y, 1 + (Rr() * 2 | 0), Rr() > .3 ? '#e8a04a' : '#ffcf6b', .55 * (1 - (y - HOR) / L)); }
+for (let x = 4; x < 110; x += 12) for (let y = HOR + 1; y < HOR + 12; y += 2) b.hl(x, y, 2, '#ffb347', .45 * (1 - (y - HOR) / 12));
+
+// ---------- передний план (переосвещается) ----------
+const F = new Buf(W, H);
+// лодочная станция
+(() => {
+  const x0 = 0, y0 = 116;
+  F.rect(x0, y0 + 20, 118, 70, '#6a5a4a');
+  for (let x = x0; x < x0 + 118; x += 5) { F.vl(x, y0 + 20, 70, '#56483a'); F.vl(x + 1, y0 + 20, 70, '#7a6a58'); }
+  F.poly([[x0 - 6, y0 + 22], [x0 + 124, y0 + 22], [x0 + 104, y0], [x0 + 10, y0]], '#4a3e46');
+  F.poly([[x0 + 10, y0], [x0 + 104, y0], [x0 + 110, y0 + 6], [x0 + 4, y0 + 6]], '#5a4e58');
+  for (let x = x0 - 4; x < x0 + 122; x += 4) F.line(x, y0 + 22, x + (x - 57) * .12, y0 + 4, '#3e3440');
+  F.hl(x0 - 6, y0 + 22, 130, '#2e2630');
+  // окно с тёплым светом
+  F.rect(x0 + 18, y0 + 40, 26, 20, '#3a2e26'); F.rect(x0 + 20, y0 + 42, 22, 16, '#ffcf6b'); F.vl(x0 + 31, y0 + 42, 16, '#3a2e26'); F.hl(x0 + 20, y0 + 50, 22, '#3a2e26');
+  // вывеска
+  F.rect(x0 + 54, y0 + 30, 58, 20, '#2d4e62'); F.rect(x0 + 55, y0 + 31, 56, 18, '#1f3a4c');
+  text(F, x0 + 59, y0 + 33, 'ЛОДОЧНАЯ', '#e8e0c8'); text(F, x0 + 62, y0 + 41, 'СТАНЦИЯ', '#e8e0c8');
+  // дверь и спасательный круг
+  F.rect(x0 + 70, y0 + 56, 18, 34, '#4a3a2e'); F.vl(x0 + 70, y0 + 56, 34, '#3a2e24'); F.set(x0 + 84, y0 + 74, '#c9a45a');
+  F.ellipse(x0 + 102, y0 + 66, 8, 8, '#e2553f'); F.ellipse(x0 + 102, y0 + 66, 4, 4, '#6a5a4a'); [[0, -7], [0, 7], [-7, 0], [7, 0]].forEach(([dx, dy]) => F.rect(x0 + 101 + dx, y0 + 65 + dy, 2, 2, '#f5efe3'));
+  // сваи под домиком
+  for (let x = x0 + 4; x < x0 + 118; x += 16) F.rect(x, y0 + 90, 3, 14, '#3a2e26');
+})();
+// мостки: от нижнего края к середине
+const deck = [[96, 300], [300, 300], [312, 188], [212, 188]];
+F.poly(deck, '#8a7258');
+for (let y = 188; y < 300; y++) {
+  const t = (y - 188) / 112, xl = 212 - t * 116, xr = 312 - t * 12;
+  const n = 9; for (let k = 1; k < n; k++) { const x = xl + (xr - xl) * k / n; F.set(x, y, '#5e4a38'); }
+  if (Math.floor(y / 3) % 7 === 0) F.hl(xl, y, xr - xl, '#6e5a44', .5);
+}
+F.hl(212, 188, 100, '#b09070'); F.hl(212, 189, 100, '#9a8062');
+F.rect(212, 190, 100, 5, '#4a3a2c'); // торец настила
+// сваи у торца
+[[214, 195], [260, 195], [306, 195]].forEach(([x, y]) => { F.rect(x, y, 4, 16, '#3a2e24'); F.vl(x, y, 16, '#4e3e30'); });
+// столбики и канат
+[[318, 180]].forEach(([x, y]) => { F.rect(x, y, 4, 22, '#5e4a38'); F.hl(x, y, 4, '#8a7258'); });
+
+// фонарь на столбе
+F.rect(214, 118, 3, 74, '#2e2a30'); F.rect(212, 188, 7, 3, '#2e2a30'); F.rect(211, 110, 9, 9, '#2e2a30'); F.rect(212, 111, 7, 7, '#ffe9a8'); F.hl(210, 109, 11, '#1e1a20'); F.set(215, 106, '#2e2a30'); F.set(215, 107, '#2e2a30');
+// лодки у мостков
+function boat(x, y, w, c) { F.poly([[x, y], [x + w, y], [x + w - 6, y + 7], [x + 6, y + 7]], c[0]); F.hl(x, y, w, c[1]); F.hl(x + 2, y + 1, w - 4, c[2]); F.rect(x + w / 2 - 6, y + 1, 12, 2, c[2]); }
+boat(338, 204, 50, ['#3f6b8a', '#8fb3c8', '#2a3a4a']); boat(398, 214, 44, ['#a8553a', '#e2a080', '#3a2a24']); boat(128, 208, 46, ['#3f7d5a', '#9ad0b0', '#243a2e']);
+F.line(338, 205, 312, 196, '#b0a080');
+
+// пакет «Калача» между ними
+F.rect(292, 180, 8, 9, '#e8d8b8'); F.hl(292, 180, 8, '#f5ecd8'); F.rect(293, 183, 6, 2, '#c46f17'); F.rect(294, 178, 4, 2, '#d9b870');
+
+// ---------- двое на краю мостков (спиной) ----------
+function sitBack(o) {
+  const s = new Buf(30, 34);
+  const c = o.coat, cs = o.coatS, h = o.hair, hs = o.hairS;
+  // туловище (трапеция) и бёдра на досках
+  s.poly([[6, 12], [22, 12], [24, 30], [4, 30]], c); s.poly([[16, 12], [22, 12], [24, 30], [17, 30]], cs);
+  s.rect(4, 29, 21, 3, cs);
+  // руки
+  if (o.lean) { s.line(4, 14, 0, 30, c); s.line(5, 14, 1, 30, c); s.rect(0, 30, 3, 2, o.skin); }
+  else { s.line(5, 14, 3, 26, c); s.line(6, 14, 4, 26, c); }
+  s.line(23, 14, 25, 26, cs); s.line(22, 14, 24, 26, cs);
+  // воротник/шарф
+  if (o.scarf) { s.rect(8, 10, 12, 4, o.scarf[0]); s.rect(15, 10, 5, 4, o.scarf[1]); s.rect(9, 14, 3, 7, o.scarf[0]); }
+  else { s.poly([[8, 12], [20, 12], [18, 15], [10, 15]], cs); }
+  // голова
+  const hx = 14 + (o.tilt || 0);
+  s.rect(hx - 2, 8, 5, 4, o.skinS);
+  s.ellipse(hx, 5, 5.5, 5.8, h); s.ellipse(hx + 2, 6, 3.5, 4.5, hs); s.set(hx - 5, 6, o.skin); s.set(hx + 5, 6, o.skinS);
+  if (o.messy) { s.set(hx - 2, -0, h); s.set(hx + 1, 0, h); s.set(hx - 5, 3, h); }
+  return s;
+}
+const hero = sitBack({ coat: '#3d5a7a', coatS: '#2a4058', hair: '#4a3024', hairS: '#2f1d17', skin: '#f4cfa6', skinS: '#dca47c', scarf: ['#c46f17', '#94500b'], messy: 1, tilt: 1 });
+const oleg = sitBack({ coat: '#6b6a73', coatS: '#4f4e57', hair: '#3b2e2a', hairS: '#241a18', skin: '#f4cfa6', skinS: '#dca47c', lean: 1, tilt: -1 });
+F.blit(oleg.outline('#0a0c16', .7), 300, 158);
+F.blit(hero.outline('#0a0c16', .7), 258, 160);
+
+// переосвещение переднего плана: ночь + фонарь + окно + луна спереди
+relight(F, '#2a3358', [
+  { c: '#ffb45a', i: 1.9, f: point(215, 116, 120, 1.5, 100) },
+  { c: '#ffcf6b', i: 1.2, f: point(30, 175, 60, 1.4) },
+  { c: '#9fb4ff', i: .5, f: point(MOON[0], 150, 150, 1.2, 90) },
+], { steps: 10, dither: .55, max: 1.35, skip: (x, y) => (x >= 20 && x < 42 && y >= 158 && y < 174) || (x >= 212 && x < 219 && y >= 111 && y < 118) });
+// лунный контур (rim) на силуэтах сверху-справа
+function rim(buf, x0, y0, w, h, c, a) {
+  const o = buf.clone();
+  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) { if (!o.get(x, y)) continue; if (!o.get(x, y - 1) || !o.get(x + 1, y)) buf.light(x, y, c, a); }
+}
+rim(F, 258, 156, 72, 36, '#dfe8ff', .8);
+b.blit(F, 0, 0);
+
+// ---------- свечения поверх ----------
+b.glow(215, 114, 46, '#ffb45a', .4, { steps: 8, dither: .6 });
+b.glow(215, 114, 12, '#ffe9a8', .5, { steps: 4 });
+b.glow(31, 166, 34, '#ffcf6b', .3, { steps: 6, dither: .6 });
+// отражение фонаря в воде
+for (let y = 206; y < 250; y += 2) b.hl(208 + (bay(0, y) * 6 | 0) - 3, y, 3 + ((y * 7) % 5), '#ffb45a', .5 * (1 - (y - 206) / 44));
+// мотыльки у фонаря
+[[204, 104], [225, 100], [221, 124], [208, 120]].forEach(([x, y]) => { b.set(x, y, '#fff3c8'); });
+// лёгкий туман над водой
+for (let y = 196; y < 232; y++) for (let x = 0; x < W; x++) { const t = 1 - Math.abs(y - 214) / 18; if (bay(x + (y >> 2), y) < t * .22) b.light(x, y, '#6a7eb8', .22); }
+
+// виньетка
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x - W * .55) / (W * .62), dy = (y - H * .38) / (H * .62), d = dx * dx + dy * dy; if (d > .7) b.shade(x, y, '#03040a', Math.min(.55, (d - .7) * .7)); }
+
+// заголовок
+text(b, 14, 12, 'ВСТРЕЧА НА БЕЛОЙ', '#c9d6ff', 2, { shadow: '#03040a' });
+b.hl(14, 29, 190, '#c9d6ff', .45);
+
+PX.show(b, document.getElementById('cv'), 3);
+PX.show(PX.portrait(CAST.oleg.p, 'tired'), document.getElementById('olegP'), 2);
+</script>
+</body>
+</html>
