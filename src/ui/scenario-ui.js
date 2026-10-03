@@ -238,8 +238,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const Sc = SC(), d = Sc && Sc.info(p.id); if (!d) return;
     const startEl = document.getElementById('start');
     if (startEl && !startEl.hidden) return;
+    // карточку рисуют два механизма (перехват старта и опрос) — если она уже показана для этой же
+    // истории, второй раз разметку не трогаем: иначе клик по крестику «отваливается» вместе с DOM
+    const already = cardEl();
+    if (already && already.__scenId === p.id && already.offsetParent !== null) return;
     let b = cardEl();
-    if (!b) { b = document.createElement('div'); b.id = 'scenStart'; b.className = 'scen-start'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    if (b) b.__scenId = p.id;
+    if (!b) { b = document.createElement('div'); b.id = 'scenStart'; b.className = 'scen-start'; b.setAttribute('role', 'status'); b.__scenId = p.id; document.body.appendChild(b); }
     const pr = Sc.progress(), gl = goal(d);
     b.innerHTML = `<div class="scs-card" data-scen-act="closeStart">
       <span class="scs-ic" aria-hidden="true">${ic(d)}</span>

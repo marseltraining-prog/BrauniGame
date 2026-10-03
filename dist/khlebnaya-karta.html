@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 17:35 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 17:45 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -31057,8 +31057,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const Sc = SC(), d = Sc && Sc.info(p.id); if (!d) return;
     const startEl = document.getElementById('start');
     if (startEl && !startEl.hidden) return;
+    // карточку рисуют два механизма (перехват старта и опрос) — если она уже показана для этой же
+    // истории, второй раз разметку не трогаем: иначе клик по крестику «отваливается» вместе с DOM
+    const already = cardEl();
+    if (already && already.__scenId === p.id && already.offsetParent !== null) return;
     let b = cardEl();
-    if (!b) { b = document.createElement('div'); b.id = 'scenStart'; b.className = 'scen-start'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    if (b) b.__scenId = p.id;
+    if (!b) { b = document.createElement('div'); b.id = 'scenStart'; b.className = 'scen-start'; b.setAttribute('role', 'status'); b.__scenId = p.id; document.body.appendChild(b); }
     const pr = Sc.progress(), gl = goal(d);
     b.innerHTML = `<div class="scs-card" data-scen-act="closeStart">
       <span class="scs-ic" aria-hidden="true">${ic(d)}</span>
