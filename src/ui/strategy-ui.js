@@ -48,12 +48,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="stratpick"><legend>Как играем?</legend><div class="spaths">${auto}${cards}</div>
       <p class="spdesc" id="stratDesc" aria-live="polite">${esc(AUTO_TEXT)}</p></fieldset>`;
   }
+  // через пролог путь не выбирают: карточки прячем, путь выпадет случайно вместе с игрой
+  function modeIsPrologue() {
+    const r = document.querySelector('#start input[name=startmode]:checked');
+    return r ? r.value === 'prologue' : false;
+  }
+  function syncPick() {
+    const f = document.querySelector('#startForm .stratpick'); if (!f) return;
+    const pro = modeIsPrologue();
+    f.hidden = pro;
+    let note = document.getElementById('stratAuto');
+    if (!note) {
+      note = document.createElement('p');
+      note.id = 'stratAuto'; note.className = 'hint strat-auto';
+      note.textContent = 'Путь не выбираем: он выпадет вам случайно, когда история приведёт вас к своей сети. Сменить можно будет в первые месяцы.';
+      f.parentNode.insertBefore(note, f.nextSibling);
+    }
+    note.hidden = !pro;
+  }
   function bindStart(form) {
     if (!form || form.__stratBind) return;
     form.__stratBind = true;
+    document.querySelectorAll('#start input[name=startmode]').forEach((r) => r.addEventListener('change', syncPick));
+    setTimeout(syncPick);
     // strategyValue — всегда функция-геттер (её зовёт app.js при отправке формы); не затираем её строкой
     const sel = () => { const r = form.querySelector('input[name=strategy]:checked'); return r ? (r.value === AUTO_ID ? '' : r.value) : ''; };
-    form.strategyValue = sel;
+    form.strategyValue = () => (modeIsPrologue() ? 'random' : sel());
     const desc = () => document.getElementById('stratDesc');
     form.addEventListener('change', (e) => {
       if (!e.target || e.target.name !== 'strategy') return;

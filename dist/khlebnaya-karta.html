@@ -16302,7 +16302,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function set(S, id) {
     const st = ensure(S); if (!st) return null;
     if (id && !K().PATHS[id]) return null;
-    st.id = id || null; st.chosen = !!id; st.since = S.day;
+    st.id = id || null; st.chosen = !!id; st.random = false; st.since = S.day;
     syncMods(S);
     return st.id;
   }
@@ -16315,13 +16315,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const m of p.mods || []) S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 36500), scope: 'global', src: 'strat' });
   }
   const openMult = (S) => { const st = state(S), p = st && st.id ? K().PATHS[st.id] : null; return (p && p.openK) || 1; };
+  // Путь «выпадает случайно»: игра через пролог не спрашивает игрока (детерминированно от зерна,
+  // поэтому одна и та же партия воспроизводится; сменить можно в первые месяцы, как и выбранный).
+  function setRandom(S) {
+    const st = ensure(S); if (!st) return null;
+    const ids = list();
+    let t = ((S.seed | 0) ^ 0x2c1b3) | 0;
+    t = (Math.imul(t ^ (t >>> 15), 1 | t) + 0x6D2B79F5) | 0;
+    const id = ids[((t ^ (t >>> 14)) >>> 0) % ids.length];
+    st.id = id; st.chosen = false; st.random = true; st.since = S.day;
+    syncMods(S);
+    if (S.notify) S.notify.push({ type: 'strat', phase: 'random', id });
+    return id;
+  }
   const path = (id) => K().PATHS[id] || null;
   function info(S) {
     const st = state(S); if (!st) return null;
     const p = st.id ? K().PATHS[st.id] : null;
     const d = detect(S);
     return {
-      id: st.id, chosen: st.chosen, name: p ? p.name : null, icon: p ? p.icon : null,
+      id: st.id, chosen: st.chosen, random: !!st.random, name: p ? p.name : null, icon: p ? p.icon : null,
       text: p ? p.text : null, plus: p ? p.plus : null, minus: p ? p.minus : null,
       detect: d, since: st.since, day: S.day - st.since,
     };
@@ -16409,7 +16422,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (BK.Engine) wrap();
 
-  BK.Strat = { ensure, state, set, list, path, info, metrics, detect, maybeDetect, syncMods, openMult, attItems, day };
+  BK.Strat = { ensure, state, set, setRandom, list, path, info, metrics, detect, maybeDetect, syncMods, openMult, attItems, day };
 })();
 
 /* sound.js */
@@ -25235,12 +25248,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="stratpick"><legend>Как играем?</legend><div class="spaths">${auto}${cards}</div>
       <p class="spdesc" id="stratDesc" aria-live="polite">${esc(AUTO_TEXT)}</p></fieldset>`;
   }
+  // через пролог путь не выбирают: карточки прячем, путь выпадет случайно вместе с игрой
+  function modeIsPrologue() {
+    const r = document.querySelector('#start input[name=startmode]:checked');
+    return r ? r.value === 'prologue' : false;
+  }
+  function syncPick() {
+    const f = document.querySelector('#startForm .stratpick'); if (!f) return;
+    const pro = modeIsPrologue();
+    f.hidden = pro;
+    let note = document.getElementById('stratAuto');
+    if (!note) {
+      note = document.createElement('p');
+      note.id = 'stratAuto'; note.className = 'hint strat-auto';
+      note.textContent = 'Путь не выбираем: он выпадет вам случайно, когда история приведёт вас к своей сети. Сменить можно будет в первые месяцы.';
+      f.parentNode.insertBefore(note, f.nextSibling);
+    }
+    note.hidden = !pro;
+  }
   function bindStart(form) {
     if (!form || form.__stratBind) return;
     form.__stratBind = true;
+    document.querySelectorAll('#start input[name=startmode]').forEach((r) => r.addEventListener('change', syncPick));
+    setTimeout(syncPick);
     // strategyValue — всегда функция-геттер (её зовёт app.js при отправке формы); не затираем её строкой
     const sel = () => { const r = form.querySelector('input[name=strategy]:checked'); return r ? (r.value === AUTO_ID ? '' : r.value) : ''; };
-    form.strategyValue = sel;
+    form.strategyValue = () => (modeIsPrologue() ? 'random' : sel());
     const desc = () => document.getElementById('stratDesc');
     form.addEventListener('change', (e) => {
       if (!e.target || e.target.name !== 'strategy') return;
@@ -27806,7 +27839,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Stage1UI) BK.Stage1UI.close();
     S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
-    if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat); // выбранный на старте путь (strategy.js)
+    if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
+    else if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat);     // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
