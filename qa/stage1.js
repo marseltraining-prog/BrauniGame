@@ -15,6 +15,23 @@ const RUNS = [['d1440', false], ['d1440', true], ['m390', false], ['m390', true]
 
 async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + '.png') }); }
 async function check(p, label, root, mobile) { for (const x of await layoutCheck(p, label, { root, mobile })) issues.push(x); }
+// пиксельная сцена кофейни: canvas с целым множителем и непустой картинкой (как в qa/pixel.js)
+async function canvases(p, label, sel) {
+  const r = await p.evaluate((sel) => [...document.querySelectorAll(sel)].filter((c) => c.offsetParent).map((c) => {
+    const w = c.getBoundingClientRect().width, k = w / c.width, ctx = c.getContext('2d');
+    let colors = new Set();
+    try { const d = ctx.getImageData(0, 0, c.width, c.height).data; for (let i = 0; i < d.length; i += 4 * 7) if (d[i + 3]) colors.add((d[i] >> 4) * 256 + (d[i + 1] >> 4) * 16 + (d[i + 2] >> 4)); } catch (e) {}
+    return { cls: c.className, w: c.width, h: c.height, k: +k.toFixed(3), colors: colors.size };
+  }), sel);
+  if (!r.length) issues.push(`[${label}] нет пиксельной сцены (${sel})`);
+  for (const c of r) {
+    if (Math.abs(c.k - Math.round(c.k)) > 0.01) issues.push(`[${label}] ${c.cls}: множитель не целый (${c.k})`);
+    if (c.colors < 12) issues.push(`[${label}] ${c.cls}: сцена почти пустая (${c.colors} цветов)`);
+    if (c.h < 40) issues.push(`[${label}] ${c.cls}: сцена подозрительно низкая (${c.h})`);
+  }
+  return r;
+}
+const ovTxt = (p) => p.textContent('#s1ShopOv');
 const st = (p) => p.evaluate(() => { const T = BK.App.state && BK.App.state.stage1; return T ? { status: T.status, cards: T.cards.length, card: T.cards[0] && T.cards[0].id, mode: BK.Stage1UI.ui.mode, open: BK.Stage1UI.active(), day: BK.App.state.day } : null; });
 // дни «как цикл интерфейса», но быстро: E.tick + снимок «Переиграть» + перерисовка; останавливаемся на карточке
 async function days(p, n) {
@@ -29,6 +46,15 @@ async function days(p, n) {
 async function waitCard(p) { await p.waitForSelector('#s1Ov .s1-card', { timeout: 4000 }); await p.waitForTimeout(350); }
 async function chooseFirst(p) { const v = await p.evaluate(() => { const b = document.querySelector('#s1Ov .s1-card [data-s1=choose]:not([disabled])'); return b ? b.dataset.v : null; }); if (v != null) { await p.click(`#s1Ov .s1-card [data-s1=choose][data-v="${v}"]`); await p.waitForTimeout(200); } return v; }
 async function closeMs(p) { for (let i = 0; i < 6; i++) { const b = await p.$('#s1Ov .s1-msc [data-s1=msClose].btn'); if (!b) return; await b.click(); await p.waitForTimeout(250); } }
+// Окно вехи («звёздочка», конфетти) открывает цикл слоя очередью fx — оно может появиться в любой момент,
+// в том числе сразу после закрытия карточки. Поэтому ловим его по появлению, а не «через ровно 15 дней».
+async function msWin(p, tag, mobile, full, n) {
+  const el = await p.$('#s1Ov .s1-msc'); if (!el) return 0;
+  await check(p, `${tag} веха`, '#s1Ov .s1-card', mobile);
+  if (n === 1) await shot(p, `${tag}-07-milestone`);
+  await closeMs(p);
+  return 1;
+}
 
 async function toStage1(p, tag, mobile, full) {
   await p.waitForSelector('#startForm .pro-pick');
@@ -66,7 +92,12 @@ async function toStage1(p, tag, mobile, full) {
       await shot(p, `${tag}-01-pick`);
       // --- выбор места ---
       await p.click('.s1-spot [data-s1=pick]:not([disabled])');
-      await p.waitForSelector('#s1Shop svg', { timeout: 3000 });
+      // сцена кофейни — пиксельная (BK.Px.stage): canvas с целым множителем, «Открытие через N дн.» — текстом поверх сцены
+      await p.waitForSelector('#s1Shop canvas.pxs', { timeout: 3000 });
+      await p.waitForTimeout(250);
+      const ov0 = await ovTxt(p);
+      if (!/Открытие через \d+ дн\./.test(ov0)) issues.push(`[${tag}] до открытия на сцене нет «Открытие через N дн.»: ${JSON.stringify(ov0)}`);
+      await canvases(p, tag + ' сцена до открытия', '#s1Shop canvas.pxs');
       const s1 = await st(p);
       if (!s1 || s1.status !== 'run') issues.push(`[${tag}] после выбора места стадия не пошла: ${JSON.stringify(s1)}`);
       await days(p, 12);
@@ -76,12 +107,31 @@ async function toStage1(p, tag, mobile, full) {
       await check(p, tag + ' сцена 1.1', '#s1Ov .s1-card', mobile);
       await shot(p, `${tag}-02-scene-s11`);
       await chooseFirst(p);
+      let ms = await msWin(p, tag, mobile, full, 1);   // веха «Открыться» — звёздочка и конфетти
       await closeMs(p);
       // --- главный экран и вкладки ---
       await days(p, 3);
       await closeMs(p);
       await check(p, tag + ' главный экран', '#stage1', mobile);
+      // сцена кофейни — в начале слоя (прокручивается сам слой #stage1, а не окно): пусть попадёт в кадр
+      await p.evaluate(() => { const el = document.getElementById('stage1'); if (el) el.scrollTop = 0; window.scrollTo(0, 0); });
+      await p.waitForTimeout(150);
       await shot(p, `${tag}-03-main`);
+      // сцена открытой кофейни: непустая и живая (пар, гость, монетка)
+      await canvases(p, tag + ' сцена открытой кофейни', '#s1Shop canvas.pxs');
+      await p.evaluate(() => { const el = document.getElementById('s1Shop'); if (el) el.scrollIntoView({ block: 'center' }); });
+      await p.waitForTimeout(300);
+      const same = await p.evaluate(async () => { const c = document.querySelector('#s1Shop canvas.pxs'); const a = c.toDataURL(); await new Promise((r) => setTimeout(r, 600)); return a === c.toDataURL(); });
+      if (same) issues.push(`[${tag}] сцена кофейни не анимируется`);
+      // сцена реагирует на состояние: ремонт и закрытый день — свои подписи и своя картинка
+      const ovState = async (f) => { await p.evaluate(f); await p.evaluate(() => BK.Stage1UI.render(true)); await p.waitForTimeout(200); return [await ovTxt(p), await canvases(p, tag + ' состояние', '#s1Shop canvas.pxs')]; };
+      const [ovRep] = await ovState(() => { const S = BK.App.state, st = BK.Stage1.store(S); st.status = 'repair'; });
+      if (!/Ремонт/.test(ovRep)) issues.push(`[${tag}] в ремонте на сцене нет подписи «Ремонт»: ${JSON.stringify(ovRep)}`);
+      if (full) await shot(p, `${tag}-12-scene-repair`);
+      const [ovCl] = await ovState(() => { const S = BK.App.state, st = BK.Stage1.store(S); st.status = 'open'; st.today = Object.assign({}, st.today, { closed: true }); });
+      if (!/Закрыто/.test(ovCl)) issues.push(`[${tag}] в закрытый день на сцене нет подписи «Закрыто»: ${JSON.stringify(ovCl)}`);
+      const [ovOp] = await ovState(() => { const S = BK.App.state, st = BK.Stage1.store(S); st.today = Object.assign({}, st.today, { closed: false }); });
+      if (ovOp) issues.push(`[${tag}] в открытый день поверх сцены лишняя подпись: ${JSON.stringify(ovOp)}`);
       await p.click('[data-s1=tab][data-v=menu]');
       const pr0 = await p.evaluate(() => BK.App.state.menu[0].pm);
       await p.click('.s1-mi [data-s1=price][data-d="0.05"]');
@@ -94,6 +144,7 @@ async function toStage1(p, tag, mobile, full) {
       const gi = await p.evaluate(() => BK.Stage1.store(BK.App.state).incoming.some((x) => x.p.name === 'Гульнара Сафина'));
       if (!gi) issues.push(`[${tag}] Гуля не вышла на работу`);
       await p.waitForTimeout(200);
+      ms += await msWin(p, tag, mobile, full, ms + 1);   // веха «Первый наём»
       await closeMs(p);
       await check(p, tag + ' вкладка «Команда»', '#stage1', mobile);
       if (full) await shot(p, `${tag}-05-team`);
@@ -103,7 +154,7 @@ async function toStage1(p, tag, mobile, full) {
       await p.click('[data-s1=bake][data-v="-1"]');
       if ((await p.evaluate(() => BK.Engine.wasteState(BK.App.state).bake)) !== -1) issues.push(`[${tag}] «Сколько печь» не переключился`);
       // --- месяцы: сцены, события, вехи ---
-      const seen = new Set(); let ms = 0;
+      const seen = new Set();
       for (let k = 0; k < 40; k++) {
         const s = await st(p);
         if (s.status !== 'run') break;
@@ -114,8 +165,8 @@ async function toStage1(p, tag, mobile, full) {
           await chooseFirst(p);
           continue;
         }
-        const m = await p.$('#s1Ov .s1-msc');
-        if (m) { ms++; if (ms === 1) { await check(p, tag + ' веха', '#s1Ov .s1-card', mobile); await shot(p, `${tag}-07-milestone`); } await closeMs(p); continue; }
+        const m = await msWin(p, tag, mobile, full, ms + 1);
+        if (m) { ms += m; continue; }
         await days(p, 15);
         await p.evaluate(() => BK.Stage1UI.render(true));
         await p.waitForTimeout(80);

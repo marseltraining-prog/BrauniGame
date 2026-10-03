@@ -4,8 +4,9 @@
    Раскладка по макету docs/mockups/vision/img/s1-shop.png: сверху HUD (дата и часы, скорость, сегодня / месяц / счёт, ближайшая веха),
    слева — сцена кофейни «вблизи» + «Сегодня по частям дня», «Мысли гостей», лента; справа — вкладки «Точка / Меню / Команда / Деньги»,
    «Совет наставника», вехи главы. Решения — карточки (сцены 1.1–1.8, события кофейни), вехи — карточка с конфетти (s1-milestone.png).
-   Картинки — временные и простые: сцена кофейни рисуется ОДНОЙ функцией drawShop(el, S, view), портреты героев — одной portrait(who),
-   чтобы потом заменить их пиксельной сценой (docs/vision-plan.md §10) без правок остального интерфейса.
+   Сцена кофейни — ПИКСЕЛЬНАЯ (src/pixel/coffee.js, BK.Px.stage), как в прологе «Бариста»: canvas низкого разрешения с целым
+   множителем, анимация общим rAF только пока сцена видна, prefers-reduced-motion — один кадр. Текстовые данные сцены
+   (сколько дней до открытия, деньги, дни, кнопки, список цен) остаются в DOM — поверх и рядом со сценой.
    Связь с ядром — BK.App (state, newGame, save, refresh, toast, toStart, ACT.theme, setSpeed); в app.js только хуки (active, resume, close).
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -20,7 +21,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const T = () => { const s = S(); return s && s.stage1; };
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
-  const ui = { open: false, speed: 1, prev: 1, acc: 0, lastT: 0, tab: 'shop', mode: null, parts: {}, dirty: true, lastRender: 0, pressing: false, loop: false, slipT: 0, ask: null, menu: false };
+  const ui = { open: false, speed: 1, prev: 1, acc: 0, lastT: 0, tab: 'shop', mode: null, parts: {}, dirty: true, lastRender: 0, pressing: false, loop: false, slipT: 0, ask: null, menu: false, pxShop: null, pxKey: '', lastScene: 0 };
 
   /* ---------------- звук (src/sound.js) ----------------
      Тихий и ненавязчивый: это не аркада. Главное правило — звук привязан к СОБЫТИЮ, а не к отрисовке.
@@ -90,41 +91,55 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else { tapS(); play('click'); }
   }
 
-  /* ---------------- портреты и сцена (одна точка замены на пиксельную графику) ---------------- */
+  /* ---------------- портреты в разметке и пиксельная сцена ----------------
+     Сцена кофейни рисуется пиксельным движком (src/pixel/coffee.js → BK.Px.scenes.coffee): окно на улицу, вывеска
+     с названием, полки, меловая доска с ценами из меню, прилавок, витрина, кофемашина с паром, касса, столик,
+     вы за прилавком (фигура из Px.CAST) и 1–3 гостя из Px.GUESTS. Числа и флаги сцене передаёт view(S) — сама она
+     в движок не смотрит. Портреты в карточках и списках — по-прежнему portrait(who) (плоские буквы). */
+  const PXS = () => (BK.Px && BK.Px.stage && BK.Px.scenes && BK.Px.scenes.coffee) ? BK.Px : null;
+  // мысли гостей — те же короткие фразы, что в списке «Мысли гостей», но значками для пиксельных пузырей
+  const TH_IC = { 'очередь…': { ic: ['dots', 'cup'], tone: 'hot' }, 'дорого?': { ic: ['rub'], tone: 'bad' }, 'нет моих булочек': { ic: ['no:croissant'], tone: 'bad' }, 'вкусно!': { ic: ['heart'], tone: 'good' }, 'тихо тут': { ic: ['zzz'], tone: 'norm' }, 'уютно': { ic: ['note'], tone: 'hot' } };
+  const thIc = (x) => TH_IC[x] || (x && typeof x === 'object' ? x : { ic: ['dots'], tone: 'norm' });
+  // Пол героя игра не спрашивает — вариант внешности выбирается стабильно по названию кофейни (за игру он не
+  // «переключается»), а за полтора года за стойкой герой седеет. Варианты (пол и возраст) — в src/pixel/coffee.js.
+  function heroLook(s) {
+    const k = String(s.company || '') + '|' + (s.difficulty || '');
+    let x = 0; for (let i = 0; i < k.length; i++) x = (x * 31 + k.charCodeAt(i)) >>> 0;
+    return ((s.stage1 && s.stage1.months.length >= 14) ? 'old' : 'young') + (x % 2 ? 'F' : '');
+  }
+  // настроение за стойкой видно на лице: силы героя (T.hp) и настроение сотрудника-героя
+  function heroEmo(s) {
+    const t = s.stage1, h = ((S1().store(s) || {}).staff || []).find((e) => e.hero);
+    const m = h ? h.mood : 60;
+    return (t.hp < 32 || m < 25) ? 'tired' : t.hp < 55 ? 'worried' : m >= 78 ? 'happy' : 'smile';
+  }
   function portrait(who, big) {
     const h = (S1().HEROES[who]) || S1().HEROES.life;
     return `<span class="s1-av${big ? ' big' : ''}" style="--h:${h.hue}" aria-hidden="true">${esc(h.ini)}</span>`;
   }
-  // сцена кофейни «вблизи»: витрина, доска меню, стойка, люди за стойкой, очередь, мысли гостей, «Двор» в окне.
-  // view — готовые данные (не лезем в движок из отрисовки): { name, menu[{n,p}], staff[{hero, tired}], queue, thoughts[], closed, opening, dvor, fill, hour }
-  function drawShop(el, S, view) {
-    if (!el) return;
-    const v = view, W = 720, H = 300;
-    const shirt = ['#c46f17', '#3b8796', '#8a5a9a', '#2c8a57'];
-    const person = (x, y, i, o) => `<g transform="translate(${x} ${y})" class="s1-p${o && o.tired ? ' tired' : ''}"><circle r="13" cy="-30" class="sp-head"/><path d="M-5 -32 h.1 M5 -32 h.1" class="sp-eye"/><path d="${o && o.tired ? 'M-5 -24 q5 -3 10 0' : 'M-5 -25 q5 4 10 0'}" class="sp-mouth"/>${o && o.hat ? `<path d="M-14 -38 q14 -16 28 0" fill="${o.hat}"/>` : ''}<path d="M-17 12 q0 -24 17 -24 q17 0 17 24 z" fill="${shirt[i % 4]}"/>${o && o.tired ? '<path d="M12 -40 q3 5 0 7 q-3 -2 0 -7z" class="sp-drop"/>' : ''}</g>`;
-    const guests = [];
-    for (let i = 0; i < Math.min(8, v.queue); i++) guests.push(person(60 + i * 44, 272, i + 1, {}));
-    const staff = v.staff.slice(0, 4).map((p, i) => person(430 + i * 52, 170, i, { tired: p.tired, hat: p.hero ? '#18223a' : null })).join('');
-    const board = v.menu.slice(0, 7).map((m, i) => `<text x="498" y="${58 + i * 17}" class="sc-mi">${esc(m.n.length > 18 ? m.n.slice(0, 17) + '…' : m.n)}</text><text x="690" y="${58 + i * 17}" text-anchor="end" class="sc-mp">${m.p}</text>`).join('');
-    const pastry = []; const nf = Math.round(10 * v.fill);
-    for (let i = 0; i < 10; i++) pastry.push(`<circle cx="${262 + (i % 5) * 26}" cy="${i < 5 ? 176 : 196}" r="8" class="${i < nf ? 'sc-bun' : 'sc-empty'}"/>`);
-    const thought = v.thoughts.slice(0, 3).map((t, i) => `<g transform="translate(${40 + i * 128} ${118 + (i % 2) * 22})"><rect x="0" y="0" width="${Math.max(78, t.length * 7.2 + 18)}" height="24" rx="12" class="sc-th"/><text x="10" y="16" class="sc-tt">${esc(t)}</text></g>`).join('');
-    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Кофейня вблизи: ${esc(v.name)}${v.closed ? ', закрыто' : ''}" class="s1-svg">
-      <rect x="0" y="0" width="${W}" height="${H}" class="sc-wall"/>
-      <rect x="18" y="16" width="170" height="92" rx="6" class="sc-win"/><path d="M103 16 v92 M18 62 h170" class="sc-frame"/>
-      ${v.dvor ? `<rect x="26" y="24" width="150" height="30" rx="4" class="sc-dvor"/><text x="101" y="43" text-anchor="middle" class="sc-dvt">«Хлебный двор»${v.dvor === 'soon' ? ' · скоро' : ''}</text>` : ''}
-      <rect x="220" y="14" width="250" height="38" rx="6" class="sc-sign"/><text x="345" y="39" text-anchor="middle" class="sc-st">${esc(v.name.toUpperCase().slice(0, 22))}</text>
-      <path d="M212 56 h266 v14 ${Array.from({ length: 10 }, () => 'q-13.3 12 -26.6 0').join(' ')} z" class="sc-awn"/>
-      <rect x="486" y="40" width="216" height="${Math.min(7, v.menu.length) * 17 + 18}" rx="6" class="sc-board"/>${board}
-      <rect x="248" y="160" width="146" height="50" rx="8" class="sc-case"/>${pastry.join('')}
-      <rect x="648" y="150" width="54" height="56" rx="6" class="sc-mach"/><path d="M660 144 q4 -8 0 -14 M675 144 q4 -8 0 -14" class="sc-steam"/>
-      ${staff}
-      <rect x="220" y="206" width="486" height="14" rx="3" class="sc-top"/><rect x="226" y="218" width="474" height="30" class="sc-counter"/>
-      ${thought}
-      ${guests.join('')}
-      <rect x="0" y="286" width="${W}" height="14" class="sc-floor"/>
-      ${v.closed ? `<g transform="translate(360 110)"><rect x="-90" y="-26" width="180" height="46" rx="10" class="sc-closed"/><text y="4" text-anchor="middle" class="sc-ct">${esc(v.closed)}</text></g>` : ''}
-    </svg>`;
+  // сцена кофейни: canvas переживает перерисовку разметки (BK.Px.stage.attach переносит тот же элемент),
+  // данные обновляются только при изменении снимка (view(S)), а чаще 8 раз в секунду сцена не перерисовывается.
+  function drawShop(el, s, v) {
+    if (!el || !s) return;
+    const px = PXS();
+    if (!px) { if (!el.firstChild) el.innerHTML = '<div class="s1-nofig">Сцена недоступна</div>'; return; }
+    // совместимость со старым вызовом drawShop(el, S, {queue, thoughts:[тексты…]}): так сцену зовёт qa/s4-sound.js,
+    // проверяя, что перерисовка не «звенит». Старый снимок переводим в данные сцены.
+    if (v && v.state == null && (v.queue != null || v.thoughts)) {
+      v = { name: v.name, menu: v.menu, guests: Math.min(3, Math.max(0, v.queue | 0)), fill: v.fill == null ? 1 : v.fill,
+        revenue: v.revenue || 0, hour: v.hour == null ? 12 : v.hour, state: v.closed ? 'closed' : 'open', hero: true,
+        heroLook: 'young', heroEmo: 'smile', heroDrop: false, dvor: v.dvor, thoughts: (v.thoughts || []).map(thIc).slice(0, 2) };
+    }
+    if (!ui.pxShop) ui.pxShop = px.stage({
+      cls: 's1-pxc', fps: 8, label: 'Своя кофейня вблизи: прилавок, витрина, кофемашина, вы за стойкой',
+      height: (W) => Math.round(W / 2.15), minW: 156, maxW: 380, scale: () => 2,
+      active: () => ui.open,
+      draw: (b, t, W, H, dd) => px.scenes.coffee(b, t, W, H, dd),
+    });
+    const k = JSON.stringify(v);
+    const moved = ui.pxShop.slot !== el || !ui.pxShop.cv.isConnected;   // разметку перерисовали — тот же canvas переезжает в новый слот
+    if (moved) ui.pxShop.attach(el);
+    if (k !== ui.pxKey || moved) { ui.pxKey = k; ui.pxShop.set(v); }    // set() рисует сразу, без ожидания кадра
   }
 
   /* ---------------- данные для сцены и HUD ---------------- */
@@ -141,19 +156,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!out.length) out.push(st.today.load < 0.5 ? 'тихо тут' : 'уютно');
     return out;
   }
+  // снимок для сцены: что показать (состояние, гости, витрина, свет, герой, мысли) — сцена сама в движок не смотрит
   function view(s) {
     const t = s.stage1, st = S1().store(s);
     const dp = st ? E().daypartOf(st) : { m: 0.33, d: 0.33, e: 0.33 };
-    const h = hourOf(), part = h < 11 ? dp.m : h < 16 ? dp.d : dp.e;
+    const h = Math.round(hourOf() * 2) / 2, part = h < 11 ? dp.m : h < 16 ? dp.d : dp.e;   // полчаса: сцена не перерисовывается каждый кадр
     const load = st && st.today && !st.today.closed ? st.today.load : 0;
-    const staff = st ? st.staff.map((e) => ({ hero: !!e.hero, tired: e.hero ? t.hp < 40 : (e.fatigue || 0) > 45 })) : [];
-    const closedTxt = !st ? null : st.status === 'opening' ? `Открытие через ${Math.max(0, st.openDay - s.day)} дн.` : st.status === 'repair' ? 'Ремонт' : (st.today && st.today.closed) ? (t.hero ? 'Закрыто: вы болеете' : 'Закрыто') : null;
+    const closedTxt = !st ? 'Открытие' : st.status === 'opening' ? `Открытие через ${Math.max(0, st.openDay - s.day)} дн.` : st.status === 'repair' ? 'Ремонт' : (st.today && st.today.closed) ? (t.hero ? 'Закрыто: вы болеете' : 'Закрыто') : null;
+    const state = !st || st.status === 'opening' ? 'opening' : st.status === 'repair' ? 'repair' : closedTxt ? 'closed' : 'open';
     const bake = E().wasteState(s).bake;
-    return { name: s.company.replace(/[«»"]/g, ''), menu: s.menu.map((m) => { const p = E().byId(BK.PRODUCTS, m.id); return { n: p.name, p: Math.round(p.price * pl() * m.pm) }; }),
-      staff, queue: closedTxt ? 0 : Math.round(clampN(load * 3 * part * 3, 0, 8)), thoughts: closedTxt ? [] : thoughts(s), closed: closedTxt,
-      dvor: t.flags.dvorOpen ? 'open' : t.dvorDay ? 'soon' : null, fill: closedTxt ? 0 : clampN(1 - (h - 7) / 15 * (0.9 - bake * 0.12), 0.1, 1), hour: h };
+    const th = closedTxt ? [] : thoughts(s);
+    return {
+      name: s.company.replace(/[«»"]/g, ''),
+      menu: s.menu.map((m) => { const p = E().byId(BK.PRODUCTS, m.id); return { n: p.name, p: Math.round(p.price * pl() * m.pm) }; }),
+      state, guests: closedTxt ? 0 : Math.min(3, Math.round(clampN(load * 3 * part * 3, 0, 8))),
+      revenue: st && st.today && !st.today.closed ? Math.round(st.today.rev) : 0,
+      fill: closedTxt ? 0 : clampN(1 - (h - 7) / 15 * (0.9 - bake * 0.12), 0.1, 1),
+      hour: h, hero: !!(st && st.staff.some((e) => e.hero)), heroLook: heroLook(s), heroEmo: heroEmo(s), heroDrop: t.hp < 45,
+      dvor: t.flags.dvorOpen ? 'open' : t.dvorDay ? 'soon' : null, thoughts: th.map(thIc).slice(0, 2),
+      seed: (s.seed || 1) + (s.flags.storeNum || 1),
+    };
   }
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+  // текстовые подписи поверх сцены (сама сцена — картинка): состояние точки читается словами
+  function shopOv(t, st, s) {
+    if (!st) return '';
+    const txt = st.status === 'opening' ? `Открытие через ${Math.max(0, st.openDay - s.day)} дн.` : st.status === 'repair' ? 'Ремонт' : (st.today && st.today.closed) ? (t.hero ? 'Закрыто: вы болеете' : 'Закрыто') : '';
+    return txt ? `<span class="ov-c warn">${esc(txt)}</span>` : '';
+  }
 
   /* ---------------- открыть / закрыть ---------------- */
   function active() { return ui.open; }
@@ -184,7 +214,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
     }
     else { $('#s1Ov').innerHTML = ''; $('#s1In').innerHTML = ''; } // повторное открытие (загрузка, «Переиграть») — окна прошлого состояния не нужны
-    ui.open = true; ui.parts = {}; ui.dirty = true; ui.acc = 0;
+    ui.open = true; ui.parts = {}; ui.dirty = true; ui.acc = 0; ui.pxKey = '';
     snd.fx = []; snd.sig = ''; snd.cardId = ''; snd.msId = ''; snd.fin = ''; snd.guestKey = ''; snd.inviting = 0; // звук: новая сессия — с чистого листа
     document.documentElement.classList.add('s1-on');
     render(true);
@@ -277,7 +307,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function clockTxt() { const h = hourOf(), hh = Math.floor(h), mm = Math.floor((h - hh) * 60 / 5) * 5; return `${hh}:${String(mm).padStart(2, '0')}${ui.speed === 0 ? ' · пауза' : ''}`; }
   function clock() { const el = $('#s1Clock'); if (el) { const t = clockTxt(); if (el.textContent !== t) el.textContent = t; } }
-  function scene(force) { const s = S(); if (!s || !s.stage1 || s.stage1.status === 'pick') return; const now = performance.now(); if (!force && now - (ui.lastScene || 0) < 450) return; ui.lastScene = now; drawShop($('#s1Shop'), s, view(s)); }
+  function scene(force) { const s = S(); if (!s || !s.stage1 || s.stage1.status === 'pick') return; const slot = $('#s1Shop'); if (!slot) return; const now = performance.now(); if (!force && now - (ui.lastScene || 0) < 450) return; ui.lastScene = now; drawShop(slot, s, view(s)); }
 
   /* ---- выбор места ---- */
   function pickHtml(s) {
@@ -308,7 +338,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const th = thoughts(s).map((x) => `<li><span class="s1-bub">${esc(x)}</span></li>`).join('');
     const fd = t.feed.slice(-6).reverse().map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span>${esc(f.t)}</span></li>`).join('');
     const lost = td.lost > 0 && !td.closed ? `ушли, не купив: ~${Math.round(td.lost / (td.check || 1))}` : '';
-    return `<div class="s1-shop" id="s1Shop"></div>
+    return `<div class="s1-shop" id="s1Shop"><div class="s1-shopov" id="s1ShopOv">${shopOv(t, st, s)}</div></div>
       <div class="s1-q"><span>${td.closed ? 'Сегодня закрыто' : `загрузка ${Math.round(load * 100)} %`}${lost ? ' · ' + lost : ''}</span><span>${esc(C().HOURS[t.hours].name)}</span></div>
       <div class="s1-cards"><section class="pc s1-hours"><h3>Сегодня по частям дня <small>гостей</small></h3><div class="s1-hbs">${bars}</div>${load > 1 ? '<p class="s1-note dn">В пик очередь теряет гостей — нужен ещё человек за стойкой.</p>' : ''}</section>
       <section class="pc s1-th"><h3>Мысли гостей</h3><ul class="s1-thl">${th || '<li class="muted">Пока никого</li>'}</ul>${t.flags.dvorOpen ? `<p class="s1-note">Напротив — «Хлебный двор»${storyLenin(s)}</p>` : t.dvorDay ? '<p class="s1-note">На пустой витрине напротив: «Хлебный двор. Скоро!»</p>' : ''}</section>
@@ -398,9 +428,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const t = s.stage1;
     if (t.status === 'pick') { setPart('s1In', pickHtml(s)); return; }
     if (!$('#s1Left')) { ui.parts = { s1Top: ui.parts.s1Top }; $('#s1In').innerHTML = '<div class="s1-grid"><div class="s1-col" id="s1Left"></div><aside class="s1-col s1-side" id="s1Right"></aside></div>'; }
-    // сцену перерисовывает scene(); левую колонку — только если изменились данные под сценой
+    // сцену перерисовывает scene(); левую колонку — только если изменились данные под сценой.
+    // Canvas сцены живёт сам (BK.Px.stage): убираем его из старой разметки, чтобы клон пустого canvas не попал
+    // в новую, — scene(true) ниже поставит тот же элемент на место (attach).
     const L = leftHtml(s);
-    if (ui.parts.s1Left !== L) { const shop = $('#s1Shop'); const keep = shop ? shop.innerHTML : ''; setPart('s1Left', L); const sh2 = $('#s1Shop'); if (sh2 && keep) sh2.innerHTML = keep; }
+    if (ui.parts.s1Left !== L) { const cv = ui.pxShop && ui.pxShop.cv; if (cv && cv.parentNode) cv.parentNode.removeChild(cv); setPart('s1Left', L); }
     setPart('s1Right', rightHtml(s));
     scene(true);
     if (ui.menu) menuHtml();
