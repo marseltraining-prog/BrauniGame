@@ -96,7 +96,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if ((P.status === 'done' || P.status === 'skipped') && (!S.stage1 || S.stage1.status !== 'done')) st.ch = 'own'; // глава 1 «Своя точка» (стадия 1 — stage1.js; после неё — 'city')
   }
   const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
-  function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info' }); if (P.feed.length > 40) P.feed.shift(); }
+  // тон записи в ленте: по нему озвучка пролога (src/ui/prologue.js) выбирает звук события.
+  // Иначе звук пришлось бы определять по русскому тексту записи — это хрупко.
+  // Вариант может задать тон сам (fx.k, feed.k), тогда он важнее общего правила.
+  const FEED_K = { good: 'pos', bad: 'neg' };
+  function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
   function fx(P, kind, v, where) { P.fx.push({ kind, v: Math.round(v), where: where || '' }); if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30); }
 
   /* ---------------- справочные функции ---------------- */
@@ -554,12 +558,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.cards.shift();
     c.do(P, cv.v);
     const q = /^«/.test(c.label) ? c.label : `«${c.label}»`;
-    if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: ${q}.`, cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero');
+    // тон последствий варианта — для звука карточки и для записи в ленте (fx.k не обязателен: у многих вариантов только fx.rub)
+    const F = c.fx || {};
+    let sc = 0;
+    for (const k of Object.keys(F)) { const v = F[k] || 0; sc += k === 'rub' ? v * 1.2 : v; }
+    const tone = c.risk ? 'risk' : sc > 0 ? 'pos' : sc < 0 ? 'neg' : '';
+    if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: ${q}.`, F.k || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.kind === 'hero') { P.seen[cv.id] = P.m * 30; P.slog.push({ day: null, pm: P.m, id: cv.id, choice: cv.choices.indexOf(c), line: c.label }); if (P.slog.length > 120) P.slog.shift(); }
     // развилка П7 → П8 «Гуля» (кроме скандала и партнёрства, где исход ясен) → финал; стажировка у Олега — ещё 3 месяца
     if (cv.id === 'p07') { if (P.sf.mentor === 'enemy' || P.sf.mentor === 'partner') finish(P); else P.cards.unshift({ id: 'p08', v: {} }); }
     else if (cv.id === 'p08' && P.sf.mentor !== 'intern') finish(P);
     syncStory(S);
+    if (S.prologue) S.prologue.pick = { id: cv.id, i: cv.choices.indexOf(c), tone, kind: c.fx && c.fx.k || cv.kind, label: c.label }; // звук выбора читает интерфейс
     return { ok: true };
   }
 
@@ -641,7 +651,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (P.fired === 0 && P.rep < c.REP_FIRE) {
       P.fired = 1; P.stats.fired++; P.job = Math.max(0, P.job - 1); P.jobM = 0; P.rep = 45; P.payK = 1; P.flags.promoLater = P.m + 4;
-      eff(P, { mood: -15 }); rel(P, { rashid: -20 }); P.cards.push({ id: 'fired', v: {} }); feed(P, 'Вас уволили. Месяц на поиски работы.', 'bad');
+      eff(P, { mood: -15 }); rel(P, { rashid: -20 }); P.cards.push({ id: 'fired', v: {} }); feed(P, 'Вас уволили. Месяц на поиски работы.', 'bad'); fx(P, 'ev', -3);
     } else if (P.fired === 0 && P.rep < c.REP_WARN && (P.flags.warnM == null || P.m - P.flags.warnM >= 4)) { P.flags.warnM = P.m; P.stats.warn++; P.cards.push({ id: 'warn', v: {} }); }
     const pr = promoCheck(P);
     if (pr && pr.ok && P.fired === 0 && (P.flags.promoLater == null || P.m >= P.flags.promoLater) && !P.cards.some((x) => x.id === 'promo')) P.cards.push({ id: 'promo', v: {} });
@@ -708,6 +718,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.shift = { m: P.m, stars, tips, served, errors, ups, lost };
     P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
     fx(P, 'rub', tips, 'shift');
+    // тон смены — для звука интерфейса («Смена»): удачная (+) / провальная (−) / обычная
+    P.lastShift = { stars: stars, tips: tips, tone: stars >= 4 ? 'pos' : stars <= 2 ? 'neg' : '' };
     feed(P, `Смена: ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}, чаевые ${fm(tips)}.`, stars >= 4 ? 'good' : stars <= 2 ? 'bad' : 'info');
     return { tips, stars, add, rep, mood };
   }
