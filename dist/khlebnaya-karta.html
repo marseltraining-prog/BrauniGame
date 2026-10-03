@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 15:41";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 15:48";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -19569,9 +19569,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const NO_TAP = { tab: 1, sound: 1, sndSet: 1, sndCat: 1, closeModal: 1, continue: 1, theme: 1, help: 1, settings: 1, zoomIn: 1, zoomOut: 1, zoomReset: 1 };
 
   const MASTER = 0.16;              // «тихие по умолчанию»: общая громкость невелика
+  // Шина одноразовых звуков. Замер (qa/crackle.js) показал, что эффекты были на ~20 дБ громче музыки:
+  // пик музыки на выходе 0,0057, а пик нажатия — 0,069 (в 12 раз). Поэтому все рецепты идут не сразу
+  // в master, а через свою шину: одним числом держим баланс «эффекты против музыки», характер звуков
+  // остаётся прежним. 0,5 = −6 дБ — ровно та правка, что просил владелец («опусти эффекты на 3–6 дБ»).
+  const SFX = 0.5;
   const RATE = 45;                  // мс: один и тот же звук не чаще раза в 45 мс (на ×10 иначе трещит; performance.now() — в миллисекундах)
   const SETTLE = 30;                // мс: отклик действия уже прозвучал — общий «щелчок» не повторяем
-  let on = null, ctx = null, master = null, last = {}, cats = {}, fbAt = 0;
+  let on = null, ctx = null, master = null, sfx = null, last = {}, cats = {}, fbAt = 0;
+  let timeBase = 0;   // сдвиг времени для офлайн-замера: в живом контексте 0, в renderMix — момент события
 
   function stored() { try { const v = localStorage.getItem(KEY); return v == null ? null : v === '1'; } catch (e) { return null; } }
   function isOn() { if (on == null) on = stored(); return on !== false; } // нет записи — включено (тихо)
@@ -19612,8 +19618,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     try {
       ctx = new AC();
       master = ctx.createGain(); master.gain.value = MASTER; master.connect(ctx.destination);
+      sfx = null;                                  // шина эффектов создаётся лениво, на своём контексте
     } catch (e) { ctx = null; }
     return ctx;
+  }
+  // шина одноразовых эффектов: gain → master. Всё, что звучит «по нажатию», идёт сюда (см. SFX выше).
+  function sfxBus() {
+    const c = ac(); if (!c || !master) return null;
+    if (!sfx) { sfx = c.createGain(); sfx.gain.value = SFX; sfx.connect(master); }
+    return sfx;
   }
   function resume() { const c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} } }
   // общий выключатель: не «в ноль одним кадром», а короткий плавный спад шины — иначе слышен щелчок
@@ -19631,68 +19644,102 @@ var BK = globalThis.BK || (globalThis.BK = {});
     } catch (e) {}
   }
 
-  /* ---------- кирпичики синтеза ---------- */
-  // нота: осциллятор с огибающей. o: { f, f2, t (задержка), d (длина), type, vol, sweep }
-  function tone(o) {
-    const c = ac(); if (!c || !master) return;
-    const t0 = c.currentTime + (o.t || 0), d = o.d || 0.1;
+  /* ---------- кирпичики синтеза ----------
+     c и dest — необязательные контекст и приёмник: в игре это ctx и шина эффектов, в офлайн-замере
+     (renderMix, qa/crackle.js) — свой OfflineAudioContext и его шины. Одни и те же рецепты и играются,
+     и измеряются, поэтому «второго набора звуков для теста» нет. */
+  // нота: осциллятор с огибающей. o: { f, f2, t (задержка), d (длина), type, vol, sweep, att }
+  function tone(o, c, dest) {
+    c = c || ac(); if (!c) return;
+    dest = dest || sfxBus(); if (!dest) return;
+    const t0 = c.currentTime + timeBase + (o.t || 0), d = o.d || 0.1;
     const osc = c.createOscillator(), g = c.createGain();
     osc.type = o.type || 'triangle';
     osc.frequency.setValueAtTime(Math.max(20, o.f), t0);
     if (o.f2) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.f2), t0 + d * (o.sweep || 1));
-    const v = (o.vol == null ? 1 : o.vol);
+    const v = (o.vol == null ? 1 : o.vol), att = o.att || 0.008;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v), t0 + att);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-    osc.connect(g); g.connect(master);
+    osc.connect(g); g.connect(dest);
     osc.start(t0); osc.stop(t0 + d + 0.03);
+    osc.onended = () => { try { osc.disconnect(); g.disconnect(); } catch (e) {} };
   }
   // шум (касса, «шшш» монет): короткий буфер с полосовым фильтром.
   // Раньше буфер начинался сразу с полной амплитуды (первый сэмпл — ступенька) и громкость ставилась
   // мгновенно: каждое «дзынь» щёлкало. Теперь в буфере мягкая атака 2 мс, громкость — короткой рампой.
-  function noise(o) {
-    const c = ac(); if (!c || !master) return;
-    const t0 = c.currentTime + (o.t || 0), d = o.d || 0.08;
+  // Буферы кэшируются: на каждое нажатие новый кусок шума — лишняя работа ровно в тот момент, когда
+  // главный поток и так занят перерисовкой (владелец: «трогаю кнопки — появляются хрусты»).
+  const ncache = new WeakMap();   // контекст → { ключ: буфер } (буферы не переносятся между контекстами)
+  function noiseBuf(c, d) {
+    let m = ncache.get(c); if (!m) { m = {}; ncache.set(c, m); }
+    const key = Math.round(d * 1000);
+    if (m[key]) return m[key];
     const n = Math.max(1, Math.floor(c.sampleRate * d));
     const buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
-    const atk = Math.max(1, Math.floor(c.sampleRate * 0.002));
+    const atk = Math.max(1, Math.floor(c.sampleRate * 0.003));
     for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.min(1, i / atk) * Math.pow(1 - i / n, 2.2);
+    m[key] = buf;
+    return buf;
+  }
+  function noise(o, c, dest) {
+    c = c || ac(); if (!c) return;
+    dest = dest || sfxBus(); if (!dest) return;
+    const t0 = c.currentTime + timeBase + (o.t || 0), d = o.d || 0.08;
+    const buf = noiseBuf(c, d);
     const vol = o.vol == null ? 0.5 : o.vol;
     const src = c.createBufferSource(); src.buffer = buf;
     const f = c.createBiquadFilter(); f.type = 'bandpass';
     f.frequency.setValueAtTime(o.hz || 2600, t0); f.Q.setValueAtTime(o.q || 1.1, t0);
     const g = c.createGain();
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(vol, t0 + 0.006);
+    g.gain.linearRampToValueAtTime(vol, t0 + (o.att || 0.006));
     g.gain.linearRampToValueAtTime(0, t0 + d + 0.012);
-    src.connect(f); f.connect(g); g.connect(master);
+    src.connect(f); f.connect(g); g.connect(dest);
     src.start(t0);
     try { src.stop(t0 + d + 0.05); } catch (e) {}
     src.onended = () => { try { src.disconnect(); f.disconnect(); g.disconnect(); } catch (e) {} };
   }
 
+  // Рецепты звуков. Первые два аргумента (c, dest) — контекст и шина: игра передаёт свои, офлайн-замер
+  // (renderMix) — свои. Характер звуков не менялся; изменились только «щелчковые» звуки интерфейса
+  // (tap / click / tab) — в них больше нет белого шума (см. ниже) и уровень эффектов опущен на шине SFX.
   const RECIPES = {
-    coin: (c) => { tone({ f: 1046, d: 0.07, vol: 0.5 }); tone({ f: 1568, d: 0.11, t: 0.055, vol: 0.42 }); noise({ hz: 3600, d: 0.05, vol: 0.16, t: 0.01 }); },
-    money: (c) => {
-      noise({ hz: 2400, d: 0.09, vol: 0.3 });
+    coin: (o, c, d) => { tone({ f: 1046, d: 0.07, vol: 0.4 }, c, d); tone({ f: 1568, d: 0.11, t: 0.055, vol: 0.34 }, c, d); noise({ hz: 2600, d: 0.05, vol: 0.06, t: 0.01 }, c, d); },
+    money: (o, c, d) => {
+      noise({ hz: 2200, d: 0.09, vol: 0.11 }, c, d);
       const ns = [1568, 1397, 1245, 1046];
-      ns.forEach((f, i) => tone({ f, d: 0.09, t: 0.03 + i * 0.055, vol: 0.34 - i * 0.03 }));
-      tone({ f: 2093, d: 0.16, t: 0.27, vol: 0.3 });
+      ns.forEach((f, i) => tone({ f, d: 0.09, t: 0.03 + i * 0.055, vol: 0.28 - i * 0.025 }, c, d));
+      tone({ f: 2093, d: 0.16, t: 0.27, vol: 0.24 }, c, d);
     },
-    ribbon: (c) => { tone({ f: 880, f2: 1420, d: 0.16, type: 'sine', vol: 0.42, sweep: 0.7 }); tone({ f: 1318, d: 0.5, t: 0.1, type: 'sine', vol: 0.34 }); tone({ f: 2637, d: 0.42, t: 0.1, type: 'sine', vol: 0.16 }); },
-    fanfare: (c) => { [523, 659, 784, 1046].forEach((f, i) => { tone({ f, d: i === 3 ? 0.34 : 0.13, t: i * 0.1, vol: 0.34 }); tone({ f: f * 2, d: 0.1, t: i * 0.1, vol: 0.1 }); }); },
-    sparkle: (c) => { tone({ f: 1318, d: 0.09, vol: 0.3 }); tone({ f: 1976, d: 0.16, t: 0.08, vol: 0.26 }); tone({ f: 2637, d: 0.2, t: 0.16, vol: 0.16 }); },
-    warn: (c) => { tone({ f: 392, d: 0.13, type: 'sine', vol: 0.3 }); tone({ f: 311, d: 0.2, t: 0.12, type: 'sine', vol: 0.28 }); },
-    bad: (c) => { tone({ f: 196, f2: 130, d: 0.5, type: 'sawtooth', vol: 0.22, sweep: 1 }); tone({ f: 98, d: 0.6, t: 0.04, type: 'sine', vol: 0.24 }); },
-    click: (c) => { tone({ f: 1500, d: 0.025, type: 'square', vol: 0.1 }); },
-    // ---- звуки интерфейса (тихие, короткие; на ×10 не раздражают) ----
-    tap: (c) => { noise({ hz: 1700, d: 0.026, vol: 0.1, q: 1.5 }); tone({ f: 620, f2: 470, d: 0.05, type: 'sine', vol: 0.11, sweep: 1 }); },
-    deny: (c) => { tone({ f: 185, f2: 138, d: 0.17, type: 'sine', vol: 0.2, sweep: 1 }); tone({ f: 108, d: 0.22, t: 0.03, type: 'sine', vol: 0.13 }); },
-    tab: (c) => { tone({ f: 900, d: 0.028, type: 'sine', vol: 0.08 }); tone({ f: 1260, d: 0.04, t: 0.018, type: 'sine', vol: 0.055 }); },
-    win: (c, o) => {
+    // ribbon — «открыли точку»: колокольчик. Спад удлинён (0,5 → 1,2 с): резкое закрытие длинной ноты
+    // давало единственный оставшийся скачок 0,008 (это и слышно как «дзынь с щелчком» на открытии).
+    // Про скачок 0,0074, который остаётся у ленты: это НЕ щелчок, а собственная скорость тона.
+    // У синуса соседние сэмплы не могут сойтись ближе, чем |Δ| ≈ 2π·f·A/sr. Обертоны ленты 880/1318/2637 Гц
+    // при амплитудах 0,36/0,28/0,11 дают 2π·(0,36·1420 + 0,28·1318 + 0,11·2637)/44100 ≈ 0,116 до шин,
+    // то есть ≈ 0,0093 на выходе (шина эффектов 0,5 × мастер 0,16); рядом с этим 0,00742 — норма.
+    // Чтобы уложиться в абсолютные 0,003 (порог «щелчковых» звуков интерфейса), колокольчик пришлось бы
+    // сделать на 8–9 дБ тише нажатия, то есть убрать его из важных событий, — это уже другой звук.
+    // Поэтому qa/crackle.js проверяет у звонких не абсолют, а ПРИРОДУ скачка: при 88,2 кГц он обязан
+    // уменьшиться вдвое (слитная полосно-ограниченная волна), а у настоящей ступеньки-щелчка — остаться.
+    ribbon: (o, c, d) => { tone({ f: 880, f2: 1420, d: 0.16, type: 'sine', vol: 0.36, sweep: 0.7, att: 0.012 }, c, d); tone({ f: 1318, d: 1.2, t: 0.1, type: 'sine', vol: 0.28, att: 0.012 }, c, d); tone({ f: 2637, d: 0.42, t: 0.1, type: 'sine', vol: 0.11, att: 0.012 }, c, d); },
+    fanfare: (o, c, d) => { [523, 659, 784, 1046].forEach((f, i) => { tone({ f, d: i === 3 ? 0.34 : 0.13, t: i * 0.1, vol: 0.28 }, c, d); tone({ f: f * 2, d: 0.1, t: i * 0.1, vol: 0.08 }, c, d); }); },
+    sparkle: (o, c, d) => { tone({ f: 1318, d: 0.09, vol: 0.26 }, c, d); tone({ f: 1976, d: 0.16, t: 0.08, vol: 0.22 }, c, d); tone({ f: 2637, d: 0.2, t: 0.16, vol: 0.13 }, c, d); },
+    warn: (o, c, d) => { tone({ f: 392, d: 0.13, type: 'sine', vol: 0.26 }, c, d); tone({ f: 311, d: 0.2, t: 0.12, type: 'sine', vol: 0.24 }, c, d); },
+    // bad — «провал/банкротство»: было две пилы (f2 130) — это самый резкий звук из всех (скачок 0,016).
+    // Теперь мягкий низкий треугольник с ровной огибающей: по-прежнему «плохо», но без скрежета.
+    bad: (o, c, d) => { tone({ f: 165, d: 0.5, type: 'triangle', vol: 0.17, sweep: 1, att: 0.012 }, c, d); tone({ f: 98, d: 0.6, t: 0.04, type: 'sine', vol: 0.15, att: 0.012 }, c, d); },
+    // click — самый частый звук интерфейса. Раньше это был квадрат 1500 Гц (то есть буквально щелчок);
+    // теперь — короткий мягкий синус с атакой 4 мс: отклик слышно, «хруста» нет.
+    click: (o, c, d) => { tone({ f: 1180, d: 0.03, type: 'sine', vol: 0.045, att: 0.004 }, c, d); },
+    // ---- звуки интерфейса (тихие, короткие, без шума: шум на нажатие и читался как «хруст») ----
+    tap: (o, c, d) => { tone({ f: 660, f2: 560, d: 0.055, type: 'sine', vol: 0.09, sweep: 1, att: 0.005 }, c, d); },
+    deny: (o, c, d) => { tone({ f: 185, f2: 138, d: 0.17, type: 'sine', vol: 0.17, sweep: 1, att: 0.01 }, c, d); tone({ f: 108, d: 0.22, t: 0.03, type: 'sine', vol: 0.11, att: 0.01 }, c, d); },
+    tab: (o, c, d) => { tone({ f: 980, d: 0.03, type: 'sine', vol: 0.05, att: 0.004 }, c, d); tone({ f: 1320, d: 0.04, t: 0.018, type: 'sine', vol: 0.032, att: 0.004 }, c, d); },
+    win: (o, c, d) => {
       const up = !(o && o.down);
-      tone({ f: up ? 520 : 640, f2: up ? 780 : 430, d: 0.1, type: 'sine', vol: 0.12, sweep: 1 });
-      tone({ f: up ? 1040 : 320, d: 0.09, t: 0.045, type: 'sine', vol: 0.07 });
+      tone({ f: up ? 520 : 640, f2: up ? 780 : 430, d: 0.1, type: 'sine', vol: 0.1, sweep: 1, att: 0.008 }, c, d);
+      tone({ f: up ? 1040 : 320, d: 0.09, t: 0.045, type: 'sine', vol: 0.06, att: 0.008 }, c, d);
     },
   };
 
@@ -19706,7 +19753,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (last[name] && now - last[name] < RATE) return false;
     last[name] = now;
     if (name === 'tap' || name === 'deny') fbAt = now; // отклик действия: второй звук на то же нажатие не нужен
-    try { resume(); RECIPES[name](o || {}); } catch (e) { /* WebAudio недоступен — просто тишина */ }
+    try { resume(); RECIPES[name](o || {}, ctx, sfxBus()); } catch (e) { /* WebAudio недоступен — просто тишина */ }
     return true;
   }
 
@@ -19748,7 +19795,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     FADE_OUT: 0.25,      // τ, с: затухание при выключении
     ATT: 0.024,          // с: атака ноты — мягкая (щелчка нет)
     REL: 0.09,           // с: спад ноты
-    LOOK: 0.4,           // с: насколько вперёд планируем ноты
+    // с: насколько вперёд планируем ноты. Замер (qa/crackle.js, режим «СТУПОР»): с планом 0,4 с
+    // задержка главного потока 1,2 с рвала музыку дыркой в 140 мс, а 2 с — в 880 мс. Перетаскивание
+    // карты в Safari — как раз такие задержки. С планом 1 с музыка переживает стопор до ~1,5 с.
+    // Темп, мелодия и инструменты от этого не меняются — только то, за сколько нот мы «успели» их поставить.
+    LOOK: 1.0,
+    TICK: 250,           // мс: как часто планировщик просыпается (реже, чем раньше, — меньше работы в момент нажатий)
     CUT: { game: 3000, prologue: 2300 }, // Гц: в прологе тембр мягче (меньше верхов у квадрата)
   };
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);   // MIDI-номер → Гц
@@ -19906,13 +19958,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (typeof c.createDynamicsCompressor === 'function') {
       lim = c.createDynamicsCompressor();                 // мягкий лимитер: сумма голосов не выходит за 1,0
       try {
-        lim.threshold.setValueAtTime(-10, 0); lim.knee.setValueAtTime(3, 0); lim.ratio.setValueAtTime(20, 0);
+        // Порог поднят с −10 до −6 дБ: замер (qa/crackle.js) показывает, что шина музыки даже с эффектами
+        // не доходит до −28 дБ, то есть лимитер не срабатывает ни разу и ничего не «качает». −10 дБ при
+        // таком запасе пугало владельца: он слышал хрип «на каждом нажатии» (это были сами эффекты, не лимитер).
+        lim.threshold.setValueAtTime(-6, 0); lim.knee.setValueAtTime(3, 0); lim.ratio.setValueAtTime(20, 0);
         lim.attack.setValueAtTime(0.004, 0); lim.release.setValueAtTime(0.18, 0);
       } catch (e) {}
       lp.connect(lim); lim.connect(dest);
     } else lp.connect(dest);
     return { bus, lp, lim, th };
   }
+  // Порог лимитера в линейной амплитуде — для проверок «он вообще не срабатывает» (qa/crackle.js)
+  const LIM_THRESHOLD = Math.pow(10, -6 / 20);
   function musFree(nd) {
     if (!nd) return;
     try { nd.bus.disconnect(); } catch (e) {}
@@ -19956,7 +20013,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     mus.nextT = 0; mus.pos = 0;
     musSched();
-    if (!mus.timer) mus.timer = setInterval(musSched, 150);
+    if (!mus.timer) mus.timer = setInterval(musSched, MUS.TICK);
     musLevel();
     return true;
   }
@@ -20038,6 +20095,148 @@ var BK = globalThis.BK || (globalThis.BK = {});
       nd.bus.gain.linearRampToValueAtTime(0, end);
     }
     return c.startRendering();
+  }
+  /* Офлайн-замер СУММЫ «музыка + эффекты» — для qa/crackle.js (владелец: «хрустит, когда трогаю кнопки»).
+     Рендерим в 3 канала, чтобы одним прогоном видеть всё, что нужно:
+       0 — выход мастер-шины (то, что слышно: музыка + эффекты через те же рецепты и ту же шину эффектов);
+       1 — сигнал на входе лимитера музыки: сравнив его пик с порогом, видно, срабатывает лимитер или нет;
+       2 — шина эффектов: видно уровень нажатий отдельно от музыки.
+     Событие: { at: секунда, name: 'tap', o: {…} } — тот же рецепт, что играет в игре. */
+  function renderMix(mood, seconds, events, opts) {
+    const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    // sr можно задать (opts.sr): проверка qa/crackle.js рендерит звук ещё и на 88,2 кГц — у слитной волны
+    // скачок между сэмплами падает вдвое, у ступеньки-щелчка нет. Так «хруст» отличают от скорости тона.
+    const sr = (opts && opts.sr) || 44100, sec = Math.max(4, Math.min(60, seconds || 12));
+    const c = new OAC(3, Math.ceil(sec * sr), sr);
+    const merger = c.createChannelMerger(3);
+    // замерный «штырь» намеренно НЕ выводим в слышимый канал: он не должен попадать в замеры
+    const meter = c.createGain(); meter.gain.setValueAtTime(1, 0); meter.connect(merger, 0, 1);
+    merger.connect(c.destination);
+    const out = c.createGain(); out.gain.setValueAtTime(MASTER, 0); out.connect(merger, 0, 0);
+    const sfx = c.createGain(); sfx.gain.setValueAtTime(SFX, 0); sfx.connect(out); sfx.connect(merger, 0, 2);
+    const nd = musGraph(c, m, out);
+    if (!nd) return null;
+    nd.lp.connect(meter);
+    const end = sec - 0.3, withMusic = !(opts && opts.music === false);
+    if (withMusic) {
+      let t = 0.12, pos = 0, guard = 0;
+      while (t < end - 0.2 && guard++ < 4000) { musStep(c, nd, th, t, pos); pos++; t += stepDur(th); }
+      nd.bus.gain.setValueAtTime(0, 0);
+      nd.bus.gain.linearRampToValueAtTime(th.gain, 0.5);
+      nd.bus.gain.setValueAtTime(th.gain, end - 0.4);
+      nd.bus.gain.linearRampToValueAtTime(0, end);
+    } else {
+      nd.bus.gain.setValueAtTime(0, 0);          // музыка выключена: меряем сам эффект (шина канала 2)
+    }
+    const played = [];
+    (events || []).forEach((ev) => {
+      const r = RECIPES[ev && ev.name]; if (!r) return;
+      const at = Math.max(0.1, Math.min(end - 0.6, (ev && ev.at) || 1));
+      timeBase = at;                                  // офлайн-контекст всегда «сейчас» = 0, поэтому сдвигаем сами
+      try { r(ev.o || {}, c, sfx); } catch (e) {}
+      timeBase = 0;
+      played.push({ name: ev.name, at: at });
+    });
+    return c.startRendering().then((buf) => ({ buf, master: MASTER, sfxGain: SFX, limThreshold: LIM_THRESHOLD, sr, played: played.slice() }));
+  }
+  /* СЛУШАЕМ МАСТЕР-ШИНУ вживую — для qa/crackle.js. Это точная копия того, что делает проверка:
+     AudioWorkletNode (модуль через data:-URL — blob: на file:// не грузится), приёмник с numberOfOutputs: 0,
+     поэтому звук он не портит. Пишем мастер-шину (первый createGain модуля) и возвращаем сэмплы.
+     opts.counters — считать ещё и созданные узлы (сколько работы на каждое нажатие).
+     Обычная игра этим не пользуется: одна проверка — один вызов, потом stopRec(). */
+  let recorder = null;
+  const REC_CODE = `class BkRec extends AudioWorkletProcessor {
+    constructor(){ super(); this.acc = new Float32Array(4096); this.n = 0; }
+    process(inputs){
+      const ch = inputs[0] && inputs[0][0];
+      if (ch) { for (let i = 0; i < ch.length; i++) { this.acc[this.n++] = ch[i]; if (this.n === this.acc.length) this.flush(); } }
+      else { for (let i = 0; i < 128; i++) { this.acc[this.n++] = 0; if (this.n === this.acc.length) this.flush(); } }
+      return true;
+    }
+    flush(){ if (this.n) this.port.postMessage(this.acc.slice(0, this.n)); this.n = 0; }
+  }
+  registerProcessor('bkrec', BkRec);`;
+  async function startRec(opts) {
+    const c = ac(); if (!c) return { err: 'нет AudioContext' };
+    try {
+      resume();
+      if (!c.audioWorklet) return { err: 'нет AudioWorklet' };
+      if (!c.__bkRecMod) { await c.audioWorklet.addModule('data:application/javascript;base64,' + btoa(REC_CODE)); c.__bkRecMod = true; }
+      const node = new AudioWorkletNode(c, 'bkrec', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1, channelCountMode: 'explicit' });
+      const chunks = [];
+      node.port.onmessage = (e) => { chunks.push(e.data); };
+      if (!master) return { err: 'мастер-шина ещё не создана' };
+      master.connect(node);
+      c.__bkNodes = 0;
+      const counters = !!(opts && opts.counters);
+      if (counters && !c.__bkCounted) {
+        c.__bkCounted = true;
+        ['createGain', 'createOscillator', 'createBufferSource', 'createBiquadFilter', 'createBuffer'].forEach((k) => {
+          const o = c[k].bind(c); c[k] = function () { c.__bkNodes++; return o.apply(null, arguments); };
+        });
+      }
+      recorder = { c, node, chunks, counters };
+      return { ok: true, sr: c.sampleRate, state: c.state, counters: counters };
+    } catch (e) { return { err: String(e) }; }
+  }
+  async function stopRec() {
+    const r = recorder; if (!r) return { err: 'запись не начата' };
+    recorder = null;
+    try { r.node.port.postMessage('flush'); } catch (e) {}
+    await new Promise((res) => setTimeout(res, 90));        // дать воркл-ету отдать последний неполный блок
+    try { master.disconnect(r.node); } catch (e) {}
+    let len = 0; r.chunks.forEach((a) => { len += a.length; });
+    const d = new Float32Array(len);
+    let o = 0; r.chunks.forEach((a) => { d.set(a, o); o += a.length; });
+    try { r.node.disconnect(); } catch (e) {}
+    const sr = r.c.sampleRate, nodes = r.counters ? (r.c.__bkNodes || 0) : 0;
+    // ——— метрики: пик, RMS, скачки между сэмплами, участки в ноль, окна по 10 мс ———
+    let peak = 0, sq = 0, dc = 0, maxJump = 0, jumpAt = 0, j01 = 0, j05 = 0, prev = 0;
+    for (let i = 0; i < len; i++) {
+      const v = d[i], a = v < 0 ? -v : v;
+      if (a > peak) peak = a;
+      sq += v * v; dc += v;
+      if (i) { const j = Math.abs(v - prev); if (j > maxJump) { maxJump = j; jumpAt = i / sr; } if (j > 0.01) j01++; if (j > 0.05) j05++; }
+      prev = v;
+    }
+    let run = 0, runAt = 0, zeroRun = 0, zeroRuns = 0;
+    for (let i = 0; i < len; i++) {
+      if (d[i] === 0) { if (!run) runAt = i; run++; }
+      else { if (run >= 32) { zeroRuns++; if (run > zeroRun) zeroRun = run; } run = 0; }
+    }
+    if (run >= 32) { zeroRuns++; if (run > zeroRun) zeroRun = run; }
+    const win = Math.round(0.01 * sr);
+    let winMin = Infinity, winMinAt = 0, silent = 0, wins = 0, gap = 0, gapWin = 0, gapAt = 0;
+    for (let w = 0; w + win <= len; w += win) {
+      let s = 0;
+      for (let i = w; i < w + win; i++) s += d[i] * d[i];
+      const rr = Math.sqrt(s / win);
+      wins++;
+      if (rr < winMin) { winMin = rr; winMinAt = w / sr; }
+      if (rr < 1e-5) { silent++; gapWin++; if (gapWin > gap) { gap = gapWin; gapAt = (w - (gapWin - 1) * win) / sr; } } else gapWin = 0;
+    }
+    return { sec: +(len / sr).toFixed(2), sr, nodes,
+      peak: +peak.toFixed(5), rms: +Math.sqrt(sq / Math.max(1, len)).toFixed(5), dc: +(dc / Math.max(1, len)).toFixed(6),
+      maxJump: +maxJump.toFixed(5), jumpAt: +jumpAt.toFixed(2), jumps01: j01, jumps05: j05,
+      zeroRun, zeroRuns, winMin: +winMin.toFixed(5), winMinAt: +winMinAt.toFixed(1), silent, wins, gapMs: gap * 10, gapAt: +gapAt.toFixed(2) };
+  }
+  // Живая диагностика для qa/crackle.js: состояние шин, лимитера и планировщика (ничего не меняет).
+  function diag() {
+    const nd = mus.nodes;
+    return {
+      ctxState: ctx ? ctx.state : null, sr: ctx ? ctx.sampleRate : 0, t: ctx ? +ctx.currentTime.toFixed(3) : 0,
+      on: mus.on, mood: mus.mood, duck: mus.duck, pos: mus.pos,
+      ahead: ctx && mus.nextT ? +(mus.nextT - ctx.currentTime).toFixed(3) : 0,   // на сколько вперёд запланированы ноты
+      bus: nd ? +nd.bus.gain.value.toFixed(5) : 0,
+      cut: nd ? +nd.lp.frequency.value.toFixed(0) : 0,
+      limThreshold: LIM_THRESHOLD,
+      limReduction: nd && nd.lim ? +nd.lim.reduction.toFixed(2) : null,
+      master: master ? +master.gain.value.toFixed(4) : 0,
+      sfx: sfx ? +sfx.gain.value.toFixed(4) : null,
+      sounds: Object.keys(RECIPES).length,
+    };
   }
 
   /* ---------- кнопки в интерфейсе ---------- */
@@ -20141,6 +20340,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     music: musMood,
     musicInfo: musInfo,       // справка о теме: темп, тональность, длина петли, тембр (проверка qa/music8.js)
     renderMusic,              // офлайн-рендер музыки в OfflineAudioContext — числа вместо «на слух»
+    renderMix,                // офлайн-рендер суммы «музыка + эффекты» (3 канала) — проверка qa/crackle.js
+    diag,                     // живое состояние шин, лимитера и планировщика — проверка qa/crackle.js
+    startRec, stopRec,        // запись мастер-шины вживую: покой против взаимодействия — проверка qa/crackle.js
+    SFX,                      // уровень шины эффектов (для проверок)
     // первый жест игрока — можно включать звук (политика браузеров) и снимать запрет на музыку
     arm() {
       if (typeof document === 'undefined' || BK.Sound.__armed) return;
