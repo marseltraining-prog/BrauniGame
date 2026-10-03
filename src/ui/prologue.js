@@ -20,6 +20,62 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const PREF = 'bk-ufa-start';
   const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
 
+  /* ---------------- звук (src/sound.js) ----------------
+     Тихий и ненавязчивый: это не аркада. Главное правило — звук привязан к СОБЫТИЮ, а не к отрисовке.
+     Цикл пролога (loop → render/bar/drainFx) вызывается десятки раз в секунду, поэтому «звенеть по факту
+     перерисовки» нельзя: события проходят через маленькую очередь snd.fx (как pk в основной игре), а
+     остальные звуки — только из обработчиков и из кода, который зовётся один раз на событие
+     (drainFx / onMonth / showCard / shiftEnd / showFinal). BK.Sound сам делает всё остальное:
+     выключенный звук, скрытая вкладка, не чаще раза в 45 мс (`RATE`), подавление дублей `tap`/`deny`. */
+  const snd = { fx: [], saw: 0, moSig: '', feedLen: 0, fin: '', cardId: '' };
+  // один вход: BK.Sound сам решает про выключенный звук, скрытую вкладку и RATE (45 мс)
+  const play = (n, o) => (BK.Sound && BK.Sound.play ? BK.Sound.play(n, o) : false);
+  // «дзынь» монет и искорки — только когда вкладка видна (в смене свои SFX)
+  const sfx = (n) => (document.hidden ? false : play(n));
+  // отклик на нажатие: как в app.js — `tap` после действия, `deny` при отказе (BK.Sound сам не дублирует)
+  function tapS() { if (BK.Sound && BK.Sound.tap) BK.Sound.tap('pro'); }
+  // очередь событий: звук ждёт ближайшего тика цикла и звучит ровно один раз (не на каждой перерисовке)
+  function push(kind, tone, id) { snd.fx.push({ kind, tone: tone || '', id: id || '' }); }
+  // «отпечаток» состояния пролога: меняется только на событиях (месяц, лента, карточки, смена, финал)
+  function sig() {
+    const p = Pp(); if (!p) return '';
+    return [p.m, p.status, p.cards.length, p.feed.length, p.stats.shifts, p.flags.mentor || '', p.flags.gulya || '', p.hist.length].join('|');
+  }
+  function drainSnd() {
+    const p = Pp(); if (!p) return;
+    const s = sig(); if (s !== snd.moSig) { snd.moSig = s; onSig(); }
+    const list = snd.fx.splice(0, snd.fx.length);
+    for (const f of list) evSnd(f);
+  }
+  function evSnd(f) {
+    if (f.kind === 'card') return;                                  // карточку озвучивает showCard()
+    if (f.kind === 'money') return;                                 // деньги месяца — в onMonth(), один звук на месяц
+    if (f.kind === 'cf') { play('ribbon'); return; }                // открыли свою точку — «дзынь» с ленточкой
+    if (f.id === 'fired') { play('bad'); return; }                  // уволили — низкий тон
+    if (f.id === 'promo') { play('fanfare'); return; }              // повышение
+    if (f.tone === 'pos') play('coin');                             // хорошее событие
+    else if (f.tone === 'neg') play('warn');                        // плохое событие (70 % случайных — `warn`)
+    else if (f.kind === 'idea' || f.kind === 'rec' || f.kind === 'sys') play('click'); // покупка/учёба/привычка — тихий отклик
+  }
+  function onSig() {
+    const p = Pp(); if (!p) return;
+    if (p.status !== 'run' && snd.saw < 2) { snd.saw = 2; showFinal(); }        // финал — один звук на финал
+    // лента — по индексу (feed режется до 40, поэтому сдвиг считаем аккуратно), фильтруем прошлое игры
+    if (p.feed.length && !snd.feedLen) snd.feedLen = p.feed.length;
+    else if (p.feed.length !== snd.feedLen) {
+      const grown = Math.min(8, Math.max(0, p.feed.length - snd.feedLen));
+      const tail = p.feed.slice(p.feed.length - grown);
+      snd.feedLen = p.feed.length;
+      for (const e of tail) {
+        const tone = e.tone || (e.k === 'good' ? 'pos' : e.k === 'bad' ? 'neg' : '');
+        if (!tone) continue;
+        if (e.k === 'good' && /своя точка|пролог окончен/i.test(e.t || '')) continue; // финал озвучивает showFinal()
+        if (e.k === 'bad' && /уволил|копилка|вклад/i.test(e.t || '')) continue;       // увольнение — из разбора месяца
+        push('feed', tone);
+      }
+    }
+  }
+
   /* ---------------- стартовый экран: «Как начать» ---------------- */
   function pref() { try { return localStorage.getItem(PREF) === 'prologue' ? 'prologue' : 'net'; } catch (e) { return 'net'; } }
   function startOpt() {
@@ -59,6 +115,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div id="proOv"></div><div class="pro-fly" id="proFly" aria-hidden="true"></div></div>`);
       root = $('#prologue');
       root.addEventListener('click', onClick);
+      // у выключенной кнопки браузер не рассылает click (а клик по ней — обычное дело: «нет денег»),
+      // поэтому мягкий `deny` вешаем на pointerdown: он приходит и для disabled
+      root.addEventListener('pointerdown', (e) => { const b = e.target && e.target.closest && e.target.closest('[data-pa]'); if (b && b.disabled) play('deny'); }, true);
       root.addEventListener('pointerdown', () => { ui.pressing = true; }, true);
       const up = () => { if (ui.pressing) { ui.pressing = false; ui.dirty = true; } };
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
@@ -92,6 +151,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     drainFx();
     bar();
+    drainSnd(); // звук: только по событиям из очереди (в цикле ничего не «звенит» от перерисовки)
     if (ui.slipT && t > ui.slipT) { ui.slipT = 0; const sl = $('#proSlip'); if (sl) sl.hidden = true; }
     if (ui.dirty && !ui.pressing && t - ui.lastRender > 200) render();
   }
@@ -109,6 +169,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (p.status !== 'run') { APP().save(); return; } // финал — без монеток и итога месяца поверх окна
     if (mo) {
       const g = $('#proSav');
+      if (mo.net >= 0) sfx('coin');                                       // зарплата-месяц пришла — короткий «дзынь»
+      else if ((mo.notes || []).some((n) => /Не хватило|урезаны|Больничный|без работы|так и не вернул|сгорел|прогорело/.test(n))) sfx('warn'); // месяц со срывом
+      else sfx('click');                                                  // месяц закрылся, итог в записке — тихий отклик
+      // перераскладка денег по строкам месяца: копилка (или снятие вклада), вклад, жизнь
+      const notes = (mo.notes || []).join(' · ');
+      if (mo.boxed > 0) sfx('coin');
+      else if (/снят|сгорел/i.test(notes)) sfx('warn');
       coins($('#proMb'), g, mo.net >= 0 ? 7 : 3, mo.net < 0);
       float(g, fmS(mo.net), mo.net >= 0 ? 'up' : 'dn', true);
       const inc = (mo.inc.salary || 0) + (mo.inc.tips || 0) + (mo.inc.extra || 0) + (mo.inc.interest || 0);
@@ -153,7 +220,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const list = p.fx.splice(0, p.fx.length);
     for (const f of list) {
       if (f.kind === 'month') continue; // итог месяца — в onMonth
-      if (f.kind === 'promo') { confetti(); continue; }
+      if (f.kind === 'save') continue; // копилка стадии 1 — не звук пролога
+      if (f.kind === 'promo') { push('fx', '', 'promo'); confetti(); continue; } // повышение — фанфары
+      if (f.kind === 'rub' && f.where !== 'want') push('rub', f.v >= 0 ? 'pos' : 'neg'); // приход/расход денег — один «дзынь» на событие
       const el = $(FXWHERE[f.kind] || '#proSav');
       if (f.kind === 'mood') float(el, f.v > 0 ? '🙂 +' : '🙁 −', f.v > 0 ? 'up' : 'dn');
       else if (f.kind === 'rep') float(el, f.v > 0 ? '👍' : '👎', f.v > 0 ? 'up' : 'dn');
@@ -334,6 +403,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function showCard() {
     const s = S(), cv = PR().card(s); if (!cv) { hideOv(); return; }
     ui.mode = 'card';
+    // звук: одна карточка — один звук. showCard() зовётся и из цикла, поэтому помним id открытой карточки
+    if (snd.cardId !== cv.id) { snd.cardId = cv.id; snd.saw++; cardSnd(cv); }
     const LET = 'АБВГДЕ', kind = cv.kind === 'pos' ? 'pos' : cv.kind === 'neg' ? 'neg' : 'hero';
     const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
@@ -351,14 +422,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = $('#proOv .pro-card'); if (d) d.focus({ preventScroll: true });
   }
   function hideOv() { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
+  // звук появления карточки-сцены: событие месяца — по тону, сцена с героем — тихий отклик окна
+  function cardSnd(cv) {
+    const t = cv.choices.length ? cv.choices[0].fx || {} : {};
+    if (cv.kind === 'pos') play('coin');
+    else if (cv.kind === 'neg') play('warn');
+    else play('win');
+  }
   function choose(i) {
-    const s = S(), r = PR().choose(s, i);
-    if (!r.ok) { APP().toast('Не получится', r.msg || '', 'warn'); return; }
-    hideOv(); ui.dirty = true; render(true); drainFx();
-    const p = Pp();
+    const s = S(), p = Pp(), r = PR().choose(s, i);
+    if (!r.ok) { APP().toast('Не получится', r.msg || '', 'warn'); play('deny'); return; }   // отказ — мягкий низкий тон
+    const hadOv = !!$('#proOv .pro-card');
+    hideOv(); ui.dirty = true; render(true); drainFx(); snd.fx.length = 0;                   // звук выбора — ровно один
+    const pick = p.pick; snd.cardId = '';                                                    // следующая карточка звенит своим звуком
+    let vol = '';                                                                            // особый звук поверх обычного
+    if (pick) {
+      const tone = pick.tone || pick.kind;
+      if (pick.id === 'p07' && tone !== 'neg') vol = pick.kind === 'pos' ? 'sparkle' : 'coin';
+      else if (tone === 'neg') vol = 'warn';
+      else if (tone === 'pos') vol = 'coin';
+      else vol = 'click';                                                                    // нейтральный выбор — тихий отклик
+    }
+    if (vol) play(vol); else tapS();
+    // с карточкой ушло и её окно: под слоем не должно оставаться прозрачного .pro-ovbg (иначе он ловит нажатия)
+    if (hadOv && !p.cards.length && !$('#proOv .pro-card')) { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
     if (p.status !== 'run') { APP().save(); showFinal(); return; }
     if (p.cards.length) showCard();
-    else if (p.m === 0 && p.stats.shifts === 0 && !ui.firstShift) { ui.firstShift = true; shiftOpen(true); } // после сцены П1 — первая «Смена»
+    // после сцены П1 — первая «Смена»; карточку закрываем: иначе она остаётся под окном смены и перехватывает нажатия
+    else if (p.m === 0 && p.stats.shifts === 0 && !ui.firstShift) { ui.firstShift = true; hideOv(); shiftOpen(true); }
     APP().save();
   }
 
@@ -366,6 +457,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const SPENT_IC = { home: '🏠', food: '🍲', fun: '🎬', transport: '🚌', phone: '📶', study: '🎓', health: '💊', fines: '🧾', clothes: '👕', gifts: '🎁', sneakers: '👟', console: '🎮', phone2: '📱', trip: '🏖️', car: '🚗', debt: '💳', loans: '🤝', invest: '🎲', other: '•' };
   function showFinal() {
     const s = S(), p = Pp(); if (!p) return;
+    // звук финала — один раз на финал (showFinal зовётся и из цикла, и после выбора развилки П7/П8)
+    const key = p.status + ':' + p.m;
+    if (snd.fin !== key) { snd.fin = key; if (p.status === 'won' || p.status === 'done') play('fanfare'); else play('warn'); }
     ui.mode = 'final';
     const sm = PR().summary(p), c = C();
     const rows = sm.rows.slice(0, 9), max = Math.max(1, ...rows.map((r) => r.v));
@@ -421,6 +515,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // переход в основную игру (стадия 2) с переносом бонусов
   function toMain(skipped) {
     const s = S(), p = Pp(); if (!s || !p) return;
+    play('ribbon'); // открыли своё дело — «дзынь» с ленточкой (до закрытия слоя)
     let cr = null;
     if (!skipped && p.status === 'won') cr = PR().applyCarry(s); else PR().skip(s);
     if (s.tutorial) s.tutorial.on = !!p.tutOn;
@@ -453,7 +548,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function mul(seed) { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   const FACES = ['🧔', '👩', '👨‍🦳', '👧', '🧑‍💼', '👵', '🧑‍🎓', '👩‍🦰', '👨', '👱‍♀️'];
   function shiftOpen(first) {
-    const p = Pp(), why = PR().shiftWhy(p); if (why) { APP().toast('Смена', why, 'warn'); return; }
+    const p = Pp(), why = PR().shiftWhy(p); if (why) { APP().toast('Смена', why, 'warn'); sfx('deny'); return; }
+    if (ui.mode === 'shift' && ui.sh) return;   // уже идёт — второе окно не открываем
+    hideOv();                                    // карточка и меню не должны оставаться под окном смены
+    ui.menu = false; const mm = $('#proMenu'); if (mm) mm.remove();
     const plan = PR().shiftPlan(p);
     ui.mode = 'shift';
     ui.sh = { plan, rnd: mul(plan.seed), state: 'intro', t: 0, guests: [], next: 0, tray: [], served: 0, errors: 0, upsells: 0, lost: 0, total: 0, tips: 0, id: 0, first, msg: null, tired: p.flags.tired === p.m - 1 || p.flags.tired === p.m };
@@ -545,7 +643,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!ui.sh || ui.sh.state !== 'play') ui.pxPos = {};
     ui.pxShift.attach(slot);
   }
-  function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); return; } sh.tray.push(id); shiftRender(); }
+  function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); play('deny'); return; } sh.tray.push(id); play('tap'); shiftRender(); }
   function shiftServe() {
     const sh = ui.sh, g = sh && sh.guests[0]; if (!g || !sh.tray.length) return;
     const a = sh.tray.slice().sort().join(), b = g.order.slice().sort().join();
@@ -555,7 +653,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       sh.tips += tip; sh.guests.shift(); sh.tray = [];
       sh.heroFx = 'happy'; sh.heroUntil = performance.now() + 900; sh.coinAt = performance.now();
       flash(`Спасибо! +${tip} ₽`, 'up');
-    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); sh.heroFx = 'worried'; sh.heroUntil = performance.now() + 1100; flash('Не тот заказ! 😬', 'dn'); }
+      sfx('coin'); // чаевые — короткий «дзынь» (BK.Sound сам держит частоту)
+    } else { sh.errors++; sh.tray = []; g.pat = Math.max(1, g.pat - 3); sh.heroFx = 'worried'; sh.heroUntil = performance.now() + 1100; flash('Не тот заказ! 😬', 'dn'); play('deny'); }
     shiftRender();
   }
   function shiftUp() {
@@ -564,8 +663,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (sh.rnd() < sh.plan.upsell) {
       const bake = sh.plan.items.filter((x) => x.cat === 'bake' && !g.order.includes(x.id));
       const it = (bake.length ? bake : sh.plan.items)[Math.floor(sh.rnd() * (bake.length || sh.plan.items.length))];
-      g.order.push(it.id); g.up = g.order.length - 1; flash(`Давайте! ${it.icon}`, 'up');
-    } else { g.pat = Math.max(1, g.pat - 1); flash('Нет, спасибо', 'dn'); }
+      g.order.push(it.id); g.up = g.order.length - 1; flash(`Давайте! ${it.icon}`, 'up'); play('coin');
+    } else { g.pat = Math.max(1, g.pat - 1); flash('Нет, спасибо', 'dn'); play('deny'); } // допродажа не прошла — мягкий отказ
     shiftRender();
   }
   function shiftEnd() {
@@ -573,6 +672,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     sh.state = 'res';
     sh.result = PR().shiftResult(S(), { served: sh.served, errors: sh.errors, upsells: sh.upsells, lost: sh.lost, total: sh.total });
     Pp().fx = Pp().fx.filter((f) => f.where !== 'shift'); // монетки — на экране итога, не второй раз
+    if (sh.result.stars >= 4) play('fanfare'); else if (sh.result.stars <= 2) play('warn'); else play('click'); // итог смены
     shiftRender();
     setTimeout(() => { const t = $('#shTip'); if (t) { t.classList.add('bump'); } }, 300);
   }
@@ -580,16 +680,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const el = $('#proSh'); if (el) el.remove();
     const tips = ui.sh && ui.sh.result ? ui.sh.result.tips : 0;
     ui.sh = null; ui.mode = null; ui.dirty = true; render(true);
-    if (tips) { coins($('#proShiftAnchor') || $('.pro-shiftbtn'), $('#proSav'), 6); float($('#proSav'), '+' + fm(tips), 'up', true); }
+    if (tips) { play('money'); coins($('#proShiftAnchor') || $('.pro-shiftbtn'), $('#proSav'), 6); float($('#proSav'), '+' + fm(tips), 'up', true); } // горсть монет — итог смены
     APP().save();
   }
 
   /* ---------------- действия ---------------- */
-  function res(r, okMsg) { if (r && r.ok === false && r.msg) APP().toast('Не получится', r.msg, 'warn'); ui.dirty = true; render(true); drainFx(); if (r && r.ok) APP().save(); return r; }
+  function res(r, okMsg) { if (r && r.ok === false && r.msg) { APP().toast('Не получится', r.msg, 'warn'); play('deny'); } ui.dirty = true; render(true); drainFx(); if (r && r.ok) APP().save(); return r; }
+  // звук кнопки-действия: неудача — `deny`, удача — тихий `tap`; у смены скорости и темы свои звуки
+  const ACT_SND = { speed: 0, theme: 0, shift: 0, shiftGo: 0, shiftItem: 0, shiftTray: 0, shiftServe: 0, shiftUp: 0, shiftEnd: 0, shiftDone: 0, choose: 0, finalMain: 0, finalShop: 0, skipYes: 0, skipMain: 0, retry: 0, toStart: 0, menu: 0, menuClose: 0, skipAsk: 0, askNo: 0, openOwn: 0, fromDepYes: 0 };
   function onClick(e) {
     const b = e.target.closest('[data-pa]'); if (!b) return;
-    if (b.disabled) return;
+    if (b.disabled) { play('deny'); return; }                                            // нажали выключенную кнопку
     const a = b.dataset.pa, v = b.dataset.v, s = S(), p = Pp(); if (!s || !p) return;
+    if (!ACT_SND[a]) tapS();                                                            // отклик кнопки-действия
     if (a === 'menuClose' && b.classList.contains('pro-ovbg') && e.target !== b) return; // клик внутри меню — не закрывать
     e.preventDefault();
     switch (a) {
@@ -604,29 +707,33 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'home': res(PR().setHome(s, v)); break;
       case 'food': res(PR().setFood(s, v)); break;
       case 'fun': res(PR().setFun(s, v)); break;
-      case 'extra': res(PR().setExtra(s, +v)); break;
-      case 'save': res(PR().setSaveRate(s, +v)); break;
-      case 'study': res(PR().startStudy(s, v)); break;
-      case 'want': { const r = res(PR().buyWant(s, v)); if (r && r.ok) float(document.querySelector(`#prologue [data-pa=want][data-v=${v}]`), '−' + fm(r.cost), 'dn'); break; }
-      case 'toBox': { const keep = Math.max(0, PR().monthCost(p) - 0), amt = Math.max(0, p.cash - keep); if (amt <= 0) APP().toast('Копилка', `Оставьте в кошельке запас на месяц жизни (${fm(PR().monthCost(p))}).`, 'warn'); else { res(PR().toBox(s, amt)); coins($('#proCash'), $('#proBox'), 4); } break; }
-      case 'fromBox': res(PR().fromBox(s, Math.min(p.box, 10000))); break;
-      case 'toDep': { const r = res(PR().toDep(s, p.box)); if (r && r.ok) coins($('#proBox'), $('#proDep'), 4); break; }
-      case 'fromDep': if (p.depInt > 0) { ui.ask = 'dep'; ui.dirty = true; render(true); } else res(PR().fromDep(s)); break;
-      case 'fromDepYes': ui.ask = null; res(PR().fromDep(s)); break;
-      case 'openOwn': { const r = PR().openOwn(s); if (r.ok) showCard(); break; }
+      case 'extra': res(PR().setExtra(s, +v)); sfx('click'); break;
+      case 'save': res(PR().setSaveRate(s, +v)); sfx('click'); break;
+      case 'study': { const r = res(PR().startStudy(s, v)); if (r && r.ok) play('coin'); break; } // записались на курс — оплата
+      case 'want': {
+        const r = res(PR().buyWant(s, v));
+        if (r && r.ok) { play('coin'); float(document.querySelector(`#prologue [data-pa=want][data-v=${v}]`), '−' + fm(r.cost), 'dn'); } // уже прозвучал `tap` кнопки
+        break;
+      }
+      case 'toBox': { const keep = Math.max(0, PR().monthCost(p) - 0), amt = Math.max(0, p.cash - keep); if (amt <= 0) APP().toast('Копилка', `Оставьте в кошельке запас на месяц жизни (${fm(PR().monthCost(p))}).`, 'warn'); else { const r = res(PR().toBox(s, amt)); if (r && r.ok) { sfx('coin'); coins($('#proCash'), $('#proBox'), 4); } } break; }
+      case 'fromBox': { const r = res(PR().fromBox(s, Math.min(p.box, 10000))); if (r && r.ok) sfx('coin'); break; }
+      case 'toDep': { const r = res(PR().toDep(s, p.box)); if (r && r.ok) { play('coin'); coins($('#proBox'), $('#proDep'), 4); } break; }
+      case 'fromDep': if (p.depInt > 0) { ui.ask = 'dep'; ui.dirty = true; render(true); play('win'); } else { const r = res(PR().fromDep(s)); if (r && r.ok) play('coin'); } break;
+      case 'fromDepYes': { const r = res(PR().fromDep(s)); if (r && r.ok) play('coin'); break; }
+      case 'openOwn': { const r = PR().openOwn(s); if (r.ok) { play('fanfare'); showCard(); } break; }
       case 'choose': choose(+v); break;
       case 'shift': shiftOpen(false); break;
-      case 'shiftGo': if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; shiftRender(); } break;
-      case 'shiftCancel': { const el = $('#proSh'); if (el) el.remove(); ui.sh = null; ui.mode = null; break; }
+      case 'shiftGo': if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; play('tap'); play('win'); shiftRender(); } break;
+      case 'shiftCancel': { const el = $('#proSh'); if (el) el.remove(); ui.sh = null; ui.mode = null; play('win', { down: 1 }); break; }
       case 'shiftItem': shiftItem(v); break;
-      case 'shiftTray': if (ui.sh) { ui.sh.tray.splice(+v, 1); shiftRender(); } break;
+      case 'shiftTray': if (ui.sh) { ui.sh.tray.splice(+v, 1); play('click'); shiftRender(); } break;
       case 'shiftServe': shiftServe(); break;
       case 'shiftUp': shiftUp(); break;
       case 'shiftEnd': shiftEnd(); break;
       case 'shiftDone': shiftClose(); break;
       case 'finalMain': toMain(false); break;
-      case 'finalShop': if (BK.Stage1UI) BK.Stage1UI.begin(s); break; // стадия 1 «Своя кофейня» (src/ui/stage1.js)
-      case 'retry': retry(); break;
+      case 'finalShop': if (BK.Stage1UI) { play('ribbon'); BK.Stage1UI.begin(s); } break; // стадия 1 «Своя кофейня» (src/ui/stage1.js)
+      case 'retry': play('tap'); retry(); break;
       case 'skipMain': toMain(true); break;
       default: break;
     }

@@ -61,6 +61,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function store(S) { const T = T0(S); return T && T.storeId ? S.stores.find((x) => x.id === T.storeId) || null : null; }
   function hero(S) { const st = store(S); return st ? st.staff.find((e) => e.hero) || null : null; }
   function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
+  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
+  // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
+  function daySig(S) {
+    const T = T0(S), st = store(S); if (!T || !st) return '';
+    const td = st.today || {};
+    return [S.day, T.status, T.hp | 0, T.aware.toFixed(3), T.reg | 0, Math.round(td.checks || 0), Math.round(td.rev || 0), td.closed ? 1 : 0, st.status, st.staff.length, st.incoming.length, T.months.length, st.repair, T.hired, T.days.length, st.rating ? +st.rating.toFixed(2) : ''].join('|');
+  }
   function fx(T, kind, v, extra) { T.fx.push(Object.assign({ kind, v }, extra || {})); if (T.fx.length > 30) T.fx.splice(0, T.fx.length - 30); }
   function log(S, text, kind) { if (I()) I().log(S, text, kind || 'info'); }
   function setMod(S, key, t, m, scope, target, until) { // один модификатор стадии 1 по ключу (обновляется, не копится)
@@ -268,7 +275,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (T.offHero) { st.staff.push(T.offHero); T.offHero = null; }
     // открытие
     if (st.status === 'open' && T.openDay == null) {
-      T.openDay = S.day; milestone(S, 'open');
+      T.openDay = S.day; milestone(S, 'open'); fx(T, 'guest', 1);
       queue(S, 's11', {}, true);
       T.dvorDay = S.day + ri(T, 30, 42);
     }
@@ -350,7 +357,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fail(S) {
     const T = T0(S); if (T.status === 'failed') return;
-    T.status = 'failed'; T.cards = []; T.failDay = S.day;
+    T.status = 'failed'; T.cards = []; T.failDay = S.day; fx(T, 'fail', 1);
     log(S, 'Кофейня закрылась: деньги кончились.', 'bad');
     if (S.story) S.story.log.push({ day: S.day, id: 's1fail', choice: null, line: 'Кофейня закрылась' });
   }
@@ -584,9 +591,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (S.story.log.length > 120) S.story.log.shift();
       if (S.chron) S.chron.push({ t: 'story', id: cv.id, label: c.label, day: S.day });
     }
-    if (cv.choices.length > 1) feed(T, `${cv.title}: ${/^«/.test(c.label) ? c.label : '«' + c.label + '»'}.`, cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero');
+    if (cv.choices.length > 1) feed(T, `${cv.title}: ${/^«/.test(c.label) ? c.label : '«' + c.label + '»'}.`, (c.fx && c.fx.k) || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.id === 's12') T.flags.advisor = 1;
     if (cv.id === 's17' && T.flags.kalachMine) readyCheck(S);
+    if (S.stage1) { // звук карточки читает интерфейс (src/ui/stage1.js): тон — по значкам последствий варианта
+      const F = c.fx || {}; let sc = 0;
+      for (const k of Object.keys(F)) { const v = F[k] || 0; sc += k === 'rub' ? v * 1.2 : v; }
+      S.stage1.pick = { id: cv.id, kind: cv.kind, tone: c.risk ? 'risk' : sc > 0 ? 'pos' : sc < 0 ? 'neg' : '', label: c.label };
+    }
     return { ok: true };
   }
   // кнопка «Вторая вывеска» (готово) → сцена 1.8
@@ -690,6 +702,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Stage1 = {
     HEROES, CARDS, MS, EV, start, pick, spotCost, spotPreview, hoursCover, on, running, store, hero, card, choose, queue,
     setHours, setDayOff, menuAdd, menuRemove, menuWhy, inviteGulya, gulyaAvail, gulyaLvl, hire, hireWhy, takeLoan, loanRoom, loanWhy,
-    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap, _rnd: rnd,
+    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap, daySig, _rnd: rnd,
   };
 })();
