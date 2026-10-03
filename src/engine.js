@@ -973,6 +973,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- события ---------------- */
   function eventEligible(S, e, t) {
     if (e.followUp) return false; // последствия приходят только из очереди S.ev.queue
+    if (BK.StratEvents && !BK.StratEvents.ok(S, e)) return false; // события стратегий — только на своём пути (strat-events.js)
     const openStores = S.stores.filter((s) => s.status !== 'opening');
     if ((e.minStores || 1) > openStores.length + (S.corp && BK.Corp ? BK.Corp.otherStores(S) : 0)) return false; // порог «от N точек» — по всей сети
     if ((e.minYear || 0) > S.day / 365) return false;

@@ -190,6 +190,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
+  // данные стратегий: события пути — в общий список, достижения — в список достижений (борьба с дублями внутри)
+  function attachStratData() {
+    try {
+      if (BK.StratEvents) { BK.StratEvents.attach(); BK.StratEvents.attachAch(); }
+    } catch (e) { /* данные стратегий не должны ломать игру */ }
+  }
   function startNew(name, difficulty, opts) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty, opts); else newGame(name, difficulty, opts); }
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
@@ -926,6 +932,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
   }
   BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, startNew, continueGame, toStart, openRussia, cityView, refresh };
+  attachStratData(); // события и достижения стратегий — до первой отрисовки (strat-events.js)
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);
 })();
