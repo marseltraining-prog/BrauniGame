@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 19:35 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 19:42 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3594,7 +3594,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.4', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.5', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -27520,7 +27520,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const sex = (S, m, f) => (BK.Story && BK.Story.g ? BK.Story.g(S, m, f) : m);
   const hname = (S) => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S) : 'шеф');
   const hword = (S) => sex(S, 'молодой человек', 'девушка');
-  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
     const T = T0(S), st = store(S); if (!T || !st) return '';
@@ -28191,7 +28190,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Stage1 = {
     HEROES, CARDS, MS, EV, start, pick, spotCost, spotPreview, hoursCover, on, running, store, hero, card, choose, queue,
     setHours, setDayOff, menuAdd, menuRemove, menuWhy, inviteGulya, gulyaAvail, gulyaLvl, hire, hireWhy, takeLoan, loanRoom, loanWhy,
-    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap, daySig, _rnd: rnd,
+    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap,
+    hname, sex, hword,                                          // имя и родовые формы героя (PLAN.md §8.1) daySig, _rnd: rnd,
   };
 })();
 
@@ -35963,7 +35963,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const last = t.months[t.months.length - 1];
     return `<div class="s1-brand"><span class="s1-logo" aria-hidden="true">☕</span><span class="s1-bt"><b>${esc(s.company)}</b><small>${st ? `кофейня · ${esc(st.address)}` : 'своя кофейня · выбор места'}</small></span></div>
       <span class="chip crust s1-ch">Глава 1</span>
-      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(hname(s))}${heroGmark(s)}</span>
+      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(S1().hname ? S1().hname(s) : "шеф")}${heroGmark(s)}</span>
       <div class="s1-when"><span class="s1-date">${dt.d} ${E().MONTHS_G[dt.m].slice(0, 3)} ${dt.y}</span><span class="s1-clock" id="s1Clock">${clockTxt()}</span></div>
       <div class="speed s1-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-s1="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>

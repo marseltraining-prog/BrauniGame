@@ -305,7 +305,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const last = t.months[t.months.length - 1];
     return `<div class="s1-brand"><span class="s1-logo" aria-hidden="true">☕</span><span class="s1-bt"><b>${esc(s.company)}</b><small>${st ? `кофейня · ${esc(st.address)}` : 'своя кофейня · выбор места'}</small></span></div>
       <span class="chip crust s1-ch">Глава 1</span>
-      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(hname(s))}${heroGmark(s)}</span>
+      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(S1().hname ? S1().hname(s) : "шеф")}${heroGmark(s)}</span>
       <div class="s1-when"><span class="s1-date">${dt.d} ${E().MONTHS_G[dt.m].slice(0, 3)} ${dt.y}</span><span class="s1-clock" id="s1Clock">${clockTxt()}</span></div>
       <div class="speed s1-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-s1="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>

@@ -72,7 +72,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const sex = (S, m, f) => (BK.Story && BK.Story.g ? BK.Story.g(S, m, f) : m);
   const hname = (S) => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S) : 'шеф');
   const hword = (S) => sex(S, 'молодой человек', 'девушка');
-  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
     const T = T0(S), st = store(S); if (!T || !st) return '';
@@ -743,6 +742,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Stage1 = {
     HEROES, CARDS, MS, EV, start, pick, spotCost, spotPreview, hoursCover, on, running, store, hero, card, choose, queue,
     setHours, setDayOff, menuAdd, menuRemove, menuWhy, inviteGulya, gulyaAvail, gulyaLvl, hire, hireWhy, takeLoan, loanRoom, loanWhy,
-    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap, daySig, _rnd: rnd,
+    avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap,
+    hname, sex, hword,                                          // имя и родовые формы героя (PLAN.md §8.1) daySig, _rnd: rnd,
   };
 })();
