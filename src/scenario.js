@@ -12,6 +12,12 @@
    пройденные запоминаются в браузере (localStorage['bk-ufa-scen-done']) и больше не выпадают;
    в конце партии игрок видит «Пройдено N из 4» и может начать заново за другой историей.
 
+   Срок и провал: когда срок истории вышел, day() считает вердикт (d.done) и кладёт
+   уведомление { type:'scen', phase:'expired'|'saved' }; провал истории — failed(S)
+   (срок вышел, цель не выполнена, или партия проиграна). Показывает это интерфейс
+   (src/ui/scenario-ui.js: окно «История не сложилась» + строка в «Требует внимания»).
+   Выполненная цель по-прежнему единственное, что засчитывается в «Пройдено N из 4».
+
    Состояние сценария внутри партии: S.scen = { v, id, at (день старта), flags }.
    Пока сценарий не выбран — состояния нет (обычная игра и боты не меняются).
    Числа и тексты — src/data/scenarios.js (BK.SCEN). Интерфейс — src/ui/scenario-ui.js.
@@ -145,10 +151,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
       st.flags.expired = true;
       // срок вышел: сразу считаем, спасена история или нет — вердикт не зависит от того, когда вызван finish()
       try { st.flags.saved = !!(d.done && d.done(S, st)); } catch (e) { st.flags.saved = false; }
-      if (S.notify) S.notify.push({ type: 'scen', phase: st.flags.saved ? 'saved' : 'expired', id: st.id, days: d.days });
+      if (S.notify) S.notify.push({ type: 'scen', phase: st.flags.saved ? 'saved' : 'expired', id: st.id, days: d.days, goal: d.goal || '', at: st.at, day: S.day });
     }
   }
-  function failed(S) { const st = state(S); if (!st || !st.expired) return false; const d = info(st.id); return !!(d && d.fail && d.fail(S, st)); }
+  // Провал истории: срок вышел, а цель к сроку не выполнена (или партия уже проиграна).
+  // Зовут: интерфейс (src/ui/scenario-ui.js — окно «История не сложилась» и строка
+  // в «Требует внимания») и разбор прогресса; до этого функция не вызывалась никем,
+  // поэтому игрок не видел, что история проиграна, — партия просто шла дальше.
+  function failed(S) {
+    const st = state(S);
+    if (!st || !st.id) return false;                                   // обычная игра — провала истории нет
+    if (st.expired && !(st.flags && st.flags.saved)) return true;      // срок вышел, цель не выполнена
+    const d = info(st.id);                                             // партия проиграна — история тоже
+    try { return !!(S && S.lost && d && d.fail && d.fail(S, st)); } catch (e) { return !!(S && S.lost); }
+  }
 
   /* ---------------- итог: отметить пройденное ---------------- */
   // Вызывается, когда партия закончилась (победа, банкротство, финал истории):

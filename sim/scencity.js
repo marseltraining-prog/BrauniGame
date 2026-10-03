@@ -22,7 +22,7 @@ process.env.BK_STORY = process.env.BK_STORY || '1'; // сюжет включён
 const BK = require('./load');
 const E = BK.Engine;
 const SC = BK.Scenario, ST = BK.Story, CFG = BK.CFG;
-const years = +(process.argv[2] || 16), seeds = +(process.argv[3] || 3);
+const years = +(process.argv[2] || 20), seeds = +(process.argv[3] || 3); // 20 лет — чтобы победа в целевом коридоре 14–16 успела случиться
 const { play } = require('./bot');
 
 let bad = 0;
@@ -305,8 +305,15 @@ storyPass();
 const P = pacePass();
 const C = cityOnlyPass();
 const mosYear = med(P.moscow.wins);
-ok(mosYear != null && mosYear >= 14 && mosYear <= 16,
-  'медиана победы сценария «Старт в Москве» — в целевом коридоре 14–16 лет', mosYear == null ? 'нет побед' : `${mosYear} года`);
+// Коридор 14–16 лет можно проверить только горизонтом не короче него: при `12 3`
+// победы в принципе не наступают, и это не ошибка баланса, а короткий прогон.
+if (years >= 14) {
+  ok(mosYear != null && mosYear >= 14 && mosYear <= 16,
+    'медиана победы сценария «Старт в Москве» — в целевом коридоре 14–16 лет', mosYear == null ? 'нет побед' : `${mosYear} года`);
+} else {
+  console.log(`  — медиана победы «Старта в Москве»: горизонт ${years} лет короче коридора 14–16, проверка не считается`
+    + ` (для неё — node sim/scencity.js 20 3)`);
+}
 
 const m5 = P.moscow.y5, u5 = P.ufa.y5;
 console.log('\n# Итог: Москва против Уфы (год 5, бот good, сюжет выключен)');
@@ -321,7 +328,13 @@ const [revM, revU] = cmp('выручка месяца', ' млн ₽', (x) => Ma
 ok(chkM > chkU * 1.3, 'в Москве чек выше уфимского', `${chkM} против ${chkU} ₽`);
 ok(rentM > rentU, 'в Москве аренда съедает больше выручки', `${rentM} против ${rentU} %`);
 console.log(`  год победы: Москва с историей ${med(P.moscow.wins) || '—'} против Москвы без правил истории ${med(C.wins) || '—'} (Уфа ${med(P.ufa.wins) || '—'})`);
-ok(med(C.wins) < med(P.moscow.wins), 'правила «Старта в Москве» делают историю честнее — медленнее, чем просто московский чек', `${med(C.wins)} против ${med(P.moscow.wins)}`);
+// «С историей медленнее, чем просто московский чек» видно только там, где история успевает выиграть:
+// при коротком горизонте (например, `12 3`) сравнить нечего — это не провал баланса.
+if (med(P.moscow.wins) != null) {
+  ok(med(C.wins) < med(P.moscow.wins), 'правила «Старта в Москве» делают историю честнее — медленнее, чем просто московский чек', `${med(C.wins)} против ${med(P.moscow.wins)}`);
+} else {
+  console.log('  — сравнение «с историей медленнее»: с историей на этом горизонте побед нет, проверка не считается');
+}
 void revM; void revU;
 
 console.log(bad ? `\n✗ проверок не прошло: ${bad}` : '\n✓ все проверки города истории прошли');
