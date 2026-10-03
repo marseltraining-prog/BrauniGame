@@ -82,9 +82,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = (S.history || []).slice(-3);
     const m = h.length ? h[h.length - 1] : null;
     let size = 0, guests = 0, rev = 0;
-    for (const st of list_) { const sz = (BK.CFG.SIZES || {})[st.size] || {}; size += sz.area || sz.staffMax * 30 || 0; guests += (st.m && st.m.checks) || 0; rev += (st.m && st.m.rev) || 0; }
+    for (const st of list_) { const sz = (BK.CFG.SIZES || {})[st.size] || {}; size += sz.area || sz.staffMax * 30 || 0; guests += ((st.m && st.m.checks) || 0) * (S.day % 30.44 ? 30.44 / Math.max(1, S.day % 30.44) : 1); rev += (st.m && st.m.rev) || 0; } // гостей за неполный месяц приводим к полному
     const n = list_.length || 1;
-    const avgCheck = m && m.checks ? m.rev / m.checks : 0;
+    const avgCheck = m && m.pnl && m.pnl.checks ? m.rev / m.pnl.checks : 0;   // чеки лежат в m.pnl (в самой записи их нет)
     const market = (S.macro && S.macro.avgCheck) || (K().MARKET_CHECK * (S.macro ? S.macro.priceLevel : 1));
     return {
       n: list_.length,
