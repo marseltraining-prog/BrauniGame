@@ -115,6 +115,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function progressHtml() { const p = progress(); return `${p.played.length} из ${p.total}`; }
 
+  /* ---------------- подключение к движку ---------------- */
+  function wrap() {
+    const Eng = BK.Engine; if (!Eng || Eng.__scen) return;
+    Eng.__scen = true;
+    const ot = Eng.tick;
+    Eng.tick = function (S) {
+      const pre = S ? S.day : null;
+      const r = ot.apply(this, arguments);
+      if (S && S.day !== pre) { try { day(S); } catch (e) { /* сценарий не должен ломать игру */ } }
+      return r;
+    };
+  }
+  if (BK.Engine) wrap();
+
   BK.Scenario = {
     all, info, left, played, done, markDone, resetDone, pick, progress, progressHtml,
     state, ensure, set, current, applyStart, day, failed, finish,

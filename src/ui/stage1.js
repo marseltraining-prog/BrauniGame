@@ -506,7 +506,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s = S(); if (!s) return;
     const name = s.company, diff = s.difficulty, rival = !!(s.rival && s.rival.enabled), old = s;
     close();
-    APP().newGame(name, diff, { rival });
+    APP().newGame(name, diff, { rival, scen: (S() && S().scen && S().scen.id) || 'random' });
     const n = S(); if (!n) return;
     S1().copyCarry(old, n);
     if (skipNet) { n.stage1 = { v: 1, status: 'skipped' }; APP().refresh(); APP().save(); APP().toast('Своя сеть', 'Стартовый капитал и первая точка — как в обычной игре.', 'good'); return; }

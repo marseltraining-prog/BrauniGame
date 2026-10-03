@@ -529,7 +529,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s = S(); if (!s) return;
     const name = s.company, diff = s.difficulty, rival = !!(s.rival && s.rival.enabled), tut = !!(s.prologue && s.prologue.tutOn);
     close();
-    begin(name, diff, { rival, strat: (s.strat && s.strat.chosen && s.strat.id) || '' });   // перезапуск пролога сохраняет выбранный путь
+    begin(name, diff, { rival, strat: (s.strat && s.strat.chosen && s.strat.id) || '', scen: (s.scen && s.scen.id) || 'random' });   // перезапуск пролога сохраняет выбранный путь
     const s2 = S(); if (s2 && s2.prologue) s2.prologue.tutOn = tut;
   }
 
