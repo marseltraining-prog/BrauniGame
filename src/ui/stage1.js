@@ -13,7 +13,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const S1 = () => BK.Stage1, E = () => BK.Engine, C = () => BK.CFG.STAGE1, APP = () => BK.App;
   const $ = (s, el) => (el || document).querySelector(s);
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc0 = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  /* Местный слой (src/data/story-cast.js): в «Своей кофейне» вместо «Калача», «Семи рек» и Рашида
+     читаются наставник, банк и пекарня города партии. Для Уфы swap() возвращает строку как есть. */
+  const SW = (t) => { const C = BK.STORY_CAST; if (!C || t == null) return t; try { return C.swapNow ? C.swapNow(String(t)) : C.swap(S(), String(t)); } catch (e) { return t; } };
+  const esc = (s) => esc0(SW(s));
   const fm = (v) => BK.fmtMoney(Math.round(v));
   const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
   const rub = (v) => Math.round(v).toLocaleString('ru-RU') + ' ₽';
@@ -320,11 +324,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <dl class="sp-dl"><div><dt>Площадь</dt><dd>${sp.area} м²</dd></div><div><dt>Аренда</dt><dd>${fm(sp.area * sp.rentM2)}/мес</dd></div><div><dt>Поток мимо</dt><dd>${sp.traffic.toLocaleString('ru-RU')} чел./день</dd></div><div><dt>Кошелёк района</dt><dd>${rub(sp.solv * pl())} на чек</dd></div>
           <div><dt>Гостей в день</dt><dd>≈ ${pv.guests} <small>через 5 мес.</small></dd></div><div><dt>Средний чек</dt><dd>≈ ${rub(pv.check)}</dd></div></dl>
         <div class="sp-dp" aria-label="Когда идут люди: утро ${Math.round(dp.m * 100)} %, обед ${Math.round(dp.d * 100)} %, вечер ${Math.round(dp.e * 100)} %">${bar('m', 'утро')}${bar('d', 'обед')}${bar('e', 'вечер')}<span class="sp-hrs">Часы: ${sp.hours.map((h) => esc(C().HOURS[h].name)).join(' / ')}</span></div>
-        <div class="sp-cost"><span>Отделка ${fm(c.fit)} · оборудование ${fm(c.equip)}${c.machine ? ` <em>(кофемашина Рашида −${fm(c.machine)})</em>` : ''} · депозит ${fm(c.rent)} · закупка ${fm(c.stock)}${c.thrift ? ` · торг −${fm(c.thrift)}` : ''}</span><b>Открыть: ${fm(c.total)}</b><span class="${c.left < 200000 ? 'dn' : ''}">Останется: ${fm(c.left)}${c.left < 200000 ? ' — мало на первые месяцы' : ''}</span></div>
+        <div class="sp-cost"><span>Отделка ${fm(c.fit)} · оборудование ${fm(c.equip)}${c.machine ? ` <em>(${esc0(SW('кофемашина Рашида'))} −${fm(c.machine)})</em>` : ''} · депозит ${fm(c.rent)} · закупка ${fm(c.stock)}${c.thrift ? ` · торг −${fm(c.thrift)}` : ''}</span><b>Открыть: ${fm(c.total)}</b><span class="${c.left < 200000 ? 'dn' : ''}">Останется: ${fm(c.left)}${c.left < 200000 ? ' — мало на первые месяцы' : ''}</span></div>
         <button type="button" class="btn primary block" data-s1="pick" data-v="${i}" ${c.left < 0 ? `disabled title="Не хватает ${fm(-c.left)}"` : ''}>${c.left < 0 ? `Не хватает ${fm(-c.left)}` : 'Открыть здесь'}</button></article>`;
     }).join('');
     const f = (s.story && s.story.f) || {};
-    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2><p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — кредит «Семь рек»)` : ''}${t.flags.rashidIn ? ` — с долей Рашида ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', Гуля ждёт звонка' : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
+    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2><p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — ${esc0(SW('кредит «Семь рек»'))})` : ''}${t.flags.rashidIn ? ` — ${esc0(SW('с долей Рашида'))} ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', ' + esc0(SW('Гуля ждёт звонка')) : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
   }
 
   /* ---- основной экран ---- */
@@ -341,10 +345,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="s1-shop" id="s1Shop"><div class="s1-shopov" id="s1ShopOv">${shopOv(t, st, s)}</div></div>
       <div class="s1-q"><span>${td.closed ? 'Сегодня закрыто' : `загрузка ${Math.round(load * 100)} %`}${lost ? ' · ' + lost : ''}</span><span>${esc(C().HOURS[t.hours].name)}</span></div>
       <div class="s1-cards"><section class="pc s1-hours"><h3>Сегодня по частям дня <small>гостей</small></h3><div class="s1-hbs">${bars}</div>${load > 1 ? '<p class="s1-note dn">В пик очередь теряет гостей — нужен ещё человек за стойкой.</p>' : ''}</section>
-      <section class="pc s1-th"><h3>Мысли гостей</h3><ul class="s1-thl">${th || '<li class="muted">Пока никого</li>'}</ul>${t.flags.dvorOpen ? `<p class="s1-note">Напротив — «Хлебный двор»${storyLenin(s)}</p>` : t.dvorDay ? '<p class="s1-note">На пустой витрине напротив: «Хлебный двор. Скоро!»</p>' : ''}</section>
+      <section class="pc s1-th"><h3>Мысли гостей</h3><ul class="s1-thl">${th || '<li class="muted">Пока никого</li>'}</ul>${t.flags.dvorOpen ? `<p class="s1-note">${esc0(SW('Напротив — «Хлебный двор»'))}${storyLenin(s)}</p>` : t.dvorDay ? `<p class="s1-note">${esc0(SW('На пустой витрине напротив: «Хлебный двор. Скоро!»'))}</p>` : ''}</section>
       <section class="pc s1-feed"><h3>Что происходит</h3><ul>${fd}</ul></section></div>`;
   }
-  function storyLenin(s) { const l = s.story && s.story.f.lenin; return l === 'pact' ? ' · договор с Олегом: хлеб и пироги — у них' : l === 'fight' ? ' · «битва на улице»' : ''; }
+  function storyLenin(s) { const l = s.story && s.story.f.lenin; return l === 'pact' ? SW(' · договор с Олегом: хлеб и пироги — у них') : l === 'fight' ? SW(' · «битва на улице»') : ''; }
   const TABS = [['shop', 'Точка'], ['menu', 'Меню'], ['team', 'Команда'], ['money', 'Деньги']];
   function rightHtml(s) {
     const tabs = `<nav class="s1-tabs" role="tablist">${TABS.map(([k, n]) => `<button type="button" role="tab" data-s1="tab" data-v="${k}" aria-selected="${ui.tab === k}">${n}</button>`).join('')}</nav>`;
@@ -365,7 +369,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <h4>Вечерняя скидка</h4>${seg('disc', W.disc, BK.CFG.EVE_DISCOUNTS.map((d, i) => [i, d ? `−${Math.round(d * 100)} %` : 'Нет']))}</section>
       <section class="s1-sec s1-kv"><div><span>Рейтинг на картах</span><b>${rt.toFixed(2).replace('.', ',')}★</b></div><div><span>Постоянные гости</span><b>${Math.round(t.reg)}</b></div><div><span>О вас знают</span><b>${Math.round(t.aware * 100)} %</b></div><div><span>Ремонт</span><b>${st.repair ? esc(BK.CFG.REPAIRS[st.repair].name) : 'нет'}</b></div></section>
       ${rep ? `<section class="s1-sec"><button type="button" class="btn block" data-s1="repair" ${st.status !== 'open' || s.cash < rc ? 'disabled' : ''}>Ремонт «${esc(rep.name)}» · ${fm(rc)} · ${rep.days} дн. закрыто</button><p class="s1-hint">Уютнее — выше рейтинг и чек.</p></section>` : ''}
-      <section class="s1-sec s1-second"><h4>Вторая вывеска</h4><p class="s1-hint">${sw ? esc(sw) : 'Эльвира готова: деньги на цех и вторую точку. Кофейня станет точкой №1 сети.'}</p><button type="button" class="btn ${sw ? '' : 'primary '}block" data-s1="second" ${sw ? 'disabled' : ''}>Открыть вторую точку</button></section>`;
+      <section class="s1-sec s1-second"><h4>Вторая вывеска</h4><p class="s1-hint">${sw ? esc(sw) : esc0(SW('Эльвира готова: деньги на цех и вторую точку. Кофейня станет точкой №1 сети.'))}</p><button type="button" class="btn ${sw ? '' : 'primary '}block" data-s1="second" ${sw ? 'disabled' : ''}>Открыть вторую точку</button></section>`;
   }
   function tabMenu(s) {
     const t = s.stage1, sum = BK.ProdStats ? BK.ProdStats.summary(s) : null, rows = {};
@@ -391,7 +395,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       : `<li class="s1-emp"><span class="s1-av sm" style="--h:${(e.name.charCodeAt(0) * 37) % 360}">${esc(e.name[0])}</span><div><b>${esc(e.name)}</b><small>${esc(BK.STAFF_LVL_NAMES[e.lvl])} · ${fm(E().salaryOf(s, e.lvl))}/мес</small></div><span class="face" title="Настроение ${Math.round(e.mood)}">${face(e.mood)}</span>${e.lvl < BK.CFG.MAX_LVL ? `<button type="button" class="btn sm" data-s1="train" data-v="${e.id}" ${s.cash < E().trainCost(s, e.lvl + 1) ? 'disabled' : ''}>Учить · ${fm(E().trainCost(s, e.lvl + 1))}</button>` : ''}</li>`).join('');
     const inc = st.incoming.map((x) => `<li class="s1-emp inc"><span class="s1-av sm" style="--h:200">${esc(x.p.name[0])}</span><div><b>${esc(x.p.name)}</b><small>выходит через ${Math.max(0, x.day - s.day)} дн.</small></div></li>`).join('');
     const sick = t.hero ? `<li class="s1-emp inc">${portrait('hero')}<div><b>Вы болеете</b><small>вернётесь через ${Math.max(0, t.sick - s.day)} дн.</small></div></li>` : '';
-    const gl = S1().gulyaAvail(s) ? `<li class="s1-cand gulya">${portrait('gulya')}<div><b>Гульнара Сафина</b><small>из «Калача» · уровень ${S1().gulyaLvl(s)} · ждёт звонка${s.story && s.story.f.gulya === 'share' ? ' · совладелица 10 %' : ''}</small></div><button type="button" class="btn sm primary" data-s1="gulya" ${hw ? `disabled title="${esc(hw)}"` : ''}>Позвать</button></li>` : '';
+    const gl = S1().gulyaAvail(s) ? `<li class="s1-cand gulya">${portrait('gulya')}<div><b>${esc0(SW('Гульнара Сафина'))}</b><small>${esc0(SW('из «Калача»'))} · уровень ${S1().gulyaLvl(s)} · ждёт звонка${s.story && s.story.f.gulya === 'share' ? ' · совладелица 10 %' : ''}</small></div><button type="button" class="btn sm primary" data-s1="gulya" ${hw ? `disabled title="${esc(hw)}"` : ''}>Позвать</button></li>` : '';
     const cands = s.candidates.slice(0, 4).map((c) => `<li class="s1-cand"><span class="s1-av sm" style="--h:${(c.name.charCodeAt(0) * 53) % 360}">${esc(c.name[0])}</span><div><b>${esc(c.name)}</b><small>${esc(BK.STAFF_LVL_NAMES[c.lvl])} · ${fm(E().salaryOf(s, c.lvl))}/мес</small></div><button type="button" class="btn sm" data-s1="hire" data-v="${c.id}" ${hw || s.cash < E().hireCost(s, c.lvl) ? `disabled title="${esc(hw || 'Не хватает денег')}"` : ''}>Нанять · ${fm(E().hireCost(s, c.lvl))}</button></li>`).join('');
     const pk = s.pay.seller / s.market.seller;
     return `<section class="s1-sec"><h4>За стойкой <small>${st.staff.length} из ${BK.CFG.SIZES.small.staffMax}</small></h4><ul class="s1-el">${rows}${sick}${inc}</ul>
@@ -406,7 +410,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const mon = t.months.slice(-6).map((m) => `<li><span>${cap(E().MONTHS[m.m]).slice(0, 3)}</span><span class="mb"><i class="${m.profit >= 0 ? 'up' : 'dn'}" style="width:${Math.min(100, Math.abs(m.profit) / 4000).toFixed(0)}%"></i></span><b class="${m.profit >= 0 ? 'up' : 'dn'}">${fmS(m.profit)}</b></li>`).join('');
     const lw = S1().loanWhy(s);
     return `<section class="s1-sec s1-kv"><div><span>Счёт</span><b class="${s.cash < 0 ? 'dn' : ''}">${fm(s.cash)}</b></div><div><span>Резерв</span><b>${fm(s.reserve)}</b></div><div><span>Кредит</span><b>${fm(s.loan)}</b></div><div><span>Ставка</span><b>${(E().loanRate(s) * 100).toFixed(1).replace('.', ',')} %</b></div></section>
-      <section class="s1-sec"><h4>Кредит «Семь рек» <small>лимит для одной кофейни ${fm(t.loanMax)}</small></h4><div class="s1-row"><button type="button" class="btn" data-s1="loan" ${lw ? `disabled title="${esc(lw)}"` : ''}>Взять ${fm(Math.min(200000, S1().loanRoom(s)) || 0)}</button><button type="button" class="btn" data-s1="repay" ${s.loan > 0 && s.cash > 0 ? '' : 'disabled'}>Погасить ${fm(Math.min(200000, s.loan))}</button></div>${lw ? `<p class="s1-hint">${esc(lw)}</p>` : ''}</section>
+      <section class="s1-sec"><h4>${esc0(SW('Кредит «Семь рек»'))} <small>лимит для одной кофейни ${fm(t.loanMax)}</small></h4><div class="s1-row"><button type="button" class="btn" data-s1="loan" ${lw ? `disabled title="${esc(lw)}"` : ''}>Взять ${fm(Math.min(200000, S1().loanRoom(s)) || 0)}</button><button type="button" class="btn" data-s1="repay" ${s.loan > 0 && s.cash > 0 ? '' : 'disabled'}>Погасить ${fm(Math.min(200000, s.loan))}</button></div>${lw ? `<p class="s1-hint">${esc(lw)}</p>` : ''}</section>
       <section class="s1-sec"><h4>Прошлый месяц</h4>${pnl}${t.share ? `<p class="s1-hint">Доли партнёров (${Math.round(t.share * 100)} % прибыли) списываются 1-го числа.</p>` : ''}</section>
       ${mon ? `<section class="s1-sec"><h4>По месяцам</h4><ul class="s1-mon">${mon}</ul></section>` : ''}`;
   }
@@ -483,7 +487,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (snd.msId !== f.id) { snd.msId = f.id; play('sparkle'); } // веха главы — искорка (один раз на веху)
     const last = t.months[t.months.length - 1];
     const big = f.id === 'plus' && last ? `<div class="s1-msv up">${fmS(last.profit)}<small>прибыль за ${esc(E().MONTHS[last.m])}</small></div>` : f.id === 'g100' ? '<div class="s1-msv">100<small>гостей за день</small></div>' : f.id === 'r45' ? '<div class="s1-msv">4,5★<small>на картах</small></div>' : '';
-    const sms = { plus: ['Мама', 'Я видела, у вас очередь была. Горжусь. Покушай.'], g100: ['Семён Аркадьевич', 'Сто человек за день? Это уже не кофейня, это остановка. Рекомендую.'], r45: ['Эльвира', 'Четыре с половиной звезды. Банки такое тоже читают.'], hire: ['Мама', 'Теперь ты начальник? Не обижай людей. И покушай.'], open: ['Ильдар', 'Открылись! Я уже выложил сторис.'], streak: ['Эльвира', 'Три месяца в плюсе. Приходите — поговорим о второй точке.'] }[f.id];
+    const sms0 = { plus: ['Мама', 'Я видела, у вас очередь была. Горжусь. Покушай.'], g100: ['Семён Аркадьевич', 'Сто человек за день? Это уже не кофейня, это остановка. Рекомендую.'], r45: ['Эльвира', 'Четыре с половиной звезды. Банки такое тоже читают.'], hire: ['Мама', 'Теперь ты начальник? Не обижай людей. И покушай.'], open: ['Ильдар', 'Открылись! Я уже выложил сторис.'], streak: ['Эльвира', 'Три месяца в плюсе. Приходите — поговорим о второй точке.'] }[f.id];
+    const sms = sms0 ? [SW(sms0[0]), SW(sms0[1])] : sms0; // СМС вехи — от местных людей
     const nxt = S1().MS.find((m) => t.ms[m.id] == null);
     $('#s1Ov').innerHTML = `<div class="s1-ovbg" data-s1="msClose"><div class="s1-card s1-msc" role="dialog" aria-modal="true" aria-labelledby="s1MsT" tabindex="-1"><span class="s1-star" aria-hidden="true">★</span>
       <span class="s1-ey pos">Веха главы · ${n} из ${L}</span><h2 id="s1MsT">${esc(f.name)}</h2>${big}
@@ -520,7 +525,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rw = BK.RewindUI ? BK.RewindUI.blockHtml(s, true) : '';
     $('#s1Ov').innerHTML = `<div class="s1-ovbg"><div class="s1-card s1-final" role="dialog" aria-modal="true" aria-labelledby="s1FinT" tabindex="-1">
       <span class="s1-ey neg">Глава 1 · ${L.length} ${plural(L.length, 'месяц', 'месяца', 'месяцев')} работы</span><h2 id="s1FinT">Кофейня закрылась</h2>
-      <p class="s1-ct">Деньги кончились, банк больше не даёт. Мама: «Ничего. Рашид тоже не с первого раза. Приходи ужинать». Это не конец истории — можно вернуться назад и сыграть иначе.</p>
+      <p class="s1-ct">Деньги кончились, банк больше не даёт. ${esc0(SW('Мама: «Ничего. Рашид тоже не с первого раза. Приходи ужинать».'))} Это не конец истории — можно вернуться назад и сыграть иначе.</p>
       <ul class="s1-tips">${tips.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
       ${rw}
       <div class="s1-fb"><button type="button" class="btn block" data-s1="retry">Открыть кофейню заново</button><button type="button" class="btn block" data-s1="skipNet">Начать сразу со своей сети</button></div></div></div>`;
@@ -532,7 +537,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (snd.fin !== 'main') { snd.fin = 'main'; play('fanfare'); } // глава пройдена — фанфары, дальше своя сеть
     close();
     APP().refresh(); APP().save();
-    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1. На счёте ${fm(nx.cash)}${nx.fund ? ` (программа «Семь рек» ${fm(nx.fund)})` : ''}. Выберите помещение под цех.`, 'good');
+    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1. На счёте ${fm(nx.cash)}${nx.fund ? ` (${SW('программа «Семь рек»')} ${fm(nx.fund)})` : ''}. Выберите помещение под цех.`, 'good');
   }
   function restart(skipNet) {
     const s = S(); if (!s) return;

@@ -447,25 +447,40 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s0 = pickStreet(st), s1 = bareStreet(st[1] || st[0]);
     const main = st.find((s) => /пр\.|проспект|шоссе/i.test(s)) || st[0];
     const sleep = (ds.find((d) => d[1] === 'sleep') || ds[ds.length - 1] || ['Центр'])[0];
-    const f = forms(sleep, 'inan');
+    // второй район — только для текстов, где Уфа названа двумя районами сразу («от Черниковки до Дёмы»)
+    const far = (ds.find((d) => d[1] === 'far' && d[0] !== sleep) || ds.find((d) => d[0] !== sleep) || [sleep])[0];
+    const f = forms(sleep, 'inan'), f2 = forms(far, 'inan');
+    const mainNom = bareStreet(main);
     return { street: s0, streetIn: /(ая|яя)$/.test(s0) ? wordOne(s0, 'p', 'inan-f') : s0, route: s0 + ' — ' + s1,
-      mainIn: prepStreet(main), districtNom: sleep, districtGen: f.g, districtAcc: f.a, districtIns: f.i, districtPre: f.p };
+      mainIn: prepStreet(main), mainNom: mainNom,
+      districtNom: sleep, districtGen: f.g, districtAcc: f.a, districtIns: f.i, districtPre: f.p,
+      district2Nom: far, district2Gen: f2.g, district2Acc: f2.a, district2Pre: f2.p };
   }
   const TOPO_KEYS = (t) => [
     ['Пушкина — Ленина', t.route],
     ['улица Пушкина', 'улица ' + t.street],
     ['На Пушкина', 'На ' + t.streetIn],
     ['на Пушкина', 'на ' + t.streetIn],
+    ['проспект Октября', 'проспект ' + t.mainNom],
+    ['Проспект Октября', 'Проспект ' + t.mainNom],
     ['проспекте Октября', t.mainIn],
+    ['Проспекте Октября', t.mainIn],
+    ['от Черниковки до Дёмы', 'от ' + t.districtGen + ' до ' + (t.district2Gen || t.districtGen)],
     ['Черниковки', t.districtGen],
     ['Черниковке', t.districtPre],
     ['Черниковку', t.districtAcc || t.districtNom],
     ['Черниковкой', t.districtIns || t.districtNom],
     ['Черниковка', t.districtNom],
+    ['Дёмы', t.district2Gen || t.districtGen],
+    ['Дёме', t.district2Pre || t.districtPre],
+    ['Дёму', t.district2Acc || t.districtNom],
+    ['Дёма', t.district2Nom || t.districtNom],
     ['из Сипайлово', 'из ' + t.districtGen],
     ['Сипайлова', t.districtGen],
     ['Сипайлове', t.districtPre],
     ['Сипайлово', t.districtNom],
+    ['Инорс', t.districtNom],
+    ['Шакша', t.district2Nom || t.districtNom],
     ['Пушкина', t.street],
   ];
 
@@ -506,6 +521,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return 'ufa';
   }
   function resolve(S) { return record(cityOf(S)); }
+
+  /* ---------- город партии, когда состояния под рукой нет (пролог, стадия 1, стартовый экран) ----------
+     homeId ставит install() на входе в новую игру (BK.Engine.newGame) и при загрузке сохранения
+     (BK.Corp.applyGlobals): так во втором акте, где активный город меняется, «свой» город остаётся
+     прежним. Если игры ещё нет вовсе (стартовый экран) — смотрим BK.CITY (там, как и раньше, Уфа). */
+  let homeId = null;
+  function noteHome(id) {
+    const by = CITY_DEF();
+    const c = id && by[id] ? id : null;
+    if (c) homeId = c === 'ufa' ? null : c;
+  }
+  function cityIdNow() {
+    if (homeId && CITY_DEF()[homeId]) return homeId;
+    const c = (BK.CITY && BK.CITY.id) || null;
+    const by = CITY_DEF();
+    if (c && by[c] && (c === 'ufa' || MANUAL[c] || REGION[c])) return c;
+    return 'ufa';
+  }
+  const chainName = (id) => record(id || 'ufa').chains.rivalChain;
+  const chainShortName = (id) => { const r = record(id || 'ufa').chains; return r.chainShort || r.rivalChain; };
+  const bankName = (id) => record(id || 'ufa').chains.bank;
+  const shopName = (id) => record(id || 'ufa').chains.shop;
+  const personOf = (id, role) => (record(id || 'ufa').people[role] || null);
+  // Имя сети-соперника для интерфейса вне сюжета (вкладка «Рынок», CFG.RIVAL_NAME, второй акт)
+  const rivalNow = () => chainName(cityIdNow());
+
 
   // Активный город сцены (как subCity в src/ui/story-ui.js): чужой, если сеть уже в других городах.
   function sceneCity(S) {
@@ -585,26 +626,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
       put(lastWord(a) + ' ' + a.short, lastWord(b) + ' ' + b.short);
     }
     for (const k of ['rivalChain', 'chainShort', 'bank', 'shop']) both(chainForms(src.chains[k] || ''), chainForms(dst.chains[k] || ''));
-    both(CITY_FORMS.ufa, CITY_FORMS[id] || CITY_FORMS.ufa);
+    // Формы города: у Уфы дательный и предложный совпадают («Уфе»), поэтому для местных названий
+    // берём предложный — он и стоит в текстах («в Уфе», «районах Уфы»); дательный — только с «к».
+    const cf = CITY_FORMS[id] || CITY_FORMS.ufa;
+    put(CITY_FORMS.ufa.n, cf.n); put(CITY_FORMS.ufa.g, cf.g); put(CITY_FORMS.ufa.a, cf.a);
+    put(CITY_FORMS.ufa.i, cf.i); put(CITY_FORMS.ufa.p, cf.p);
+    put('к Уфе', 'к ' + cf.d); put('К Уфе', 'К ' + cf.d);
     if (dst.topo) for (const [a, b] of TOPO_KEYS(dst.topo)) put(a, b);
     out.sort((x, y) => y[0].length - x[0].length || (x[0] < y[0] ? -1 : 1));
     const map = Object.create(null), keys = [];
     for (const [a, b] of out) if (!(a in map) && !/[[\](){}*+?.^$|\\]/.test(a)) { map[a] = b; keys.push(a); }
     if (!keys.length) return null;
+    /* Слова местных имён, названий и топонимов («значения» замены). Текст проходит слой не всегда
+       один раз: пролог и стадия 1 подставляют имена при записи, а интерфейс — ещё раз при отрисовке;
+       летопись и «Рынок» тоже смотрят на один и тот же текст. Без этого правила второй проход
+       принимал бы местное имя за уфимское («Юрий Аркадьевич» → «Юрий Ратнер»). Поэтому слово,
+       которое уже есть среди местных, не заменяется: подстановка идемпотентна. */
+    const local = Object.create(null);
+    for (const x of out) for (const w of String(x[1]).split(/[^0-9A-Za-zА-Яа-яЁё]+/)) if (w.length > 2) local[w] = 1;
     const re = new RegExp('(^|[^0-9A-Za-zА-Яа-яЁё])(' + keys.join('|') + ')(?![0-9A-Za-zА-Яа-яЁё])', 'g');
-    return { re, map };
+    return { re, map, local };
   }
   const pairCache = {};
-  function swap(S, txt) {
+  function swapBy(id, txt) {
     let s = String(txt == null ? '' : txt);
-    if (!s) return s;
-    const id = cityOf(S);
-    if (id === 'ufa') return s;
+    if (!s || !id || id === 'ufa') return s;
     let P = pairCache[id];
     if (P === undefined) P = pairCache[id] = pairsFor(id);
     if (!P) return s;
-    return s.replace(P.re, (m, pre, w) => pre + (P.map[w] || w));
+    return s.replace(P.re, (m, pre, w) => pre + ((P.local[w] || !(w in P.map)) ? w : P.map[w]));
   }
+  function swap(S, txt) { return swapBy(cityOf(S), txt); }
+  // то же, но когда состояния под рукой нет (пролог, стадия 1, стартовый экран): город — из homeId/BK.CITY
+  function swapNow(txt) { return swapBy(cityIdNow(), txt); }
 
   /* ---------- герой по городу: подпись говорящего и роль ---------- */
   const GUEST_IDS = { maltsev: 1, albina: 1, radik: 1, nina: 1, aliya: 1, zoya: 1, gabdullai: 1, artur: 1 };
@@ -620,9 +674,93 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return out;
   }
 
+  /* =====================================================================
+     8. ПОДКЛЮЧЕНИЕ К ДВИЖКУ (install) — вызывается из src/prologue.js, который
+     грузится после engine.js и corp.js и в браузере, и в Node.
+     Три обёртки, ни одна не трогает числа, ГСЧ и состояние Уфы:
+       • newGame            — запомнить город партии до rivalInit (имя сети-соперника
+                              берётся из CFG.RIVAL_NAME → он спрашивает rivalNow());
+       • Corp.applyGlobals  — то же при загрузке сохранения и при переезде во втором акте
+                              (активный город меняется, «свой» остаётся прежним);
+       • tick / resolveEvent — тексты событий (заголовок, текст, журнал) проходят swap,
+                              поэтому «ценовая война „Хлебного двора“» и «карантин в Уфе»
+                              читаются местно. Для Уфы swap возвращает строку как есть —
+                              тексты и прогоны ботов побайтно прежние.
+     ===================================================================== */
+  function swapEvent(S, ev) {
+    if (!ev || typeof ev !== 'object') return;
+    if (typeof ev.title === 'string') ev.title = swap(S, ev.title);
+    if (typeof ev.text === 'string') ev.text = swap(S, ev.text);
+  }
+  function swapFreshLog(S, head) {
+    const log = S && S.log; if (!log || !log.length) return;
+    for (let i = 0; i < log.length; i++) {
+      const it = log[i];
+      if (it === head) break;
+      if (it && typeof it.text === 'string') it.text = swap(S, it.text);
+    }
+  }
+  function localizeAfter(S, head) {
+    if (!S || cityOf(S) === 'ufa') return;                 // Уфа — эталон: ничего не меняем
+    try {
+      if (S.ev && S.ev.pending) swapEvent(S, S.ev.pending);
+      if (S.notify && S.notify.length) for (const n of S.notify) if (n && n.type === 'event' && n.ev) swapEvent(S, n.ev);
+      swapFreshLog(S, head);
+    } catch (e) { /* тексты не должны ломать день игры */ }
+  }
+  function install() {
+    const E = BK.Engine, Co = BK.Corp;
+    if (!E || typeof E.newGame !== 'function' || E.__castHome) return false;
+    E.__castHome = 1;
+    const origNew = E.newGame;
+    E.newGame = function (opts) {
+      noteHome((opts && opts.city) || 'ufa');              // город известен до rivalInit и до генерации предложений
+      return origNew.apply(this, arguments);
+    };
+    if (Co && typeof Co.applyGlobals === 'function' && !Co.__castHome) {
+      Co.__castHome = 1;
+      const origApp = Co.applyGlobals;
+      Co.applyGlobals = function (S) { noteHome((S && S.startCity) || 'ufa'); return origApp.apply(this, arguments); };
+    }
+    if (typeof E.tick === 'function' && !E.__castTick) {
+      E.__castTick = 1;
+      const origTick = E.tick;
+      E.tick = function (S) {
+        const head = S && S.log && S.log.length ? S.log[0] : null;
+        const r = origTick.apply(this, arguments);
+        localizeAfter(S, head);
+        return r;
+      };
+    }
+    // Летопись в окне «Летопись» (src/ui/story-ui.js) берёт названия глав из BK.Story.history —
+    // там «Уфа на двоих». Обёртка делает их местными; для Уфы swap возвращает строку как есть.
+    const ST = BK.Story;
+    if (ST && typeof ST.history === 'function' && !ST.__castHist) {
+      ST.__castHist = 1;
+      const origHist = ST.history;
+      ST.history = function (S) {
+        const h = origHist.apply(this, arguments);
+        try { if (h && h.chapters && cityOf(S) !== 'ufa') for (const c of h.chapters) c.name = swap(S, c.name); } catch (e) { /* летопись важнее */ }
+        return h;
+      };
+    }
+    if (typeof E.resolveEvent === 'function' && !E.__castEv) {
+      E.__castEv = 1;
+      const origEv = E.resolveEvent;
+      E.resolveEvent = function (S) {
+        const head = S && S.log && S.log.length ? S.log[0] : null;
+        const r = origEv.apply(this, arguments);
+        localizeAfter(S, head);
+        return r;
+      };
+    }
+    return true;
+  }
+
   BK.STORY_CAST = {
     CITY_FORMS, UFA, MANUAL, POOLS, REGION, ALL_ROLES, HERO_ROLE, GUEST_IDS,
     cityOf, resolve, record, hero, render, swap, vars, forms, wordOne,
     sceneCity, bestStore, districtOf, topoFor,
+    cityIdNow, noteHome, swapNow, chainName, chainShortName, bankName, shopName, personOf, rivalNow, install,
   };
 })();

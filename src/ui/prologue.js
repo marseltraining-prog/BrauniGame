@@ -11,7 +11,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const PR = () => BK.Prologue, C = () => BK.CFG.PROLOGUE, APP = () => BK.App;
   const $ = (s, el) => (el || document).querySelector(s);
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc0 = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  /* Местный слой (src/data/story-cast.js): в прологе вместо «Калача», «Семи рек» и Рашида читаются
+     наставник, банк и пекарня города партии. Для Уфы swap() возвращает строку как есть. */
+  const SW = (t) => { const C = BK.STORY_CAST; if (!C || t == null) return t; try { return C.swapNow ? C.swapNow(String(t)) : C.swap(S(), String(t)); } catch (e) { return t; } };
+  const esc = (s) => esc0(SW(s));
   const fm = (v) => BK.fmtMoney(Math.round(v));
   const fmS = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + BK.fmtMoney(Math.abs(Math.round(v)));
   const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
@@ -117,7 +121,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function startOpt() {
     const v = pref();
     const opt = (k, ic, t, d) => `<label class="pro-pk${v === k ? ' on' : ''}"><input type="radio" name="startmode" value="${k}"${v === k ? ' checked' : ''}><span class="pk-i" aria-hidden="true">${ic}</span><span class="pk-t"><b>${t}</b><small>${d}</small></span></label>`;
-    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', '15–30 мин · вы за стойкой у Рашида и копите на свою точку')}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
+    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', SW('15–30 мин · вы за стойкой у Рашида и копите на свою точку'))}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
   }
   function bindStart(el) {
     const btn = () => el.querySelector('#startForm button[type=submit]');
@@ -292,7 +296,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   function top(p) {
     const age = PR().age(p), job = C().JOBS[p.job].name;
-    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>пролог · «Калач» на Пушкина</small></span></div>
+    return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>${esc0(SW('пролог · «Калач» на Пушкина'))}</small></span></div>
       <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
       <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
@@ -308,7 +312,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function hpHint(p) { return p.hp < C().SICK_HP ? 'Силы на исходе: можно заболеть, начальник замечает ошибки. Ешьте нормально, меньше подработок.' : p.hp < 50 ? 'Устаёте. Нормальная еда и меньше подработок вернут силы.' : 'Силы в порядке.'; }
   function moodHint(p) { return p.mood < C().SPLURGE_MOOD ? 'Настроение на нуле — легко сорваться на покупку. Деньги в копилке и на вкладе целее.' : p.mood < 45 ? 'Грустно. Развлечения, отдых и удачные смены поднимут настроение.' : 'Настроение хорошее.'; }
-  function repHint(p) { return p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'; }
+  function repHint(p) { return SW(p.rep < C().REP_WARN ? 'Начальник недоволен — может уволить.' : 'Мнение Рашида о вас: растёт от доп. смен и удачных «Смен», падает от усталости и плохого настроения.'); }
   const beans = (v) => { const n = Math.min(5, 1 + Math.floor(v / 20)); return `<span class="pro-beans" aria-label="уровень ${n} из 5">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(5 - n)}</span>`; };
 
   // стойка «Калача» в пикселях (src/pixel/scenes.js): герой — настроение и силы, Рашид — мнение о вас, огонь и пар живые
@@ -318,7 +322,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function monthScene() {
     const slot = document.getElementById('proPxSlot'), p = Pp(); if (!slot || !p || !PX()) return;
     const d = { mode: 'month', heroEmo: heroEmo(p), heroDrop: p.hp < 45, job: p.job, rashidEmo: p.rep >= 72 ? 'smile' : p.rep < 38 ? 'angry' : 'neutral', gulyaEmo: (p.rel && p.rel.gulya > 20) ? 'happy' : 'smile' };
-    if (!ui.pxMonth) ui.pxMonth = BK.Px.stage({ cls: 'pro-pxc', fps: 8, label: 'Пекарня «Калач»: вы за стойкой, Рашид у печи, Гуля с противнем', height: (W) => (W < 200 ? 112 : 128), scale: (a) => (a >= 760 ? 3 : 2), minW: 150, maxW: 300, active: () => !ui.mode || ui.mode === 'card', draw: (b, t, W, H, dd) => BK.Px.scenes.kalach(b, t, W, H, dd) });
+    if (!ui.pxMonth) ui.pxMonth = BK.Px.stage({ cls: 'pro-pxc', fps: 8, label: SW('Пекарня «Калач»: вы за стойкой, Рашид у печи, Гуля с противнем'), height: (W) => (W < 200 ? 112 : 128), scale: (a) => (a >= 760 ? 3 : 2), minW: 150, maxW: 300, active: () => !ui.mode || ui.mode === 'card', draw: (b, t, W, H, dd) => BK.Px.scenes.kalach(b, t, W, H, dd) });
     const k = JSON.stringify(d);
     if (ui.pxMonth.slot !== slot || !ui.pxMonth.cv.isConnected) { ui.pxMonth.data = d; ui.pxMonth.attach(slot); }
     else if (k !== ui.pxMonthKey) ui.pxMonth.set(d);
@@ -386,7 +390,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else note = `Следующая смена придёт сама — <b>${when(list[done])}</b>. К ней можно быть не готовым.`;
     if (tired && done < list.length) note += ' Вы не выспались: гости будут нетерпеливее.';
     return `<div class="pro-shift" id="proShiftAnchor">
-      <div class="ps-top"><span class="ps-t"><span aria-hidden="true">☕</span> Смены в «Калаче»</span><span class="ps-c">${done} из ${list.length}</span></div>
+      <div class="ps-top"><span class="ps-t"><span aria-hidden="true">☕</span> ${esc0(SW('Смены в «Калаче»'))}</span><span class="ps-c">${done} из ${list.length}</span></div>
       <div class="ps-dots" role="img" aria-label="Смен пройдено: ${done} из ${list.length}">${dots}</div>
       <p class="ps-w">${note}</p>
       ${due ? `<button type="button" class="btn primary block pro-big pro-shiftbtn ready" data-pa="shift">Встать за стойку<small>смена ждёт вас · ${C().SHIFT_SEC} с</small></button>` : ''}
@@ -543,7 +547,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (cr.mentor) gains.push(`<li><span aria-hidden="true">🤝</span><span>${esc(M[cr.mentor])}</span></li>`);
       h = `<div class="pro-ovbg"><div class="pro-card pro-final won" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
         ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🏪</div>'}<span class="eyebrow pos">Пролог пройден · ${sm.months} мес.</span><h2 id="proFinT">Своя точка!</h2>
-        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} вы уходите из «Калача» с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
+        <p class="pcd-t">В ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')} ${esc0(SW('вы уходите из «Калача»'))} с ${fm(sm.sav)}${p.won && p.won.credit ? ' и одобренным кредитом' : ''}. ${BK.Stage1UI ? 'Дальше — своя кофейня: одна точка, всё руками. Потом — сеть.' : 'Дальше — своя сеть: цех, первая точка и весь город на карте.'}</p>
         <div class="pf-sms"><span class="pf-sms-h">СМС ночью · неизвестный номер</span>${esc(PR().hookSms(p))}</div>
         <h3>Что вы берёте с собой</h3><ul class="pf-gain">${gains.join('')}</ul>
         <details class="pf-det"><summary>Куда уходили деньги</summary><p class="pro-note">Заработано ${fm(sm.earned)}, отложено ${fm(sm.sav)}.</p>${where}</details>
@@ -558,7 +562,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!tips.length) tips.push('Копилка и вклад защищают деньги от срывов, а «Смена» и учёба быстрее ведут к повышению.');
       h = `<div class="pro-ovbg"><div class="pro-card pro-final life" role="dialog" aria-modal="true" aria-labelledby="proFinT" tabindex="-1">
         ${BK.Px && BK.Px.stage ? '<div class="pf-px" id="proFinPx"></div>' : '<div class="pf-hero" aria-hidden="true">🕰️</div>'}<span class="eyebrow neg">${sm.months / 12 | 0} лет спустя · ${sm.age} ${plural(sm.age, 'год', 'года', 'лет')}</span><h2 id="proFinT">Вы прожили жизнь, работая в найме</h2>
-        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, а Семён Аркадьевич всё так же берёт американо и правду. Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
+        <p class="pcd-t">Вы стали «${esc(sm.job.toLowerCase())}», вас любят гости, ${esc0(SW('а Семён Аркадьевич всё так же берёт американо и правду.'))} Заработано <b>${fm(sm.earned)}</b>, осталось <b>${fm(sm.sav)}</b>. Своя точка так и не открылась.</p>
         <h3>Куда ушли деньги</h3>${where}
         <ul class="pf-tips">${tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
         <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="retry">Попробовать заново</button><button type="button" class="btn block pro-big2" data-pa="skipMain">Начать сразу со своей сети</button></div></div></div>`;
@@ -575,7 +579,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = won ? { gulya: p.sf && (p.sf.gulya === 'with' || p.sf.gulya === 'share'), rashid: p.sf && p.sf.mentor === 'partner' }
       : { mode: 'life', light: 'night', old: true, job: p.job, heroEmo: 'tired', rashidEmo: 'neutral', gulya: false, fill: 0.2 };
     if (ui.pxFin) ui.pxFin.destroy();
-    ui.pxFin = BK.Px.stage({ cls: 'pro-pxf', fps: 8, data: d, label: won ? 'Своя точка: вывеска, ленточка у входа, вы машете' : 'Поздний вечер в «Калаче»: вы за той же стойкой', height: (W) => (W < 200 ? 104 : 120), scale: () => 2, minW: 150, maxW: 320, draw: (b, t, W, H, dd) => (won ? BK.Px.scenes.own(b, t, W, H, dd) : BK.Px.scenes.kalach(b, t, W, H, dd)) });
+    ui.pxFin = BK.Px.stage({ cls: 'pro-pxf', fps: 8, data: d, label: won ? 'Своя точка: вывеска, ленточка у входа, вы машете' : SW('Поздний вечер в «Калаче»: вы за той же стойкой'), height: (W) => (W < 200 ? 104 : 120), scale: () => 2, minW: 150, maxW: 320, draw: (b, t, W, H, dd) => (won ? BK.Px.scenes.own(b, t, W, H, dd) : BK.Px.scenes.kalach(b, t, W, H, dd)) });
     ui.pxFin.attach(slot);
   }
   // переход в основную игру (стадия 2) с переносом бонусов
@@ -602,7 +606,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let o = $('#proMenu');
     const h = `<div class="pro-ovbg" data-pa="menuClose"><div class="pro-card pro-menu" role="dialog" aria-modal="true" aria-labelledby="proMenuT" tabindex="-1">
       <h2 id="proMenuT">Пролог «Бариста»</h2>
-      <p class="pcd-t">Вы — бариста у Рашида в «Калаче». Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
+      <p class="pcd-t">${esc0(SW('Вы — бариста у Рашида в «Калаче».'))} Каждый месяц — зарплата и траты на жизнь. Копите на свою точку, растите до управляющего сменой — и открывайте своё дело. Время идёт само: пауза — пробел.</p>
       <ul class="pf-tips"><li>«Как живу» — жильё, еда, развлечения, подработки: чем дешевле, тем быстрее копится, но силы и настроение не бесконечны.</li><li>Копилка и вклад защищают деньги от срывов на покупки.</li><li>«Смена» раз в месяц — чаевые, навык и мнение начальника.</li></ul>
       ${ui.ask === 'skip' ? `<div class="confirm">Пролог закончится без бонусов, начнётся обычная игра. <button type="button" class="btn sm danger" data-pa="skipYes">Пропустить</button><button type="button" class="btn sm" data-pa="askNo">Отмена</button></div>` : ''}
       <div class="pf-btns"><button type="button" class="btn primary block" data-pa="menuClose">Вернуться</button>${ui.ask === 'skip' ? '' : '<button type="button" class="btn block" data-pa="skipAsk">Пропустить пролог — сразу своя сеть</button>'}<button type="button" class="btn block" data-pa="toStart">К списку игр</button></div></div></div>`;
@@ -666,7 +670,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sh = ui.sh, p = Pp(); if (!sh) return;
     let h;
     if (sh.state === 'intro') {
-      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : sh.auto ? 'Смена пришла сама' : 'Смена в «Калаче»'}</h2>
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : sh.auto ? 'Смена пришла сама' : esc0(SW('Смена в «Калаче»'))}</h2>
         ${sh.auto ? '<p class="pro-note">Бариста не выбирает, когда работать: смена пришла сама, и пропустить её нельзя.</p>' : ''}
         <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
         ${sh.tired ? '<p class="pro-note">Вы не выспались: гости покажутся нетерпеливее.</p>' : ''}
@@ -703,7 +707,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сцена «Смены»: гости-пиксели в очереди с пузырями заказов и шкалой терпения, герой за стойкой, Рашид у печи, Гуля
   function shiftScene() {
     const slot = document.getElementById('shScene'); if (!slot) return;
-    if (!ui.pxShift) ui.pxShift = BK.Px.stage({ cls: 'pro-pxs', fps: 10, label: 'Очередь в «Калаче»: гости с заказами, вы за стойкой', height: (W) => (W < 200 ? 100 : 124), scale: (a) => (a >= 900 ? 3 : 2), minW: 150, maxW: 360, active: () => ui.mode === 'shift', draw: (b, t, W, H) => {
+    if (!ui.pxShift) ui.pxShift = BK.Px.stage({ cls: 'pro-pxs', fps: 10, label: SW('Очередь в «Калаче»: гости с заказами, вы за стойкой'), height: (W) => (W < 200 ? 100 : 124), scale: (a) => (a >= 900 ? 3 : 2), minW: 150, maxW: 360, active: () => ui.mode === 'shift', draw: (b, t, W, H) => {
       const sh = ui.sh, now = performance.now();
       const d = { mode: 'shift', gulya: true, pos: ui.pxPos || (ui.pxPos = {}), queue: [], heroEmo: 'smile', rashidEmo: 'neutral' };
       if (sh) {

@@ -15,6 +15,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const dname = (id) => (E().byId(BK.DISTRICTS, id) || {}).name || id;
   const lname = (id) => (E().byId(BK.LANDMARKS, id) || {}).name || id;
+  // имя домашнего города партии (в Уфе — «Уфа»): тексты интерфейса не должны говорить «в Уфе» чужим городам
+  const homeName = (S) => { const W = BK.STORY_CAST; const id = (W && W.cityOf) ? W.cityOf(S) : 'ufa'; return ((BK.CITY_BY_ID || {})[id] || {}).name || 'Уфа'; };
   const km = (a, b) => (E().dist(a, b) * E().kmPerUnit()).toFixed(1).replace('.', ',');
   const stars = (l) => `<span class="stars" title="Уровень ${l} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= l ? 'on' : ''}"></i>`).join('')}</span>`;
   const btn = (act, label, o = {}) => `<button class="btn ${o.cls || ''}" data-act="${act}"${o.arg != null ? ` data-arg="${esc(o.arg)}"` : ''}${o.arg2 != null ? ` data-arg2="${esc(o.arg2)}"` : ''}${o.dis ? ' disabled' : ''}${o.title ? ` title="${esc(o.title)}"` : ''}>${label}${o.cost != null ? ` <span class="cost">${fm(o.cost)}</span>` : ''}</button>`;
@@ -545,7 +547,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `</div><div class="sec">${S.prodOffers.map((o) => prodOfferCard(S, o, ui)).join('')}</div>`;
     } else {
       const rc = BK.Corp && BK.Corp.remoteOf && BK.Corp.remoteOf(S); // Р4: снабжение из другого города
-      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в Уфе, пока город к вам не привыкнет.</p>`;
+      s += `<p style="margin:0">${rc ? `Выпечку везут: ${esc(BK.Corp.supplyName(S, rc))}.` : 'Цех арендован.'} Теперь первая <b>точка</b> — кружки с плюсом на карте. Узнаваемость бренда здесь пока ${pct(S.corp.cities[S.corp.active].aw)}: гостей чуть меньше, чем в ${esc(homeName(S))}, пока город к вам не привыкнет.</p>`;
       s += `</div><div class="sec">${S.offers.map((o) => offerCard(S, o, ui)).join('')}</div>`;
     }
     return s;
@@ -982,10 +984,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s + `</div>`;
   }
 
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   /* ---------- сеть-соперник ---------- */
   function rivalChip(S, o) { // «рядом конкурент: N точек» — в карточке точки и помещения
     const r = E().rivalNear ? E().rivalNear(S, o) : null; if (!r || !r.n) return '';
-    const name = E().rivalSummary(S).name;
+    const name = rivalName(S);
     return `<span class="chip bad" title="Точки «${esc(name)}» ближе ~${String((C().RIVAL_RADIUS * E().kmPerUnit()).toFixed(1)).replace('.', ',')} км забирают часть гостей. Чем выше рейтинг вашей точки, тем меньше потеря">рядом «${esc(name)}»: ${nw(r.n, 'точка', 'точки', 'точек')}, −${pct(Math.max(0.01, r.loss))} гостей</span>`;
   }
   function rivalBlock(S) { // «Конкурент: Хлебный двор — N точек, растёт/слабеет» (вкладка «Рынок»; можно вставить и в «Сводку»)
@@ -993,7 +1000,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const per = r.months >= 12 ? 'за год' : 'с начала игры';
     const trend = r.delta > 0 ? `<span class="negc">растёт: +${r.delta} ${per}</span>` : r.delta < 0 ? `<span class="pos">слабеет: −${-r.delta} ${per}</span>` : `<span class="hint">без изменений ${per}</span>`;
     const hit = S.stores.filter((st) => st.status !== 'opening' && E().rivalNear(S, st).n).length;
-    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(r.name)}»</small></h3>
+    return `<div class="sec rival"><h3>Конкурент <small>сеть «${esc(rivalName(S))}»</small></h3>
       <div class="rival-sum"><i class="rv-mark" aria-hidden="true"></i><div><b>${nw(r.n, 'точка', 'точки', 'точек')}</b> · ${trend}
       <div class="hint">Рядом с соперником ${hit ? nw(hit, 'ваша точка', 'ваши точки', 'ваших точек') : 'ни одной вашей точки'}. Занял помещений с рынка: ${r.grabbed}, закрыл точек из-за вас: ${r.closed}. Высокий рейтинг точки снижает потери гостей, а где у вас несколько сильных точек, соперник уходит.</div></div></div></div>`;
   }

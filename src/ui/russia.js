@@ -4,6 +4,11 @@
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const E = () => BK.Engine, H = () => BK.UIH, C = () => BK.CFG;
+  // Имя сети-соперника — по городу партии (src/data/story-cast.js): «Хлебный двор» в Уфе,
+  // «Столичный хлеб» в Москве. У старых сохранений в S.rival.name могло остаться уфимское имя.
+  const rivalName = (S) => { const W = BK.STORY_CAST, r = E().rivalSummary ? E().rivalSummary(S) : null;
+    if (r && r.name && r.name !== C().RIVAL_NAME_DEFAULT) return r.name;
+    return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const P = (lon, lat) => BK.cityProj(lon, lat);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
@@ -239,10 +244,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.tip.style.left = x + 'px'; view.tip.style.top = y + 'px';
   }
   const popTxt = (p) => (p >= 1 ? String(p.toFixed(p >= 10 ? 1 : 2)).replace('.', ',') + ' млн' : Math.round(p * 1000) + ' тыс.') + ' жителей';
+  // Расстояния в данных считаются от Уфы (src/data/cities.js); в партии из другого города показываем
+  // расстояние от домашнего города. Для Уфы строка прежняя: «… км от Уфы».
+  const homeIdOf = (S) => (BK.STORY_CAST && BK.STORY_CAST.cityOf ? BK.STORY_CAST.cityOf(S) : 'ufa');
+  const cityGen = (id) => { const f = (BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS) || {}; return (f[id] && f[id].g) || 'Уфы'; };
+  const kmFrom = (S, d) => { const home = homeIdOf(S); const km = home === 'ufa' ? d.km : (BK.roadKm ? BK.roadKm(home, d.id) : d.km);
+    return km ? ` · ${H().n0(km)} км от ${cityGen(home)}` : ''; };
   function tipFor(S, id) {
     const d = BK.CITY_BY_ID[id], st = BK.Corp.cityStats(S, id);
     if (!d) return '';
-    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.km ? ` · ${H().n0(d.km)} км от Уфы` : ''}`;
+    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.id === homeIdOf(S) ? '' : kmFrom(S, d)}`;
     if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
     else {
       const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`;
@@ -468,7 +479,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function cityCard(S, id) {
     const d = BK.CITY_BY_ID[id]; if (!d) return '';
     const h = H(), c = BK.Corp.cityStats(S, id);
-    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.km ? ` · ${h.n0(d.km)} км от Уфы` : ' · родной город'} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
+    let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.id === homeIdOf(S) ? ' · родной город' : kmFrom(S, d)} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
     s += chips(d);
     if (d.feat) s += `<div class="hint">${esc(d.feat)}</div>`;
     if (c) {
@@ -487,7 +498,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const lock = E().enterLock(S, id), cost = E().enterCost(S, id), aw = BK.Corp.awStart(S, id);
       const pk = S.corp.perks && S.corp.perks[id], pre = S.corp.prePressure && S.corp.prePressure[id];
       if (pk && pk.until >= S.day) s += `<div class="perk">Приглашение губернатора до ${esc(E().fmtDate(pk.until))}: регистрация бесплатно, цех ${Math.round((1 - pk.prodRent) * 100)} % дешевле</div>`;
-      if (pre) s += `<div class="hint warnc">«${esc(C().RIVAL_NAME)}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
+      if (pre) s += `<div class="hint warnc">«${esc(rivalName(S))}» уже готовится: давление соперника при входе +${String(pre.toFixed(1)).replace('.', ',')}</div>`;
       if (BK.CorpUI && BK.CorpUI.hqLoadHtml) s += BK.CorpUI.hqLoadHtml(S, { extra: 1 }) + `<p class="hint" style="margin:0">${esc(BK.CorpUI.enterCostNote(S))}.</p>`; // Р4 ч. 2: цена входа и штаб
       s += `<div class="grid2">${h.kv('Вход: регистрация, маркетинг, штаб города', fm(cost))}${h.kv('Стартовая узнаваемость', Math.round(aw * 100) + ' %')}${h.kv('Цех и точки', 'как в начале игры, из своих денег')}${h.kv('Рынок зарплат', fm(BK.Corp.corpMarket(S).seller * d.wage) + '/мес')}</div>`;
       s += `<div class="row sp"><span class="hint ${lock ? 'warnc' : ''}">${lock ? esc(lock) + '.' : S.cash >= cost ? 'Запустите город сами (переезд) или поручите директору — тогда вы останетесь, где были.' : `<span class="negc">Не хватает ${fm(cost - S.cash)}.</span>`}</span>${h.btn('ruEnter', 'Открыть город', { cls: 'primary', arg: id, cost, dis: !!lock || S.cash < cost })}</div>`;
@@ -530,7 +541,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function freeRow(S, id, sel) {
     const h = H(), d = BK.CITY_BY_ID[id], lock = E().enterLock(S, id);
-    return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)} · ${h.n0(d.km)} км от Уфы · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
+    return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)}${kmFrom(S, d)} · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
   }
   function citiesTab(S, ui) {
     if (!BK.Corp.on(S)) return '';
