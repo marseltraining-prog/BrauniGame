@@ -226,7 +226,18 @@ async function until(p, pred, stop) {
       if (main.cash > cash0 * 1.1501) issues.push(`[${tag}] бонус больше 15 %: ${cash0} → ${main.cash}`);
       if (!main.skills || !Object.keys(main.skills).length) issues.push(`[${tag}] навыки не перенесены: ${JSON.stringify(main.skills)}`);
       if (main.story !== 'friend' || main.gulya !== 'with') issues.push(`[${tag}] S.story не записан: ${main.story}/${main.gulya}`);
-      const g = await p.evaluate(() => { const E = BK.Engine, S = BK.App.state; const pr = S.prodOffers[0]; E.chooseProduction(S, pr.id); const o = S.offers.slice().sort((a, b) => E.storeOpenCost(S, a).total - E.storeOpenCost(S, b).total)[0]; const r = E.rentStore(S, o.id); BK.App.refresh(); return r.ok ? r.store.incoming[0].p : null; });
+      // Первое помещение: цех и точка выбираются по цене (а не «первыми в списке»), при нехватке берём кредит —
+      // как советует обучение новичка и как делает qa/rewind.js. Если банк больше не даёт (лимит 6 млн), тест
+      // добирает деньги на счёте, как qa/play.js: иначе шаг зависел от случая — самый дорогой цех в списке мог
+      // съесть почти весь стартовый капитал, и «Гуля не пришла» падало не по делу.
+      const g = await p.evaluate(() => {
+        const E = BK.Engine, S = BK.App.state, cheap = (arr, f) => arr.slice().sort((a, b) => f(S, a).total - f(S, b).total)[0];
+        if (S.prodOffers.length) E.chooseProduction(S, cheap(S.prodOffers, E.prodOpenCost).id);
+        const o = cheap(S.offers, E.storeOpenCost), need = E.storeOpenCost(S, o).total;
+        if (S.cash < need) { E.takeLoan(S, need - S.cash + 1e6); if (S.cash < need) S.cash += need - S.cash + 1e6; }
+        const r = E.rentStore(S, o.id); BK.App.refresh();
+        return r.ok ? r.store.incoming[0].p : null;
+      });
       if (!g || g.name !== 'Гульнара Сафина' || g.lvl < 2) issues.push(`[${tag}] Гуля не пришла первым сотрудником: ${JSON.stringify(g)}`);
       await p.waitForTimeout(300);
       if (full) await shot(p, `${tag}-10-main-game`);

@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 14:20";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 15:01";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -20135,6 +20135,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return P;
   }
   // --- живой сюжет пролога (src/data/prolog-v2.js): 8 историй, 16 дилемм, нити, правила показателей ---
+  // дилеммы зовут наружу функции с «2» (feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2) —
+  // они определены ниже и экспортированы, потому что сборка грузит data/prolog-v2.js раньше prologue.js
+  // и «мостик» bridge() из v2 тогда не успевает их поставить (симуляторы грузят в обратном порядке).
   const V2 = (fn, ...a) => (BK.PrologV2 && BK.PrologV2[fn] ? BK.PrologV2[fn](...a) : null);
   /* ---------- сюжет: запись решений пролога в S.story (схема docs/story.md §4.5) ---------- */
   function storyDefaults(seed) {
@@ -20158,6 +20161,74 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FEED_K = { good: 'pos', bad: 'neg' };
   function feed(P, t, k) { P.feed.push({ m: P.m, t, k: k || 'info', tone: FEED_K[k] || '' }); if (P.feed.length > 40) P.feed.shift(); }
   function fx(P, kind, v, where) { P.fx.push({ kind, v: Math.round(v), where: where || '' }); if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30); }
+
+  /* ---------------- хуки живого сюжета: функции *2 (src/data/prolog-v2.js) ----------------
+     Дилеммы v2 не лезут во внутренности пролога, а зовут эти функции через BK.Prologue.*.
+     Имена с «2» — потому что рядом уже есть внутренние feed/fx/rel/style/pay/spend.
+     Правила те же, что у внутренних: деньги уходят по порядку кошелёк → копилка → вклад
+     (проценты сгорают) и в минус только как долг; отношения и стили — в границах −100…100;
+     лента и значки не растут без предела. Аргументы могут прийти любые: функция молчит,
+     а не падает — одна запись сюжета не важнее самого пролога.
+     В prolog-v2.js есть свой «мостик» bridge(), но он срабатывает, только когда файл загружен
+     после пролога (так в симуляторах, sim/load.js). В сборке порядок обратный (build.js:
+     data/prolog-v2.js идёт раньше prologue.js) — тогда BK.Prologue ещё не создан и мостик
+     пропускает работу. Поэтому определения живут здесь и работают при любом порядке файлов;
+     мостик v2 свои версии уже не подменяет (там `if (!PR[k])`). */
+  function feed2(P, t, k) { // запись в ленту пролога с тем же тоном, что у bridge()
+    if (!P || !P.feed || typeof P.feed.push !== 'function') return;
+    const kk = k || 'info';
+    P.feed.push({ m: P.m, t: t == null ? '' : String(t), k: kk, tone: kk === 'good' ? 'pos' : kk === 'bad' ? 'neg' : kk === 'hero' ? 'hero' : '' });
+    if (P.feed.length > 40) P.feed.shift();
+  }
+  function fx2(P, kind, v, where) { // значок в «Что изменилось»
+    if (!P || !P.fx || typeof P.fx.push !== 'function') return;
+    const n = Math.round(Number(v)); if (!isFinite(n)) return;
+    P.fx.push({ kind, v: n, where: where || '' });
+    if (P.fx.length > 30) P.fx.splice(0, P.fx.length - 30);
+  }
+  function rel2(P, o) { // отношения с героями: { rashid: 8, gulya: -5 }
+    if (!P || !o || typeof o !== 'object') return;
+    if (!P.rel) P.rel = {};
+    for (const k of Object.keys(o)) { const v = Number(o[k]); if (isFinite(v) && v) P.rel[k] = clamp((P.rel[k] || 0) + v, -100, 100); }
+  }
+  function style2(P, k, v) { // стиль игры героя (care/risk/honesty/fair): −100…100
+    if (!P || !k) return;
+    const n = Number(v); if (!isFinite(n) || !n) return;
+    if (!P.sm) P.sm = {};
+    P.sm[k] = clamp((P.sm[k] || 0) + n, -100, 100);
+  }
+  // деньги и статьи расходов на месте: чужое/старое состояние не ломаем и не заводим NaN в сохранении
+  function pro2money(P) {
+    if (!P || typeof P !== 'object') return false;
+    if (!P.spent || typeof P.spent !== 'object') P.spent = {};
+    for (const k of ['cash', 'box', 'dep', 'depInt']) { const n = Number(P[k]); P[k] = isFinite(n) ? n : 0; }
+    return true;
+  }
+  function pay2(P, v, cat) { // обязательный платёж: как pay() — кошелёк, копилка, вклад, долг
+    if (!pro2money(P)) return;
+    const n = Math.round(Number(v)); if (!isFinite(n) || n <= 0) return; // NaN/«текст»/∞ в сохранение не пускаем
+    pay(P, n, cat || 'other');
+  }
+  function spend2(P, v, cat) { // только запись расхода (деньги уже списаны вручную): не трогает cash
+    if (!pro2money(P)) return;
+    const n = Math.round(Number(v)); if (!isFinite(n) || n <= 0) return;
+    spendRec(P, n, cat || 'other');
+  }
+  function thread2(P, t) { // нить: человек, который вернётся; живёт в P.v2 (аддитивный сюжет v2)
+    if (!P || !t || typeof t !== 'object') return null;
+    if (BK.PrologV2 && BK.PrologV2.addThread) return BK.PrologV2.addThread(P, t); // тот же addThread, что и в bridge()
+    if (!P.v2 || !Array.isArray(P.v2.threads)) return null;                       // живого сюжета нет — запоминать негде
+    P.v2.threads.push({ id: t.id || ('t' + P.v2.threads.length), who: t.who || '', gist: t.gist || '', dir: t.dir || 1,
+      due: t.due == null ? (P.m | 0) + 6 : t.due, fx: t.fx || 'friend', note: t.note || '', at: P.m });
+    return null;
+  }
+  function storyLog2(P, rec) { // запись в летопись пролога (P.slog; syncStory переносит её в S.story.log)
+    if (!P || !rec || typeof rec !== 'object') return;
+    if (!Array.isArray(P.slog)) P.slog = [];
+    const line = rec.line || rec.gist || '';
+    P.slog.push({ day: null, pm: P.m, id: 'v2_' + (rec.what || 'note'), choice: 0, line: line == null ? '' : String(line) });
+    if (P.slog.length > 120) P.slog.shift();
+  }
 
   /* ---------------- справочные функции ---------------- */
   const savings = (P) => Math.round(P.cash + P.box + P.dep + P.depInt);
@@ -20351,7 +20422,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     goal: { kind: 'hero', who: 'elvira', title: () => 'Можно открывать своё!',
       text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. Эльвира из «Семи рек»: «Стаж есть, отзыв от Рашида есть, цифры сходятся. Остальное банк даст в кредит. Поздравляю — теперь у нас с вами отношения. Серьёзные».` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте без кредита. Эльвира из «Семи рек»: «Люблю, когда ко мне приходят с цифрами. Ещё больше люблю, когда цифры сходятся».`),
       choices: () => [
-        { label: 'Открыть свою точку', desc: 'Разговор с Рашидом неизбежен', fx: { rub: 3 }, do(P) { P.cards.push({ id: 'p07', v: {} }); } },
+        { label: 'Открыть свою точку', desc: 'Разговор с Рашидом неизбежен', fx: { rub: 3 }, do(P) { P.cards.unshift({ id: 'p07', v: {} }); } }, // сцена П7 — сразу за решением: иначе вперёд пролезет дилемма, уже стоявшая в очереди (живой сюжет v2), и разговор с Рашидом отложится
         { label: 'Ещё поработать и подкопить', desc: 'Сверх 1,5 млн — бонус к старту. Кнопка «Открыть своё» останется', fx: { rub: 1 }, do(P) { P.flags.goalLater = 1; } },
       ] },
     p07: { kind: 'hero', who: 'rashid', title: () => 'Рашид знает',
@@ -20814,8 +20885,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
   function shiftPlan(P) {
-    const c = C();
-    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + (vm.pat || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P) };  }
+    const c = C(), vm = V2('shiftMods', P); // усталость/болезнь/долг/отношения — хук живого сюжета v2 (docs/story-v2.md)
+    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + ((vm && vm.pat) || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P) };  }
   // итог смены: stats = { served, errors, upsells, lost, total }
   function shiftResult(S, st) {
     const c = C(), P = S.prologue;
@@ -20968,6 +21039,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
     create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
+    feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2, // хуки живого сюжета v2 (src/data/prolog-v2.js) — имя с «2», чтобы не путать с внутренними feed/fx/rel/style
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
     shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
   };
