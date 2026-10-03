@@ -10,6 +10,14 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 .pro .pro-big small { font-size: 12px; font-weight: 400; opacity: .9; }
 .pro .pro-big2 { padding: 12px 16px; font-size: 15px; border-radius: 14px; white-space: normal; }
 .pro-note { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 0; }
+/* «Вас помнят» — нити живого сюжета (src/data/prolog-v2.js): кто вернётся и когда */
+.pro-thr { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2, var(--surface)); }
+.pro-thr .ptr-h { font-size: 12.5px; font-weight: 600; color: var(--ink-2); display: flex; gap: 8px; align-items: baseline; }
+.pro-thr .ptr-h small { font-weight: 400; opacity: .75; }
+.pro-thr .ptr { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; }
+.pro-thr .ptr.bad { color: var(--bad, #a3301c); }
+.pro-thr .ptr-n { font-weight: 600; }
+.pro-thr .ptr-w { margin-left: auto; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 
 /* --- верхняя полоса --- */
 .pro-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }

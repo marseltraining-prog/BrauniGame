@@ -1,6 +1,8 @@
 # Передача проекта «Хлебная карта» (для следующей модели / разработчика)
 
-**Обновлено: 02.10.2026.** Свежий коммит в main смотри командой `git log --oneline -5`.
+**Обновлено: 03.10.2026.** Свежий коммит в main смотри командой `git log --oneline -5`.
+
+**Пролог стал историей (03.10.2026, ветка `agent/s7-prologue`, задание — `docs/story-v2.md`).** Владелец: «в прологе нет по сути ни выбора, ни подумать… нет сюжета и разветвлений», «показатели персонажа ни на что не влияют». Сделано: новый файл **`src/data/prolog-v2.js`** — 8 прологовых историй (выбираются по зерну игры), **16 дилемм** без верного ответа (у каждой свой человек, отложенное последствие и влияние на механику), **нити** («вас помнят»: кто вернётся и когда, со сроком и признаком исполнения) и правила показателей. Хуки в `src/prologue.js` — минимальные (свой `V2()`-мостик, `nextCard`, `DIL`, `start`, `schedule`, `advance`, `choose`, `endMonth`, `shiftPlan`, `shiftResult`, `simShift`); `src/ui/prologue.js` — блок «Вас помнят» и метка истории в заголовке карточки (+`prologue.css`). Баланс не поехал: `node sim/bot.js good 3 18 --summary` → **wins 3/3, median win year 14.9**; темп пролога `node sim/prologue.js ideal,normal,spender 12` → **16.6 / 19.4 / 29.8 мин** (было 13.7 / 17.3 / 31.3; цель 15–30). Подробности — в разделе «Пролог V2» ниже.
 
 Сделано после этапа В2: **этап 1 плана целиком** (ROADMAP, этап 2) — **кредит под залог точки** (`src/collateral.js` + `src/ui/collateral-ui.js` + `collateral.css`, числа `CFG.COLL`) и **инвесторы** (`src/investors.js` + `src/ui/investors-ui.js` + `investors.css`, числа `CFG.INV`). Проверки: `node sim/collateral.js`, `node sim/collateral.js good 6 22`, `node sim/investors.js`, `node sim/investors.js good 6 22`, `node qa/collateral.js`, `node qa/investors.js`. Дальше по плану — **этап 2: сюжет и герои (В4)**.
 

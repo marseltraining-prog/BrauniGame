@@ -300,6 +300,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return s;
   }
+  // «Вас помнят» — нити живого сюжета: кто вернётся и когда. Показывает, что решения не исчезают.
+  function v2Threads(p) {
+    const V2 = BK.PrologV2; if (!V2 || !p.v2) return '';
+    const list = V2.pending(p); if (!list.length) return '';
+    return `<div class="pro-thr"><div class="ptr-h">Вас помнят <small>эти люди вернутся</small></div>${list.map((t) => `<div class="ptr${t.good ? '' : ' bad'}"><span class="ptr-i" aria-hidden="true">${t.good ? '🤝' : '⚠️'}</span><span class="ptr-n">${esc(t.who)}</span><span class="ptr-w">${t.left <= 0 ? 'со дня на день' : `через ${t.left} мес.`}</span></div>`).join('')}</div>`;
+  }
   function colA(p) {
     const g = PR().goal(p), c = C();
     const sav = g.sav, credMark = (c.GOAL_CREDIT / c.GOAL * 100).toFixed(1), pct = Math.min(100, sav / c.GOAL * 100);
@@ -313,6 +319,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <li class="${g.credit ? 'ok' : ''}"><span class="ck" aria-hidden="true">${g.credit ? '✓' : ''}</span>Для кредита: стаж ${Math.min(p.stazh, c.CREDIT_STAZH)} из ${c.CREDIT_STAZH} мес., начальник доволен</li></ul>`;
     if (g.ok && p.status === 'run' && !p.sf.mentor && !p.cards.length) s += `<button type="button" class="btn primary block pro-big" data-pa="openOwn">Открыть свою точку</button>`;
     if (p.sf.mentor === 'intern' && p.status === 'run') s += `<p class="pro-note">Стажировка в «Хлебном дворе» — ещё ${Math.max(0, p.flags.intern - p.m)} мес.</p>`;
+    s += v2Threads(p); // «вас помнят»: кто вернётся и с чем (src/data/prolog-v2.js)
     // деньги: кошелёк → копилка → вклад
     const rate = C().DEP_RATE + (p.depBonus || 0);
     s += `<div class="pro-money">
