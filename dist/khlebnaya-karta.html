@@ -16666,11 +16666,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
    Старые записи читаются как раньше: нет ключа категории — категория включена.
 
    Фоновая музыка (BK.Sound.music(mood):
-     — фон: постоянные осцилляторы-«пэд» (4 голоса + бас + тихий «блеск»), которые плавно переезжают
-       на ноты следующего аккорда; новые узлы на такт не создаются (ноль на аккорд), при выключении
-       узлы останавливаются и отключаются;
-     — петля: Fmaj7 – Dm7 – G6 – Cmaj7 (IV–ii–V–I в до-мажоре), мягкое голосоведение, никакой мелодии —
-       неспешный тёплый фон для чтения и раздумий; в прологе та же петля на тон выше и светлее ('prologue');
+     — лёгкая романтичная 8-битная тема (чиптюн): ведущая партия — квадрат (square) через фильтр низких
+       частот, бас — треугольник рисунком вальса «раз-два-три», мягкое арпеджио восьмыми и очень тихий
+       «тик»-перкуссия (шум через полосовой фильтр). Никаких «пэдов» и «блеска» — они владельцу не нравились;
+     — две разные темы: 'game' — фа мажор, 92 BPM, 3/4, петля 24 такта ≈ 47 с; 'prologue' — до мажор,
+       84 BPM, 3/4, петля 24 такта ≈ 51 с, выше регистр, мягче тембр и тише. Форма A–A'–B с вариациями;
+     — каждая нота — свой короткоживущий осциллятор: частота ставится до старта, огибающая только рампами
+       (атака 24 мс, спад 90 мс), stop() — после нуля; выключение и скрытая вкладка — плавный спад шины;
+       после шины стоит мягкий лимитер (DynamicsCompressor) от перегрузки;
      — включается после первого жеста игрока (arm()), молчит в скрытой вкладке (visibilitychange),
        тише под открытым окном (пауза не выключает музыку — она идёт фоном мира, см. отчет).
 
@@ -16759,7 +16762,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return ctx;
   }
   function resume() { const c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} } }
-  function stopAll() { if (master) { try { master.gain.value = 0; setTimeout(() => { if (master) master.gain.value = MASTER; }, 60); } catch (e) {} } }
+  // общий выключатель: не «в ноль одним кадром», а короткий плавный спад шины — иначе слышен щелчок
+  function stopAll() {
+    if (!master || !ctx) return;
+    try {
+      const now = ctx.currentTime, cur = master.gain.value;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(cur, now);
+      master.gain.linearRampToValueAtTime(0, now + 0.06);
+      setTimeout(() => {
+        if (!master || !ctx) return;
+        try { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(MASTER, ctx.currentTime); } catch (e) {}
+      }, 220);
+    } catch (e) {}
+  }
 
   /* ---------- кирпичики синтеза ---------- */
   // нота: осциллятор с огибающей. o: { f, f2, t (задержка), d (длина), type, vol, sweep }
@@ -16777,18 +16793,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
     osc.connect(g); g.connect(master);
     osc.start(t0); osc.stop(t0 + d + 0.03);
   }
-  // шум (касса, «шшш» монет): короткий буфер с полосовым фильтром
+  // шум (касса, «шшш» монет): короткий буфер с полосовым фильтром.
+  // Раньше буфер начинался сразу с полной амплитуды (первый сэмпл — ступенька) и громкость ставилась
+  // мгновенно: каждое «дзынь» щёлкало. Теперь в буфере мягкая атака 2 мс, громкость — короткой рампой.
   function noise(o) {
     const c = ac(); if (!c || !master) return;
     const t0 = c.currentTime + (o.t || 0), d = o.d || 0.08;
     const n = Math.max(1, Math.floor(c.sampleRate * d));
     const buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.2);
+    const atk = Math.max(1, Math.floor(c.sampleRate * 0.002));
+    for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.min(1, i / atk) * Math.pow(1 - i / n, 2.2);
+    const vol = o.vol == null ? 0.5 : o.vol;
     const src = c.createBufferSource(); src.buffer = buf;
-    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = o.hz || 2600; f.Q.value = o.q || 1.1;
-    const g = c.createGain(); g.gain.value = o.vol == null ? 0.5 : o.vol;
+    const f = c.createBiquadFilter(); f.type = 'bandpass';
+    f.frequency.setValueAtTime(o.hz || 2600, t0); f.Q.setValueAtTime(o.q || 1.1, t0);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.006);
+    g.gain.linearRampToValueAtTime(0, t0 + d + 0.012);
     src.connect(f); f.connect(g); g.connect(master);
     src.start(t0);
+    try { src.stop(t0 + d + 0.05); } catch (e) {}
+    src.onended = () => { try { src.disconnect(); f.disconnect(); g.disconnect(); } catch (e) {} };
   }
 
   const RECIPES = {
@@ -16841,37 +16867,204 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return play('tap');
   }
 
-  /* ---------- фоновая музыка: тихая синтезированная подложка ---------- */
-  // Игра шла в тишине — владелец просил фон. Файлов нет: те же осцилляторы WebAudio.
-  // Узлы создаются один раз на запуск и живут, пока музыка играет: на каждый аккорд — ноль новых узлов,
-  // голоса просто плавно переезжают на новые ноты (setTargetAtTime) с мягкой огибающей.
-  // Петля Fmaj7–Dm7–G6–Cmaj7 (IV–ii–V–I в до-мажоре): тёплое голосоведение, без «мелодии-хита» —
-  // это фон для чтения и раздумий, а не песня; полная петля ≈ 48 с, за час не приедается.
+  /* ---------- фоновая музыка: лёгкая романтичная 8-битная тема ---------- */
+  // Владелец: «фоновая музыка в прологе просто ужасная, надо переделать в лёгкую романтичную 8-битную».
+  // Прежние «пэды» (4 тянущихся голоса) и тихий «блеск» убраны совсем — теперь честный чиптюн (NES/Game Boy):
+  //   • ведущая партия — прямоугольная волна (square) с фильтром низких частот;
+  //   • бас — треугольник (triangle), рисунок вальса «раз-два-три»;
+  //   • мягкое арпеджио восьмыми — тихая подложка, чтобы фон не «проваливался» в тишину;
+  //   • лёгкая перкуссия-«тик» — шум через полосовой фильтр, совсем тихо.
+  // Две темы, у каждой своя тональность, темп и мелодия (не «та же петля на тон выше»):
+  //   • game — фа мажор, 92 BPM, 3/4, 24 такта ≈ 47 с; спокойная «деловитая» тема сети;
+  //   • prologue — до мажор, 84 BPM, 3/4, 24 такта ≈ 51 с; выше регистр, мягче тембр, тише и короче фраза.
+  // Форма петли A (8 тактов) – A' (8) – B (8), повторяется с вариациями.
+  //
+  // Почему больше нет скрипов и хрустов:
+  //   • каждая нота — свой короткоживущий осциллятор, частота ставится ДО старта: скачков частоты нет вовсе;
+  //   • огибающая — только линейные рампы, атака ~24 мс, спад ≥ 60 мс, stop() зовётся уже после нуля;
+  //   • шина музыки целиком режется фильтром низких частот (2,3–3,0 кГц) — без него квадрат «хрустит» на верхах;
+  //   • после шины стоит мягкий лимитер (DynamicsCompressor), сумма голосов не выходит за 1,0;
+  //   • выключение и уход в скрытую вкладку — плавный спад шины, узлы освобождаются только после него;
+  //   • в аккордах нет секунд в низком регистре: прежний Cmaj7 держал B2 и C3 рядом (7,3 Гц биений — «дребезг»).
   const MUS = {
-    GAIN: 0.06,           // громкость подложки (дальше ещё общий MASTER 0,16 — вместе очень тихо)
-    FADE_IN: 0.25,        // τ, с: появление (слышимо ~0,7 с)
-    FADE_OUT: 0.16,       // τ, с: затухание при остановке — плавно, без щелчков (~0,5–0,8 с)
-    ATTACK: [2.6, 2.0],   // с: мягкая атака аккорда [игра, пролог]
-    RELEASE: [3.0, 2.4],  // с: затухание аккорда [игра, пролог]
-    STEP: [12.0, 9.5],    // с: длина аккорда [игра, пролог] — неспешно; в прологе чуть живее
-    CUT: [1150, 1650],    // Гц: срез фильтра — в игре темнее, в прологе теплее и светлее
-    GLIDE: 1.1,           // τ, с: переезд голоса на новую ноту (никаких скачков)
-    DUCK: 0.45,           // под открытым окном музыка тише — не мешает читать
-    BASS: 0.30,           // вес нижнего голоса
-    SHINE: [0.05, 0.16],  // вес тихого «блеска» (высокая синусоида) [игра, пролог]
+    GAIN: 0.06,          // громкость шины музыки (дальше общий MASTER 0,16 — вместе тихо, как раньше)
+    PRO_K: 0.72,         // пролог тише игры
+    DUCK: 0.45,          // под открытым окном — тише, но не останавливаемся
+    FADE_IN: 0.5,        // τ, с: появление подложки
+    FADE_OUT: 0.25,      // τ, с: затухание при выключении
+    ATT: 0.024,          // с: атака ноты — мягкая (щелчка нет)
+    REL: 0.09,           // с: спад ноты
+    LOOK: 0.4,           // с: насколько вперёд планируем ноты
+    CUT: { game: 3000, prologue: 2300 }, // Гц: в прологе тембр мягче (меньше верхов у квадрата)
   };
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);   // MIDI-номер → Гц
-  const MUS_TR = [0, 2];                                  // пролог — та же петля на тон выше
-  // аккорды петли: голоса (MIDI), бас (MIDI), вес каждого голоса
-  const MUS_CHORDS = [
-    { v: [45, 48, 52, 57], b: 41, w: [0.50, 0.42, 0.38, 0.30] }, // Fmaj7: A2 C3 E3 A3, бас F2
-    { v: [45, 48, 50, 53], b: 38, w: [0.46, 0.40, 0.42, 0.30] }, // Dm7:   A2 C3 D3 F3, бас D2
-    { v: [47, 50, 52, 55], b: 43, w: [0.44, 0.40, 0.38, 0.34] }, // G6:    B2 D3 E3 G3, бас G2
-    { v: [47, 48, 52, 55], b: 48, w: [0.42, 0.36, 0.40, 0.34] }, // Cmaj7: B2 C3 E3 G3, бас C3
-  ];
-  const mus = { on: false, gestured: false, mood: 'game', nodes: null, bus: null, gen: 0, timer: null, next: 0, step: 0, duck: false };
 
-  const musIdx = () => (mus.mood === 'prologue' ? 1 : 0);
+  // Аккорды сопровождения: [тоника, терция, квинта] в третьей октаве (только трезвучия — без секунд внизу).
+  const CH = {
+    F: [53, 57, 60], Bb: [58, 62, 65], C: [60, 64, 67], Dm: [50, 53, 57], Gm: [55, 58, 62],
+    Am: [57, 60, 64], Em: [52, 55, 59], G: [55, 59, 62], D: [50, 54, 57],
+  };
+  // Мелодия: на каждый такт — список [шаг (0..5 = восьмые в такте 3/4), MIDI, длина в шагах].
+  const MUS_MEL = {
+    // ——— игра: фа мажор, спокойно и «деловито»; фраза A (8 тактов) ———
+    game: [
+      [[0, 72, 2], [2, 69, 1], [3, 65, 2], [5, 69, 1]],
+      [[0, 70, 2], [2, 74, 1], [3, 77, 3]],
+      [[0, 72, 1], [1, 67, 1], [2, 64, 2], [4, 67, 1], [5, 72, 1]],
+      [[0, 69, 3], [3, 65, 3]],
+      [[0, 74, 2], [2, 69, 1], [3, 65, 2], [5, 69, 1]],
+      [[0, 70, 2], [2, 67, 1], [3, 62, 2], [5, 67, 1]],
+      [[0, 67, 1], [1, 70, 1], [2, 72, 2], [4, 76, 2]],
+      [[0, 77, 3], [3, 72, 1], [4, 69, 1], [5, 65, 1]],
+      // ——— A' (8 тактов): та же фраза с небольшим подъёмом ———
+      [[0, 77, 2], [2, 76, 1], [3, 72, 2], [5, 74, 1]],
+      [[0, 74, 3], [3, 70, 1], [4, 72, 1], [5, 74, 1]],
+      [[0, 72, 2], [2, 76, 1], [3, 77, 2], [5, 76, 1]],
+      [[0, 74, 2], [2, 72, 1], [3, 69, 3]],
+      [[0, 74, 2], [2, 77, 1], [3, 76, 2], [5, 74, 1]],
+      [[0, 70, 2], [2, 67, 1], [3, 62, 3]],
+      [[0, 72, 1], [1, 74, 1], [2, 76, 2], [4, 79, 1], [5, 77, 1]],
+      [[0, 77, 4], [4, 72, 1], [5, 69, 1]],
+      // ——— B (8 тактов): контраст, кончается на доминанте — возврат к A ———
+      [[0, 74, 2], [2, 70, 1], [3, 67, 2], [5, 70, 1]],
+      [[0, 72, 2], [2, 69, 1], [3, 65, 2], [5, 69, 1]],
+      [[0, 70, 2], [2, 74, 1], [3, 70, 2], [5, 67, 1]],
+      [[0, 72, 3], [3, 76, 3]],
+      [[0, 77, 2], [2, 76, 1], [3, 74, 2], [5, 72, 1]],
+      [[0, 74, 3], [3, 69, 1], [4, 72, 1], [5, 74, 1]],
+      [[0, 70, 2], [2, 74, 1], [3, 77, 3]],
+      [[0, 76, 2], [2, 74, 1], [3, 72, 3]],
+    ],
+    // ——— пролог: до мажор, выше и мягче; фраза короче (по 4 такта) ———
+    prologue: [
+      [[0, 76, 2], [2, 79, 1], [3, 81, 2], [5, 79, 1]],
+      [[0, 81, 2], [2, 79, 1], [3, 76, 2], [5, 72, 1]],
+      [[0, 77, 2], [2, 81, 1], [3, 84, 2], [5, 81, 1]],
+      [[0, 79, 3], [3, 77, 1], [4, 74, 1], [5, 71, 1]],
+      [[0, 76, 2], [2, 79, 1], [3, 84, 2], [5, 83, 1]],
+      [[0, 81, 3], [3, 79, 2], [5, 76, 1]],
+      [[0, 77, 2], [2, 79, 1], [3, 81, 3]],
+      [[0, 79, 2], [2, 77, 1], [3, 74, 3]],
+      [[0, 84, 2], [2, 83, 1], [3, 79, 2], [5, 81, 1]],
+      [[0, 81, 3], [3, 76, 1], [4, 79, 1], [5, 81, 1]],
+      [[0, 84, 2], [2, 81, 1], [3, 79, 2], [5, 77, 1]],
+      [[0, 79, 2], [2, 77, 1], [3, 74, 3]],
+      [[0, 79, 2], [2, 81, 1], [3, 84, 3]],
+      [[0, 83, 2], [2, 81, 1], [3, 79, 3]],
+      [[0, 81, 2], [2, 79, 1], [3, 77, 2], [5, 76, 1]],
+      [[0, 74, 2], [2, 76, 1], [3, 79, 3]],
+      [[0, 81, 2], [2, 84, 1], [3, 86, 2], [5, 84, 1]],
+      [[0, 83, 2], [2, 81, 1], [3, 79, 2], [5, 77, 1]],
+      [[0, 79, 2], [2, 76, 1], [3, 72, 2], [5, 76, 1]],
+      [[0, 81, 2], [2, 79, 1], [3, 76, 3]],
+      [[0, 77, 2], [2, 81, 1], [3, 84, 2], [5, 86, 1]],
+      [[0, 84, 2], [2, 83, 1], [3, 81, 3]],
+      [[0, 79, 2], [2, 76, 1], [3, 72, 3]],
+      [[0, 74, 1], [1, 76, 1], [2, 77, 2], [4, 79, 2]],
+    ],
+  };
+  // Гармония по тактам (A – A' – B). Вальс: I–IV–V–I / vi–ii–V–I.
+  const MUS_PROG = {
+    game: ['F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F', 'F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F',
+      'Bb', 'F', 'Gm', 'C', 'F', 'Dm', 'Bb', 'C'],
+    prologue: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G',
+      'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'G'],
+  };
+  const MUS_THEMES = {
+    game: {
+      mood: 'game', key: 'фа мажор', bpm: 92, beats: 3, steps: 6, gain: MUS.GAIN, cut: MUS.CUT.game,
+      lev: { lead: 0.34, bass: 0.246, arp: 0.058, tick: 0.037 },
+    },
+    prologue: {
+      mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: MUS.CUT.prologue,
+      lev: { lead: 0.272, bass: 0.208, arp: 0.049, tick: 0.025 },
+    },
+  };
+  Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });
+  const theme = (m) => (m === 'prologue' ? MUS_THEMES.prologue : MUS_THEMES.game);
+  const stepDur = (th) => (60 / th.bpm) / (th.steps / th.beats);   // длительность восьмой, с
+  const loopSec = (th) => th.bars * th.beats * 60 / th.bpm;        // длина полной петли, с
+
+  const mus = { on: false, gestured: false, mood: 'game', nodes: null, bus: null, gen: 0, timer: null, nextT: 0, pos: 0, duck: false };
+
+  // одна нота: свой осциллятор, мягкая атака, спад в ноль, и только потом stop() — щелчка на стыках нет
+  function musNote(c, dest, o) {
+    const att = o.att || MUS.ATT, rel = o.rel || MUS.REL;
+    const d = Math.max(att + rel + 0.02, o.d || 0.2);
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'square';
+    if (osc.frequency.setValueAtTime) osc.frequency.setValueAtTime(o.f, o.t); else osc.frequency.value = o.f;
+    g.gain.setValueAtTime(0, o.t);
+    g.gain.linearRampToValueAtTime(o.vol, o.t + att);
+    g.gain.setValueAtTime(o.vol, o.t + d - rel);
+    g.gain.linearRampToValueAtTime(0, o.t + d);
+    osc.connect(g); g.connect(dest);
+    osc.start(o.t); osc.stop(o.t + d + 0.01);
+    osc.onended = () => { try { osc.disconnect(); g.disconnect(); } catch (e) {} };
+  }
+  // перкуссия-«тик»: короткий шум через полосовой фильтр; в буфере мягкая атака — иначе первый сэмпл щёлкает
+  function musTick(c, dest, t, vol, hz) {
+    const n = Math.max(1, Math.floor(c.sampleRate * 0.03));
+    const buf = c.createBuffer(1, n, c.sampleRate), bd = buf.getChannelData(0);
+    const atk = Math.max(1, Math.floor(c.sampleRate * 0.002));
+    for (let i = 0; i < n; i++) { const k = 1 - i / n; bd[i] = (Math.random() * 2 - 1) * Math.min(1, i / atk) * k * k; }
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass';
+    if (f.frequency.setValueAtTime) f.frequency.setValueAtTime(hz, t); else f.frequency.value = hz;
+    if (f.Q && f.Q.setValueAtTime) f.Q.setValueAtTime(0.9, t); else if (f.Q) f.Q.value = 0.9;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.006);
+    g.gain.linearRampToValueAtTime(0, t + 0.032);
+    src.connect(f); f.connect(g); g.connect(dest);
+    src.start(t);
+    try { src.stop(t + 0.05); } catch (e) {}
+    src.onended = () => { try { src.disconnect(); f.disconnect(); g.disconnect(); } catch (e) {} };
+  }
+  // один шаг секвенсора (восьмая): мелодия, бас, арпеджио, тик — всё в одно и то же время t
+  function musStep(c, nd, th, t, pos) {
+    const steps = th.steps, bar = Math.floor(pos / steps) % th.bars, st = pos % steps;
+    const ch = CH[th.prog[bar]] || CH.C, sd = stepDur(th), lev = th.lev;
+    const m = th.mel[bar];
+    if (m) for (let i = 0; i < m.length; i++) {
+      if (m[i][0] !== st) continue;                       // ведущая партия — квадрат
+      musNote(c, nd.bus, { f: midi(m[i][1]), t, d: sd * m[i][2] * 0.96, type: 'square', vol: lev.lead });
+    }
+    if (st === 0) musNote(c, nd.bus, { f: midi(ch[0] - 12), t, d: sd * 1.9, type: 'triangle', vol: lev.bass });
+    else if (st === 2) musNote(c, nd.bus, { f: midi(ch[0]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.62 });
+    else if (st === 4) musNote(c, nd.bus, { f: midi(ch[1]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.55 });
+    const arp = [ch[0], ch[1], ch[2], ch[0] + 12];        // мягкое арпеджио восьмыми — тихо
+    // нота арпеджио звучит дольше шага (1,3 восьмой): между шагами не остаётся «дырки» в тишину
+    musNote(c, nd.bus, { f: midi(arp[st % 4]), t, d: sd * 1.3, type: 'square', vol: lev.arp, att: 0.02, rel: 0.08 });
+    const tv = lev.tick * (st === 0 ? 1 : (st === 2 || st === 4 ? 0.55 : 0));
+    if (tv > 0) musTick(c, nd.bus, t, tv, st === 0 ? 5200 : 4200);
+  }
+  // шина музыки: gain → фильтр низких частот → мягкий лимитер → выход (master в игре, destination в офлайне)
+  function musGraph(c, mood, dest) {
+    const th = theme(mood);
+    const bus = c.createGain();
+    bus.gain.setValueAtTime(0, 0);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    if (lp.frequency.setValueAtTime) lp.frequency.setValueAtTime(th.cut, 0); else lp.frequency.value = th.cut;
+    if (lp.Q && lp.Q.setValueAtTime) lp.Q.setValueAtTime(0.5, 0); else if (lp.Q) lp.Q.value = 0.5;
+    bus.connect(lp);
+    let lim = null;
+    if (typeof c.createDynamicsCompressor === 'function') {
+      lim = c.createDynamicsCompressor();                 // мягкий лимитер: сумма голосов не выходит за 1,0
+      try {
+        lim.threshold.setValueAtTime(-10, 0); lim.knee.setValueAtTime(3, 0); lim.ratio.setValueAtTime(20, 0);
+        lim.attack.setValueAtTime(0.004, 0); lim.release.setValueAtTime(0.18, 0);
+      } catch (e) {}
+      lp.connect(lim); lim.connect(dest);
+    } else lp.connect(dest);
+    return { bus, lp, lim, th };
+  }
+  function musFree(nd) {
+    if (!nd) return;
+    try { nd.bus.disconnect(); } catch (e) {}
+    try { nd.lp.disconnect(); } catch (e) {}
+    if (nd.lim) { try { nd.lim.disconnect(); } catch (e) {} }
+  }
   // музыка нужна: общий звук включён, категория «Музыка» включена, был жест игрока, вкладка видима
   function musicWant() {
     return mus.gestured && isOn() && catVal('music') && !(typeof document !== 'undefined' && document.hidden);
@@ -16879,127 +17072,73 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // уровень подложки: всегда через плавный setTargetAtTime — щелчков не бывает
   function musLevel() {
     if (!mus.bus || !ctx || !mus.bus.gain || !mus.bus.gain.setTargetAtTime) return;
-    const want = (mus.on && musicWant()) ? MUS.GAIN * (mus.duck ? MUS.DUCK : 1) : 0;
-    const tau = want ? (mus.duck ? 0.45 : MUS.FADE_IN) : MUS.FADE_OUT;
+    const want = (mus.on && musicWant()) ? theme(mus.mood).gain * (mus.duck ? MUS.DUCK : 1) : 0;
+    const tau = want ? (mus.duck ? 0.4 : MUS.FADE_IN) : MUS.FADE_OUT;
     try { mus.bus.gain.setTargetAtTime(want, ctx.currentTime, tau); } catch (e) {}
   }
-  function musBuild() {
-    const c = ac(); if (!c || !master) return false;
-    const c0 = MUS_CHORDS[mus.step % MUS_CHORDS.length], tr0 = MUS_TR[musIdx()];
-    const bus = c.createGain(); bus.gain.value = 0;
-    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = MUS.CUT[musIdx()]; lp.Q.value = 0.4;
-    bus.connect(lp); lp.connect(master);
-    const voices = [];
-    for (let i = 0; i < c0.v.length; i++) {
-      const osc = c.createOscillator(); osc.type = i === 0 ? 'sine' : 'triangle'; // мягкий тёплый тембр
-      osc.frequency.value = midi(c0.v[i] + tr0);                                 // сразу своя нота — без «подъезда» от 440 Гц
-      const g = c.createGain(); g.gain.value = c0.w[i] * (0.24 + 0.08 * i);      // старт с «дыхания», не с нуля
-      osc.connect(g); g.connect(bus); osc.start();
-      voices.push({ osc, g });
-    }
-    const bassOsc = c.createOscillator(), bassG = c.createGain();
-    bassOsc.type = 'sine'; bassOsc.frequency.value = midi(c0.b + tr0); bassG.gain.value = MUS.BASS * 0.25;
-    bassOsc.connect(bassG); bassG.connect(bus); bassOsc.start();
-    const shOsc = c.createOscillator(), shG = c.createGain();
-    shOsc.type = 'sine'; shOsc.frequency.value = midi(c0.b + tr0) * 4; shG.gain.value = MUS.SHINE[musIdx()] * 0.3;
-    shOsc.connect(shG); shG.connect(bus); shOsc.start();
-    try { shG.gain.setTargetAtTime(MUS.SHINE[musIdx()], c.currentTime, 1.0); } catch (e) {}
-    mus.nodes = { bus, lp, voices, bassOsc, bassG, shOsc, shG }; mus.bus = bus;
-    return true;
-  }
-  function musTeardown() {
-    const n = mus.nodes; if (!n) return;
-    mus.nodes = null; mus.bus = null;
-    try {
-      n.voices.forEach((v) => { v.osc.stop(); v.osc.disconnect(); v.g.disconnect(); });
-      n.bassOsc.stop(); n.bassOsc.disconnect(); n.bassG.disconnect();
-      n.shOsc.stop(); n.shOsc.disconnect(); n.shG.disconnect();
-      n.lp.disconnect(); n.bus.disconnect();
-    } catch (e) {}
-  }
-  // один аккорд: голоса «переезжают» на новые ноты, огибающая дышит (не в полную тишину) — ровный фон без разрывов
-  function musChord(t0) {
-    const n = mus.nodes; if (!n) return;
-    const mi = musIdx(), tr = MUS_TR[mi], D = MUS.STEP[mi];
-    const ch = MUS_CHORDS[mus.step % MUS_CHORDS.length]; mus.step++;
-    for (let i = 0; i < n.voices.length; i++) {
-      const v = n.voices[i], w = ch.w[i];
-      const att = MUS.ATTACK[mi] * (0.85 + 0.15 * i), rel = MUS.RELEASE[mi] * (0.85 + 0.12 * i);
-      const floor = w * (0.24 + 0.08 * i);
-      try {
-        v.osc.frequency.setTargetAtTime(midi(ch.v[i] + tr), t0, MUS.GLIDE);
-        const g = v.g.gain;
-        g.cancelScheduledValues(t0);
-        g.setValueAtTime(floor, t0);
-        g.linearRampToValueAtTime(w, t0 + att);
-        g.setValueAtTime(w, Math.max(t0 + att, t0 + D - rel));
-        g.linearRampToValueAtTime(floor, t0 + D - 0.02); // закончить до следующего аккорда — без рывка на стыке
-      } catch (e) {}
-    }
-    const bf = midi(ch.b + tr);
-    try { n.bassOsc.frequency.setTargetAtTime(bf, t0, MUS.GLIDE);
-      n.bassG.gain.cancelScheduledValues(t0);
-      n.bassG.gain.setValueAtTime(MUS.BASS * 0.25, t0);
-      n.bassG.gain.linearRampToValueAtTime(MUS.BASS, t0 + MUS.ATTACK[mi]);
-      n.bassG.gain.setValueAtTime(MUS.BASS, Math.max(t0 + MUS.ATTACK[mi], t0 + D - MUS.RELEASE[mi]));
-      n.bassG.gain.linearRampToValueAtTime(MUS.BASS * 0.25, t0 + D - 0.02);
-      n.shOsc.frequency.setTargetAtTime(bf * 4, t0, MUS.GLIDE); // тихий «блеск» в две октавы выше баса
-    } catch (e) {}
-  }
+  // планировщик: держим LOOK секунд вперёд; отстали (вкладка подвисла) — не играем в прошлом, а начинаем заново
   function musSched() {
     if (!mus.on || !ctx || !mus.nodes) return;
     const now = ctx.currentTime;
-    if (!mus.next || mus.next < now) mus.next = now + 0.12;
+    if (!mus.nextT || mus.nextT < now + 0.05) mus.nextT = now + 0.08;
     let guard = 0;
-    while (mus.next - now < 2.2 && guard++ < 8) { musChord(mus.next); mus.next += MUS.STEP[musIdx()]; }
+    while (mus.nextT < now + MUS.LOOK && guard++ < 64) {
+      const th = theme(mus.mood);
+      musStep(ctx, mus.nodes, th, mus.nextT, mus.pos);
+      mus.pos++; mus.nextT += stepDur(th);
+    }
   }
   function musStart() {
     if (!musicWant()) return false;
-    if (mus.on && mus.nodes) return true;   // уже играет — ничего не трогаем (никаких лишних событий на каждый клик)
+    if (mus.on && mus.nodes) return true;   // уже играет — ничего не трогаем
     const c = ac(); if (!c || !master) return false;
     resume();
     mus.gen++;                       // отменяем отложенный разбор узлов прежней остановки
     mus.on = true;
-    if (!mus.nodes && !musBuild()) { mus.on = false; return false; }
-    mus.next = 0; mus.step = mus.step || 0;
+    if (!mus.nodes) {
+      const nd = musGraph(c, mus.mood, master);
+      if (!nd) { mus.on = false; return false; }
+      mus.nodes = nd; mus.bus = nd.bus;
+    }
+    mus.nextT = 0; mus.pos = 0;
     musSched();
-    if (!mus.timer) mus.timer = setInterval(musSched, 500);
+    if (!mus.timer) mus.timer = setInterval(musSched, 150);
     musLevel();
     return true;
   }
-  // mode: 'now' — мгновенно (общий выключатель: master глушится в тот же миг, щелчка не слышно),
-  //       'fast' — очень короткое плавное затухание ~0,2 с (скрытая вкладка),
-  //       иначе — обычное плавное затухание 0,5–0,8 с (выключили «Музыку»), затем узлы освобождаются.
+  // mode: 'now' — почти мгновенно (~45 мс), 'fast' — скрытая вкладка (~70 мс), иначе — обычное затухание (~0,5 с).
+  // В любом случае это линейная рампа шины в ноль, а узлы освобождаются только после неё: обрыва нет.
   function musStop(mode) {
     if (!mus.on && !mus.nodes) return false;
     mus.gen++; mus.on = false;
     if (mus.timer) { clearInterval(mus.timer); mus.timer = null; }
-    mus.next = 0;
-    const n = mus.nodes, gen = mus.gen;
-    if (mode === 'now') {
-      if (n && ctx && n.bus.gain && n.bus.gain.cancelScheduledValues) { try { n.bus.gain.cancelScheduledValues(ctx.currentTime); n.bus.gain.setValueAtTime(0, ctx.currentTime); } catch (e) {} }
-      musTeardown();
-    } else if (mode === 'fast') {
-      if (n && ctx && n.bus.gain && n.bus.gain.setTargetAtTime) { try { n.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.05); } catch (e) {} }
-      setTimeout(() => {
-        if (gen !== mus.gen || mus.on) return;
-        const m2 = mus.nodes;
-        if (m2 && ctx && m2.bus.gain && m2.bus.gain.cancelScheduledValues) { try { m2.bus.gain.cancelScheduledValues(ctx.currentTime); m2.bus.gain.setValueAtTime(0, ctx.currentTime); } catch (e) {} }
-        musTeardown();
-      }, 220);
-    } else {
-      musLevel(); // плавное затухание, потом освобождаем узлы
-      setTimeout(() => { if (gen === mus.gen && !mus.on) musTeardown(); }, 900);
-    }
+    mus.nextT = 0; mus.pos = 0;
+    const nd = mus.nodes, gen = mus.gen;
+    if (!nd || !ctx || !nd.bus.gain) { mus.nodes = null; mus.bus = null; return true; }
+    const now = ctx.currentTime, fade = mode === 'now' ? 0.045 : (mode === 'fast' ? 0.07 : 0.22);
+    try {
+      const cur = nd.bus.gain.value;
+      nd.bus.gain.cancelScheduledValues(now);
+      nd.bus.gain.setValueAtTime(cur, now);
+      nd.bus.gain.linearRampToValueAtTime(0, now + fade);
+    } catch (e) {}
+    setTimeout(() => { if (gen !== mus.gen) return; mus.nodes = null; mus.bus = null; musFree(nd); },
+      Math.round(fade * 1000) + 120);
     return true;
   }
-  // настроение: 'game' — тёмный спокойный фон, 'prologue' — та же петля выше и светлее (тёплый пролог)
+  // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога
   function musMood(m) {
     if (m !== 'game' && m !== 'prologue') return mus.mood;
     if (mus.mood === m) return mus.mood;
     mus.mood = m;
-    const n = mus.nodes;
-    if (n && ctx) { try { n.lp.frequency.setTargetAtTime(MUS.CUT[musIdx()], ctx.currentTime, 1.2); n.shG.gain.setTargetAtTime(MUS.SHINE[musIdx()], ctx.currentTime, 1.2); } catch (e) {} }
+    const nd = mus.nodes;
+    if (nd && ctx) {
+      // тембр меняется плавно; следующая нота берётся с начала такта новой темы — стык без рывка
+      try { nd.lp.frequency.cancelScheduledValues(ctx.currentTime); nd.lp.frequency.setTargetAtTime(theme(m).cut, ctx.currentTime, 0.6); } catch (e) {}
+      const st = theme(m).steps;
+      mus.pos = Math.ceil(mus.pos / st) * st;
+      if (mus.on) musLevel();
+    }
     return mus.mood;
   }
   // открылось окно (пауза чтения) — приглушаем; закрылось — возвращаем. Музыка при этом не останавливается.
@@ -17008,6 +17147,43 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (typeof document === 'undefined') return;
     if (document.hidden) musStop('fast');           // в скрытой вкладке — тишина и никакой работы
     else if (mus.gestured) { resume(); musStart(); }
+  }
+  // справка о теме (для проверки музыки, qa/music8.js): темп, тональность, длина петли, тембр, регистр
+  function musInfo(m) {
+    const th = theme(m === 'prologue' || m === 'game' ? m : mus.mood);
+    let sum = 0, n = 0, lo = 127, hi = 0;
+    th.mel.forEach((bar) => bar.forEach((v) => { sum += v[1]; n++; if (v[1] < lo) lo = v[1]; if (v[1] > hi) hi = v[1]; }));
+    return { mood: th.mood, key: th.key, bpm: th.bpm, beats: th.beats, steps: th.steps, bars: th.bars,
+      loopSec: +loopSec(th).toFixed(1), cut: th.cut, gain: +th.gain.toFixed(4),
+      leadAvg: n ? +(sum / n).toFixed(1) : 0, leadLo: lo, leadHi: hi, leadNotes: n };
+  }
+  // офлайн-рендер музыки (OfflineAudioContext) — только для проверки qa/music8.js: числа вместо «на слух».
+  // opts.stopAt (с) — та же плавная рампа выключения, что и в musStop: проверяем, что на стопе нет щелчка.
+  function renderMusic(mood, seconds, srIn, opts) {
+    const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    const sr = srIn || 44100, sec = Math.max(4, Math.min(120, seconds || 44));
+    const c = new OAC(1, Math.ceil(sec * sr), sr);
+    const out = c.createGain();                 // как MASTER в игре — иначе замер нельзя сравнивать с живым звуком
+    out.gain.setValueAtTime(MASTER, 0); out.connect(c.destination);
+    const nd = musGraph(c, m, out);
+    if (!nd) return null;
+    const end = sec - 0.3;
+    const stopAt = opts && opts.stopAt > 0.5 && opts.stopAt < end - 0.5 ? opts.stopAt : 0;
+    let t = 0.12, pos = 0, guard = 0;
+    const planTo = (stopAt || end) - 0.2;
+    while (t < planTo && guard++ < 4000) { musStep(c, nd, th, t, pos); pos++; t += stepDur(th); }
+    nd.bus.gain.setValueAtTime(0, 0);                    // вход подложки — плавно
+    nd.bus.gain.linearRampToValueAtTime(th.gain, 0.5);
+    if (stopAt) {
+      nd.bus.gain.setValueAtTime(th.gain, stopAt);
+      nd.bus.gain.linearRampToValueAtTime(0, stopAt + 0.045);   // ровно как musStop('now')
+    } else {
+      nd.bus.gain.setValueAtTime(th.gain, end - 0.4);           // выход подложки — плавно
+      nd.bus.gain.linearRampToValueAtTime(0, end);
+    }
+    return c.startRendering();
   }
 
   /* ---------- кнопки в интерфейсе ---------- */
@@ -17057,7 +17233,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${catRow('money', CAT_NAME.money, 'выручка, монетки 1-го числа')}
         ${catRow('notes', CAT_NAME.notes, 'открытие точки, вехи, достижения')}
         ${catRow('ui', CAT_NAME.ui, 'отклик на нажатия и окна')}
-        ${catRow('music', CAT_NAME.music, 'тихий тёплый фон, без мелодий')}
+        ${catRow('music', CAT_NAME.music, 'лёгкая 8-битная тема (игра и пролог — разные)')}
       </div></div>`;
   }
 
@@ -17109,6 +17285,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     catOn, catVal, setCat, toggleCat, CATS, CAT_NAME,
     // музыка: music('game') / music('prologue') — настроение (без аргумента — узнать текущее)
     music: musMood,
+    musicInfo: musInfo,       // справка о теме: темп, тональность, длина петли, тембр (проверка qa/music8.js)
+    renderMusic,              // офлайн-рендер музыки в OfflineAudioContext — числа вместо «на слух»
     // первый жест игрока — можно включать звук (политика браузеров) и снимать запрет на музыку
     arm() {
       if (typeof document === 'undefined' || BK.Sound.__armed) return;
