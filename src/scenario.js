@@ -100,7 +100,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (s.mood != null) for (const st2 of (S.stores || [])) { st2.mood = s.mood; }   // уставшая команда
       if (s.rating != null) for (const st2 of (S.stores || [])) { st2.rating = s.rating; }
     }
-    const setupFn = (typeof s.setup === 'function' && s.setup) || (typeof d.setup === 'function' && d.setup);
+    // старт «с готовой сетью» — только для обычной партии: в прологе и в «Своей кофейне» он бы всё сломал
+    const midGame = !!((S.prologue && !S.prologue.won) || S.stage1) || S.phase === 'prologue' || S.phase === 'stage1';
+    const setupFn = midGame ? null : ((typeof s.setup === 'function' && s.setup) || (typeof d.setup === 'function' && d.setup));
     if (setupFn) {
       // история может начаться не с нуля: своя сеть, цех, люди (например, «Спаси сеть»)
       try { const r = setupFn(S); out.push(r && r.stores ? `сеть: ${r.stores}` : 'сеть'); } catch (e) { out.push('сеть не встала'); }
