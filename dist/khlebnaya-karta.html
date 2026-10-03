@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 14:06";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 14:18";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3640,7 +3640,8 @@ BK.CFG.THOUGHTS = { WEEK: 7, SHOW: 3 };
 BK.CFG.PROLOGUE = {
   // --- время: ход = месяц, идёт сам. Длительность месяца на ×1 (мс) по годам: сначала всё ново, потом «годы летят быстрее»
   // (рутина). На ×3 — втрое быстрее. Окна-решения и «Смена» ставят время на паузу.
-  MONTH_MS: [[2, 15000], [4, 10000], [99, 2500]], // [до конца какого года, мс]: годы 1–2, 3–4, 5+ («годы летят»)
+  // Годы 5+ — это уже не пролог, а «жизнь в найме» (180 мес.): 1,8 с вместо 2,5 с, чтобы длинная ветка уложилась в 30 минут.
+  MONTH_MS: [[2, 15000], [4, 10000], [99, 1800]], // [до конца какого года, мс]: годы 1–2, 3–4, 5+ («годы летят»)
   AGE0: 21,                       // возраст героя на старте
   LIFE_MONTHS: 180,               // 15 лет в найме — финал «Вы прожили жизнь, работая в найме»
   // --- цель ---
@@ -3712,7 +3713,7 @@ BK.CFG.PROLOGUE = {
   // --- события ---
   EV_P1: 0.8, EV_P2: 0.3,         // шанс первого и второго случайного события за месяц
   EV_NEG: 0.7,                    // 70 % — неприятности (мягче основной игры)
-  EV_LATE: [5, 0.4],              // с 5-го года жизнь — рутина: случайные события реже
+  EV_LATE: [5, 0.1],              // с 5-го года жизнь — рутина: случайные события реже (было 0,4: длинная ветка «жизнь в найме» набирала 150+ пустых окон)
   // --- мини-игра «Смена» ---
   SHIFT_SEC: 40,                  // длина смены, с
   SHIFT_TIP: 90,                  // ₽ чаевых за обслуженного гостя (× навык продаж)
@@ -20586,12 +20587,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function schedule(P) {
     const c = C(); P.evAt = [];
-    if (V2('overlay', P) && P.cards.length && P.cards[P.cards.length - 1].v2) { /* дилемма уже в очереди */ }
+    const dil = V2('overlay', P) && P.cards.length && P.cards[P.cards.length - 1].v2; // дилемма уже в очереди
     const h = P.m > 0 ? heroScene(P) : null;
     if (h) { P.flags[h] = 1; P.evAt.push({ t: 0.15 + rnd(P) * 0.15, hero: h }); }
     const k = year(P) >= c.EV_LATE[0] ? c.EV_LATE[1] : 1;
-    if (rnd(P) < c.EV_P1 * k) P.evAt.push({ t: 0.35 + rnd(P) * 0.25 });
-    if (rnd(P) < c.EV_P2 * k) P.evAt.push({ t: 0.65 + rnd(P) * 0.25 });
+    // Разводим карточки по времени: в месяц, где уже стоит сцена или дилемма живого сюжета,
+    // случайных событий нет. Раньше за один игровой месяц приходило 3–4 окна подряд
+    // (сцена + два события + гость) — читать это было нельзя, а «окон» на партию выходило 76.
+    if (!h && !dil) {
+      if (rnd(P) < c.EV_P1 * k) P.evAt.push({ t: 0.35 + rnd(P) * 0.25 });
+      if (rnd(P) < c.EV_P2 * k) P.evAt.push({ t: 0.65 + rnd(P) * 0.25 });
+    }
     P.evAt.sort((a, b) => a.t - b.t);
   }
 
@@ -20838,9 +20844,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.hp = clamp(P.hp - 2, 0, 100);
     earn(P, tips, 'tips');
     // номер смены в расписании — по счётчику итогов; сам P.shift хранит только последний итог (его читает интерфейс)
-    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost, n: shiftsDone(P) + 1 });
-    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost });   // счётчик смены (n) не теряем
-    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
+    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost, n: shiftsDone(P) + 1 });   // счётчик смены (n) не теряем
+    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)
+    // счётчик смен: по нему расписание SHIFT_AT решает, какая смена следующая (было съедено комментарием при слиянии — из-за
+    // этого dueShift() считал расписание непройденным и «Смена» приходила каждый месяц: 34–41 смена за партию вместо 5–10).
+    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
     fx(P, 'rub', tips, 'shift');
     // тон смены — для звука интерфейса («Смена»): удачная (+) / провальная (−) / обычная
     P.lastShift = { stars: stars, tips: tips, tone: stars >= 4 ? 'pos' : stars <= 2 ? 'neg' : '' };
