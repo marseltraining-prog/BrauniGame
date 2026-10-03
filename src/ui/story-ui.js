@@ -58,17 +58,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (f && f.in) || ('в городе ' + subCity(S));
   }
   function sub(S, txt) {
-    if (BK.STORY_CAST && BK.STORY_CAST.render) { try { return BK.STORY_CAST.render(S, txt); } catch (e) { /* ниже — прежний путь */ } }
+    // родовые формы героя и {name} — общий слой (src/story.js): {say} → «сказал»/«сказала», {self}, {young}…
+    const sex = (t) => (ST && ST.heroText ? ST.heroText(S, t) : t);
+    if (BK.STORY_CAST && BK.STORY_CAST.render) { try { return sex(BK.STORY_CAST.render(S, txt)); } catch (e) { /* ниже — прежний путь */ } }
     let s = String(txt == null ? '' : txt);
-    if (s.indexOf('{') < 0) return s;
+    if (s.indexOf('{') < 0) return sex(s);
     const R = ST.state(S) || {};
     const st = subStore(S);
-    const name = (R.hero && R.hero.name) || (S && S.story && S.story.hero && S.story.hero.name) || 'шеф';
-    return s.split('{name}').join(name)
+    // имя героя: из состояния сюжета, а до его появления (первые часы «своей сети») — из выбора на старте
+    const name = (R.hero && R.hero.name) || (S && S.story && S.story.hero && S.story.hero.name) || (ST.heroOf && ST.heroOf(S).name) || 'шеф';
+    return sex(s.split('{name}').join(name)
       .split('{inCity}').join(subCityIn(S))
       .split('{city}').join(subCity(S))
       .split('{street}').join((st && st.address) || 'Пушкина')
-      .split('{n}').join(String(st && st.num != null ? st.num : 1));
+      .split('{n}').join(String(st && st.num != null ? st.num : 1)));
   }
 
   const BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';

@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 19:33 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 19:35 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -4142,7 +4142,7 @@ BK.STORY = {
     hired: { name: 'Жизнь в найме', text: 'Своё дело не вышло. Вы вернулись за стойку — и, честно говоря, вам там спокойнее.' },
     /* Концовки сквозных линий (docs/story-v2.md п. 4 «линия должна менять финал»): открываются
        не выбором в финале, а тем, чем закончились линии — флаг f.book собирает счёт решений. */
-    remembered: { name: 'Вас помнят', text: 'Дамир, Пётр Егорович, Инна, мама — кого-то вы удержали, кого-то нет. Но никто не ушёл просто так. В зале шумно, и в книге Семёна много имён.' },
+    remembered: { name: 'Вас помнят', text: 'Дамир, Пётр Егорович, Инна, мама — кого-то вы удержали, кого-то нет. Но никто не ушёл просто так. В зале шумно, а в книге Семёна много имён и одно ваше — {name}.' },
     ledger: { name: 'Всё по бумагам', text: 'Акты, сроки, подписи, приёмка по правилам. Проверки к вам не приходят — им нечего искать. В залах ровно и тихо, как в отчёте.' },
     bankrupt: { name: 'Всё сгорело', text: 'Банк забрал последнее. Но тесто вы месить умеете — начнёте снова.' },
   },
@@ -5559,7 +5559,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const st = cur(P);
     return st.intro ? st.intro + ' ' + (BASE_P01 || '') : null;
   }
-  const BASE_P01 = 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду. Правда сегодня в чём? Эчпочмаки вчерашние?»';
+  // ({young} — обращение Семёна к герою: «молодой человек» / «девушка», PLAN.md §8.1; подстановка на отрисовке)
+  const BASE_P01 = 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду, {young}. Правда сегодня в чём? Эчпочмаки вчерашние?»';
   // метка истории в заголовке карточки: «Рашид считает кассу · Долг за курсы»
   function title(P, id, t) {
     if (!P.v2 || !t) return t;
@@ -5770,12 +5771,44 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* =====================================================================
+     5.1 ГЕРОЙ: ИМЯ И ПОЛ (PLAN.md §8.1, добавление к живому сюжету)
+
+     Пол героя выбирает игрок на стартовом экране (src/ui/app.js), он лежит в P.hero и S.story.hero.
+     О герое здесь по-прежнему только «вы»/«ты» — это правило тона из шапки файла. Добавка ниже не
+     переписывает реплики, а даёт живым людям правильное обращение: Семён скажет «девушка», Рашид —
+     «кызым», бабушка — «внученька». Кто и как обращается — в таблице ADDRESS; берут её
+     интерфейс пролога и новые тексты (src/ui/prologue.js, src/prologue.js).
+     Имя героя — hello(P): «Аня, » в начале реплики; без имени (игрок не задавал) — пусто, и герой
+     остаётся «шеф», как во всей игре (src/data/story-lines.js). */
+  const ADDRESS = {
+    rashid: { m: 'балам', f: 'кызым' },              // по-татарски «сынок» / «дочка» — так Рашид и говорит
+    sania: { m: 'внучек', f: 'внученька' },           // бабушка Сания
+    mama: { m: 'сынок', f: 'дочка' },
+    semyon: { m: 'молодой человек', f: 'девушка' },
+    elvira: { m: 'молодой человек', f: 'девушка' },
+    oleg: { m: 'парень', f: 'девушка' },
+    gulya: { m: 'стажёр', f: 'стажёрка' },
+    maltsev: { m: 'молодой человек', f: 'девушка' },
+  };
+  // как этот человек обращается к герою (null — этот человек так не говорит)
+  function address(P, who) {
+    const a = ADDRESS[who]; if (!a) return null;
+    return BK.Prologue && BK.Prologue.isF && BK.Prologue.isF(P) ? a.f : a.m;
+  }
+  // имя героя в начале реплики: «Аня, …» / '' (без имени героя зовут «шеф» — см. src/story.js)
+  function hello(P) {
+    const n = BK.Prologue && BK.Prologue.heroName ? BK.Prologue.heroName(P) : '';
+    return n && n !== 'шеф' ? n + ', ' : '';
+  }
+
+  /* =====================================================================
      6. ПУБЛИЧНЫЙ ИНТЕРФЕЙС
      ===================================================================== */
   BK.PrologV2 = {
     STORIES, DILEMMAS, STORY_IDS: STORIES.map((s) => s.id), DIL_IDS: Object.keys(DILEMMAS),
     init, welcome, storyText, title, overlay, maybeDil, push, addThread, dueThreads, pending,
     debtPressure, shiftMods, shiftNote, shiftOutcome, tick, epilogue, ending, cur, bridge, DEFAULTS, V,
+    ADDRESS, address, hello,   // герой: имя и пол — обращение людей к герою (PLAN.md §8.1)
   };
   // V() готовит CFG.PROLOGUE_V2 и запоминает цену болезни (доля оклада) в момент вызова
   function fitMoney(P) { if (P && P.v2 && !P.v2.sickMoney) P.v2.sickMoney = r100((BK.CFG.PROLOGUE.JOBS[P.job].pay || 42000) * V().SICK_MONEY_K); }
@@ -8411,7 +8444,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fallback: { months: 8 },
       lines: [
         { who: 'rashid', emo: 'calm', text: '{name}. У тебя на той неделе восемь буханок ушло в списание. Восемь, я считал по фотографии в твоём же отчёте.' },
-        { who: 'rashid', emo: 'serious', text: 'Не ругаю. Черствую булку можно продать вечером. Стыдно — можно продать всю жизнь. Разницу поймёшь сам.' },
+        { who: 'rashid', emo: 'serious', text: 'Не ругаю. Черствую булку можно продать вечером. Стыдно — можно продать всю жизнь. Разницу поймёшь {self}.' },
       ],
       choices: [
         { label: 'Спасибо. Вечерняя скидка, посуда для черствого.', desc: 'Списаний меньше, себестоимость ниже на полгода.', cost: 'внимание к цеху',
@@ -9013,7 +9046,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       trigger: { after: ['kd1'], any: [{ stores: 15 }, { months: 48 }] },
       fallback: { months: 10 },
       lines: [
-        { who: 'rashid', emo: 'calm', text: 'Одну вещь я тебе не сказал. Помнишь куртку в подсобке, в чужую смену? Я её узнал и промолчал: думал, ты сам разберёшься.' },
+        { who: 'rashid', emo: 'calm', text: 'Одну вещь я тебе не сказал. Помнишь куртку в подсобке, в чужую смену? Я её узнал и промолчал: думал, ты {self} разберёшься.' },
         { who: 'rashid', emo: 'serious', text: 'Дамир тогда не болел. Он в ту ночь работал на складе за деньги и привёл с собой Айрата. Хлеб уносил Айрат, а говорили на тебя.' },
         { who: 'hero', emo: 'calm', text: 'И что теперь?' },
         { who: 'rashid', emo: 'calm', text: 'Теперь он у тебя работает или нет. Я не судья. Я тесто мешу.' },
@@ -9078,7 +9111,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fallback: { months: 6 },
       lines: [
         { who: 'maltsev', emo: 'neutral', text: 'Пётр Егорович, инспектор. Четвёртая точка по списку — ваша. Сигнализация, план эвакуации, журнал температур. Показывайте.' },
-        { who: 'maltsev', emo: 'calm', text: 'Вы меня не помните. Я заходил к вам в «Калач» за двадцать пять рублей, руки в мазуте. Печь у вас тогда дышала в одну сторону.' },
+        { who: 'maltsev', emo: 'calm', text: 'Вы меня не помните. Я заходил к вам в «Калач» за двадцать пять рублей, руки в мазуте. «{young}, американо можно?» — это я был. Печь у вас тогда дышала в одну сторону.' },
         { who: 'hero', emo: 'calm', text: 'Помню.' },
         { who: 'maltsev', emo: 'smirk', text: 'Сроками это не решается. Бумаги я не рисую — я их ношу. Кому за день, а кому за месяц.' },
       ],
@@ -9231,7 +9264,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       fallback: { months: 12 },
       lines: [
         { who: 'family', emo: 'calm', text: 'Я не хотела просить. У дома крыша поехала, та сторона совсем сдала. Я спрошу у тебя, потому что больше не у кого.' },
-        { who: 'babushka', emo: 'calm', text: 'Мать твоя гордая, а я нет. Скажи сумму сам — мы не обидимся и торговаться не будем.' },
+        { who: 'babushka', emo: 'calm', text: 'Мать твоя гордая, а я нет. Скажи сумму {self} — мы не обидимся и торговаться не будем.' },
         { who: 'hero', emo: 'calm', text: 'Сколько нужно?' },
         { who: 'family', emo: 'sad', text: 'Миллион двести. С материалами. Я не считала работу, работу мы сами.' },
       ],
@@ -9277,7 +9310,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
             { t: 'thread', rec: { id: 'th-taxman-back', who: 'Марат Ильдарович', role: 'инспекция, камеральные проверки', kind: 'grudge',
               text: 'вы отправили его к бухгалтеру, а бухгалтер не ответил', after: 400, effect: { fx: [{ t: 'cash', v: -500000 }], text: 'вернётся со сверкой и пенями' } } },
             { t: 'journal', text: 'Инспекцию отправили к бухгалтеру' }] },
-        { label: '«Расскажу всё сам — вам и Семёну»',
+        { label: '«Расскажу всё {self} — вам и Семёну»',
           desc: 'Семён напишет как было: с цифрами и без злобы. Гостей меньше на два месяца — зато тема закрыта.',
           effects: [{ t: 'traffic', m: 0.985, d: 60 }, { t: 'rel', who: 'semyon', add: 12 }, { t: 'meter', k: 'honesty', add: 10 },
             { t: 'flag', k: 'linePaper', v: 'own' }, { t: 'line', warm: true, text: 'про лишний расход вы рассказали сами — и Семён написал как было' },
@@ -9383,7 +9416,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { who: 'family', emo: 'calm', text: 'Твой человек второй вечер что-то считает на кухне и спрашивает, когда ты придёшь. Я не знаю, что отвечать, а врать не хочу.' },
         { who: 'family', emo: 'serious', text: 'Я тебе скажу как мать: или вы делаете дело вместе, или дома будет тихо и обидно. Совмещать не выйдет — я пробовала.' },
         { who: 'hero', emo: 'calm', text: 'Поговорю. Сегодня же.' },
-        { who: 'family', emo: 'smile', text: 'Поговори. Только не так, как ты разговариваешь с поставщиками. Реши сам, кто тебе рядом нужен.' },
+        { who: 'family', emo: 'smile', text: 'Поговори. Только не так, как ты разговариваешь с поставщиками. Реши {self}, кто тебе рядом нужен.' },
       ],
       choices: [
         { label: '«Работать вместе. Цифры — твои, люди — мои»', need: { flag: { mateKind: 'helper' } },
@@ -20856,8 +20889,82 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!K().ON) return null;                       // выключено — ничего не создаём
     if (S.story && S.story.v) return fill(S.story);
     S.story = fill(defaults(S.seed || 0));
+    applyHero(S);                                   // имя и пол со стартового экрана — в новое состояние
     return S.story;
   }
+
+  /* ---------------- герой игрока: имя и пол (PLAN.md §8.1) ----------------
+     Игрок выбирает имя и пол на стартовом экране (src/ui/app.js), выбор живёт в S.story.hero —
+     это поле уже было в схеме (src/prologue.js, storyDefaults), но никто его не заполнял.
+     Пока состояния сюжета нет (до первого дня игры или при выключенном сюжете), выбор лежит
+     в служебном S.__hero — тем и хорош: новая игра с прологом не создаёт S.story раньше времени
+     и не портит главу партии («Пролог» вместо «Своя точка»).
+     Пол: 'm' — мужчина, 'f' — женщина, null — не выбирали (старые сохранения, боты): тексты
+     остаются нейтральными, облик — прежний, по названию сети (src/ui/stage1.js). */
+  function heroOf(S) {
+    const R = state(S), h = (R && R.hero) || (S && S.__hero) || null;
+    return { name: (h && h.name) ? String(h.name) : '', g: h && h.g === 'f' ? 'f' : h && h.g === 'm' ? 'm' : null };
+  }
+  function applyHero(S) {
+    // выбор со стартового экрана переезжает в состояние сюжета, как только оно появилось
+    if (!S || !S.story || !S.__hero) return;
+    S.story.hero = { name: S.__hero.name || '', g: S.__hero.g || null };
+  }
+  function heroSet(S, o) {
+    if (!S) return null;
+    const h = { name: String((o && o.name) || '').trim().slice(0, 24), g: o && o.g === 'f' ? 'f' : o && o.g === 'm' ? 'm' : null };
+    const R = state(S);
+    if (R) R.hero = h; else S.__hero = h;
+    return h;
+  }
+  // Имя героя для текстов. Пустое имя — не «дырка»: в игре его зовут «шеф» (как в src/data/story-lines.js).
+  function heroName(S) { const h = heroOf(S); return h.name || 'шеф'; }
+  const heroG = (S) => heroOf(S).g;
+  const isFemale = (S) => heroOf(S).g === 'f';
+  // Родовые формы: g(S, 'сказал', 'сказала'). Без выбора пола — мужская форма (как было до §8.1).
+  function g(S, m, f) { return isFemale(S) ? f : m; }
+  // Склонение имени: «Аня» → «Ане», нужно для писем и летописи (имя приходит от игрока, падеж угадываем).
+  function heroNameDat(S) { const n = heroName(S); return /[ая]$/i.test(n) ? n.slice(0, -1) + 'е' : n; }
+
+  /* Подстановки родовых форм в тексты: {имя формы} вместо двух вариантов.
+     Данные сцен не переписываем — только те места, где форма важна (PLAN.md §8.1).
+     Формы для мужчины (по умолчанию и без выбора) — как в текстах было. */
+  const SEX = {
+    say: ['сказал', 'сказала'], self: ['сам', 'сама'], ready: ['готов', 'готова'], must: ['должен', 'должна'],
+    came: ['пришёл', 'пришла'], went: ['пошёл', 'пошла'], tired: ['устал', 'устала'], glad: ['рад', 'рада'],
+    sure: ['уверен', 'уверена'], alone: ['один', 'одна'], made: ['сделал', 'сделала'], opened: ['открыл', 'открыла'],
+    agreed: ['согласился', 'согласилась'], left: ['ушёл', 'ушла'], stayed: ['остался', 'осталась'],
+    took: ['взял', 'взяла'], could: ['смог', 'смогла'], did: ['успел', 'успела'], grew: ['вырос', 'выросла'],
+    young: ['молодой человек', 'девушка'], youngGen: ['молодого человека', 'девушки'],
+    boss: ['начальник', 'начальница'], mate: ['партнёр', 'партнёрша'],
+  };
+  const SEX_RE = /\{(say|self|ready|must|came|went|tired|glad|sure|alone|made|opened|agreed|left|stayed|took|could|did|grew|young|youngGen|boss|mate)\}/g;
+  /* Отдельные фразы, написанные заранее (src/data/story-lines.js — строки отчёта месяца; файл вне
+     правки §8.1). Заменяем целиком фразу, а не слово «сам»: в тех же репликах «сам» бывает про
+     другого человека («Вот этот батон я бы купил сам» — это Семён), и слепая замена ломала бы смысл. */
+  // (?!…) вместо \b: в JavaScript \b работает только по латинице, для кириллицы границы слова не видит
+  const SEX_PHRASES = [
+    [/решай сам(?![а-яё])/g, 'решай сама'], [/Дальше сам(?![а-яё])/g, 'Дальше сама'], [/Реши сам(?![а-яё])/g, 'Реши сама'],
+    [/поймёшь сам(?![а-яё])/g, 'поймёшь сама'], [/Скажи сумму сам(?![а-яё])/g, 'Скажи сумму сама'],
+    // книга Семёна (src/ui/story-history.js): о хозяине первой точки — в женском роде о хозяйке
+    [/очень нервного хозяина/g, 'очень нервной хозяйки'],
+  ];
+  function heroText(S, txt) {
+    if (txt == null) return txt;
+    let s = String(txt);
+    if (s.indexOf('{') < 0 && !isFemale(S)) return s;
+    if (s.indexOf('{') >= 0) s = s.replace(SEX_RE, (m, k) => (SEX[k] ? SEX[k][isFemale(S) ? 1 : 0] : m));
+    s = s.split('{name}').join(heroName(S));
+    if (isFemale(S)) for (const [re, to] of SEX_PHRASES) s = s.replace(re, to);
+    return s;
+  }
+  // То же, но для готовой разметки: подстановки идут только вне тегов (в атрибутах «сам» не встречается,
+  // но правило честнее — разметку не трогаем).
+  function heroHtml(S, html) {
+    if (html == null) return html;
+    return String(html).split(/(<[^>]*>)/).map((p) => (p.charAt(0) === '<' ? p : heroText(S, p))).join('');
+  }
+
   // дозаполнение старых сохранений и того, что писал пролог
   function fill(R) {
     const d = defaults(0);
@@ -21234,11 +21341,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     R.lastScene = S.day;
     R.pending = null;
     R.ch = chapter(S, R);
-    // ch.log — что записать в летопись, если подпись кнопки для неё не годится («Дальше» у заставки)
-    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.log || ch.label, chapter: R.ch, fx: list });
+    // В летопись (и в PNG-картинку итогов, и в тост) запись попадает уже с именем и родовой формой героя:
+    // подстановка на отрисовке есть только у окна сцены, а итоги и картинка рисуют текст как он записан.
+    const label = heroText(S, ch.log || ch.label), title = heroText(S, sc.title);
+    R.log.push({ day: S.day, id: sc.id, title: title, choice: label, chapter: R.ch, fx: list });
     while (R.log.length > 120) R.log.shift();
-    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.log || ch.label, out: out.join('; ') });
-    return { ok: true, scene: sc, choice: ch, out };
+    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: title, choice: label, out: out.join('; ') });    return { ok: true, scene: sc, choice: ch, out };
   }
 
   /* ---------------- эффекты сюжета ---------------- */
@@ -21531,19 +21639,51 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // story.js собран раньше src/data/story-lines.js? Тогда обёртка «мёртвые не говорят» встанет
   // на первом же дне (см. wrapLines() в day()): порядок файлов в сборке на это не влияет.
 
-  /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии:
-     имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть). Обёртка безопасна:
-     если модуля реплик рядом нет (прогоны ботов) или слой не подключён — ничего не делаем. */
+  /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии
+     и по полу героя: имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть)
+     и через родовые формы (src/story.js → heroHtml). Обёртка безопасна: если модуля реплик рядом
+     нет (прогоны ботов) или слой не подключён — ничего не делаем.
+
+     Важно: подстановки идут ТОЛЬКО вне тегов и по точным фразам — иначе «сам» в реплике Семёна
+     («Вот этот батон я бы купил сам») превратился бы в женскую форму. */
   function wrapLineHtml() {
     const D2 = BK.STORY;
-    if (!D2 || !D2.lineHtml || D2.__castLine || !BK.STORY_CAST) return false;
+    if (!D2 || !D2.lineHtml || D2.__castLine) return false;
     D2.__castLine = true;
     const orig = D2.lineHtml;
-    D2.lineHtml = function (S) { const html = orig.apply(this, arguments); try { return BK.STORY_CAST.swap(S, html); } catch (e) { return html; } };
+    D2.lineHtml = function (S) {
+      const html = orig.apply(this, arguments);
+      try { return heroHtml(S, BK.STORY_CAST ? BK.STORY_CAST.swap(S, html) : html); } catch (e) { return html; }
+    };
     return true;
   }
   wrapLineHtml();
   if (BK.STORY) BK.STORY.wrapLineHtml = wrapLineHtml;   // для проверок и нестандартного порядка сборки
+
+  /* Итоги игры и книга Семёна (BK.StoryHistory, src/ui/story-history.js) собирают текст без подстановок:
+     там нет ни {name}, ни {street}, ни городского слоя, ни родовых форм. Файл интерфейса в этой задаче
+     не правим — доводим его снаружи, обёрткой готовой разметки: подстановки идут только вне тегов.
+     Заодно в книгу Семёна добавляется посвящение с именем героя (если игрок имя задал) — книга
+     подписана, как и положено книге о человеке. Вызывается один раз из src/ui/app.js (boot):
+     к этому времени BK.StoryHistory уже создан. Нет модуля — нет и правки. */
+  function patchHistory() {
+    const SH = BK.StoryHistory;
+    if (!SH || SH.__hero || typeof SH.summarySection !== 'function') return false;
+    SH.__hero = true;
+    const orig = SH.summarySection;
+    SH.summarySection = function (S) {
+      let html; try { html = orig.apply(this, arguments); } catch (e) { return ''; }
+      if (!html) return html;
+      try { if (BK.STORY_CAST && BK.STORY_CAST.render) html = BK.STORY_CAST.render(S, html); } catch (e) { /* без местных имён */ }
+      html = heroHtml(S, html);
+      const name = heroOf(S).name;
+      if (name) html = html.replace(/(<div class="sh-bl">[\s\S]*?)(<\/div>)/,
+        (m, a, b) => a + `<p>Посвящение одно: «${htmlEsc(name)}».</p>` + b);
+      return html;
+    };
+    return true;
+  }
+  const htmlEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
@@ -21551,7 +21691,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
     chapter, hero, chapterName, defaults, fits, cond,
     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
-    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft,  };
+    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft, heroOf, heroSet, heroName, heroNameDat, heroG, isFemale, applyHero, g, heroText, heroHtml, patchHistory,
+  };
 })();
 
 /* threads.js */
@@ -24161,6 +24302,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       spent: {}, mo: null, hist: [], feed: [], fx: [],
       stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
       won: null, carry: null,
+      hero: { name: '', g: null },   // имя и пол героя со стартового экрана (PLAN.md §8.1); у старых сохранений поля нет — «нейтрально»
     };
     P.shiftSchedule = newShiftSchedule(P);
     return P;
@@ -24170,7 +24312,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Местный слой (src/data/story-cast.js): город партии для текстов пролога. В Уфе поля нет вовсе —
     // партия и сохранение прежние, а swap() для Уфы возвращает строку как есть.
     if (S.startCity && S.startCity !== 'ufa') P.city = S.startCity;
-    P.cards.push({ id: 'p01', v: {} });
+    // герой приходит со стартового экрана (src/ui/app.js): имя и пол уже лежат в состоянии игры
+    if (BK.Story && BK.Story.heroOf) { const h = BK.Story.heroOf(S); P.hero = { name: h.name, g: h.g }; }    P.cards.push({ id: 'p01', v: {} });
     schedule(P);
     feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
     V2('init', S); V2('welcome', P);
@@ -24201,10 +24344,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const st = S.story || (S.story = storyDefaults(S.seed || 1));
     Object.assign(st.rel, P.rel); Object.assign(st.m, P.sm); Object.assign(st.f, P.sf);
     st.shares = P.shares.slice(); Object.assign(st.seen, P.seen); st.log = P.slog.slice(-120);
+    if (S.__hero && BK.Story && BK.Story.applyHero) BK.Story.applyHero(S); // имя и пол героя со стартового экрана (PLAN.md §8.1)
     if (P.status === 'life') st.ending = 'hired';
     if ((P.status === 'done' || P.status === 'skipped') && (!S.stage1 || S.stage1.status !== 'done')) st.ch = 'own'; // глава 1 «Своя точка» (стадия 1 — stage1.js; после неё — 'city')
   }
   const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
+  /* ---------------- герой: имя и пол (PLAN.md §8.1) ----------------
+     Пол выбирает игрок на стартовом экране; он лежит в P.hero (и в S.story.hero — для сюжета и итогов).
+     Тексты пролога пишутся безлично («вы», «ты») — пол добавляет только родовые формы там, где без них
+     не по-русски: sex(P, 'готов', 'готова'). Без выбора (старые сохранения, боты) — мужская форма. */
+  const heroOf = (P) => (P && P.hero) || { name: '', g: null };
+  const isF = (P) => heroOf(P).g === 'f';
+  const sex = (P, m, f) => (isF(P) ? f : m);
+  const heroName = (P) => heroOf(P).name || 'шеф';
+  const heroWord = (P) => sex(P, 'молодой человек', 'девушка');   // как к герою обращаются чужие люди
+  const heroWordGen = (P) => sex(P, 'молодого человека', 'девушки');
   // тон записи в ленте: по нему озвучка пролога (src/ui/prologue.js) выбирает звук события.
   // Иначе звук пришлось бы определять по русскому тексту записи — это хрупко.
   // Вариант может задать тон сам (fx.k, feed.k), тогда он важнее общего правила.
@@ -24422,7 +24576,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const CARDS = {
     /* ---------- сюжет пролога (docs/story.md §7, сцены П1–П8; числа — механика CFG.PROLOGUE) ---------- */
     p01: { kind: 'hero', who: 'rashid', title: () => 'Пять утра, улица Пушкина',
-      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду. Правда сегодня в чём? Эчпочмаки вчерашние?»',
+      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду, {young}. Правда сегодня в чём? Эчпочмаки вчерашние?»',
       choices: () => [
         { label: '«Сегодняшние. Гуля с четырёх утра тут»', desc: 'Семёну нравится, Гуле — тоже', fx: { rel: 2 }, do(P) { rel(P, { semyon: 5, gulya: 5 }); P.sf.regulars++; } },
         { label: '«Не знаю, я первый день. Сейчас спрошу»', desc: 'Честность — редкость. Рашид услышал', fx: { rel: 1, rep: 1 }, do(P) { rel(P, { semyon: 5, rashid: 5 }); style(P, 'honesty', 5); eff(P, { rep: 2 }); } },
@@ -24436,7 +24590,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: '«У нас всегда так, это авторская сухость»', desc: 'Семён смеётся: «Запишу. В раздел „юмор“»', fx: { rel: 1 }, do(P) { rel(P, { semyon: -5, gulya: 5 }); } },
       ] },
     p03: { kind: 'hero', who: 'family', title: () => 'Конверт от бабушки',
-      text: () => 'Бабушка Сания пришла в «Калач» в выходном платке: «Показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».',
+      text: (P) => `Бабушка Сания пришла в «Калач» в выходном платке: «${sex(P, 'Внучек', 'Внученька')}, показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».`,
       choices: () => [
         { label: '«Положу на вклад, әби. Честно»', desc: '+15 000 ₽ сразу на вклад', fx: { rub: 2, rel: 1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; P.dep += 15000; fx(P, 'dep', 15000); rel(P, { family: 5 }); P.sf.depHint = true; } },
         { label: '«Отдам маме за квартиру»', desc: 'Дома теплее, настроение лучше', fx: { mood: 1, rel: 2 }, do(P) { rel(P, { family: 10 }); eff(P, { mood: 5 }); P.flags.calmHome = P.m; } },
@@ -24479,7 +24633,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: (P) => (P.job === 0 ? 'Рашид: «Кофе у тебя уже лучше моего. Не зазнавайся. Будешь старшим — открываешь смену, учишь новеньких. Оклад выше, спрос тоже».' : 'Рашид: «Смены без тебя разваливаются. Бери управление: график, касса, люди. Это уже почти своё дело. Почти».'),
       choices: (P) => [
         { label: 'Согласиться', desc: `Оклад около ${fm(r100((C().JOBS[P.job + 1].pay + skAvg(P) * C().SKILL_PAY) * P.payK))}`, fx: { rub: 2, mood: 1, rep: 1 }, do(P) { P.job++; P.jobM = 0; eff(P, { mood: 8, rep: 3 }); rel(P, { rashid: 4 }); feed(P, `Повышение! Теперь вы — ${C().JOBS[P.job].name.toLowerCase()}.`, 'good'); fx(P, 'promo', P.job); } },
-        { label: 'Пока не готов(а)', desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
+        { label: (P) => 'Пока не ' + sex(P, 'готов', 'готова'), desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
       ] },
     goal: { kind: 'hero', who: 'elvira', title: () => 'Можно открывать своё!',
       text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. Эльвира из «Семи рек»: «Стаж есть, отзыв от Рашида есть, цифры сходятся. Остальное банк даст в кредит. Поздравляю — теперь у нас с вами отношения. Серьёзные».` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте без кредита. Эльвира из «Семи рек»: «Люблю, когда ко мне приходят с цифрами. Ещё больше люблю, когда цифры сходятся».`),
@@ -24545,7 +24699,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: (P, v) => `Женщина, которая каждое утро берёт раф на кокосовом, оставила ${fm(v.a)} чаевых: «За то, что помните, как я люблю».`,
       choices: (P, v) => [{ label: 'Приятно!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'tips'); eff(P, { mood: 5, people: 1 }); } }] },
     e_praise: { kind: 'pos', who: 'semyon', title: () => 'Пост в «Уфа жуёт»',
-      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
+      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт. За стойкой {name} — запоминайте имя». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
       choices: () => [{ label: 'Приятно', desc: '', fx: { rep: 2, mood: 1 }, do(P) { eff(P, { rep: 7, mood: 5 }); rel(P, { semyon: 3 }); } }] },
     e_fest: { kind: 'pos', who: 'rashid', title: () => 'Выездная точка на празднике',
       text: () => 'На Сабантуй «Калач» ставит палатку с кофе и эчпочмаками. Рашид ищет, кто выйдет в выходные.',
@@ -24748,7 +24902,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const P = S.prologue; if (!P || !P.cards.length) return null;
     const q = P.cards[0], d = CARDS[q.id] || DIL(q.id);
     if (!d) { P.cards.shift(); return card(S); } // чужая карточка (старое сохранение) — просто убираем
-    const ch = d.choices(P, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || canAfford(P, c.cost, c.cashOnly)), why: c.dis || (c.cost && !canAfford(P, c.cost, c.cashOnly) ? (c.cashOnly && canAfford(P, c.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '') }));
+    const ch = d.choices(P, q.v).map((c) => {
+      const o = Object.assign({}, c);
+      if (typeof o.label === 'function') o.label = o.label(P);   // вариант с родовой формой героя (PLAN.md §8.1)
+      o.can = !o.dis && (!o.cost || canAfford(P, o.cost, o.cashOnly));
+      o.why = o.dis || (o.cost && !o.can ? (o.cashOnly && canAfford(P, o.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '');
+      return o;
+    });
     // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     const t0 = typeof d.text === 'function' ? d.text(P, q.v) : d.text;
@@ -25178,6 +25338,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
     create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
+    heroOf, isF, sex, heroName, heroWord, heroWordGen,   // герой: имя и пол героя (PLAN.md §8.1)
     feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2, // хуки живого сюжета v2 (src/data/prolog-v2.js) — имя с «2», чтобы не путать с внутренними feed/fx/rel/style
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
     shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, ensureShiftSchedule, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
@@ -25796,9 +25957,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   // платок бабушки: светлый хлопок, красные цветы, бордовая кайма (раньше читался как рыжие волосы)
   const SCARF = ['#efe3c8', '#d2c09c', '#e3b341', '#c0412d', '#8a2f3a'];
+  /* Герой: четыре облика — мужчина/женщина, молодой/постаревший (PLAN.md §8.1, выбор игрока).
+     Облик подменяет сам Px.CAST.hero / heroOld (Px.heroSet), поэтому все готовые сцены — «Калач»
+     (scenes.js), кофейня (coffee.js), финал «Своя точка», портреты — рисуют выбранного героя без правок:
+     они спрашивают Px.fig('hero') / Px.face('hero'). Рост, позы и одежда у вариантов одинаковые —
+     отличаются причёска, цвет волос, фартук и лицо (плюс очки в возрасте, как было). */
+  const HERO_M = { name: 'Герой-бариста', skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
+    p: { skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], bg: ['#f4dfc2', '#ecd0aa'] } };
+  const HERO_F = { name: 'Героиня-бариста', skin: 0, hair: HAIR.auburn, hairStyle: 'bob', top: ['#f5efe3', '#d6ccb9'], apron: ['#3b8796', '#235f6b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
+    p: { skin: 0, hair: HAIR.auburn, hairStyle: 'bob', top: ['#f5efe3', '#d6ccb9'], apron: ['#3b8796', '#235f6b'], lashes: 1, lips: '#b0503f', bg: ['#f4dfc2', '#ecd0aa'] } };
+  const HERO_OLD_M = Object.assign({}, HERO_M, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, HERO_M.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
+  const HERO_OLD_F = Object.assign({}, HERO_F, { hair: HAIR.grey, hairStyle: 'bun', p: Object.assign({}, HERO_F.p, { hair: HAIR.grey, hairStyle: 'bun', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
   const CAST = {
-    hero: { name: 'Герой-бариста', skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
-      p: { skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], bg: ['#f4dfc2', '#ecd0aa'] } },
+    hero: HERO_M, heroOld: HERO_OLD_M, heroF: HERO_F, heroOldF: HERO_OLD_F,
     rashid: { name: 'Рашид Хайруллин', skin: 1, hair: HAIR.grey, hairStyle: 'baker', hat: ['#fbf6ec', '#d9d0c0', '#ffffff'], top: ['#f5efe3', '#d6ccb9'], apron: ['#6b4a2e', '#4a3220'], pants: ['#4a4a55', '#35353e'], shoes: ['#3a2a2a', '#241a1a'], mustache: '#b8b2aa', brows: true,
       p: { skin: 1, hair: HAIR.grey, hairStyle: 'baker', hat: ['#fbf6ec', '#d9d0c0', '#ffffff'], top: ['#f5efe3', '#d6ccb9'], apron: ['#6b4a2e', '#4a3220'], mustache: '#bdb6ad', brows: true, browc: '#8f8980', age: 1, bg: ['#efe3cf', '#e2d2b8'] } },
     gulya: { name: 'Гуля Сафина', skin: 0, hair: HAIR.dark, hairStyle: 'bandana', hat: ['#c0412d', '#8f2c20', '#e2705a', '#f5efe3'], top: ['#f5efe3', '#d6ccb9'], apron: ['#3f7d5a', '#2d5e44'], pants: ['#3a3a48', '#282833'], shoes: ['#6b4a2e', '#4a3220'],
@@ -25822,8 +25993,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     doctor: { name: 'Врач', skin: 1, hair: HAIR.grey, hairStyle: 'short', coat: true, top: ['#eef0f2', '#c9ced4', '#ffffff'], pants: ['#3f4a56', '#2c343c'], shoes: ['#22242a', '#14161a'], glasses: '#4a5560',
       p: { skin: 1, hair: HAIR.grey, hairStyle: 'short', top: ['#eef0f2', '#c9ced4'], collar: 'shirt', glasses: '#3a444e', age: 1, browc: '#8f8980', bg: ['#e2e8ec', '#cbd6dd'] } },
   };
-  // герой через 15 лет — седина, морщины (финал «Жизнь в найме»)
-  CAST.heroOld = Object.assign({}, CAST.hero, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, CAST.hero.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
+  // герой через 15 лет — седина, морщины (финал «Жизнь в найме»); у женщины — пучок
+  CAST.heroOld = HERO_OLD_M;
+  CAST.heroOldF = HERO_OLD_F;
+  /* Облик героя выбирает игрок (PLAN.md §8.1): 'm' — мужчина, 'f' — женщина, null — как раньше
+     (старые сохранения и боты: облик выбирался по названию сети, игра об этом не спрашивала).
+     heroSet идемпотентен; при смене облика «поколение» кэша растёт, иначе Px.memo вернул бы
+     готовый спрайт прежнего героя. */
+  let heroGen = 0;
+  function heroSet(g) {
+    const want = g === 'f' ? 'f' : g === 'm' ? 'm' : null;
+    if (CAST.__heroG === want) return want;
+    CAST.__heroG = want; heroGen++;
+    CAST.hero = want === 'f' ? HERO_F : HERO_M;
+    CAST.heroOld = want === 'f' ? HERO_OLD_F : HERO_OLD_M;
+    return want;
+  }
+  const heroG = () => CAST.__heroG || null;
   // гости очереди: по индексу эмодзи-лица «Смены» ['🧔','👩','👨‍🦳','👧','🧑‍💼','👵','🧑‍🎓','👩‍🦰','👨','👱‍♀️']
   const GUESTS = [
     { skin: 0, hair: HAIR.chest, hairStyle: 'short', top: ['#3f7d5a', '#2d5e44'], pants: ['#4a4a55', '#35353e'], shoes: ['#3a2a2a', '#241a1a'], beard: '#6a4028' },
@@ -25844,23 +26030,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     { skin: 0, hair: HAIR.auburn, hairStyle: 'bun', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
     { skin: 2, hair: HAIR.chest, hairStyle: 'neat', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
   ];
-  // кэшированные спрайты
+  // кэшированные спрайты: в ключе — «поколение» облика героя (heroSet), иначе после смены пола
+  // Px.memo отдал бы готовый спрайт прежнего героя
   function fig(who, opt = {}) {
     const sp = typeof who === 'string' ? CAST[who] : who;
-    const key = 'f|' + (typeof who === 'string' ? who : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
+    const key = 'f|' + (typeof who === 'string' ? who : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + heroGen + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
     return Px.memo(key, () => Px.figure(sp, opt));
   }
-  function face(who, emo) { return Px.memo('p|' + who + '|' + (emo || 'neutral'), () => Px.portrait(CAST[who].p, emo || 'neutral')); }
+  function face(who, emo) { return Px.memo('p|' + who + '|' + heroGen + '|' + (emo || 'neutral'), () => Px.portrait(CAST[who].p, emo || 'neutral')); }
   GUESTS.forEach((g, i) => { g.__k = 'g' + i; });
   STAFF.forEach((g, i) => { g.__k = 's' + i; });
   CAST.courier.__k = 'courier';
   // canvas-портреты в готовой разметке: <canvas data-pxp="rashid:angry" width="48" height="48">
   function hydrate(root) {
     if (!root) return;
+    const done = (cv, tag) => { cv.dataset.pxDone = heroGen + ':' + tag; };
     root.querySelectorAll('canvas[data-pxp]').forEach((cv) => {
-      if (cv.dataset.pxDone === cv.dataset.pxp) return;
+      const tag = heroGen + ':' + cv.dataset.pxp;
+      if (cv.dataset.pxDone === tag) return;
       const [who, emo] = cv.dataset.pxp.split(':'); if (!CAST[who]) return;
-      face(who, emo).toCanvas(cv); cv.dataset.pxDone = cv.dataset.pxp;
+      face(who, emo).toCanvas(cv); done(cv, cv.dataset.pxp);
     });
     root.querySelectorAll('canvas[data-pxi]').forEach((cv) => {
       if (cv.dataset.pxDone === cv.dataset.pxi) return;
@@ -25869,7 +26058,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const portraitTag = (who, emo, cls) => `<canvas class="pxp ${cls || ''}" data-pxp="${who}:${emo || 'neutral'}" width="48" height="48" aria-hidden="true"></canvas>`;
   const iconTag = (name, cls) => `<canvas class="pxi ${cls || ''}" data-pxi="${name}" width="9" height="9" aria-hidden="true"></canvas>`;
-  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag });
+  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag, heroSet, heroG });
 })();
 
 /* pixel/stage.js */
@@ -26893,8 +27082,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- герой: варианты по полу и возрасту ---------------- */
-  // Пола героя в состоянии игры нет (игра его не спрашивает), поэтому вариант выбирается стабильно в интерфейсе
-  // (view(S) → heroLook): за игру он не «переключается», а за полтора года за стойкой герой седеет.
+  // Пол выбирает игрок на стартовом экране (PLAN.md §8.1), облик приходит из view(S) → heroLook
+  // (src/ui/stage1.js): 'young'/'youngF' — начало главы, 'old'/'oldF' — за полтора года за стойкой
+  // герой седеет. Если пол не задан (старые сохранения, боты), вариант остаётся прежним, по названию сети.
   const HERO_V = {
     young: { hair: 'hero', hairStyle: 'messy', apron: ['#c46f17', '#94500b'] },
     youngF: { hair: 'auburn', hairStyle: 'bob', apron: ['#3b8796', '#235f6b'] },
@@ -26909,6 +27099,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return k;
   }
+  // запасной путь, если снимок не принёс heroLook: пол героя уже применён к Px.CAST (Px.heroSet)
+  function heroLookOf(o) { return HERO_V[o && o.heroLook] ? o.heroLook : (Px.heroG && Px.heroG() === 'f' ? 'youngF' : 'young'); }
 
   /* ---------------- зал: гости, столик, пузыри, монетка ---------------- */
   function hall(b, t, W, H, L, o, light, fg) {
@@ -26974,7 +27166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fg = (who, opt) => { const f = Px.fig(who, opt); if (!f.__id) f.__id = Math.random().toString(36).slice(2); return tintK ? Px.memo('cfT|' + f.__id + '|' + light, () => f.clone().tint(LIGHT[light].amb, tintK)) : f; };
     // вы за стойкой (за прилавком — прилавок рисуется поверх)
     if (o.hero !== false) {
-      const look = HERO_V[o.heroLook] ? o.heroLook : 'young', emo = o.heroEmo || 'smile';
+      const look = heroLookOf(o), emo = o.heroEmo || 'smile';
       const blink = ((t + 0.7) % 4.3) < 0.14;
       const pose = (state === 'open' && (o.guests | 0) > 0) ? 'tray' : null;
       const hx = L.hero, hy = L.cY - 27;
@@ -27322,7 +27514,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
   function subT(T, t) { return sub({ startCity: (T && T.city) || null }, t); }
   function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t: subT(T, t), k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
-  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
+  /* Родовые формы героя (PLAN.md §8.1): пол выбирается на стартовом экране, лежит в S.story.hero.
+     Базовое правило — тексты безличные («вы», «ты»); форма нужна только там, где без неё не по-русски:
+     «Пока справлюсь сам» / «…сама». Без выбора пола (старые сохранения, боты) — мужская форма, как было. */
+  const sex = (S, m, f) => (BK.Story && BK.Story.g ? BK.Story.g(S, m, f) : m);
+  const hname = (S) => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S) : 'шеф');
+  const hword = (S) => sex(S, 'молодой человек', 'девушка');
+  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
     const T = T0(S), st = store(S); if (!T || !st) return '';
@@ -27690,7 +27888,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: '«Без соцсетей, сарафан надёжнее»', desc: semyonClose(S) ? 'Семён напишет пост «Открылись»: +5 % на месяц' : 'Сарафан — дело небыстрое', fx: { guests: semyonClose(S) ? 1 : 0 }, do(S) { if (semyonClose(S)) { addMod(S, 'traffic', 1.05, 30, store(S)); feed(T0(S), 'Семён в «Уфа жуёт»: «Открылись. Американо честный, правда — тоже».', 'good'); } flag(S, 'ildar', 'none'); } },
       ] },
     s12: { kind: 'hero', who: (S) => mentorWho(S), title: () => 'Пустая витрина',
-      text: (S) => { const w = mentorWho(S); return w === 'rashid' ? 'Рашид заходит без предупреждения: «Витрина полная, зал пустой. Красиво, как в музее. Балам, у тебя хлеб выходит в десять. А люди идут на трамвай в полвосьмого. Кому ты печёшь — себе?»' : w === 'elvira' ? 'Эльвира заходит за кофе: «Средний чек у вас хороший. Чеков мало. Когда у вас люди идут мимо? Не знаете? Вот и я не знаю. Узнайте».' : w === 'gulya' ? 'Гуля, вытирая стойку: «Слышь, начальник, мы стоим, а люди идут мимо. Может, откроемся, когда они идут?»' : 'Семён Аркадьевич: «Пусто у вас, как в редакции в пятницу. Люди идут мимо в полвосьмого, а у вас ещё закрыто».'; },
+      text: (S) => { const w = mentorWho(S); return w === 'rashid' ? 'Рашид заходит без предупреждения: «Витрина полная, зал пустой. Красиво, как в музее. Балам, у тебя хлеб выходит в десять. А люди идут на трамвай в полвосьмого. Кому ты печёшь — себе?»' : w === 'elvira' ? 'Эльвира заходит за кофе: «Средний чек у вас хороший. Чеков мало. Когда у вас люди идут мимо? Не знаете? Вот и я не знаю. Узнайте».' : w === 'gulya' ? 'Гуля, вытирая стойку: «Слышь, {boss}, мы стоим, а люди идут мимо. Может, откроемся, когда они идут?»' : 'Семён Аркадьевич: «Пусто у вас, как в редакции в пятницу. Люди идут мимо в полвосьмого, а у вас ещё закрыто».'; },
       choices: (S) => { const T = T0(S), early = T.spot.hours.includes('early') || T.spot.hours.includes('full'); return [
         { label: '«Открываемся раньше»', desc: early ? 'Часы 7:00–16:00: утренний поток; и +5 % гостей на 2 месяца' : 'ТЦ открывается в 10 — зато акция у входа: +6 % гостей на 2 месяца', fx: { guests: 2, hp: early ? -1 : 0 }, do(S) { if (early) { T.hours = T.spot.hours.includes('early') ? 'early' : 'full'; applyHours(S); } addMod(S, 'traffic', early ? 1.05 : 1.06, 60, store(S)); T.flags.hoursHint = 1; } },
         { label: '«Снижу цены на кофе»', desc: 'Кофе дешевле на 5 %: гостей больше, чек меньше', fx: { guests: 1, rub: -1 }, do(S) { for (const it of S.menu) { const p = E().byId(BK.PRODUCTS, it.id); if (p && p.cat === 'drinks') E().setPrice(S, it.id, it.pm - 0.05); } addMod(S, 'conv', 1.06, 60, store(S)); } },
@@ -27718,10 +27916,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (gulyaAvail(S)) out.push({ label: '«Гуля, выходи завтра»', desc: `Гуля — уровень ${gulyaLvl(S)}, своя: не уйдёт`, dis: full, fx: { team: 2, rel: 1, rub: -1 }, do(S) { inviteGulya(S); } });
         out.push({ label: 'Айдар', desc: 'Уровень 1, недорогой, учится быстро', cost: E().hireCost(S, 1), dis: full, fx: { team: 1, rub: -1 }, do(S) { I().spend(S, E().hireCost(S, 1), 'hire'); addPerson(S, 'Айдар Галиев', 1, 4, { aidar: 1, trait: 5, patience: 8 }); hired(S, 'Айдар'); flag(S, 'hire1', 'aidar'); } });
         out.push({ label: 'Лариса', desc: 'Уровень 3 сразу: сильная, но из «Двора»…', cost: E().hireCost(S, 3), dis: full, fx: { team: 2, rub: -2 }, risk: true, do(S) { I().spend(S, E().hireCost(S, 3), 'hire'); addPerson(S, 'Лариса Кузнецова', 3, 4, { lara: 1 }); hired(S, 'Лариса'); flag(S, 'hire1', 'lara'); if (S.story) S.story.f.laraSpy = rnd(T0(S)) < 0.4; } });
-        out.push({ label: 'Пока справлюсь сам', desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
+        out.push({ label: (S) => 'Пока справлюсь ' + sex(S, 'сам', 'сама'), desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
         return out; } },
     s16: { kind: 'hero', who: 'gulya', title: () => 'Первый плюс',
-      text: (S, v) => `${T0(S).flags.gulyaIn ? 'Гуля' : 'За стойкой'}: «Начальник, мы в плюсе! На ${fm(v.profit)}, но в плюсе!» СМС от мамы: «Я видела, у вас очередь была. Горжусь. Покушай».`,
+      text: (S, v) => `${T0(S).flags.gulyaIn ? 'Гуля' : 'За стойкой'}: «{boss}, мы в плюсе! На ${fm(v.profit)}, но в плюсе!» СМС от мамы: «Я видела, у вас очередь была. Горжусь. Покушай».`,
       choices: (S) => [
         { label: '«Премия команде»', desc: 'Команда запомнит', cost: r1000(10000 * S.macro.priceLevel), fx: { rub: -1, team: 2, rel: 1 }, do(S) { I().spend(S, r1000(10000 * S.macro.priceLevel), 'bonus'); for (const e of store(S).staff) if (!e.hero) e.mood = clamp(e.mood + 10, 0, 100); meter(S, 'care', 5); rel(S, { gulya: 5 }); } },
         { label: '«Всё в резерв»', desc: 'Эльвира: «Правильный ответ. Скучный, но правильный». Резерв закрывает кассовые разрывы', fx: { rub: 1, rel: 1 }, do(S) { E().setAlloc(S, { reserve: 0.3, bonus: S.alloc.bonus, marketing: S.alloc.marketing }); rel(S, { elvira: 5 }); } },
@@ -27841,7 +28039,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const T = T0(S); if (!T || !T.cards.length) return null;
     const q = T.cards[0], d = CARDS[q.id]; if (!d) { T.cards.shift(); return card(S); }
     const who = typeof d.who === 'function' ? d.who(S) : d.who;
-    const ch = d.choices(S, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || S.cash >= c.cost), why: c.dis || (c.cost && S.cash < c.cost ? 'Не хватает денег' : '') }));
+    const ch = d.choices(S, q.v).map((c) => {
+      const o = Object.assign({}, c);
+      if (typeof o.label === 'function') o.label = o.label(S);   // вариант с родовой формой героя (PLAN.md §8.1)
+      if (typeof o.desc === 'function') o.desc = o.desc(S);
+      o.can = !o.dis && (!o.cost || S.cash >= o.cost);
+      o.why = o.dis || (o.cost && !o.can ? 'Не хватает денег' : '');
+      return o;
+    });
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     // местный слой (src/data/story-cast.js): подписи героев, заголовки, тексты и варианты — по городу партии
     const cv = { id: q.id, v: q.v, kind: d.kind, who, hero: localHero(S, who, HEROES[who] || HEROES.life), title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
@@ -27867,10 +28072,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     T.cards.shift();
     if (!T.seen[cv.id]) T.seen[cv.id] = S.day;
     c.do(S, cv.v);
+    // в летопись и в «главные решения» итогов запись идёт уже с именем и родовой формой героя (PLAN.md §8.1):
+    // окно сцены подставляет их на отрисовке, а итоги рисуют запись как она сохранена
+    const hl = BK.Story && BK.Story.heroText ? BK.Story.heroText(S, c.label) : c.label;
     if ((cv.kind === 'hero' || cv.kind === 'climax') && S.story) {
-      S.story.seen[cv.id] = S.day; S.story.log.push({ day: S.day, id: cv.id, choice: cv.choices.indexOf(c), line: c.label });
+      S.story.seen[cv.id] = S.day; S.story.log.push({ day: S.day, id: cv.id, choice: cv.choices.indexOf(c), line: hl });
       if (S.story.log.length > 120) S.story.log.shift();
-      if (S.chron) S.chron.push({ t: 'story', id: cv.id, label: c.label, day: S.day });
+      if (S.chron) S.chron.push({ t: 'story', id: cv.id, label: hl, day: S.day });
     }
     if (cv.choices.length > 1) feed(T, `${cv.title}: ${/^«/.test(c.label) ? c.label : '«' + c.label + '»'}.`, (c.fx && c.fx.k) || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.id === 's12') T.flags.advisor = 1;
@@ -31918,17 +32126,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (f && f.in) || ('в городе ' + subCity(S));
   }
   function sub(S, txt) {
-    if (BK.STORY_CAST && BK.STORY_CAST.render) { try { return BK.STORY_CAST.render(S, txt); } catch (e) { /* ниже — прежний путь */ } }
+    // родовые формы героя и {name} — общий слой (src/story.js): {say} → «сказал»/«сказала», {self}, {young}…
+    const sex = (t) => (ST && ST.heroText ? ST.heroText(S, t) : t);
+    if (BK.STORY_CAST && BK.STORY_CAST.render) { try { return sex(BK.STORY_CAST.render(S, txt)); } catch (e) { /* ниже — прежний путь */ } }
     let s = String(txt == null ? '' : txt);
-    if (s.indexOf('{') < 0) return s;
+    if (s.indexOf('{') < 0) return sex(s);
     const R = ST.state(S) || {};
     const st = subStore(S);
-    const name = (R.hero && R.hero.name) || (S && S.story && S.story.hero && S.story.hero.name) || 'шеф';
-    return s.split('{name}').join(name)
+    // имя героя: из состояния сюжета, а до его появления (первые часы «своей сети») — из выбора на старте
+    const name = (R.hero && R.hero.name) || (S && S.story && S.story.hero && S.story.hero.name) || (ST.heroOf && ST.heroOf(S).name) || 'шеф';
+    return sex(s.split('{name}').join(name)
       .split('{inCity}').join(subCityIn(S))
       .split('{city}').join(subCity(S))
       .split('{street}').join((st && st.address) || 'Пушкина')
-      .split('{n}').join(String(st && st.num != null ? st.num : 1));
+      .split('{n}').join(String(st && st.num != null ? st.num : 1)));
   }
 
   const BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';
@@ -34589,6 +34800,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
   const S = () => (APP() ? APP().state : null);
   const Pp = () => { const s = S(); return s && s.prologue; };
+  /* Герой: имя и пол (PLAN.md §8.1). Игрок выбирает их на стартовом экране (src/ui/app.js);
+     здесь только читаем — для подписи в шапке пролога, родовых форм в текстах и облика в сцене. */
+  const HG = () => (BK.Story && BK.Story.heroG ? BK.Story.heroG(S()) : null);
+  const HT = (t) => (BK.Story && BK.Story.heroText ? BK.Story.heroText(S(), t) : t);
+  const hName = () => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S()) : 'шеф');
   const PREF = 'bk-ufa-start';
   const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
 
@@ -34865,8 +35081,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function top(p) {
     const age = PR().age(p), job = C().JOBS[p.job].name;
     return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>${esc0(SW('пролог · «Калач» на Пушкина'))}</small></span></div>
-      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
-      <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
+      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${esc(hName(p))} · ${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>      <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
         <button type="button" data-pa="speed" data-v="1" aria-label="Скорость 1" title="Обычная скорость" aria-pressed="${ui.speed === 1}">${ICON.p1}</button>
         <button type="button" data-pa="speed" data-v="3" aria-label="Скорость 3" title="Втрое быстрее" aria-pressed="${ui.speed === 3}">${ICON.p3}</button></div>
@@ -34942,8 +35157,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<section class="pc pro-hero">${scene()}${jobLadder(p)}
       ${shiftBlock(p)}
       <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
-      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
+      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div>${addrNote(p)}</section>`;
     return s;
+  }
+  // как к вам обращаются (таблица ADDRESS в src/data/prolog-v2.js): живая деталь выбора пола, а не строка состояния
+  function addrNote(p) {
+    const A = BK.PrologV2 && BK.PrologV2.address;
+    if (!A || !(PR().heroOf(p) || {}).g) return '';
+    const list = [['rashid', 'Рашид'], ['sania', 'бабушка'], ['semyon', 'Семён'], ['gulya', 'Гуля']]
+      .map(([k, n]) => { const w = A(p, k); return w ? `${n} — «${w}»` : ''; }).filter(Boolean);
+    return list.length ? `<p class="pro-note">Как к вам обращаются: ${esc(list.join(' · '))}.</p>` : '';
   }
   // расписание смен: смены приходят сами (5–10 за пролог), игрок их не выбирает и не может пропустить,
   // но может оказаться не готовым. Кнопка только одна — «встать за стойку», и лишь когда смена уже ждёт.
@@ -35007,13 +35230,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }).join('')}</div></section>`;
     // лента
     const F2 = p.feed.slice(-7).reverse();
-    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(f.t)}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
+    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(HT(f.t))}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
     return s;
   }
   function setPart(id, html) { if (ui.parts[id] === html) return; ui.parts[id] = html; const el = document.getElementById(id); if (el) el.innerHTML = html; }
   function render(force) {
     const p = Pp(); if (!p || !ui.open) return;
     if (!force && ui.pressing) return;
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(HG());   // облик героя в сценах «Калача» — по выбору игрока (§8.1)
     ui.dirty = false; ui.lastRender = performance.now();
     setPart('proTop', top(p)); setPart('proColA', colA(p)); setPart('proColB', colB(p));
     monthScene();
@@ -35048,12 +35272,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
       <div class="pcd-h">${portrait(cv)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
-      <h2 id="proCardT">${esc(cv.title)}</h2><p class="pcd-t">${esc(cv.text)}</p><div class="pcd-c">`;
+      <h2 id="proCardT">${esc(HT(cv.title))}</h2><p class="pcd-t">${esc(HT(cv.text))}</p><div class="pcd-c">`;
     if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
     cv.choices.forEach((c, i) => {
       const fx = fxChips(c.fx, c.risk);
-      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="pcd-d">${esc(c.desc)}</p>` : ''}`; return; }
-      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="pcd-d">${esc(HT(c.desc))}</p>` : ''}`; return; }
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += `</div></div></div>`;
     $('#proOv').innerHTML = h;
@@ -35538,13 +35762,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // мысли гостей — те же короткие фразы, что в списке «Мысли гостей», но значками для пиксельных пузырей
   const TH_IC = { 'очередь…': { ic: ['dots', 'cup'], tone: 'hot' }, 'дорого?': { ic: ['rub'], tone: 'bad' }, 'нет моих булочек': { ic: ['no:croissant'], tone: 'bad' }, 'вкусно!': { ic: ['heart'], tone: 'good' }, 'тихо тут': { ic: ['zzz'], tone: 'norm' }, 'уютно': { ic: ['note'], tone: 'hot' } };
   const thIc = (x) => TH_IC[x] || (x && typeof x === 'object' ? x : { ic: ['dots'], tone: 'norm' });
-  // Пол героя игра не спрашивает — вариант внешности выбирается стабильно по названию кофейни (за игру он не
-  // «переключается»), а за полтора года за стойкой герой седеет. Варианты (пол и возраст) — в src/pixel/coffee.js.
+  // Пол героя выбирает игрок на стартовом экране (PLAN.md §8.1): он задаёт облик за стойкой
+  // ('young'/'youngF', через полтора года — 'old'/'oldF'). Без выбора (старые сохранения, боты)
+  // остаётся прежний стабильный вариант по названию сети — за игру он не «переключается».
   function heroLook(s) {
+    const g = BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null;
+    const old = !!(s.stage1 && s.stage1.months.length >= 14);
+    if (g === 'f') return old ? 'oldF' : 'youngF';
+    if (g === 'm') return old ? 'old' : 'young';
     const k = String(s.company || '') + '|' + (s.difficulty || '');
     let x = 0; for (let i = 0; i < k.length; i++) x = (x * 31 + k.charCodeAt(i)) >>> 0;
-    return ((s.stage1 && s.stage1.months.length >= 14) ? 'old' : 'young') + (x % 2 ? 'F' : '');
+    return (old ? 'old' : 'young') + (x % 2 ? 'F' : '');
   }
+  // родовые формы в текстах кофейни и подстановка имени героя: {name}, {self}, {ready}… (src/story.js)
+  const HT = (t) => (BK.Story && BK.Story.heroText ? BK.Story.heroText(S(), t) : t);
+  // значок пола у имени героя в шапке: ♀ / ♂ — только когда игрок пол выбрал (старые сохранения — без значка)
+  const heroGmark = (s) => { const g = BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null; return g === 'f' ? ' ♀' : g === 'm' ? ' ♂' : ''; };
   // настроение за стойкой видно на лице: силы героя (T.hp) и настроение сотрудника-героя
   function heroEmo(s) {
     const t = s.stage1, h = ((S1().store(s) || {}).staff || []).find((e) => e.hero);
@@ -35597,6 +35830,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // снимок для сцены: что показать (состояние, гости, витрина, свет, герой, мысли) — сцена сама в движок не смотрит
   function view(s) {
     const t = s.stage1, st = S1().store(s);
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null); // облик героя за стойкой — по выбору игрока (§8.1)
     const dp = st ? E().daypartOf(st) : { m: 0.33, d: 0.33, e: 0.33 };
     const h = Math.round(hourOf() * 2) / 2, part = h < 11 ? dp.m : h < 16 ? dp.d : dp.e;   // полчаса: сцена не перерисовывается каждый кадр
     const load = st && st.today && !st.today.closed ? st.today.load : 0;
@@ -35725,11 +35959,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.6" fill="currentColor"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="13" cy="8" r="1.6" fill="currentColor"/></svg>',
   };
   function top(s) {
-    const t = s.stage1, st = S1().store(s), dt = E().dateOf(s.day), g = S1().nextGoal(s);
-    const today = st && st.today && !st.today.closed ? st.today.rev : 0;
+    const t = s.stage1, st = S1().store(s), dt = E().dateOf(s.day), g = S1().nextGoal(s);    const today = st && st.today && !st.today.closed ? st.today.rev : 0;
     const last = t.months[t.months.length - 1];
     return `<div class="s1-brand"><span class="s1-logo" aria-hidden="true">☕</span><span class="s1-bt"><b>${esc(s.company)}</b><small>${st ? `кофейня · ${esc(st.address)}` : 'своя кофейня · выбор места'}</small></span></div>
       <span class="chip crust s1-ch">Глава 1</span>
+      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(hname(s))}${heroGmark(s)}</span>
       <div class="s1-when"><span class="s1-date">${dt.d} ${E().MONTHS_G[dt.m].slice(0, 3)} ${dt.y}</span><span class="s1-clock" id="s1Clock">${clockTxt()}</span></div>
       <div class="speed s1-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-s1="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
@@ -35774,7 +36008,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const load = td.load || 0;
     const bars = parts.map(([n, w]) => { const v = w / tot * g; return `<div class="s1-hb"><b>${Math.round(v)}</b><span class="hb"><i class="${load > 1 && w / tot > 0.38 ? 'hot' : ''}" style="height:${Math.max(4, v / mx * 100).toFixed(0)}%"></i></span><small>${n}</small></div>`; }).join('');
     const th = thoughts(s).map((x) => `<li><span class="s1-bub">${esc(x)}</span></li>`).join('');
-    const fd = t.feed.slice(-6).reverse().map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span>${esc(f.t)}</span></li>`).join('');
+    const fd = t.feed.slice(-6).reverse().map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span>${esc(HT(f.t))}</span></li>`).join('');
     const lost = td.lost > 0 && !td.closed ? `ушли, не купив: ~${Math.round(td.lost / (td.check || 1))}` : '';
     return `<div class="s1-shop" id="s1Shop"><div class="s1-shopov" id="s1ShopOv">${shopOv(t, st, s)}</div></div>
       <div class="s1-q"><span>${td.closed ? 'Сегодня закрыто' : `загрузка ${Math.round(load * 100)} %`}${lost ? ' · ' + lost : ''}</span><span>${esc(C().HOURS[t.hours].name)}</span></div>
@@ -35851,7 +36085,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function adviceHtml(s) {
     const a = s.stage1.advice; if (!a || !s.stage1.flags.advisor) return '';
     const act = { hire: ['Кого нанять?', 'team'], price: ['К ценам', 'menu'], bakeLess: ['Печь меньше', 'bake'], hours: ['К часам', 'shop'] }[a.act];
-    return `<section class="s1-adv">${portrait(a.who)}<div><b>Совет наставника</b><p>${esc(a.text)}</p>${act ? `<button type="button" class="btn sm primary" data-s1="adv" data-v="${act[1]}">${act[0]}</button> ` : ''}<button type="button" class="btn sm" data-s1="advNo">Позже</button></div></section>`;
+    return `<section class="s1-adv">${portrait(a.who)}<div><b>Совет наставника</b><p>${esc(HT(a.text))}</p>${act ? `<button type="button" class="btn sm primary" data-s1="adv" data-v="${act[1]}">${act[0]}</button> ` : ''}<button type="button" class="btn sm" data-s1="advNo">Позже</button></div></section>`;
   }
   function msHtml(s) {
     const L = S1().msList(s), n = L.filter((x) => x.day != null).length;
@@ -35892,12 +36126,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ey = cv.kind === 'climax' ? 'Кульминация главы' : kind === 'hero' ? 'Сцена · ' + esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Неприятность';
     let h = `<div class="s1-ovbg"><div class="s1-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="s1CardT" tabindex="-1">
       <div class="s1-chd">${portrait(cv.who, true)}<span class="s1-cw"><span class="s1-ey ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
-      <h2 id="s1CardT">${esc(cv.title)}</h2><p class="s1-ct">${esc(cv.text)}</p><div class="s1-cc">`;
+      <h2 id="s1CardT">${esc(HT(cv.title))}</h2><p class="s1-ct">${esc(HT(cv.text))}</p><div class="s1-cc">`;
     if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
     cv.choices.forEach((c, i) => {
-      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="s1-cd">${esc(c.desc)}</p>` : ''}`; return; }
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="s1-cd">${esc(HT(c.desc))}</p>` : ''}`; return; }
       const fx = fxChips(c.fx, c.risk);
-      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += '</div></div></div>';
     $('#s1Ov').innerHTML = h;
@@ -36232,7 +36466,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -36246,7 +36480,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
+    bindHero(el); // имя и пол героя (PLAN.md §8.1)
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG() }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -36254,6 +36489,66 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
+  /* ---------------- герой игрока: имя и пол (PLAN.md §8.1) ----------------
+     Поле имени (необязательное) и два переключателя пола стоят прямо в форме старта, рядом с названием сети.
+     Выбор запоминается в localStorage (ключ bk-ufa-hero — та же привычка, что у «Как начать», bk-ufa-start),
+     поэтому после перезагрузки страницы поля заполнены как игрок их оставил, и переносится в состояние игры:
+     BK.Story.heroSet пишет S.story.hero = { name, g } — это поле уже было в схеме (src/prologue.js), его читают
+     реплики, письма, летопись, книга Семёна и строка героя в отчёте месяца.
+     Пустое имя — не ошибка: без имени героя зовут «шеф» (как в src/data/story-lines.js и раньше).
+     Пол по умолчанию — «Мужчина»; у старых сохранений пола нет вовсе, и там всё остаётся «нейтрально» (см. heroG). */
+  const HERO_PREF = 'bk-ufa-hero';
+  function heroPref() {
+    try {
+      const o = JSON.parse(localStorage.getItem(HERO_PREF) || 'null');
+      return { name: o && typeof o.n === 'string' ? o.n.slice(0, 24) : '', g: o && o.g === 'f' ? 'f' : 'm' };
+    } catch (e) { return { name: '', g: 'm' }; }
+  }
+  function heroPrefSave(name, g) { try { localStorage.setItem(HERO_PREF, JSON.stringify({ n: String(name || '').slice(0, 24), g: g === 'f' ? 'f' : 'm' })); } catch (e) { /* без хранилища выбор живёт до перезагрузки */ } }
+  function heroOpt() {
+    const h = heroPref();
+    return `<div class="rival-opt hero-opt" style="flex:1 1 100%">
+      <div class="row"><span>Имя героя</span><small>необязательно</small></div>
+      <input class="input" id="heroName" maxlength="24" autocomplete="off" placeholder="Как вас зовут? (можно оставить пустым)" value="${H.esc(h.name)}" aria-label="Имя героя">
+      <div class="row"><span>Пол героя</span><div class="seg" role="group" aria-label="Пол героя"><button type="button" data-hero="m" aria-pressed="${h.g === 'm'}">Мужчина</button><button type="button" data-hero="f" aria-pressed="${h.g === 'f'}">Женщина</button></div></div>
+      <small>Имя видно в репликах, письмах и летописи. Пол задаёт облик героя в пиксельных сценах и пару живых деталей в разговорах: к женщине обратятся «девушка», к мужчине — «молодой человек».</small></div>`;
+  }
+  function heroPickedName() { const el = document.querySelector('#start #heroName'); return el ? el.value.trim().slice(0, 24) : ''; }
+  function heroPickedG() { const b = document.querySelector('#start [data-hero="f"]'); return b && b.getAttribute('aria-pressed') === 'true' ? 'f' : 'm'; }
+  function bindHero(el) {
+    const inp = el.querySelector('#heroName');
+    const btns = () => el.querySelectorAll('[data-hero]');
+    if (inp) inp.addEventListener('input', () => heroPrefSave(inp.value, heroPickedG()));
+    btns().forEach((b) => b.addEventListener('click', () => {
+      btns().forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      heroPrefSave(inp ? inp.value : '', b.getAttribute('data-hero'));
+    }));
+  }
+  // герой в «Меню игры»: видно, кем играете, и можно поправить имя или пол — партия от этого не сбрасывается
+  function heroSettingsHtml(S) {
+    const h = BK.Story && BK.Story.heroOf ? BK.Story.heroOf(S) : { name: '', g: null };
+    const g = h.g === 'f' ? 'f' : 'm';
+    return `<div class="field"><label for="heroIn">Имя героя</label><div class="row"><input id="heroIn" class="input" style="flex:1" maxlength="24" autocomplete="off" placeholder="Без имени героя зовут «шеф»" value="${H.esc(h.name)}"><button class="btn" id="heroOk">Сохранить</button></div></div>
+      <div class="row sp"><span>Пол героя <small class="hint">от него зависит облик в сценах и родовые формы в текстах</small></span><div class="seg" role="group" aria-label="Пол героя"><button type="button" data-heroset="m" aria-pressed="${g === 'm'}">Мужчина</button><button type="button" data-heroset="f" aria-pressed="${g === 'f'}">Женщина</button></div></div>`;
+  }
+  function bindHeroSettings() {
+    const inp = $('#heroIn'), ok = $('#heroOk');
+    const apply = (name, g) => {
+      if (!S || !BK.Story || !BK.Story.heroSet) return;
+      BK.Story.heroSet(S, { name, g });
+      if (S.prologue && S.prologue.hero) S.prologue.hero = { name: String(name || '').slice(0, 24), g: g === 'f' ? 'f' : 'm' }; // пролог читает свой P.hero
+      if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(g);
+      save(); hudCache = '';
+      if (BK.App && BK.App.refresh) BK.App.refresh();
+      toast('Герой обновлён', name ? `Вас зовут ${name}` : 'Без имени героя зовут «шеф»', 'good');
+    };
+    if (ok && inp) ok.addEventListener('click', () => apply(inp.value.trim(), heroPickedGS()));
+    $('#modal').querySelectorAll('[data-heroset]').forEach((b) => b.addEventListener('click', () => {
+      $('#modal').querySelectorAll('[data-heroset]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      apply(inp ? inp.value.trim() : '', b.getAttribute('data-heroset'));
+    }));
+  }
+  const heroPickedGS = () => { const b = $('#modal [data-heroset="f"]'); return b && b.getAttribute('aria-pressed') === 'true' ? 'f' : 'm'; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
   // данные стратегий: события пути — в общий список, достижения — в список достижений (борьба с дублями внутри)
@@ -36274,6 +36569,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
     const city = (scDef && scDef.start && scDef.start.city) || null;
     S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    // герой партии: имя и пол со стартового экрана (PLAN.md §8.1). Пишем до создания S.story — пролог
+    // создаёт состояние сам и возьмёт выбор оттуда (src/prologue.js → storyDefaults/syncStory).
+    if (BK.Story && BK.Story.heroSet) BK.Story.heroSet(S, { name: (opts && opts.heroName) || '', g: (opts && opts.heroG) || 'm' });
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet((opts && opts.heroG) || 'm');
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
@@ -36285,6 +36584,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+    if (BK.Story && BK.Story.applyHero) BK.Story.applyHero(S);          // выбор со стартового экрана — в состояние (§8.1)
+    if (BK.Px && BK.Px.heroSet && BK.Story && BK.Story.heroG) BK.Px.heroSet(BK.Story.heroG(S)); // облик героя: у старых сохранений пола нет — «нейтрально»
     openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
     hideStart(); closeModal(); map.reset(S); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
@@ -36971,6 +37272,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row sp settings-top"><div class="field"><span class="flabel">Тема оформления</span>${themeSeg()}</div><button class="btn" data-act="help">Как играть</button></div>
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
+      ${heroSettingsHtml(S)}
       ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       ${BK.Tutorial ? BK.Tutorial.settingsHtml(S) : ''}
       ${BK.RewindUI ? BK.RewindUI.blockHtml(S, false) : ''}
@@ -36980,6 +37282,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div id="newConfirm"></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Вернуться в игру</button><button class="btn danger block" id="newGameBtn">Новая игра</button></div>`, { closable: true });
     if (BK.RewindUI) BK.RewindUI.bind($('#modal'), false);
+    bindHeroSettings(); // имя и пол героя: правится тут же, партия не сбрасывается
     $('#renameOk').addEventListener('click', () => { S.company = $('#renameIn').value.trim() || S.company; hudCache = ''; save(); toast('Название сохранено', S.company, 'good'); });
     $('#copyCode').addEventListener('click', () => {
       const code = exportCode(); const ta = $('#saveCode'); ta.value = code;
@@ -37000,6 +37303,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     applyTheme(loadTheme());
     shell();
     applyTheme(ui.theme);
+    if (BK.Story && BK.Story.patchHistory) { try { BK.Story.patchHistory(); } catch (e) { /* итоги и книга работают и без правки */ } } // имя и родовые формы в книге Семёна (§8.1)
     if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); BK.Sound.music('game'); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера; музыка — спокойный фон игры
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();

@@ -104,13 +104,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // мысли гостей — те же короткие фразы, что в списке «Мысли гостей», но значками для пиксельных пузырей
   const TH_IC = { 'очередь…': { ic: ['dots', 'cup'], tone: 'hot' }, 'дорого?': { ic: ['rub'], tone: 'bad' }, 'нет моих булочек': { ic: ['no:croissant'], tone: 'bad' }, 'вкусно!': { ic: ['heart'], tone: 'good' }, 'тихо тут': { ic: ['zzz'], tone: 'norm' }, 'уютно': { ic: ['note'], tone: 'hot' } };
   const thIc = (x) => TH_IC[x] || (x && typeof x === 'object' ? x : { ic: ['dots'], tone: 'norm' });
-  // Пол героя игра не спрашивает — вариант внешности выбирается стабильно по названию кофейни (за игру он не
-  // «переключается»), а за полтора года за стойкой герой седеет. Варианты (пол и возраст) — в src/pixel/coffee.js.
+  // Пол героя выбирает игрок на стартовом экране (PLAN.md §8.1): он задаёт облик за стойкой
+  // ('young'/'youngF', через полтора года — 'old'/'oldF'). Без выбора (старые сохранения, боты)
+  // остаётся прежний стабильный вариант по названию сети — за игру он не «переключается».
   function heroLook(s) {
+    const g = BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null;
+    const old = !!(s.stage1 && s.stage1.months.length >= 14);
+    if (g === 'f') return old ? 'oldF' : 'youngF';
+    if (g === 'm') return old ? 'old' : 'young';
     const k = String(s.company || '') + '|' + (s.difficulty || '');
     let x = 0; for (let i = 0; i < k.length; i++) x = (x * 31 + k.charCodeAt(i)) >>> 0;
-    return ((s.stage1 && s.stage1.months.length >= 14) ? 'old' : 'young') + (x % 2 ? 'F' : '');
+    return (old ? 'old' : 'young') + (x % 2 ? 'F' : '');
   }
+  // родовые формы в текстах кофейни и подстановка имени героя: {name}, {self}, {ready}… (src/story.js)
+  const HT = (t) => (BK.Story && BK.Story.heroText ? BK.Story.heroText(S(), t) : t);
+  // значок пола у имени героя в шапке: ♀ / ♂ — только когда игрок пол выбрал (старые сохранения — без значка)
+  const heroGmark = (s) => { const g = BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null; return g === 'f' ? ' ♀' : g === 'm' ? ' ♂' : ''; };
   // настроение за стойкой видно на лице: силы героя (T.hp) и настроение сотрудника-героя
   function heroEmo(s) {
     const t = s.stage1, h = ((S1().store(s) || {}).staff || []).find((e) => e.hero);
@@ -163,6 +172,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // снимок для сцены: что показать (состояние, гости, витрина, свет, герой, мысли) — сцена сама в движок не смотрит
   function view(s) {
     const t = s.stage1, st = S1().store(s);
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(BK.Story && BK.Story.heroG ? BK.Story.heroG(s) : null); // облик героя за стойкой — по выбору игрока (§8.1)
     const dp = st ? E().daypartOf(st) : { m: 0.33, d: 0.33, e: 0.33 };
     const h = Math.round(hourOf() * 2) / 2, part = h < 11 ? dp.m : h < 16 ? dp.d : dp.e;   // полчаса: сцена не перерисовывается каждый кадр
     const load = st && st.today && !st.today.closed ? st.today.load : 0;
@@ -291,11 +301,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     menu: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.6" fill="currentColor"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="13" cy="8" r="1.6" fill="currentColor"/></svg>',
   };
   function top(s) {
-    const t = s.stage1, st = S1().store(s), dt = E().dateOf(s.day), g = S1().nextGoal(s);
-    const today = st && st.today && !st.today.closed ? st.today.rev : 0;
+    const t = s.stage1, st = S1().store(s), dt = E().dateOf(s.day), g = S1().nextGoal(s);    const today = st && st.today && !st.today.closed ? st.today.rev : 0;
     const last = t.months[t.months.length - 1];
     return `<div class="s1-brand"><span class="s1-logo" aria-hidden="true">☕</span><span class="s1-bt"><b>${esc(s.company)}</b><small>${st ? `кофейня · ${esc(st.address)}` : 'своя кофейня · выбор места'}</small></span></div>
       <span class="chip crust s1-ch">Глава 1</span>
+      <span class="chip s1-hn" title="Герой: имя и пол задаёт игрок на стартовом экране, поменять можно в «Меню игры»">${esc(hname(s))}${heroGmark(s)}</span>
       <div class="s1-when"><span class="s1-date">${dt.d} ${E().MONTHS_G[dt.m].slice(0, 3)} ${dt.y}</span><span class="s1-clock" id="s1Clock">${clockTxt()}</span></div>
       <div class="speed s1-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-s1="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
@@ -340,7 +350,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const load = td.load || 0;
     const bars = parts.map(([n, w]) => { const v = w / tot * g; return `<div class="s1-hb"><b>${Math.round(v)}</b><span class="hb"><i class="${load > 1 && w / tot > 0.38 ? 'hot' : ''}" style="height:${Math.max(4, v / mx * 100).toFixed(0)}%"></i></span><small>${n}</small></div>`; }).join('');
     const th = thoughts(s).map((x) => `<li><span class="s1-bub">${esc(x)}</span></li>`).join('');
-    const fd = t.feed.slice(-6).reverse().map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span>${esc(f.t)}</span></li>`).join('');
+    const fd = t.feed.slice(-6).reverse().map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span>${esc(HT(f.t))}</span></li>`).join('');
     const lost = td.lost > 0 && !td.closed ? `ушли, не купив: ~${Math.round(td.lost / (td.check || 1))}` : '';
     return `<div class="s1-shop" id="s1Shop"><div class="s1-shopov" id="s1ShopOv">${shopOv(t, st, s)}</div></div>
       <div class="s1-q"><span>${td.closed ? 'Сегодня закрыто' : `загрузка ${Math.round(load * 100)} %`}${lost ? ' · ' + lost : ''}</span><span>${esc(C().HOURS[t.hours].name)}</span></div>
@@ -417,7 +427,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function adviceHtml(s) {
     const a = s.stage1.advice; if (!a || !s.stage1.flags.advisor) return '';
     const act = { hire: ['Кого нанять?', 'team'], price: ['К ценам', 'menu'], bakeLess: ['Печь меньше', 'bake'], hours: ['К часам', 'shop'] }[a.act];
-    return `<section class="s1-adv">${portrait(a.who)}<div><b>Совет наставника</b><p>${esc(a.text)}</p>${act ? `<button type="button" class="btn sm primary" data-s1="adv" data-v="${act[1]}">${act[0]}</button> ` : ''}<button type="button" class="btn sm" data-s1="advNo">Позже</button></div></section>`;
+    return `<section class="s1-adv">${portrait(a.who)}<div><b>Совет наставника</b><p>${esc(HT(a.text))}</p>${act ? `<button type="button" class="btn sm primary" data-s1="adv" data-v="${act[1]}">${act[0]}</button> ` : ''}<button type="button" class="btn sm" data-s1="advNo">Позже</button></div></section>`;
   }
   function msHtml(s) {
     const L = S1().msList(s), n = L.filter((x) => x.day != null).length;
@@ -458,12 +468,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ey = cv.kind === 'climax' ? 'Кульминация главы' : kind === 'hero' ? 'Сцена · ' + esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Неприятность';
     let h = `<div class="s1-ovbg"><div class="s1-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="s1CardT" tabindex="-1">
       <div class="s1-chd">${portrait(cv.who, true)}<span class="s1-cw"><span class="s1-ey ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
-      <h2 id="s1CardT">${esc(cv.title)}</h2><p class="s1-ct">${esc(cv.text)}</p><div class="s1-cc">`;
+      <h2 id="s1CardT">${esc(HT(cv.title))}</h2><p class="s1-ct">${esc(HT(cv.text))}</p><div class="s1-cc">`;
     if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
     cv.choices.forEach((c, i) => {
-      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="s1-cd">${esc(c.desc)}</p>` : ''}`; return; }
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="s1-cd">${esc(HT(c.desc))}</p>` : ''}`; return; }
       const fx = fxChips(c.fx, c.risk);
-      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += '</div></div></div>';
     $('#s1Ov').innerHTML = h;

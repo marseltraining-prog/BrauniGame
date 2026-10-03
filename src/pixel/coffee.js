@@ -310,8 +310,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- герой: варианты по полу и возрасту ---------------- */
-  // Пола героя в состоянии игры нет (игра его не спрашивает), поэтому вариант выбирается стабильно в интерфейсе
-  // (view(S) → heroLook): за игру он не «переключается», а за полтора года за стойкой герой седеет.
+  // Пол выбирает игрок на стартовом экране (PLAN.md §8.1), облик приходит из view(S) → heroLook
+  // (src/ui/stage1.js): 'young'/'youngF' — начало главы, 'old'/'oldF' — за полтора года за стойкой
+  // герой седеет. Если пол не задан (старые сохранения, боты), вариант остаётся прежним, по названию сети.
   const HERO_V = {
     young: { hair: 'hero', hairStyle: 'messy', apron: ['#c46f17', '#94500b'] },
     youngF: { hair: 'auburn', hairStyle: 'bob', apron: ['#3b8796', '#235f6b'] },
@@ -326,6 +327,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     return k;
   }
+  // запасной путь, если снимок не принёс heroLook: пол героя уже применён к Px.CAST (Px.heroSet)
+  function heroLookOf(o) { return HERO_V[o && o.heroLook] ? o.heroLook : (Px.heroG && Px.heroG() === 'f' ? 'youngF' : 'young'); }
 
   /* ---------------- зал: гости, столик, пузыри, монетка ---------------- */
   function hall(b, t, W, H, L, o, light, fg) {
@@ -391,7 +394,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fg = (who, opt) => { const f = Px.fig(who, opt); if (!f.__id) f.__id = Math.random().toString(36).slice(2); return tintK ? Px.memo('cfT|' + f.__id + '|' + light, () => f.clone().tint(LIGHT[light].amb, tintK)) : f; };
     // вы за стойкой (за прилавком — прилавок рисуется поверх)
     if (o.hero !== false) {
-      const look = HERO_V[o.heroLook] ? o.heroLook : 'young', emo = o.heroEmo || 'smile';
+      const look = heroLookOf(o), emo = o.heroEmo || 'smile';
       const blink = ((t + 0.7) % 4.3) < 0.14;
       const pose = (state === 'open' && (o.guests | 0) > 0) ? 'tray' : null;
       const hx = L.hero, hy = L.cY - 27;

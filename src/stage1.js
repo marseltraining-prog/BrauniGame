@@ -66,7 +66,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function sub(S, t) { const C = BK.STORY_CAST; if (!C || !C.swap || t == null) return t; try { return C.swap(S, String(t)); } catch (e) { return t; } }
   function subT(T, t) { return sub({ startCity: (T && T.city) || null }, t); }
   function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t: subT(T, t), k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }
-  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
+  /* Родовые формы героя (PLAN.md §8.1): пол выбирается на стартовом экране, лежит в S.story.hero.
+     Базовое правило — тексты безличные («вы», «ты»); форма нужна только там, где без неё не по-русски:
+     «Пока справлюсь сам» / «…сама». Без выбора пола (старые сохранения, боты) — мужская форма, как было. */
+  const sex = (S, m, f) => (BK.Story && BK.Story.g ? BK.Story.g(S, m, f) : m);
+  const hname = (S) => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S) : 'шеф');
+  const hword = (S) => sex(S, 'молодой человек', 'девушка');
+  function feed(T, t, k) { T.feed.push({ day: T.lastDay || 0, t, k: k || 'info' }); if (T.feed.length > 40) T.feed.shift(); }  // «отпечаток» состояния дня — для звука интерфейса (src/ui/stage1.js): звук привязан к событиям,
   // а цикл слоя перерисовывается десятки раз в секунду. Здесь только чтение, состояние не меняется.
   function daySig(S) {
     const T = T0(S), st = store(S); if (!T || !st) return '';
@@ -434,7 +440,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: '«Без соцсетей, сарафан надёжнее»', desc: semyonClose(S) ? 'Семён напишет пост «Открылись»: +5 % на месяц' : 'Сарафан — дело небыстрое', fx: { guests: semyonClose(S) ? 1 : 0 }, do(S) { if (semyonClose(S)) { addMod(S, 'traffic', 1.05, 30, store(S)); feed(T0(S), 'Семён в «Уфа жуёт»: «Открылись. Американо честный, правда — тоже».', 'good'); } flag(S, 'ildar', 'none'); } },
       ] },
     s12: { kind: 'hero', who: (S) => mentorWho(S), title: () => 'Пустая витрина',
-      text: (S) => { const w = mentorWho(S); return w === 'rashid' ? 'Рашид заходит без предупреждения: «Витрина полная, зал пустой. Красиво, как в музее. Балам, у тебя хлеб выходит в десять. А люди идут на трамвай в полвосьмого. Кому ты печёшь — себе?»' : w === 'elvira' ? 'Эльвира заходит за кофе: «Средний чек у вас хороший. Чеков мало. Когда у вас люди идут мимо? Не знаете? Вот и я не знаю. Узнайте».' : w === 'gulya' ? 'Гуля, вытирая стойку: «Слышь, начальник, мы стоим, а люди идут мимо. Может, откроемся, когда они идут?»' : 'Семён Аркадьевич: «Пусто у вас, как в редакции в пятницу. Люди идут мимо в полвосьмого, а у вас ещё закрыто».'; },
+      text: (S) => { const w = mentorWho(S); return w === 'rashid' ? 'Рашид заходит без предупреждения: «Витрина полная, зал пустой. Красиво, как в музее. Балам, у тебя хлеб выходит в десять. А люди идут на трамвай в полвосьмого. Кому ты печёшь — себе?»' : w === 'elvira' ? 'Эльвира заходит за кофе: «Средний чек у вас хороший. Чеков мало. Когда у вас люди идут мимо? Не знаете? Вот и я не знаю. Узнайте».' : w === 'gulya' ? 'Гуля, вытирая стойку: «Слышь, {boss}, мы стоим, а люди идут мимо. Может, откроемся, когда они идут?»' : 'Семён Аркадьевич: «Пусто у вас, как в редакции в пятницу. Люди идут мимо в полвосьмого, а у вас ещё закрыто».'; },
       choices: (S) => { const T = T0(S), early = T.spot.hours.includes('early') || T.spot.hours.includes('full'); return [
         { label: '«Открываемся раньше»', desc: early ? 'Часы 7:00–16:00: утренний поток; и +5 % гостей на 2 месяца' : 'ТЦ открывается в 10 — зато акция у входа: +6 % гостей на 2 месяца', fx: { guests: 2, hp: early ? -1 : 0 }, do(S) { if (early) { T.hours = T.spot.hours.includes('early') ? 'early' : 'full'; applyHours(S); } addMod(S, 'traffic', early ? 1.05 : 1.06, 60, store(S)); T.flags.hoursHint = 1; } },
         { label: '«Снижу цены на кофе»', desc: 'Кофе дешевле на 5 %: гостей больше, чек меньше', fx: { guests: 1, rub: -1 }, do(S) { for (const it of S.menu) { const p = E().byId(BK.PRODUCTS, it.id); if (p && p.cat === 'drinks') E().setPrice(S, it.id, it.pm - 0.05); } addMod(S, 'conv', 1.06, 60, store(S)); } },
@@ -462,10 +468,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (gulyaAvail(S)) out.push({ label: '«Гуля, выходи завтра»', desc: `Гуля — уровень ${gulyaLvl(S)}, своя: не уйдёт`, dis: full, fx: { team: 2, rel: 1, rub: -1 }, do(S) { inviteGulya(S); } });
         out.push({ label: 'Айдар', desc: 'Уровень 1, недорогой, учится быстро', cost: E().hireCost(S, 1), dis: full, fx: { team: 1, rub: -1 }, do(S) { I().spend(S, E().hireCost(S, 1), 'hire'); addPerson(S, 'Айдар Галиев', 1, 4, { aidar: 1, trait: 5, patience: 8 }); hired(S, 'Айдар'); flag(S, 'hire1', 'aidar'); } });
         out.push({ label: 'Лариса', desc: 'Уровень 3 сразу: сильная, но из «Двора»…', cost: E().hireCost(S, 3), dis: full, fx: { team: 2, rub: -2 }, risk: true, do(S) { I().spend(S, E().hireCost(S, 3), 'hire'); addPerson(S, 'Лариса Кузнецова', 3, 4, { lara: 1 }); hired(S, 'Лариса'); flag(S, 'hire1', 'lara'); if (S.story) S.story.f.laraSpy = rnd(T0(S)) < 0.4; } });
-        out.push({ label: 'Пока справлюсь сам', desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
+        out.push({ label: (S) => 'Пока справлюсь ' + sex(S, 'сам', 'сама'), desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
         return out; } },
     s16: { kind: 'hero', who: 'gulya', title: () => 'Первый плюс',
-      text: (S, v) => `${T0(S).flags.gulyaIn ? 'Гуля' : 'За стойкой'}: «Начальник, мы в плюсе! На ${fm(v.profit)}, но в плюсе!» СМС от мамы: «Я видела, у вас очередь была. Горжусь. Покушай».`,
+      text: (S, v) => `${T0(S).flags.gulyaIn ? 'Гуля' : 'За стойкой'}: «{boss}, мы в плюсе! На ${fm(v.profit)}, но в плюсе!» СМС от мамы: «Я видела, у вас очередь была. Горжусь. Покушай».`,
       choices: (S) => [
         { label: '«Премия команде»', desc: 'Команда запомнит', cost: r1000(10000 * S.macro.priceLevel), fx: { rub: -1, team: 2, rel: 1 }, do(S) { I().spend(S, r1000(10000 * S.macro.priceLevel), 'bonus'); for (const e of store(S).staff) if (!e.hero) e.mood = clamp(e.mood + 10, 0, 100); meter(S, 'care', 5); rel(S, { gulya: 5 }); } },
         { label: '«Всё в резерв»', desc: 'Эльвира: «Правильный ответ. Скучный, но правильный». Резерв закрывает кассовые разрывы', fx: { rub: 1, rel: 1 }, do(S) { E().setAlloc(S, { reserve: 0.3, bonus: S.alloc.bonus, marketing: S.alloc.marketing }); rel(S, { elvira: 5 }); } },
@@ -585,7 +591,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const T = T0(S); if (!T || !T.cards.length) return null;
     const q = T.cards[0], d = CARDS[q.id]; if (!d) { T.cards.shift(); return card(S); }
     const who = typeof d.who === 'function' ? d.who(S) : d.who;
-    const ch = d.choices(S, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || S.cash >= c.cost), why: c.dis || (c.cost && S.cash < c.cost ? 'Не хватает денег' : '') }));
+    const ch = d.choices(S, q.v).map((c) => {
+      const o = Object.assign({}, c);
+      if (typeof o.label === 'function') o.label = o.label(S);   // вариант с родовой формой героя (PLAN.md §8.1)
+      if (typeof o.desc === 'function') o.desc = o.desc(S);
+      o.can = !o.dis && (!o.cost || S.cash >= o.cost);
+      o.why = o.dis || (o.cost && !o.can ? 'Не хватает денег' : '');
+      return o;
+    });
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     // местный слой (src/data/story-cast.js): подписи героев, заголовки, тексты и варианты — по городу партии
     const cv = { id: q.id, v: q.v, kind: d.kind, who, hero: localHero(S, who, HEROES[who] || HEROES.life), title: d.title(S, q.v), text: d.text(S, q.v), choices: ch };
@@ -611,10 +624,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     T.cards.shift();
     if (!T.seen[cv.id]) T.seen[cv.id] = S.day;
     c.do(S, cv.v);
+    // в летопись и в «главные решения» итогов запись идёт уже с именем и родовой формой героя (PLAN.md §8.1):
+    // окно сцены подставляет их на отрисовке, а итоги рисуют запись как она сохранена
+    const hl = BK.Story && BK.Story.heroText ? BK.Story.heroText(S, c.label) : c.label;
     if ((cv.kind === 'hero' || cv.kind === 'climax') && S.story) {
-      S.story.seen[cv.id] = S.day; S.story.log.push({ day: S.day, id: cv.id, choice: cv.choices.indexOf(c), line: c.label });
+      S.story.seen[cv.id] = S.day; S.story.log.push({ day: S.day, id: cv.id, choice: cv.choices.indexOf(c), line: hl });
       if (S.story.log.length > 120) S.story.log.shift();
-      if (S.chron) S.chron.push({ t: 'story', id: cv.id, label: c.label, day: S.day });
+      if (S.chron) S.chron.push({ t: 'story', id: cv.id, label: hl, day: S.day });
     }
     if (cv.choices.length > 1) feed(T, `${cv.title}: ${/^«/.test(c.label) ? c.label : '«' + c.label + '»'}.`, (c.fx && c.fx.k) || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.id === 's12') T.flags.advisor = 1;

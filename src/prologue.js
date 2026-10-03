@@ -73,6 +73,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       spent: {}, mo: null, hist: [], feed: [], fx: [],
       stats: { sick: 0, splurge: 0, shifts: 0, warn: 0, fired: 0, best: 0, boxed: 0 },
       won: null, carry: null,
+      hero: { name: '', g: null },   // имя и пол героя со стартового экрана (PLAN.md §8.1); у старых сохранений поля нет — «нейтрально»
     };
     P.shiftSchedule = newShiftSchedule(P);
     return P;
@@ -82,7 +83,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Местный слой (src/data/story-cast.js): город партии для текстов пролога. В Уфе поля нет вовсе —
     // партия и сохранение прежние, а swap() для Уфы возвращает строку как есть.
     if (S.startCity && S.startCity !== 'ufa') P.city = S.startCity;
-    P.cards.push({ id: 'p01', v: {} });
+    // герой приходит со стартового экрана (src/ui/app.js): имя и пол уже лежат в состоянии игры
+    if (BK.Story && BK.Story.heroOf) { const h = BK.Story.heroOf(S); P.hero = { name: h.name, g: h.g }; }    P.cards.push({ id: 'p01', v: {} });
     schedule(P);
     feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
     V2('init', S); V2('welcome', P);
@@ -113,10 +115,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const st = S.story || (S.story = storyDefaults(S.seed || 1));
     Object.assign(st.rel, P.rel); Object.assign(st.m, P.sm); Object.assign(st.f, P.sf);
     st.shares = P.shares.slice(); Object.assign(st.seen, P.seen); st.log = P.slog.slice(-120);
+    if (S.__hero && BK.Story && BK.Story.applyHero) BK.Story.applyHero(S); // имя и пол героя со стартового экрана (PLAN.md §8.1)
     if (P.status === 'life') st.ending = 'hired';
     if ((P.status === 'done' || P.status === 'skipped') && (!S.stage1 || S.stage1.status !== 'done')) st.ch = 'own'; // глава 1 «Своя точка» (стадия 1 — stage1.js; после неё — 'city')
   }
   const on = (S) => !!(S && S.prologue && S.prologue.status === 'run');
+  /* ---------------- герой: имя и пол (PLAN.md §8.1) ----------------
+     Пол выбирает игрок на стартовом экране; он лежит в P.hero (и в S.story.hero — для сюжета и итогов).
+     Тексты пролога пишутся безлично («вы», «ты») — пол добавляет только родовые формы там, где без них
+     не по-русски: sex(P, 'готов', 'готова'). Без выбора (старые сохранения, боты) — мужская форма. */
+  const heroOf = (P) => (P && P.hero) || { name: '', g: null };
+  const isF = (P) => heroOf(P).g === 'f';
+  const sex = (P, m, f) => (isF(P) ? f : m);
+  const heroName = (P) => heroOf(P).name || 'шеф';
+  const heroWord = (P) => sex(P, 'молодой человек', 'девушка');   // как к герою обращаются чужие люди
+  const heroWordGen = (P) => sex(P, 'молодого человека', 'девушки');
   // тон записи в ленте: по нему озвучка пролога (src/ui/prologue.js) выбирает звук события.
   // Иначе звук пришлось бы определять по русскому тексту записи — это хрупко.
   // Вариант может задать тон сам (fx.k, feed.k), тогда он важнее общего правила.
@@ -334,7 +347,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const CARDS = {
     /* ---------- сюжет пролога (docs/story.md §7, сцены П1–П8; числа — механика CFG.PROLOGUE) ---------- */
     p01: { kind: 'hero', who: 'rashid', title: () => 'Пять утра, улица Пушкина',
-      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду. Правда сегодня в чём? Эчпочмаки вчерашние?»',
+      text: () => 'Рашид Хайруллин, хозяин «Калача»: «Бариста? Мне нужен человек, а не бариста. Кофе — это вода и терпение. Хлеб — вот это работа. Фартук на крючке, касса слева, улыбка — своя». Гуля из цеха, не оборачиваясь: «Сахар — в синей банке, соль — в белой. Перепутаешь — Рашид-абый тебя в тесто замесит. Шучу. Наполовину». 7:02, первый гость — Семён Аркадьевич: «Американо и правду, {young}. Правда сегодня в чём? Эчпочмаки вчерашние?»',
       choices: () => [
         { label: '«Сегодняшние. Гуля с четырёх утра тут»', desc: 'Семёну нравится, Гуле — тоже', fx: { rel: 2 }, do(P) { rel(P, { semyon: 5, gulya: 5 }); P.sf.regulars++; } },
         { label: '«Не знаю, я первый день. Сейчас спрошу»', desc: 'Честность — редкость. Рашид услышал', fx: { rel: 1, rep: 1 }, do(P) { rel(P, { semyon: 5, rashid: 5 }); style(P, 'honesty', 5); eff(P, { rep: 2 }); } },
@@ -348,7 +361,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: '«У нас всегда так, это авторская сухость»', desc: 'Семён смеётся: «Запишу. В раздел „юмор“»', fx: { rel: 1 }, do(P) { rel(P, { semyon: -5, gulya: 5 }); } },
       ] },
     p03: { kind: 'hero', who: 'family', title: () => 'Конверт от бабушки',
-      text: () => 'Бабушка Сания пришла в «Калач» в выходном платке: «Показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».',
+      text: (P) => `Бабушка Сания пришла в «Калач» в выходном платке: «${sex(P, 'Внучек', 'Внученька')}, показывай, где работаешь. Так… Тесто у вас хорошее. Лук мелковат. Вот. Пятнадцать тысяч. На мечту. Не на кроссовки. На кроссовки я тебе в прошлый раз давала».`,
       choices: () => [
         { label: '«Положу на вклад, әби. Честно»', desc: '+15 000 ₽ сразу на вклад', fx: { rub: 2, rel: 1 }, do(P) { earn(P, 15000, 'gifts'); P.cash -= 15000; P.dep += 15000; fx(P, 'dep', 15000); rel(P, { family: 5 }); P.sf.depHint = true; } },
         { label: '«Отдам маме за квартиру»', desc: 'Дома теплее, настроение лучше', fx: { mood: 1, rel: 2 }, do(P) { rel(P, { family: 10 }); eff(P, { mood: 5 }); P.flags.calmHome = P.m; } },
@@ -391,7 +404,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: (P) => (P.job === 0 ? 'Рашид: «Кофе у тебя уже лучше моего. Не зазнавайся. Будешь старшим — открываешь смену, учишь новеньких. Оклад выше, спрос тоже».' : 'Рашид: «Смены без тебя разваливаются. Бери управление: график, касса, люди. Это уже почти своё дело. Почти».'),
       choices: (P) => [
         { label: 'Согласиться', desc: `Оклад около ${fm(r100((C().JOBS[P.job + 1].pay + skAvg(P) * C().SKILL_PAY) * P.payK))}`, fx: { rub: 2, mood: 1, rep: 1 }, do(P) { P.job++; P.jobM = 0; eff(P, { mood: 8, rep: 3 }); rel(P, { rashid: 4 }); feed(P, `Повышение! Теперь вы — ${C().JOBS[P.job].name.toLowerCase()}.`, 'good'); fx(P, 'promo', P.job); } },
-        { label: 'Пока не готов(а)', desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
+        { label: (P) => 'Пока не ' + sex(P, 'готов', 'готова'), desc: 'Рашид предложит снова через 3 месяца', fx: { rep: -1 }, do(P) { P.flags.promoLater = P.m + 3; } },
       ] },
     goal: { kind: 'hero', who: 'elvira', title: () => 'Можно открывать своё!',
       text: (P, v) => (v.credit ? `Накоплено ${fm(savings(P))}. Эльвира из «Семи рек»: «Стаж есть, отзыв от Рашида есть, цифры сходятся. Остальное банк даст в кредит. Поздравляю — теперь у нас с вами отношения. Серьёзные».` : `Накоплено ${fm(savings(P))} — хватает на островок в хорошем месте без кредита. Эльвира из «Семи рек»: «Люблю, когда ко мне приходят с цифрами. Ещё больше люблю, когда цифры сходятся».`),
@@ -457,7 +470,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: (P, v) => `Женщина, которая каждое утро берёт раф на кокосовом, оставила ${fm(v.a)} чаевых: «За то, что помните, как я люблю».`,
       choices: (P, v) => [{ label: 'Приятно!', desc: '', fx: { rub: 1, mood: 1 }, do(P) { gift(P, v.a, 'tips'); eff(P, { mood: 5, people: 1 }); } }] },
     e_praise: { kind: 'pos', who: 'semyon', title: () => 'Пост в «Уфа жуёт»',
-      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
+      text: () => 'Семён Аркадьевич написал в канале: «В „Калаче“ на Пушкина кофе наконец-то догнал хлеб. Рекомендую бариста — помнит, кто что пьёт. За стойкой {name} — запоминайте имя». Рашид показал пост всей смене и сделал вид, что ему всё равно.',
       choices: () => [{ label: 'Приятно', desc: '', fx: { rep: 2, mood: 1 }, do(P) { eff(P, { rep: 7, mood: 5 }); rel(P, { semyon: 3 }); } }] },
     e_fest: { kind: 'pos', who: 'rashid', title: () => 'Выездная точка на празднике',
       text: () => 'На Сабантуй «Калач» ставит палатку с кофе и эчпочмаками. Рашид ищет, кто выйдет в выходные.',
@@ -660,7 +673,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const P = S.prologue; if (!P || !P.cards.length) return null;
     const q = P.cards[0], d = CARDS[q.id] || DIL(q.id);
     if (!d) { P.cards.shift(); return card(S); } // чужая карточка (старое сохранение) — просто убираем
-    const ch = d.choices(P, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || canAfford(P, c.cost, c.cashOnly)), why: c.dis || (c.cost && !canAfford(P, c.cost, c.cashOnly) ? (c.cashOnly && canAfford(P, c.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '') }));
+    const ch = d.choices(P, q.v).map((c) => {
+      const o = Object.assign({}, c);
+      if (typeof o.label === 'function') o.label = o.label(P);   // вариант с родовой формой героя (PLAN.md §8.1)
+      o.can = !o.dis && (!o.cost || canAfford(P, o.cost, o.cashOnly));
+      o.why = o.dis || (o.cost && !o.can ? (o.cashOnly && canAfford(P, o.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '');
+      return o;
+    });
     // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
     const t0 = typeof d.text === 'function' ? d.text(P, q.v) : d.text;
@@ -1090,6 +1109,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
     create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
+    heroOf, isF, sex, heroName, heroWord, heroWordGen,   // герой: имя и пол героя (PLAN.md §8.1)
     feed2, fx2, rel2, style2, pay2, spend2, thread2, storyLog2, // хуки живого сюжета v2 (src/data/prolog-v2.js) — имя с «2», чтобы не путать с внутренними feed/fx/rel/style
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
     shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, ensureShiftSchedule, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,

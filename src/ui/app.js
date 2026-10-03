@@ -173,7 +173,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -187,7 +187,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
+    bindHero(el); // имя и пол героя (PLAN.md §8.1)
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG() }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -195,6 +196,66 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
+  /* ---------------- герой игрока: имя и пол (PLAN.md §8.1) ----------------
+     Поле имени (необязательное) и два переключателя пола стоят прямо в форме старта, рядом с названием сети.
+     Выбор запоминается в localStorage (ключ bk-ufa-hero — та же привычка, что у «Как начать», bk-ufa-start),
+     поэтому после перезагрузки страницы поля заполнены как игрок их оставил, и переносится в состояние игры:
+     BK.Story.heroSet пишет S.story.hero = { name, g } — это поле уже было в схеме (src/prologue.js), его читают
+     реплики, письма, летопись, книга Семёна и строка героя в отчёте месяца.
+     Пустое имя — не ошибка: без имени героя зовут «шеф» (как в src/data/story-lines.js и раньше).
+     Пол по умолчанию — «Мужчина»; у старых сохранений пола нет вовсе, и там всё остаётся «нейтрально» (см. heroG). */
+  const HERO_PREF = 'bk-ufa-hero';
+  function heroPref() {
+    try {
+      const o = JSON.parse(localStorage.getItem(HERO_PREF) || 'null');
+      return { name: o && typeof o.n === 'string' ? o.n.slice(0, 24) : '', g: o && o.g === 'f' ? 'f' : 'm' };
+    } catch (e) { return { name: '', g: 'm' }; }
+  }
+  function heroPrefSave(name, g) { try { localStorage.setItem(HERO_PREF, JSON.stringify({ n: String(name || '').slice(0, 24), g: g === 'f' ? 'f' : 'm' })); } catch (e) { /* без хранилища выбор живёт до перезагрузки */ } }
+  function heroOpt() {
+    const h = heroPref();
+    return `<div class="rival-opt hero-opt" style="flex:1 1 100%">
+      <div class="row"><span>Имя героя</span><small>необязательно</small></div>
+      <input class="input" id="heroName" maxlength="24" autocomplete="off" placeholder="Как вас зовут? (можно оставить пустым)" value="${H.esc(h.name)}" aria-label="Имя героя">
+      <div class="row"><span>Пол героя</span><div class="seg" role="group" aria-label="Пол героя"><button type="button" data-hero="m" aria-pressed="${h.g === 'm'}">Мужчина</button><button type="button" data-hero="f" aria-pressed="${h.g === 'f'}">Женщина</button></div></div>
+      <small>Имя видно в репликах, письмах и летописи. Пол задаёт облик героя в пиксельных сценах и пару живых деталей в разговорах: к женщине обратятся «девушка», к мужчине — «молодой человек».</small></div>`;
+  }
+  function heroPickedName() { const el = document.querySelector('#start #heroName'); return el ? el.value.trim().slice(0, 24) : ''; }
+  function heroPickedG() { const b = document.querySelector('#start [data-hero="f"]'); return b && b.getAttribute('aria-pressed') === 'true' ? 'f' : 'm'; }
+  function bindHero(el) {
+    const inp = el.querySelector('#heroName');
+    const btns = () => el.querySelectorAll('[data-hero]');
+    if (inp) inp.addEventListener('input', () => heroPrefSave(inp.value, heroPickedG()));
+    btns().forEach((b) => b.addEventListener('click', () => {
+      btns().forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      heroPrefSave(inp ? inp.value : '', b.getAttribute('data-hero'));
+    }));
+  }
+  // герой в «Меню игры»: видно, кем играете, и можно поправить имя или пол — партия от этого не сбрасывается
+  function heroSettingsHtml(S) {
+    const h = BK.Story && BK.Story.heroOf ? BK.Story.heroOf(S) : { name: '', g: null };
+    const g = h.g === 'f' ? 'f' : 'm';
+    return `<div class="field"><label for="heroIn">Имя героя</label><div class="row"><input id="heroIn" class="input" style="flex:1" maxlength="24" autocomplete="off" placeholder="Без имени героя зовут «шеф»" value="${H.esc(h.name)}"><button class="btn" id="heroOk">Сохранить</button></div></div>
+      <div class="row sp"><span>Пол героя <small class="hint">от него зависит облик в сценах и родовые формы в текстах</small></span><div class="seg" role="group" aria-label="Пол героя"><button type="button" data-heroset="m" aria-pressed="${g === 'm'}">Мужчина</button><button type="button" data-heroset="f" aria-pressed="${g === 'f'}">Женщина</button></div></div>`;
+  }
+  function bindHeroSettings() {
+    const inp = $('#heroIn'), ok = $('#heroOk');
+    const apply = (name, g) => {
+      if (!S || !BK.Story || !BK.Story.heroSet) return;
+      BK.Story.heroSet(S, { name, g });
+      if (S.prologue && S.prologue.hero) S.prologue.hero = { name: String(name || '').slice(0, 24), g: g === 'f' ? 'f' : 'm' }; // пролог читает свой P.hero
+      if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(g);
+      save(); hudCache = '';
+      if (BK.App && BK.App.refresh) BK.App.refresh();
+      toast('Герой обновлён', name ? `Вас зовут ${name}` : 'Без имени героя зовут «шеф»', 'good');
+    };
+    if (ok && inp) ok.addEventListener('click', () => apply(inp.value.trim(), heroPickedGS()));
+    $('#modal').querySelectorAll('[data-heroset]').forEach((b) => b.addEventListener('click', () => {
+      $('#modal').querySelectorAll('[data-heroset]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      apply(inp ? inp.value.trim() : '', b.getAttribute('data-heroset'));
+    }));
+  }
+  const heroPickedGS = () => { const b = $('#modal [data-heroset="f"]'); return b && b.getAttribute('aria-pressed') === 'true' ? 'f' : 'm'; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
   // данные стратегий: события пути — в общий список, достижения — в список достижений (борьба с дублями внутри)
@@ -215,6 +276,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
     const city = (scDef && scDef.start && scDef.start.city) || null;
     S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    // герой партии: имя и пол со стартового экрана (PLAN.md §8.1). Пишем до создания S.story — пролог
+    // создаёт состояние сам и возьмёт выбор оттуда (src/prologue.js → storyDefaults/syncStory).
+    if (BK.Story && BK.Story.heroSet) BK.Story.heroSet(S, { name: (opts && opts.heroName) || '', g: (opts && opts.heroG) || 'm' });
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet((opts && opts.heroG) || 'm');
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
@@ -226,6 +291,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
+    if (BK.Story && BK.Story.applyHero) BK.Story.applyHero(S);          // выбор со стартового экрана — в состояние (§8.1)
+    if (BK.Px && BK.Px.heroSet && BK.Story && BK.Story.heroG) BK.Px.heroSet(BK.Story.heroG(S)); // облик героя: у старых сохранений пола нет — «нейтрально»
     openSeen = null; // живость: после загрузки не «звенеть» открытием уже открытых точек
     hideStart(); closeModal(); map.reset(S); renderAll();
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
@@ -912,6 +979,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row sp settings-top"><div class="field"><span class="flabel">Тема оформления</span>${themeSeg()}</div><button class="btn" data-act="help">Как играть</button></div>
       <div class="field"><label for="renameIn">Название сети</label><div class="row"><input id="renameIn" class="input" style="flex:1" maxlength="40" value="${H.esc(S.company)}"><button class="btn" id="renameOk">Сохранить</button></div></div>
       <div class="row sp"><span>Уровень сложности</span><b class="diffbadge ${S.difficulty || 'normal'}">${diffName(S.difficulty)}</b></div>
+      ${heroSettingsHtml(S)}
       ${BK.Extras ? BK.Extras.settingsHtml(S) : ''}
       ${BK.Tutorial ? BK.Tutorial.settingsHtml(S) : ''}
       ${BK.RewindUI ? BK.RewindUI.blockHtml(S, false) : ''}
@@ -921,6 +989,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div id="newConfirm"></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Вернуться в игру</button><button class="btn danger block" id="newGameBtn">Новая игра</button></div>`, { closable: true });
     if (BK.RewindUI) BK.RewindUI.bind($('#modal'), false);
+    bindHeroSettings(); // имя и пол героя: правится тут же, партия не сбрасывается
     $('#renameOk').addEventListener('click', () => { S.company = $('#renameIn').value.trim() || S.company; hudCache = ''; save(); toast('Название сохранено', S.company, 'good'); });
     $('#copyCode').addEventListener('click', () => {
       const code = exportCode(); const ta = $('#saveCode'); ta.value = code;
@@ -941,6 +1010,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     applyTheme(loadTheme());
     shell();
     applyTheme(ui.theme);
+    if (BK.Story && BK.Story.patchHistory) { try { BK.Story.patchHistory(); } catch (e) { /* итоги и книга работают и без правки */ } } // имя и родовые формы в книге Семёна (§8.1)
     if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); BK.Sound.music('game'); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера; музыка — спокойный фон игры
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
