@@ -1,10 +1,121 @@
-/* Истории (сценарии): список на старте и блок «пройдено N из 4» в итогах. */
-.scenpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+/* =====================================================================
+   Истории (сценарии): карточки на стартовом экране, карточка «Новая история»
+   в начале партии и блок «Пройдено N из 4» в итогах игры.
+   Разметка — src/ui/scenario-ui.js, логика — src/scenario.js (BK.Scenario).
+   Только токены темы из styles.css: светлая и тёмная тема — один набор правил.
+   Проверять глазами: 1440 / 390 / 360, светлая и тёмная тема (нет горизонтальной
+   прокрутки, текст не обрезается, кнопки не меньше 34 px).
+   ===================================================================== */
+
+/* ---------- общие мелочи ---------- */
+.scen-ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; line-height: 1;
+  background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.scen-ic.sm { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
+.scen-b { display: flex; flex-direction: column; min-width: 0; }
+.scen-n { display: block; font-weight: 600; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.scen-n.sm { font-size: 13.5px; }
+.scen-d { margin-top: 3px; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); overflow-wrap: anywhere; }
+.scen-g { margin-top: 3px; font-size: 11.5px; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.scen-s { margin-top: 6px; justify-self: start; align-self: start; font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+  padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+.scen-s.on { background: var(--good-soft); color: var(--good-t); box-shadow: none; }
+
+/* прогресс точками: пройденные — с галочкой */
+.scen-pips { display: inline-flex; gap: 4px; flex: none; }
+.scen-pip { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center;
+  font-family: var(--f-body); font-size: 11px; font-weight: 700; line-height: 1; font-style: normal;
+  background: var(--surface-2); color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line-2); }
+.scen-pip.on { background: var(--good-soft); color: var(--good-t); box-shadow: none; }
+.scen-pips.big .scen-pip { width: 24px; height: 24px; font-size: 13px; }
+.scen-num { font-family: var(--f-mono); font-size: 1.06em; color: var(--crust-t); }
+
+/* ---------- 1. стартовый экран: карточки историй ---------- */
+.scenpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 8px; min-width: 0; }
 .scenpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
-.scen-list { display: flex; flex-wrap: wrap; gap: 6px 10px; }
-.scen-it { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); background: var(--surface-2); border-radius: 7px; padding: 4px 8px; }
-.scen-it.done { color: var(--good-t); background: var(--good-soft); }
-.scen-end { border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 10px; }
-.scen-end-h { margin: 2px 0 0; font-size: 15px; }
-.scen-end-h b { font-family: var(--f-mono); }
-@media (max-width: 560px) { .scen-list { flex-direction: column; } }
+.scen-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; min-width: 0; }
+.scen-sum { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; overflow-wrap: anywhere; }
+.scen-sum b { color: var(--ink); font-weight: 600; }
+.scen-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; min-width: 0; }
+.scen-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: start; min-width: 0;
+  padding: 10px 11px; border: 1px solid var(--line-2); border-left: 3px solid var(--crust); border-radius: 10px; background: var(--surface); }
+.scen-card.done { border-color: var(--line); border-left-color: var(--good); background: var(--surface-2); }
+.scen-card.done .scen-ic, .scen-card.done .scen-n, .scen-card.done .scen-d, .scen-card.done .scen-g { opacity: .62; }
+.scen-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 12px; margin-top: 8px; }
+.scen-foot .hint { flex: 1 1 220px; min-width: 0; }
+.scen-reset { flex: 0 1 auto; min-width: 0; }
+.scen-reset .linkbtn { min-height: 34px; }
+.scen-conf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--warn-t); min-width: 0; }
+.scen-conf > span:first-child { flex: 1 1 100%; overflow-wrap: anywhere; }
+.scen-conf .btn { min-height: 34px; }
+
+/* ---------- 2. начало партии: карточка «Новая история» ---------- */
+/* не окно и не модальное: игра не останавливается, обучение новичка (z-index 55) не перекрывается */
+.scen-start { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 44; width: min(560px, calc(100% - 24px)); pointer-events: none; }
+.scen-start[hidden] { display: none; }
+.scs-card { pointer-events: auto; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px;
+  align-items: start; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line-2); border-left: 4px solid var(--crust);
+  border-radius: 12px; box-shadow: var(--shadow); cursor: pointer; opacity: 0; transform: translateY(10px); transition: opacity .2s ease, transform .22s ease; }
+.scen-start.on .scs-card { opacity: 1; transform: translateY(0); }
+.scs-ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 21px; line-height: 1;
+  background: var(--crust-soft); color: var(--crust-t); }
+.scs-b { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-right: 32px; }
+.scs-ey { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.scs-n { font-family: var(--f-display); font-size: 16.5px; line-height: 1.2; overflow-wrap: anywhere; }
+.scs-t { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); overflow-wrap: anywhere; }
+.scs-g { margin: 0; font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.scs-g b { font-weight: 600; }
+.scs-w { margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.scs-x { position: absolute; top: 7px; right: 7px; width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 9px;
+  background: none; color: var(--ink-3); cursor: pointer; display: grid; place-items: center; }
+.scs-x:hover { color: var(--ink); background: var(--surface-2); border-color: var(--line); }
+.scs-x svg { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) { .scs-card { transition: none; opacity: 1; transform: none; } }
+/* идёт обучение новичка (карточка обучения выше по слою и обычно в центре/справа):
+   уводим свою карточку влево и делаем уже, чтобы не спорить с обучением */
+.scen-start.tut-safe { left: 16px; transform: none; width: min(380px, calc(100% - 24px)); }
+@media (max-width: 820px) { .scen-start.tut-safe { left: 50%; transform: translateX(-50%); width: calc(100% - 16px); } }
+
+/* уведомления не должны оказаться под карточкой истории: пока она видна — поднимаем их */
+html.scs-on .toasts.bottom { bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--scs-h, 0px) + 8px); }
+@media (min-width: 821px) { html.scs-on .toasts { bottom: calc(16px + env(safe-area-inset-bottom, 0px) + var(--scs-h, 0px) + 8px); } }
+
+/* ---------- 3. итоги игры: «Пройдено N из 4» ---------- */
+.scen-end { border-top: 1px solid var(--line); padding-top: 12px; }
+.scen-end-box { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line-2);
+  border-radius: var(--r); background: linear-gradient(180deg, var(--crust-soft), var(--surface) 78%); }
+.scen-end-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.scen-end-ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.scen-end-h { font-size: 21px; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; }
+.scen-end-num { font-family: var(--f-mono); font-size: 1.18em; color: var(--crust-t); }
+.scen-end-cur { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0;
+  padding: 10px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.scen-end-lb { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--ink-3); }
+.scen-end-lead { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); overflow-wrap: anywhere; }
+.scen-end-lead b { color: var(--ink); }
+.scen-end-left { display: flex; flex-direction: column; gap: 6px; }
+.scen-mini { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; min-width: 0; }
+.scen-mini li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; min-width: 0;
+  padding: 9px 10px; border: 1px dashed var(--line-2); border-radius: 9px; background: var(--surface); }
+.scen-again { width: 100%; min-height: 40px; font-size: 14px; white-space: normal; text-align: center; }
+.scen-end-hint { margin: 0; }
+
+/* ---------- телефон 390 / 360 ---------- */
+@media (max-width: 560px) {
+  .scen-cards, .scen-mini { grid-template-columns: minmax(0, 1fr); }
+  .scen-end-box { padding: 12px 13px; }
+  .scen-end-h { font-size: 19px; }
+  .scen-end-num { font-size: 1.2em; }
+  .scen-again { min-height: 44px; }
+  .scen-foot .hint { flex: 1 1 100%; }
+  .scen-reset { flex: 1 1 100%; }
+  .scs-x { width: 36px; height: 36px; }
+}
+@media (max-width: 480px) { .scen-start { width: calc(100% - 16px); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 380px) {
+  .scen-n { font-size: 13.5px; }
+  .scen-d { font-size: 12px; }
+  .scen-s { font-size: 11px; }
+  .scs-n { font-size: 15px; }
+  .scs-t, .scs-g { font-size: 12px; }
+}
