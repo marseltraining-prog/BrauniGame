@@ -17,14 +17,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const LET = 'АБВГДЕЖЗИК';
 
-  /* ---------- подстановки в текстах сцен: {name}, {street}, {n}, {city}, {inCity} ----------
+  /* ---------- подстановки в текстах сцен: {name}, {street}, {n}, {city}, {inCity}, {district},
+     {mentor}, {rival}, {rivalChain}, {bank}, {colleague}, {banker}, {inspector}, {chronicler}, {shop}…
      Тексты сцен пишутся с плейсхолдерами (docs/writing.md, разбор C3). Без подстановки игрок
      читает «Уфа жуёт: очередь на {street}» и «На №{n} тесто вчерашнее» — поэтому подставляем
      ровно здесь, на отрисовке: данные не переписываем, старые сохранения не трогаем.
        {name}   — имя героя; если игрок его не задавал, зовём «шеф» (как src/data/story-lines.js);
        {street} — адрес точки, о которой сцена (самая сильная по рейтингу, не открывающаяся);
-       {n}      — её номер; {city} — название города сцены: чужой, если сеть уже в других
-                  городах, иначе активный; {inCity} — та же мысль в падеже («в Казани»).        */
+       {n}      — её номер; {district} — её район; {city} — название города сцены: чужой, если сеть
+                  уже в других городах, иначе активный; {inCity} — та же мысль в падеже («в Казани»).
+
+     Местный слой (решение владельца, PLAN.md §8.2 — «свои районы и улицы, имена и персонажи другие»)
+     живёт в src/data/story-cast.js (BK.STORY_CAST): он подставляет людей города партии по
+     плейсхолдерам и заменяет уфимские имена, названия («Хлебный двор», «Семь рек», «Калач»)
+     и топонимы на местные — во всех главах, письмах и летописи. Для Уфы слой возвращает текст
+     как есть, поэтому партии в Уфе читаются побайтно прежними. Ниже — запасной путь, если
+     файла слоя рядом нет (старая сборка): ровно прежняя подстановка. */
   function subStore(S) {
     const list = (S && S.stores) || [];
     let best = null;
@@ -47,6 +55,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (f && f.in) || ('в городе ' + subCity(S));
   }
   function sub(S, txt) {
+    if (BK.STORY_CAST && BK.STORY_CAST.render) { try { return BK.STORY_CAST.render(S, txt); } catch (e) { /* ниже — прежний путь */ } }
     let s = String(txt == null ? '' : txt);
     if (s.indexOf('{') < 0) return s;
     const R = ST.state(S) || {};
@@ -72,7 +81,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const EMO = { neutral: 1, calm: 1, smile: 1, happy: 1, closed: 1, smirk: 1, surprised: 1, sad: 1, tired: 1, angry: 1, worried: 1 };
   const ui = { scene: null, line: 0, form: 'scene', letter: null };
 
-  const hero = (who) => (BK.STORY && BK.STORY.heroes && BK.STORY.heroes[who]) || { name: who };
+  /* Город партии решает, кто наставник, соперник, банкир и гости (src/data/story-cast.js).
+     Для Уфы или старой сборки без слоя — прежняя запись BK.STORY.heroes. */
+  const hero = (who) => {
+    const S = APP() && APP().state;
+    if (BK.STORY_CAST && BK.STORY_CAST.hero) { try { const h = BK.STORY_CAST.hero(S, who); if (h) return h; } catch (e) { /* прежний герой */ } }
+    return (BK.STORY && BK.STORY.heroes && BK.STORY.heroes[who]) || { name: who };
+  };
   const whoName = (who) => { const h = hero(who); return h.short || h.name; };
   const post = (sc) => sc && (sc.form === 'letter' || sc.form === 'post');
   const isClimax = (sc) => !!(sc && (sc.form === 'climax' || sc.climax));
@@ -104,7 +119,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
     if (!bad.length) return { dis: false, text: '' };
-    return { dis: true, text: 'Пока нельзя: нужно ' + bad.join(', ') };
+    return { dis: true, text: 'Пока нельзя: нужно ' + sub(S, bad.join(', ')) };   // «судьба „Калача“» — по городу партии
   }
 
   /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
@@ -155,7 +170,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = hero(who), isPost = sc.form === 'post';
     const body = lines.map((l) => `${lines.length > 1 && l.who && l.who !== who ? `<span class="st-pw">${esc(whoName(l.who))}:</span> ` : ''}${esc(sub(S, l.text))}`).join('</p><p>');
     return `<article class="st-paper ${isPost ? 'post' : 'letter'}">
-      <header class="st-ph">${portrait(who, isPost ? 'smirk' : 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
+      <header class="st-ph">${portrait(who, isPost ? 'smirk' : 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(sub(S, h.role || ''))} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
       <div class="st-pb"><p>${body}</p></div>
       <div class="st-ps">— ${esc(whoName(who))}</div>
     </article>`;
@@ -179,7 +194,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="st-stage"${attrs}>
         ${portrait(L.who, L.emo)}
         <div class="st-say">
-          <div class="st-meta"><b class="st-who">${esc(whoName(L.who))}</b><span class="st-role">${esc(hero(L.who).role || '')}</span></div>
+          <div class="st-meta"><b class="st-who">${esc(whoName(L.who))}</b><span class="st-role">${esc(sub(S, hero(L.who).role || ''))}</span></div>
           <p class="st-text">${esc(sub(S, L.text || ''))}</p>
           ${many ? `<div class="st-foot">${prog}${dots}</div>` : ''}
           ${last ? '' : '<button type="button" class="btn primary block st-next" data-act="storyNext">Дальше <span aria-hidden="true">›</span></button>'}
@@ -263,7 +278,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const isPost = m.form === 'post';
     return `<div class="modal-h st-h"><span class="eyebrow st-ey">${isPost ? 'Пост' : 'Входящее'}</span><h2>${esc(sub(S, m.title || (isPost ? 'Новый пост' : 'Письмо')))}</h2></div>
       <div class="modal-b story-m"><article class="st-paper ${isPost ? 'post' : 'letter'}">
-        <header class="st-ph">${portrait(who, 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
+        <header class="st-ph">${portrait(who, 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(sub(S, h.role || ''))} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
         <div class="st-pb"><p>${body}</p></div><div class="st-ps">— ${esc(whoName(who))}</div>
       </article><div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyRead">Прочитано</button></div></div>`;
   }

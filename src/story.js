@@ -311,6 +311,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
   }
   function hero(id) { return (D().heroes || {})[id] || { name: id }; }
+  // Герой по городу партии (src/data/story-cast.js): для Уфы — прежняя запись без изменений.
+  function cityHero(S, id) {
+    if (BK.STORY_CAST && BK.STORY_CAST.hero) { try { return BK.STORY_CAST.hero(S, id); } catch (e) { /* прежний герой */ } }
+    return hero(id);
+  }
   function givePerk(S, R, id) {
     const p = (D().perks || {})[id]; if (!p) return null;
     R.perks.push(id);
@@ -452,6 +457,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- «Требует внимания» ---------------- */
+  // Местный слой (src/data/story-cast.js): в этих строках встречаются имена людей и названия
+  // («Олег предлагает поговорить…», «Дамир: чем это кончится»). Для партии не в Уфе заменяем
+  // их на местные; для Уфы функция возвращает текст как есть, поэтому строки не меняются.
+  function castSwap(S, t) { return (BK.STORY_CAST && BK.STORY_CAST.swap) ? BK.STORY_CAST.swap(S, t) : t; }
   function attItems(S) {
     const R = state(S); const out = [];
     if (R && R.pending) {
@@ -487,6 +496,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (R && R.f && R.f.mateKind && !R.seen.kf3 && R.f.mateKind !== 'none') {
       out.push({ lvl: R.f.mateKind === 'tyrant' ? 'warn' : 'info', ic: 'chat', t: R.f.mateKind === 'helper' ? 'Рядом появляется человек, который считает' : 'Рядом появляется человек с деньгами', d: MATE_TEXT[R.f.mateKind], b: { act: 'threads', label: 'Подробнее' } });
     }
+    for (const it of out) { it.t = castSwap(S, it.t); it.d = castSwap(S, it.d); }
     return out;
   }
 
@@ -504,9 +514,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (BK.Engine) wrap();
 
+  /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии:
+     имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть). Обёртка безопасна:
+     если модуля реплик рядом нет (прогоны ботов) или слой не подключён — ничего не делаем. */
+  function wrapLineHtml() {
+    const D2 = BK.STORY;
+    if (!D2 || !D2.lineHtml || D2.__castLine || !BK.STORY_CAST) return false;
+    D2.__castLine = true;
+    const orig = D2.lineHtml;
+    D2.lineHtml = function (S) { const html = orig.apply(this, arguments); try { return BK.STORY_CAST.swap(S, html); } catch (e) { return html; } };
+    return true;
+  }
+  wrapLineHtml();
+  if (BK.STORY) BK.STORY.wrapLineHtml = wrapLineHtml;   // для проверок и нестандартного порядка сборки
+
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
-    chapter, hero, chapterName, defaults, fits, cond,
+    chapter, hero, chapterName, defaults, fits, cond, cityHero,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
   };
 })();
