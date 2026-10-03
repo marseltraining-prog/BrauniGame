@@ -44,10 +44,23 @@ function checkScripts(html, where) {
   if (bad) { console.error('Сборка содержит ' + bad + ' скрипт(ов) с ошибкой синтаксиса — публиковать нельзя.'); process.exitCode = 1; }
   return n;
 }
+// Версия и дата сборки — в README (владелец просил, чтобы версия была и в описании на GitHub).
+function stampReadme() {
+  try {
+    const f = path.join(__dirname, 'README.md');
+    const src = fs.readFileSync(path.join(__dirname, 'src', 'config.js'), 'utf8');
+    const num = (src.match(/VERSION\s*=\s*\{[^}]*num:\s*'([^']+)'/) || [])[1] || '?';
+    const name = (src.match(/VERSION\s*=\s*\{[^}]*name:\s*'([^']+)'/) || [])[1] || '';
+    let md = fs.readFileSync(f, 'utf8');
+    md = md.replace(/^\*\*Версия .*<!-- bk:version -->$/m, `**Версия ${num}${name ? ' (' + name + ')' : ''} · сборка ${BUILD_DATE}** <!-- bk:version -->`);
+    fs.writeFileSync(f, md);
+  } catch (e) { console.warn('README не обновлён: ' + e.message); }
+}
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'dist/khlebnaya-karta.html'), content);
 const local = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n${content.replace('<script>', '</head><body><script>')}</body></html>`;
 fs.writeFileSync(path.join(__dirname, 'dist/local.html'), local);
+stampReadme();
 checkScripts(content, 'khlebnaya-karta.html');
 console.log('built', (content.length / 1024).toFixed(0) + ' KB');
 
