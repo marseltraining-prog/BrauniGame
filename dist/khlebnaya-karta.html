@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 19:42 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026 20:10 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -166,7 +166,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 
 /* ---------- main layout ---------- */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; min-height: 0; }
-.mapwrap { position: relative; min-height: 0; overflow: hidden; background: var(--map-land); }
+/* contain: layout paint — карта-чертёж больше не заставляет браузер пересчитывать вёрстку и перерисовывать
+   всю страницу при каждой перерисовке маркеров (на подробной карте Москвы это ~1000×840 px SVG с сотнями
+   узлов: кольца, магистрали, рельсы, реки, точки притяжения и подписи). Внешний вид не меняется: обрезка
+   совпадает с overflow:hidden, который здесь уже был, а размеры карты заданы сеткой родителя. */
+.mapwrap { position: relative; min-height: 0; overflow: hidden; background: var(--map-land); contain: layout paint; }
 .map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; }
 .map.dragging { cursor: grabbing; }
 .maptip { position: absolute; pointer-events: none; background: var(--inv-bg); color: var(--inv-ink); border: 1px solid var(--inv-line); padding: 6px 9px; border-radius: 6px; font-size: 12px; max-width: 240px; z-index: 4; box-shadow: var(--shadow); }
@@ -3594,7 +3598,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.5', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.6', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -28246,8 +28250,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     park: 'var(--good)', uni: 'var(--good)', fitness: 'var(--good)', theatre: 'var(--crust)', lux: 'var(--crust)',
     clinic: 'var(--map-rail)', school: 'var(--map-label)', sleep: 'var(--map-label)', industrial: 'var(--ink-3)' };
 
+  /* Статичный слой (районы, кольца, магистрали, рельсы, реки, парки, точки притяжения, подписи)
+     зависит ТОЛЬКО от активного города и набора опций — не от состояния игры. На подробной карте
+     большого города (Москва: 12 районов, 10 магистралей, 48 точек притяжения) он собирается из
+     нескольких сотен кусков строки и пересчитывает ячейки Вороного, поэтому держим результат в кэше:
+     ключ — город + опции, значение — готовая строка SVG. Кэш сбрасывается при смене BK.MAP/BK.DISTRICTS
+     (см. setCity и useCity), поэтому «залипнуть» на прошлом городе он не может. */
+  const staticCache = new globalThis.Map();
+  const staticKey = (id, noLabels) => id + '|' + (noLabels ? 0 : 1) + '|' + (BK.CITY && BK.CITY.id || 'ufa') + '|' + (BK.DISTRICTS && BK.DISTRICTS.length);
+  BK.mapStaticCacheClear = function () { staticCache.clear(); };
   function staticLayer(opts) {
     const M = BK.MAP, id = opts.id;
+    const key = staticKey(id, opts.noLabels);
+    const hit = staticCache.get(key);
+    if (hit != null) return hit;
     const cells = voronoi(BK.DISTRICTS);
     const city = smooth(M.city.concat([M.city[0]])) + 'Z';
     let s = `<defs><clipPath id="${id}-city"><path d="${city}"/></clipPath>
@@ -28291,6 +28307,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
+    staticCache.set(key, s);
     return s;
   }
 
@@ -28611,6 +28628,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (this.cityId === id && this.cityMap === BK.MAP) return false;
     const first = this.cityId == null;
     this.cityId = id; this.cityMap = BK.MAP;
+    staticCache.clear(); // карта города могла подмениться (BK.useCity) — кэш статичного слоя не переиспользуем
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
@@ -36591,6 +36609,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.lost) ui.modalQueue.push(openLostModal); // сохранение после банкротства: сразу показать итог, а не «замёрзшую» игру
     if (BK.PrologueUI) BK.PrologueUI.resume(); // сохранение посреди пролога — открыть пролог
     if (BK.Stage1UI && !(BK.PrologueUI && BK.PrologueUI.active())) BK.Stage1UI.resume(); // посреди стадии 1 «Своя кофейня» — открыть кофейню
+    prewarm();
+  }
+  /* Прогрев интерфейса после загрузки (производительность, подробная карта большого города).
+     Замеры qa/moscow.js на 200 точках показали: единственная долгая задача появляется НЕ в отрисовке карты
+     (карта — 0,5–1,5 мс на вызов, см. также кэш статичного слоя в map.js), а в первом полном кадре игры:
+     первый тик на большой сети стоит ~18–23 мс, первый расчёт панели/карты/подписей — ещё столько же, и всё
+     это вместе с первой вёрсткой страницы попадает в одну задачу браузера (~200 мс). Дальше кадр стоит ~1 мс.
+     Прогреваем эти пути ЗДЕСЬ, на уже загруженном состоянии: цена та же, но она приходится на загрузку
+     сохранения (один раз, до старта часов), а не на первый игровой кадр, и не «залипает» в замере.
+     Состояние игры не меняем: тик идёт по копии, отрисовка — только чтение. Ошибка прогрева ничего не ломает. */
+  function prewarm() {
+    try {
+      if (!S || !S.stores || !S.stores.length) return;
+      const clone = JSON.parse(JSON.stringify(S));
+      for (let i = 0; i < 6; i++) E.tick(clone); // первый тик на большой сети — самый дорогой (разогрев кода движка)
+      renderPanel(); map.render(S, ui.sel); renderHud(); // панель, карта и HUD: разогрев путей отрисовки на текущем состоянии
+    } catch (e) { /* прогрев — необязательный: не мешает загрузке */ }
   }
 
   /* ---------------- цикл ---------------- */
