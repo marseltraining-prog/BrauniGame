@@ -85,9 +85,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
     if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
     if (s.city) {
-      // история может начинаться в другом городе (например, «Старт в Москве»)
-      if (BK.useCity) { try { BK.useCity(s.city, S.seed); out.push('город'); } catch (e) {} }
-      if (BK.Corp && BK.Corp.applyGlobals) { try { BK.Corp.applyGlobals(S); } catch (e) {} }
+      // Город истории выбран ещё при создании мира (engine.newGame: opts.city, src/ui/app.js) — предложения
+      // помещений и цехов сгенерированы уже в нём. Здесь его повторно не переключаем: пока сети в городах
+      // нет, BK.Corp.applyGlobals вернул бы Уфу и сам себя отменил (задача 1 «Задачи по каркасу»).
+      out.push('город');
     }
     if (s.stores) {
       // старт не с нуля: выдаём готовые точки (для истории «спаси сеть в кризисе»)

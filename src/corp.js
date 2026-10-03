@@ -59,12 +59,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     applyGlobals(S);
   }
-  // глобальные ссылки на карту активного города (BK.DISTRICTS / BK.MAP / BK.CITY)
+  // Глобальные ссылки на карту активного города (BK.DISTRICTS / BK.MAP / BK.CITY)
+  // Город партии, когда второго акта ещё нет: поле S.startCity (новые партии — engine.newGame) или город
+  // истории. Благодаря ему загрузка «Старта в Москве» открывается в Москве, а не в Уфе (задача 1 «Задачи по каркасу»).
+  function startCityOf(S) {
+    if (S && typeof S.startCity === 'string' && S.startCity) return S.startCity === 'ufa' ? null : S.startCity;
+    const id = S && S.scen && S.scen.id;
+    const d = id && BK.SCEN && BK.SCEN.list && BK.SCEN.list[id];
+    const c = (d && d.start && d.start.city) || null;
+    if (!c || c === 'ufa') return null;
+    // Страховка старых сохранений: до правки каркаса история «Старт в Москве» игралась в Уфе, и её мир
+    // (районы точек, предложений и площадок) — уфимский. Такому сохранению Москва сломала бы игру — оставляем Уфу.
+    return worldFits(S, c) ? c : null;
+  }
+  function worldFits(S, cityId) {
+    const def = BK.CITY_BY_ID && BK.CITY_BY_ID[cityId];
+    if (!def || def.builtin || !BK.genCityGeo) return false;
+    let g = null; try { g = BK.genCityGeo(def, (S && S.seed | 0) || 0, 1); } catch (e) { return false; }
+    const ids = {}; for (const d of (g && g.DISTRICTS) || []) ids[d.id] = 1;
+    const world = [].concat((S && S.stores) || [], (S && S.offers) || [], (S && S.productions) || [], (S && S.prodOffers) || [], (S && S.rival && S.rival.stores) || []);
+    for (const o of world) if (o && o.district && !ids[o.district]) return false;
+    return true;
+  }
+  // Карта города для движка: «уфа» в состоянии корпорации — это домашний город партии, а он не всегда Уфа
+  // («Старт в Москве»). Остальные города — сами собой (id + зерно + mapGen из S.corp.cities).
+  function useCityFor(S, id, c) {
+    if (id && id !== 'ufa' && c) BK.useCity(id, c.seed, c.mapGen);
+    else BK.useCity(startCityOf(S), (S && S.seed) || 0);
+  }
   function applyGlobals(S) {
     if (!BK.useCity) return;
     const a = S && S.corp && S.corp.active, c = a && S.corp.cities[a];
     syncOpenDays(S, a); // нити истории: срок открытия точки в городе × openGap (обиженный инспектор — дольше, друг — быстрее)
-    if (c && a !== 'ufa') BK.useCity(a, c.seed, c.mapGen); else BK.useCity(null);
+    useCityFor(S, a || 'ufa', c); // подробно считается активный город; без корпорации — город истории, иначе Уфа
   }
 
   /* ---------------- нити истории (BK.Threads, src/threads.js) ----------------
@@ -97,7 +124,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const keep = { stores: S.stores, productions: S.productions, offers: S.offers, prodOffers: S.prodOffers, rival: S.rival, D: BK.DISTRICTS, M: BK.MAP, P: BK.CENTER_POINT, CITY: BK.CITY };
     const pk = c.packed;
     S.stores = pk.stores; S.productions = pk.productions; S.offers = []; S.prodOffers = []; S.rival = pk.rival || { enabled: false, stores: [] };
-    if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
+    useCityFor(S, id, c);
     const w0 = cr._with, a0 = cr._actProd; cr._with = id; if (w0 == null) cr._actProd = keep.productions; // цеха активного города — для снабжения из него (§7.2)
     const kd0 = C().OPEN_DAYS; syncOpenDays(S, id); // нити истории: у этого города свой срок открытия точки
     try { return withRng(S, c, 'rng', fn); } finally {
@@ -248,7 +275,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function mount(S, id) {
     const cr = S.corp, c = cr.cities[id];
     if (c.packed) settleAgg(S, c); // упакованная часть месяца — по агрегированной модели
-    if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
+    useCityFor(S, id, c);
     const m0 = cr.market0, w = def(id).wage;
     S.market = { seller: m0.seller * w, baker: m0.baker * w };
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
