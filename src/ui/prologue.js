@@ -64,12 +64,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
     }
     ui.open = true; ui.parts = {}; ui.dirty = true;
+    if (BK.Sound) BK.Sound.music('prologue'); // музыка пролога — та же петля, но выше и светлее
     document.documentElement.classList.add('pro-on');
     render(true);
     if (!ui.loop) { ui.loop = true; requestAnimationFrame(loop); }
   }
   function close() {
     const root = $('#prologue'); if (root) root.remove();
+    if (BK.Sound) BK.Sound.music('game'); // вернулись в игру — обычный спокойный фон
     ui.open = false; ui.mode = null; ui.menu = false; ui.sh = null;
     document.documentElement.classList.remove('pro-on');
   }

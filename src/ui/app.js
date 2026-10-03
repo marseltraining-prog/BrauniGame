@@ -924,7 +924,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     applyTheme(loadTheme());
     shell();
     applyTheme(ui.theme);
-    if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера
+    if (BK.Sound) { BK.Sound.arm(); BK.Sound.sync(); BK.Sound.music('game'); } // живость: звук (кнопка в HUD) — первый жест игрока снимает запрет браузера; музыка — спокойный фон игры
     if (hot && hot.state) { continueGame(hot.state); ui.speed = hot.speed != null ? hot.speed : 1; }
     else startScreen();
     requestAnimationFrame(frame);
