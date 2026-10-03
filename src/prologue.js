@@ -77,9 +77,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.cards.push({ id: 'p01', v: {} });
     schedule(P);
     feed(P, 'Уфа, февраль. Вам 21. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».', 'info');
+    V2('init', S); V2('welcome', P);
     syncStory(S);
     return P;
   }
+  // --- живой сюжет пролога (src/data/prolog-v2.js): 8 историй, 16 дилемм, нити, правила показателей ---
+  const V2 = (fn, ...a) => (BK.PrologV2 && BK.PrologV2[fn] ? BK.PrologV2[fn](...a) : null);
   /* ---------- сюжет: запись решений пролога в S.story (схема docs/story.md §4.5) ---------- */
   function storyDefaults(seed) {
     return { v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'prologue', rng: ((seed | 0) ^ 0x51a7e) | 0, seen: {}, queue: [], pending: null, inbox: [],
@@ -521,6 +524,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function schedule(P) {
     const c = C(); P.evAt = [];
+    if (V2('overlay', P) && P.cards.length && P.cards[P.cards.length - 1].v2) { /* дилемма уже в очереди */ }
     const h = P.m > 0 ? heroScene(P) : null;
     if (h) { P.flags[h] = 1; P.evAt.push({ t: 0.15 + rnd(P) * 0.15, hero: h }); }
     const k = year(P) >= c.EV_LATE[0] ? c.EV_LATE[1] : 1;
@@ -542,14 +546,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (P.t >= 1) { P.t = 0; endMonth(S); return 'month'; }
     return null;
   }
-  // карточка сверху очереди: определение и варианты (для интерфейса и ботов)
-  function card(S) {
+  // дилемма с живым человеком ждёт в очереди и всплывает раньше рутинного события (docs/story-v2.md п. 2)
+  function nextCard(S) {
     const P = S.prologue; if (!P || !P.cards.length) return null;
-    const q = P.cards[0], d = CARDS[q.id]; if (!d) { P.cards.shift(); return card(S); }
+    if (!P.cards[0].v2 && V2('overlay', P) && P.cards[P.cards.length - 1].v2) { const q = P.cards.pop(); P.cards.unshift(q); }
+    return card(S);
+  }
+  // карточка сверху очереди: определение и варианты (для интерфейса и ботов)
+  function card(S, skipPush) {
+    const P = S.prologue; if (!P || !P.cards.length) return null;
+    const q = P.cards[0], d = CARDS[q.id] || DIL(q.id);
+    if (!d) { P.cards.shift(); return card(S); } // чужая карточка (старое сохранение) — просто убираем
     const ch = d.choices(P, q.v).map((c) => Object.assign({}, c, { can: !c.dis && (!c.cost || canAfford(P, c.cost, c.cashOnly)), why: c.dis || (c.cost && !canAfford(P, c.cost, c.cashOnly) ? (c.cashOnly && canAfford(P, c.cost) ? 'В кошельке не хватает' : 'Не хватает денег') : '') }));
     // бесплатный вариант есть почти всегда; если ни один не доступен — открыт первый (иначе игрок застрянет)
     if (!ch.some((c) => c.can)) ch[ch.length - 1].can = true;
-    return { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: HEROES[d.who] || HEROES.life, title: d.title(P, q.v), text: d.text(P, q.v), choices: ch };
+    const t0 = typeof d.text === 'function' ? d.text(P, q.v) : d.text;
+    return { id: q.id, v: q.v, kind: d.kind, who: d.who, hero: HEROES[d.who] || HEROES.life, title: V2('title', P, q.id, d.title(P, q.v)) || d.title(P, q.v), text: V2('storyText', P, q.id) || t0, choices: ch };
+  }
+  // определение дилеммы из живого сюжета (тот же формат, что CARDS ядра — интерфейс не меняется)
+  function DIL(id) {
+    const d = BK.PrologV2 && BK.PrologV2.DILEMMAS && BK.PrologV2.DILEMMAS[id]; if (!d) return null;
+    return {
+      kind: 'hero', who: d.who, v2: 1,
+      title: () => d.title, text: () => d.text,
+      choices: (P) => d.choices(P),
+    };
   }
   function choose(S, i) {
     const P = S.prologue, cv = card(S); if (!cv) return { ok: false };
@@ -565,6 +586,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const tone = c.risk ? 'risk' : sc > 0 ? 'pos' : sc < 0 ? 'neg' : '';
     if (cv.kind !== 'info' && c.label && cv.choices.length > 1) feed(P, `${cv.title}: ${q}.`, F.k || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.kind === 'hero') { P.seen[cv.id] = P.m * 30; P.slog.push({ day: null, pm: P.m, id: cv.id, choice: cv.choices.indexOf(c), line: c.label }); if (P.slog.length > 120) P.slog.shift(); }
+    if (cv.v2) { P.v2.lastDil = P.m; } // дилемма живого сюжета: отметка темпа
     // развилка П7 → П8 «Гуля» (кроме скандала и партнёрства, где исход ясен) → финал; стажировка у Олега — ещё 3 месяца
     if (cv.id === 'p07') { if (P.sf.mentor === 'enemy' || P.sf.mentor === 'partner') finish(P); else P.cards.unshift({ id: 'p08', v: {} }); }
     else if (cv.id === 'p08' && P.sf.mentor !== 'intern') finish(P);
@@ -667,6 +689,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const g = goal(P);
     if (g.ok && !P.flags.goalShown) { P.flags.goalShown = 1; P.cards.push({ id: 'goal', v: { credit: g.credit && g.sav < g.full } }); }
     if (P.m >= c.LIFE_MONTHS && P.status === 'run' && !g.ok) { P.status = 'life'; P.cards = []; P.won = null; feed(P, 'Годы прошли. Своей точки так и не случилось.', 'bad'); syncStory(S); return mo; }
+    V2('tick', P); // живой сюжет: дни болезни, отложенные люди, давление долга, эпилог (src/data/prolog-v2.js)
     schedule(P);
     syncStory(S);
     return mo;
@@ -680,7 +703,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (P.fired > 0) return 'Сейчас вы без работы';
     if (P.shift.m === P.m) return 'Смена в этом месяце уже была';
     if (P.cards.length) return 'Сначала решите, что делать';
-    return null;
+    const note = V2('shiftNote', P);
+    return note || null;
   }
   // меню стойки: чем выше должность и навык кофе, тем больше позиций
   const ITEMS = [
@@ -694,9 +718,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     { id: 'chk', name: 'Чак-чак', icon: '🍯', cat: 'bake' },
   ];
   function shiftPlan(P) {
-    const c = C(), n = P.job >= 1 || P.sk.coffee >= 30 ? 8 : 6;
+    const c = C(), n = P.job >= 1 || P.sk.coffee >= 30 ? 8 : 6, vm = V2('shiftMods', P) || { cloth: 0, pat: 0, speed: 1 };
     const items = ITEMS.slice(0, 4).slice(0, n >= 8 ? 4 : 3).concat(ITEMS.slice(4, n >= 8 ? 8 : 7));
-    return { sec: c.SHIFT_SEC, items, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: 11 + P.sk.people / 12, upsell: 0.35 + P.sk.sales / 250 };
+    return { sec: c.SHIFT_SEC, items, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + (vm.pat || 0)), upsell: 0.35 + P.sk.sales / 250 - (vm.cloth || 0), speed: vm.speed || 1, v2: vm };
   }
   // итог смены: stats = { served, errors, upsells, lost, total }
   function shiftResult(S, st) {
@@ -716,6 +740,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.hp = clamp(P.hp - 2, 0, 100);
     earn(P, tips, 'tips');
     P.shift = { m: P.m, stars, tips, served, errors, ups, lost };
+    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)
     P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
     fx(P, 'rub', tips, 'shift');
     // тон смены — для звука интерфейса («Смена»): удачная (+) / провальная (−) / обычная
@@ -725,6 +750,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // для ботов: смена с качеством q (0..1) без интерфейса
   function simShift(P, q) {
+    const vm = V2('shiftMods', P);
+    if (vm) q = Math.max(0.15, q - (vm.cloth || 0));
     const n = 14 + Math.round(10 * q + rr(P, -2, 2));
     const lost = Math.max(0, Math.round((1 - q) * 6 + rr(P, -1, 1)));
     return { served: Math.max(0, n - lost), errors: Math.max(0, Math.round((1 - q) * 5 + rr(P, -1, 1))), upsells: Math.max(0, Math.round(q * 5 + rr(P, -1, 1))), lost, total: n };
@@ -843,7 +870,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
-    create, start, on, advance, card, choose, endMonth, openOwn, schedule,
+    create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule,
     savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
     shiftWhy, shiftPlan, shiftResult, simShift, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,

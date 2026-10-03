@@ -23,6 +23,21 @@ function pickChoice(S, cv, pf, R) {
   if (id === 'p07') return ch[3] && ch[3].can && pf.hero > 0.9 ? 3 : ch[0].can ? 0 : 1;
   if (id === 'p08') return ch[0].can ? 0 : ch.length - 1;
   if (id === 'promo') return 0;
+  // дилеммы живого сюжета (src/data/prolog-v2.js): бот взвешивает — здоровье и деньги против людей.
+  // Смысл проверки: любой вариант проходит, состояние не ломается, пролог остаётся проходимым.
+  if (!PR.CARDS[id]) {
+    const P = S.prologue, w = [];
+    for (let i = 0; i < ch.length; i++) {
+      if (!ch[i].can) continue;
+      const f = ch[i].fx || {}, v = pf.save;
+      let s = (f.rub || 0) * (v >= 2 ? 1.2 : 0.4) + (f.hp || 0) * (P.hp < 45 ? 1.6 : 0.8) + (f.rel || 0) * pf.hero + (f.mood || 0) * 0.5 + (f.rep || 0) * 0.6;
+      s += R() * 2; // и немного характера: у одного и того же бота решения не всегда одинаковые
+      w.push({ i, s });
+    }
+    if (!w.length) return can[0];
+    w.sort((a, b) => b.s - a.s);
+    return w[0].i;
+  }
   if (cv.kind === 'hero') return R() < pf.hero ? 0 : can[can.length - 1];
   const tempt = ch.findIndex((c) => c.cashOnly && c.fx && c.fx.mood > 0);
   if (tempt >= 0) return ch[tempt].can && R() < pf.tempt ? tempt : can.find((i) => i !== tempt) != null ? can.find((i) => i !== tempt) : can[0];
