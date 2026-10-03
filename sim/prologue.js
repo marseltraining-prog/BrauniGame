@@ -6,12 +6,12 @@ const BK = require('./load');
 const PR = BK.Prologue, c = () => BK.CFG.PROLOGUE;
 
 const PROF = {
-  // экономно, у родителей, вклад, учёба, мало соблазнов, «Смена» раз в 2–3 месяца
-  ideal: { home: 'parents', food: 'eco', fun: 'none', extra: 1, save: 3, depEvery: 1, courses: ['coffee', 'sales', 'lead'], shiftEvery: 4, q: 0.85, wants: { gifts: 0.08 }, tempt: 0.08, invest: 0, loan: 0, hero: 0.95 },
+  // экономно, у родителей, вклад, учёба, мало соблазнов; смены приходят сами (расписание BK.Prologue.SHIFT_AT), q — как их играет
+  ideal: { home: 'parents', food: 'eco', fun: 'none', extra: 1, save: 3, depEvery: 1, courses: ['coffee', 'sales', 'lead'], q: 0.85, wants: { gifts: 0.08 }, tempt: 0.08, invest: 0, loan: 0, hero: 0.95 },
   // снимает комнату, ест нормально, иногда срывается, вклад раз в год
-  normal: { home: 'room', food: 'normal', fun: 'some', extra: 1, save: 2, depEvery: 12, courses: ['coffee', 'lead', 'sales'], shiftEvery: 3, q: 0.65, wants: { clothes: 0.35, gifts: 0.25, sneakers: 0.2, trip: 0.15, phone: 0.08, console: 0.04 }, tempt: 0.45, invest: 0.25, loan: 0.5, hero: 0.75 },
+  normal: { home: 'room', food: 'normal', fun: 'some', extra: 1, save: 2, depEvery: 12, courses: ['coffee', 'lead', 'sales'], q: 0.65, wants: { clothes: 0.35, gifts: 0.25, sneakers: 0.2, trip: 0.15, phone: 0.08, console: 0.04 }, tempt: 0.45, invest: 0.25, loan: 0.5, hero: 0.75 },
   // своя квартира, кафе, всё что хочется, ничего не откладывает
-  spender: { home: 'flat', food: 'cafe', fun: 'lots', extra: 0, save: 0, depEvery: 0, courses: [], shiftEvery: 10, q: 0.5, wants: { clothes: 0.7, gifts: 0.5, sneakers: 0.6, trip: 0.5, phone: 0.35, console: 0.3, car: 0.5 }, tempt: 0.9, invest: 0.6, loan: 0.8, hero: 0.5 },
+  spender: { home: 'flat', food: 'cafe', fun: 'lots', extra: 0, save: 0, depEvery: 0, courses: [], q: 0.5, wants: { clothes: 0.7, gifts: 0.5, sneakers: 0.6, trip: 0.5, phone: 0.35, console: 0.3, car: 0.5 }, tempt: 0.9, invest: 0.6, loan: 0.8, hero: 0.5 },
 };
 
 function botRand(seed) { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -76,9 +76,9 @@ function run(profile, seed, verbose) {
       }
       const g = PR.goal(P);
       if (g.ok && P.flags.goalLater) { PR.openOwn(S); continue; }
-      // «Смена» по желанию: первые 2 года — с частотой профиля, дальше вдвое реже (приелась)
-      const every = pf.shiftEvery * (P.m >= 48 ? 4 : P.m >= 24 ? 2 : 1);
-      if (!PR.shiftWhy(P) && P.m % every === 0) { PR.shiftResult(S, PR.simShift(P, pf.q)); shifts++; sec += c().SHIFT_SEC + 10; T.shift += c().SHIFT_SEC + 10; }
+      // «Смена» приходит сама по расписанию (BK.Prologue.dueShift): профиль её не выбирает, только играет —
+      // с качеством q, которое падает, если герой не выспался (см. PR.simShift)
+      if (PR.dueShift(P)) { PR.shiftResult(S, PR.simShift(P, pf.q)); shifts++; sec += c().SHIFT_SEC + 10; T.shift += c().SHIFT_SEC + 10; }
     }
     const before = P.m;
     // месяц идёт: до карточки или до конца месяца
@@ -105,4 +105,4 @@ if (require.main === module) {
     console.log(`${pr}: своя точка ${w.length}/${n}${w.length ? `, медиана ${med(w.map((r) => r.months))} мес. / ${med(w.map((r) => r.min)).toFixed(1)} мин (${Math.min(...w.map((r) => r.min)).toFixed(1)}–${Math.max(...w.map((r) => r.min)).toFixed(1)})` : ''}; жизнь в найме ${l.length}/${n}${l.length ? `, медиана ${med(l.map((r) => r.min)).toFixed(1)} мин (${Math.min(...l.map((r) => r.min)).toFixed(1)}–${Math.max(...l.map((r) => r.min)).toFixed(1)})` : ''}`);
   }
 }
-module.exports = { run, PROF };
+module.exports = { run, PROF, pickChoice };

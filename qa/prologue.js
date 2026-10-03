@@ -1,9 +1,9 @@
 /* Пролог «Бариста» в браузере: node qa/prologue.js [папка скриншотов]
-   Старт с пролога со стартового экрана, сцена П1, первая «Смена» (заказы, допродажа, итог), настройки жизни, копилка/вклад,
-   учёба, покупки, несколько месяцев (события и сцены), сохранение и загрузка посреди пролога, финал «Своя точка» (П7 → П8 →
-   перенос: бонус к капиталу, навыки, Гуля — первый сотрудник первой точки) и финал «Жизнь в найме» (подготовленное состояние,
-   «Попробовать заново», «Сразу своя сеть»), старт «Сразу своя сеть» без пролога. Вёрстка — 1440 / 390 / 360, светлая и тёмная тема.
-   Итог — список проблем и ошибок консоли; код выхода 1, если они есть. */
+   Старт с пролога со стартового экрана, сцена П1, пришедшая сама «Смена» (расписание, заказы, допродажа, итог),
+   настройки жизни, копилка/вклад, учёба, покупки, несколько месяцев (события и сцены), сохранение и загрузка посреди пролога,
+   финал «Своя точка» (П7 → П8 → перенос: бонус к капиталу, навыки, Гуля — первый сотрудник первой точки) и финал
+   «Жизнь в найме» (подготовленное состояние, «Попробовать заново», «Сразу своя сеть»), старт «Сразу своя сеть» без пролога.
+   Вёрстка — 1440 / 390 / 360, светлая и тёмная тема. Итог — список проблем и ошибок консоли; код выхода 1, если они есть. */
 const path = require('path');
 const fs = require('fs');
 const { chromium, openPage, layoutCheck } = require('./lib');
@@ -15,7 +15,19 @@ const RUNS = [['d1440', false], ['d1440', true], ['m390', false], ['m390', true]
 
 async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + '.png') }); }
 async function check(p, label, root, mobile) { for (const x of await layoutCheck(p, label, { root, mobile })) issues.push(x); }
-const st = (p) => p.evaluate(() => { const P = BK.App.state && BK.App.state.prologue; return P ? { status: P.status, m: P.m, cards: P.cards.length, card: P.cards[0] && P.cards[0].id, mode: BK.PrologueUI.ui.mode, open: BK.PrologueUI.active() } : null; });
+const st = (p) => p.evaluate(() => { const P = BK.App.state && BK.App.state.prologue; return P ? { status: P.status, m: P.m, cards: P.cards.length, card: P.cards[0] && P.cards[0].id, mode: BK.PrologueUI.ui.mode, open: BK.PrologueUI.active(), shifts: P.stats.shifts } : null; });
+// «Смена» приходит сама по расписанию (BK.Prologue.dueShift) — в тесте её нельзя пропустить: играем до конца,
+// а там, где смена только мешает (подготовленные состояния), сразу заканчиваем и закрываем
+async function playShift(p, fast) {
+  const s = await st(p); if (!s || s.mode !== 'shift') return false;
+  for (let i = 0; i < 8; i++) {
+    if (await p.$('#proSh [data-pa=shiftGo]')) { await p.click('#proSh [data-pa=shiftGo]'); await p.waitForTimeout(90); }
+    if (fast && await p.$('#proSh [data-pa=shiftEnd]')) { await p.click('#proSh [data-pa=shiftEnd]'); await p.waitForTimeout(90); }
+    if (await p.$('#proSh [data-pa=shiftDone]')) { await p.click('#proSh [data-pa=shiftDone]'); await p.waitForTimeout(180); }
+    const t = await st(p); if (!t || t.mode !== 'shift') return true;
+  }
+  return true;
+}
 
 async function startPrologue(p) {
   await p.evaluate(() => { const r = document.querySelector('#start input[name=startmode][value=prologue]'); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); } });
@@ -36,6 +48,7 @@ async function resolveCards(p, prefer) {
 // идти, решая карточки по одной (первый доступный вариант), пока не выполнится условие или не появится карточка stop
 async function until(p, pred, stop) {
   for (let g = 0; g < 60; g++) {
+    if (await playShift(p, true)) continue;   // пришедшая смена держит время: играем её и идём дальше
     const s = await st(p);
     if (await p.evaluate(pred)) return true;
     if (s && s.card && s.card === stop) return true;
@@ -65,11 +78,44 @@ async function until(p, pred, stop) {
       await check(p, tag + ' сцена П1', '#proOv .pro-card', mobile);
       await shot(p, `${tag}-02-scene-p01`);
       await resolveCards(p, 0);
-      // --- первая «Смена» ---
+      // --- «Смена» приходит сама (владелец: не на выбор, а по расписанию 5–10 раз за пролог) ---
+      // кнопка ручного запуска смены убрана: в блоке расписания остаётся только «встать за стойку», если смена уже ждёт
+      const stray = await p.evaluate(() => [...document.querySelectorAll('#prologue [data-pa=shift]')].filter((b) => !b.closest('.pro-shift')).length);
+      if (stray) issues.push(`[${tag}] в прологе осталась кнопка ручного запуска смены`);
       await p.waitForSelector('#proSh .sh-intro', { timeout: 3000 }).catch(() => issues.push(`[${tag}] после П1 не открылась первая «Смена»`));
+      const sh0 = await p.evaluate(() => ({ auto: BK.PrologueUI.ui.sh.auto, cancel: !!document.querySelector('#proSh [data-pa=shiftCancel]'), plan: BK.Prologue.shiftAt(), items: BK.Prologue.shiftPlan(BK.App.state.prologue).items.length }));
+      if (!sh0.auto) issues.push(`[${tag}] первая смена не «пришла сама»`);
+      if (sh0.cancel) issues.push(`[${tag}] пришедшую смену можно пропустить кнопкой «Не сейчас»`);
+      if (!(sh0.plan.length >= 5 && sh0.plan.length <= 10)) issues.push(`[${tag}] смен в расписании ${sh0.plan.length} (нужно 5–10): ${sh0.plan}`);
+      if (sh0.items !== 9) issues.push(`[${tag}] на полке ${sh0.items} позиций, ожидалось 9 (три ряда по три)`);
       await check(p, tag + ' смена: вступление', '#proSh .sh-in', mobile);
       await p.click('[data-pa=shiftGo]');
       await p.waitForSelector('#proSh .sh-g.front', { timeout: 3000 });
+      // полка три на три и подсказки клавиш: на ПК видны, на телефоне — нет
+      const shelf = await p.evaluate(() => {
+        const kb = document.querySelector('#prologue').classList.contains('pro-kb');
+        const shelfKeys = [...document.querySelectorAll('#proSh .sh-it kbd')];
+        const hints = [...document.querySelectorAll('#proSh [data-kb]')].filter((e) => getComputedStyle(e).display !== 'none').length;
+        return { kb, cols: getComputedStyle(document.querySelector('.sh-items')).gridTemplateColumns.split(' ').length, shown: shelfKeys.filter((k) => getComputedStyle(k).display !== 'none').length, all: shelfKeys.length, hints, labels: shelfKeys.map((k) => k.textContent.trim()).join(','), up: (document.querySelector('[data-pa=shiftUp]') || {}).textContent || '' };
+      });
+      if (shelf.cols !== 3) issues.push(`[${tag}] полка не в три колонки (${shelf.cols})`);
+      if (shelf.labels !== '1,2,3,Q,W,E,A,S,D') issues.push(`[${tag}] клавиши полки: ${shelf.labels}`);
+      if (mobile && (shelf.kb || shelf.hints)) issues.push(`[${tag}] на телефоне видны подсказки клавиш: режим клавиатуры ${shelf.kb}, подсказок ${shelf.hints}`);
+      if (!mobile && (!shelf.kb || shelf.shown !== 9)) issues.push(`[${tag}] на ПК не видны клавиши полки: режим ${shelf.kb}, видно ${shelf.shown} из ${shelf.all}`);
+      if (!mobile && !/Пробел/.test(shelf.up)) issues.push(`[${tag}] у допродажи нет подписи клавиши: «${shelf.up}»`);
+      // клавиши полки берут продукт так же, как клик; допродажа — Пробел; Enter — отдать заказ
+      if (!mobile) {
+        const KEYS = ['Digit1', 'Digit2', 'Digit3', 'KeyQ', 'KeyW', 'KeyE', 'KeyA', 'KeyS', 'KeyD'];
+        const ids = await p.evaluate(() => BK.Prologue.shiftPlan(BK.App.state.prologue).items.map((x) => x.id));
+        const ord = await p.evaluate(() => { const sh = BK.PrologueUI.ui.sh; return sh && sh.guests[0] ? sh.guests[0].order.slice() : []; });
+        for (const id of ord) { await p.keyboard.press(KEYS[ids.indexOf(id)]); await p.waitForTimeout(40); }
+        const tr = await p.evaluate(() => BK.PrologueUI.ui.sh.tray.slice());
+        if (tr.join() !== ord.join()) issues.push(`[${tag}] клавиши полки не собрали заказ: ${tr.join()} вместо ${ord.join()}`);
+        await p.keyboard.press('Space');
+        if (!(await p.evaluate(() => !!(BK.PrologueUI.ui.sh.guests[0] && BK.PrologueUI.ui.sh.guests[0].asked)))) issues.push(`[${tag}] Пробел не сделал допродажу`);
+        await p.keyboard.press('Enter');
+        await p.waitForTimeout(150);
+      }
       // обслужить правильно 3 гостей и сделать ошибку, попробовать допродажу
       for (let i = 0; i < 4; i++) {
         await p.waitForSelector('#proSh .sh-g.front', { timeout: 6000 }).catch(() => {});
@@ -93,6 +139,10 @@ async function until(p, pred, stop) {
       await p.waitForTimeout(300);
       if (!(tips0 > 0)) issues.push(`[${tag}] «Смена» не дала чаевых`);
       if ((await st(p)).mode) issues.push(`[${tag}] после «Смены» слой не закрылся`);
+      const done1 = await st(p);
+      if (done1.shifts !== 1) issues.push(`[${tag}] счётчик смен после первой: ${done1.shifts}`);
+      if (done1.mode === 'shift') issues.push(`[${tag}] смена пришла второй раз в том же месяце`);
+      if (!(await p.$('#proShiftAnchor'))) issues.push(`[${tag}] нет блока расписания смен`);
       // --- главный экран и решения ---
       await p.evaluate(() => { BK.PrologueUI.ui.speed = 0; });
       await check(p, tag + ' главный экран', '#prologue', mobile);
@@ -114,11 +164,14 @@ async function until(p, pred, stop) {
         await p.click('[data-pa=fromDep]'); await p.waitForTimeout(100);
         await check(p, tag + ' главный экран после решений', '#prologue', mobile);
         await shot(p, `${tag}-06-main-decisions`);
-        // --- несколько месяцев: события и сцены с героями, итог месяца ---
+        // --- несколько месяцев: события и сцены с героями, итог месяца, пришедшие сами смены ---
         let seen = new Set();
         for (let k = 0; k < 6; k++) {
           await p.evaluate(() => { BK.PrologueUI.ui.speed = 3; const P = BK.App.state.prologue; P.t = Math.max(P.t, 0.97); });
-          for (let w = 0; w < 30; w++) { const s = await st(p); if (s.cards || s.m > k) break; await p.waitForTimeout(100); }
+          for (let w = 0; w < 30; w++) {
+            if (await playShift(p, true)) { w = -1; continue; }   // смена по расписанию: играем её и ждём месяц дальше
+            const s = await st(p); if (s.cards || s.m > k) break; await p.waitForTimeout(100);
+          }
           const s = await st(p);
           if (s.cards && s.card) {
             if (!seen.has(s.card) && seen.size < 3) { await check(p, `${tag} карточка ${s.card}`, '#proOv .pro-card', mobile); await shot(p, `${tag}-07-card-${s.card}`); }
@@ -130,6 +183,8 @@ async function until(p, pred, stop) {
         if (seen.size < 2) issues.push(`[${tag}] за 6 месяцев почти не было событий: ${[...seen].join(',')}`);
         const sl = await p.evaluate(() => BK.App.state.prologue.hist.length);
         if (sl < 3) issues.push(`[${tag}] месяцы не идут: история ${sl}`);
+        const shifts6 = (await st(p)).shifts;
+        if (shifts6 < 2) issues.push(`[${tag}] за несколько месяцев пришла всего ${shifts6} смена(ы) — расписание не работает`);
         // --- сохранение и загрузка посреди пролога ---
         // месяц отводим от границы: после загрузки время сразу идёт на ×1, и месяц на 97–99 % успевал перевалить до проверки (гонка теста)
         const before = await p.evaluate(() => { const P = BK.App.state.prologue; P.t = Math.min(P.t, 0.5); BK.App.save(); return P.m; });
@@ -180,9 +235,9 @@ async function until(p, pred, stop) {
       await p.waitForSelector('#startForm');
       await startPrologue(p);
       await resolveCards(p);
-      await p.waitForSelector('#proSh .sh-intro', { timeout: 3000 }).catch(() => {});
-      await p.click('[data-pa=shiftCancel]').catch(() => {});
-      await p.evaluate(() => { const P = BK.App.state.prologue, c = BK.CFG.PROLOGUE; P.m = c.LIFE_MONTHS - 1; P.job = 1; P.cash = 12000; P.box = 0; P.spent = { home: 2600000, food: 3100000, fun: 1500000, sneakers: 180000, trip: 560000, car: 816000, phone2: 290000, debt: 40000 }; P.earned = { salary: 9800000, tips: 900000 }; });
+      await playShift(p, true);   // первая смена приходит сразу после П1 — для этого финала она не нужна
+      // расписание уже прошло: подготовленному финалу «жизнь в найме» смены больше не мешают
+      await p.evaluate(() => { const P = BK.App.state.prologue, c = BK.CFG.PROLOGUE; P.m = c.LIFE_MONTHS - 1; P.stats.shifts = BK.Prologue.shiftAt().length; P.job = 1; P.cash = 12000; P.box = 0; P.spent = { home: 2600000, food: 3100000, fun: 1500000, sneakers: 180000, trip: 560000, car: 816000, phone2: 290000, debt: 40000 }; P.earned = { salary: 9800000, tips: 900000 }; });
       await until(p, () => BK.App.state.prologue.status === 'life');
       await p.waitForSelector('#proOv .pro-final.life', { timeout: 5000 }).catch(() => issues.push(`[${tag}] финал «Жизнь в найме» не открылся`));
       await p.waitForTimeout(700);
@@ -193,8 +248,8 @@ async function until(p, pred, stop) {
       const re = await st(p);
       if (!re || re.status !== 'run' || re.m !== 0) issues.push(`[${tag}] «Попробовать заново» не начал пролог: ${JSON.stringify(re)}`);
       // «Пропустить пролог» из меню → основная игра без бонусов
-      await p.waitForSelector('#proSh .sh-intro', { timeout: 3000 }).catch(() => {});
-      await p.click('[data-pa=shiftCancel]').catch(() => {});
+      await resolveCards(p);
+      await playShift(p, true);   // смена после П1 приходит сама: играем её, иначе она перекроет меню
       await p.evaluate(() => { BK.PrologueUI.ui.speed = 0; });
       await resolveCards(p);
       const cashS = await p.evaluate(() => BK.App.state.cash);
