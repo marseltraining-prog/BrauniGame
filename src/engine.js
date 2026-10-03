@@ -1202,12 +1202,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- действия игрока ---------------- */
   function storeOpenCost(S, o) {
     const cfg = C();
+    const stratK = (S.strat && BK.Strat) ? BK.Strat.openMult(S) : 1; // стратегии: «Народная» дешевле, «Кафе» дороже
     const sz = cfg.SIZES[o.size];
     const fit = o.area * cfg.FITOUT_PER_M2 * S.macro.priceLevel;
     const eq = cfg.STORE_EQUIP[o.size] * S.macro.priceLevel;
     const hire = recStaff(S, o).target * hireCost(S, 1);
     const rent = o.payMode === 'year' ? o.area * o.rentM2 * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT) : o.area * o.rentM2; // год вперёд или депозит
-    return { fit, eq, hire, rent, total: fit + eq + hire + rent };
+    const total = (fit + eq + hire + rent) * stratK;   // стоимость открытия с поправкой на стратегию
+    return { fit, eq, hire, rent, total: Math.round(total), stratK };
   }
   function prodOpenCost(S, o) {
     const cfg = C();

@@ -206,6 +206,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
     if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
       if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
+      if (BK.Strat && BK.Strat.attItems) for (const x of BK.Strat.attItems(S)) add(x); // стратегия сложилась сама
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -483,6 +484,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+    if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);

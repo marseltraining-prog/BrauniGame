@@ -166,7 +166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -176,10 +176,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
+    if (BK.StratUI) BK.StratUI.bindStart($('#startForm')); // «Как играем?» — карточки путей
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel()); });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -189,12 +190,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const rivalPicked = () => { const b = document.querySelector('#start [data-rival="1"]'); return b ? b.getAttribute('aria-pressed') === 'true' : BK.CFG.RIVAL_ON; };
   function hideStart() { const el = $('#start'); el.hidden = true; el.innerHTML = ''; $('#toasts').innerHTML = ''; }
   // новая игра со стартового экрана: пролог «Бариста» (src/ui/prologue.js) или сразу своя сеть
-  function startNew(name, difficulty) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty); else newGame(name, difficulty); }
+  function startNew(name, difficulty, opts) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty, opts); else newGame(name, difficulty, opts); }
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
     if (BK.Stage1UI) BK.Stage1UI.close();
     S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
+    if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat); // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
@@ -273,6 +275,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
       else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
         else if (n.type === 'story' && BK.StoryUI) BK.StoryUI.notify(n);
+        else if (n.type === 'strat' && BK.StratUI) BK.StratUI.notify(n);
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));
