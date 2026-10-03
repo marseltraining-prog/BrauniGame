@@ -48,6 +48,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch (e) { /* без хранилища тема живёт до перезагрузки */ }
     applyTheme(t);
   }
+  // номер версии и дата сборки: видно, какую именно версию открыл игрок
+  const verBadge = () => {
+    const v = (BK.CFG && BK.CFG.VERSION) || {};
+    const b = globalThis.__BK_BUILD || '';
+    return `<span class="verbadge" title="Хлебная карта ${v.num || ''}${v.name ? ' (' + v.name + ')' : ''}${b ? ' · собрано ' + b : ''}">v${v.num || '?'}</span>`;
+  };
   const themeSeg = () => `<div class="themeseg" role="group" aria-label="Тема оформления">${Object.keys(THEMES).map((k) => `<button type="button" data-act="theme" data-arg="${k}" aria-pressed="${ui.theme === k}">${THEME_ICON[k]}${THEMES[k]}</button>`).join('')}</div>`;
 
   const LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--crust)"/><path d="M7 19c0-5 4-9 9-9s9 4 9 9v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" fill="#fff"/><path d="M12 13.5l1.5 4M16 12.5v5M20 13.5l-1.5 4" stroke="var(--crust)" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -100,6 +106,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><div class="gr"><span class="k" id="hud-goal-k"><span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span></span><span class="gp" id="hud-goal-p"></span></div><div class="gr"><span class="v" id="hud-goal"></span><span class="dl muted" id="hud-goal-eta"></span></div><div id="hud-goalbar"></div></div>
     </div>
     <div class="hudbtns">
+      ${verBadge()}
       <button class="iconbtn" data-act="sound" aria-label="Звук" title="Звук"></button>
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть" aria-label="Как играть">${ICON.help}</button>

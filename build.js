@@ -28,7 +28,9 @@ const GUARD = `<script>(function(){
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
 })();</script>`;
-const page = (c, j) => `${GUARD}<title>Хлебная карта</title>\n${fonts}\n<style>\n${c}</style>\n<script>\n${j.replace(/<\/script/gi, '<\\/script')}\n</script>\n`;
+// дата сборки — чтобы владелец мог убедиться, что открыл свежую версию
+const BUILD_DATE = new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const page = (c, j) => `${GUARD.replace('</script>', 'window.__BK_BUILD=' + JSON.stringify(BUILD_DATE) + ';</script>')}<title>Хлебная карта</title>\n${fonts}\n<style>\n${c}</style>\n<script>\n${j.replace(/<\/script/gi, '<\\/script')}\n</script>\n`;
 const content = page(css, js);
 // Проверка синтаксиса всех встроенных скриптов: сборка не должна выпускать файл с ошибкой
 // (однажды опечатка в защитном скрипте ломала его, и ошибка всплыла только в тестах).

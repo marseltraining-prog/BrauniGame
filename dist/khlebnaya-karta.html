@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 13:20";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -855,6 +855,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 @media (max-width: 420px) { .fintbl .c-margin, .fintbl .c-staff { display: none; } .fintbl .m-stf { display: inline; } .wfrow { grid-template-columns: 84px minmax(0, 1fr) 56px; gap: 6px; } }
 /* узкая карта при широкой панели «Финансов» (ПК до 1366 px): у неактивных слоёв — только значок (6 слоёв не помещаются) */
 @media (min-width: 821px) and (max-width: 1366px) { .main.fin-wide .maplayers button.ml-chip:not([aria-pressed="true"]) span { display: none; } .main.fin-wide .maplayers button.ml-chip { padding: 0 9px; } }
+
+/* версия игры в правом верхнем углу (рядом с переключателем темы) */
+.verbadge { align-self: center; margin-right: 2px; padding: 2px 7px; border-radius: 999px; background: var(--surface-2);
+  color: var(--ink-3); font-family: var(--f-mono); font-size: 11px; line-height: 1.5; letter-spacing: .02em; cursor: help; white-space: nowrap; }
+@media (max-width: 430px) { .verbadge { display: none; } }   /* на телефоне место дороже: версия есть в «Меню игры» */
 
 /* ===== Дополнения: слоты сохранений, достижения, итоговый экран (src/ui/extras.js). Только токены темы из styles.css. ===== */
 .rar-c { --rar: var(--good); --rar-t: var(--good-t); --rar-soft: var(--good-soft); }
@@ -3436,6 +3441,10 @@ BK.CFG.COLL = {
   BAN_RATE_ADD: 0.02,            // потом ставка выше на 2 п. п.
   WARN_DAYS: 5,                  // за сколько дней до 1-го числа показывать «не хватит на платёж»
 };
+
+/* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
+   При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
+BK.CFG.VERSION = { num: '0.9', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -23348,6 +23357,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
       ${BK.Sound ? BK.Sound.settingsHtml(S) : ''}
       ${BK.StratUI ? BK.StratUI.settingsHtml(S) : ''}
+      <p class="hint" style="margin:0 0 4px">Версия ${(BK.CFG.VERSION && BK.CFG.VERSION.num) || '?'}${globalThis.__BK_BUILD ? ` · собрано ${globalThis.__BK_BUILD}` : ''}</p>
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
@@ -28811,6 +28821,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch (e) { /* без хранилища тема живёт до перезагрузки */ }
     applyTheme(t);
   }
+  // номер версии и дата сборки: видно, какую именно версию открыл игрок
+  const verBadge = () => {
+    const v = (BK.CFG && BK.CFG.VERSION) || {};
+    const b = globalThis.__BK_BUILD || '';
+    return `<span class="verbadge" title="Хлебная карта ${v.num || ''}${v.name ? ' (' + v.name + ')' : ''}${b ? ' · собрано ' + b : ''}">v${v.num || '?'}</span>`;
+  };
   const themeSeg = () => `<div class="themeseg" role="group" aria-label="Тема оформления">${Object.keys(THEMES).map((k) => `<button type="button" data-act="theme" data-arg="${k}" aria-pressed="${ui.theme === k}">${THEME_ICON[k]}${THEMES[k]}</button>`).join('')}</div>`;
 
   const LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--crust)"/><path d="M7 19c0-5 4-9 9-9s9 4 9 9v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" fill="#fff"/><path d="M12 13.5l1.5 4M16 12.5v5M20 13.5l-1.5 4" stroke="var(--crust)" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -28863,6 +28879,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="stat goal" title="Оборот сети за последние 12 месяцев. Цель — 5 млрд ₽"><div class="gr"><span class="k" id="hud-goal-k"><span class="long">К цели · 5 млрд</span><span class="short">Цель 5 млрд</span></span><span class="gp" id="hud-goal-p"></span></div><div class="gr"><span class="v" id="hud-goal"></span><span class="dl muted" id="hud-goal-eta"></span></div><div id="hud-goalbar"></div></div>
     </div>
     <div class="hudbtns">
+      ${verBadge()}
       <button class="iconbtn" data-act="sound" aria-label="Звук" title="Звук"></button>
       <button class="iconbtn theme" data-act="theme" aria-label="Сменить тему"></button>
       <button class="iconbtn" data-act="help" title="Как играть" aria-label="Как играть">${ICON.help}</button>

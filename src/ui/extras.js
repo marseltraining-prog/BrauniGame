@@ -307,6 +307,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
       ${BK.Sound ? BK.Sound.settingsHtml(S) : ''}
       ${BK.StratUI ? BK.StratUI.settingsHtml(S) : ''}
+      <p class="hint" style="margin:0 0 4px">Версия ${(BK.CFG.VERSION && BK.CFG.VERSION.num) || '?'}${globalThis.__BK_BUILD ? ` · собрано ${globalThis.__BK_BUILD}` : ''}</p>
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
