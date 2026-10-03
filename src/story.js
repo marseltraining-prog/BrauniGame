@@ -67,6 +67,93 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function scenes() { return (D() && D().scenes) || []; }
   function scene(id) { return scenes().find((s) => s.id === id) || null; }
 
+  /* ---------------- сквозные линии: пролог → нити (docs/story-v2.md п. 4–6) ----------------
+     Пролог вёл свой реестр (P.v2.threads) и при переходе в основную игру терялся: решение
+     первой главы умирало вместе с прологом (разбор — docs/writing-review.md, С1–С2).
+     Здесь в первый же день основной игры незакрытые нити пролога переезжают в BK.Threads:
+     игрок снова видит «Вас помнит …» в «Требует внимания» и в «Сводке», цену — заранее,
+     а последствие меняет механику (обиженный инспектор тянет приёмку: 50 дней вместо 21
+     во всех новых городах). Соответствия «нить пролога → нить игры» — BK.STORY.prologue
+     (src/data/story-bridges.js), тут только механика. Без пролога (боты, старые сохранения)
+     функция только помечает партию и ничего не создаёт. */
+  function lineFired(P, id) {
+    const F = (P && P.v2 && P.v2.fired) || {};
+    for (const k of Object.keys(F)) if (k.indexOf(id + ':') === 0) return true;
+    return false;
+  }
+  function wire(S, R) {
+    if (R.f.proWired) return;
+    const P = S.prologue, W = (D() && D().prologue) || {}, T = BK.Threads;
+    if (!P || !P.v2) { R.f.proWired = 'no'; return; }        // партии без живого пролога
+    R.f.proWired = S.day || 1;
+    const tl = W.threads || {}, fl = W.flags || {};
+    const setFlag = (a) => { if (a && a[0] && R.f[a[0]] == null) R.f[a[0]] = a[1]; };
+    for (const k of Object.keys(fl)) if (P.flags && P.flags[k]) setFlag(fl[k]);
+    if (T && T.add) {
+      for (const t of P.v2.threads || []) {                 // нить ещё не отозвалась — переносим целиком
+        const m = tl[t.id]; if (!m) continue;
+        setFlag(m.flag);
+        // срок: свой у каждой нити (последствие — через годы). Если пролог откладывал её дальше,
+        // берём срок пролога: игрок уже видел эту дату в «Вас помнят».
+        const left = (t.due != null && P.m != null) ? Math.round(Math.max(0, t.due - P.m) * 30.44) : 0;
+        const after = Math.max(m.after != null ? m.after : 365, left);
+        T.add(S, { who: m.who || t.who, role: m.role || '', kind: m.kind || (t.dir > 0 ? 'favor' : 'grudge'),
+          text: m.text || t.gist || '', city: m.city || null, from: S.day,
+          due: (S.day || 0) + after, effect: m.effect || {}, src: m.src || ('prologue:' + t.id) });
+      }
+    }
+    for (const id of Object.keys(tl)) if (lineFired(P, id)) setFlag(tl[id].flag);   // отозвалось ещё в прологе
+  }
+  // чем закончилась линия: счёт «за людей» и «по бумагам» (docs/story-v2.md п. 4,
+  // концовки «Вас помнят» / «Всё по бумагам» — их открывает флаг f.book)
+  function closeLine(S, R, fx) {
+    const warm = fx.warm !== false;
+    const k = warm ? 'lineWarm' : 'lineCold';
+    R.f[k] = (R.f[k] | 0) + 1;
+    const w = R.f.lineWarm | 0, c = R.f.lineCold | 0;
+    R.f.book = w >= 2 && w > c ? 'warm' : c >= 2 && c >= w ? 'cold' : 'even';
+    if (fx.text) R.log.push({ day: S.day, id: 'ln' + S.day + '_' + R.log.length, title: fx.text, choice: '', chapter: R.ch, fx: ['line'] });
+    return fx.text || null;
+  }
+  // помирились: нить закрывается из сцены (по src, id или имени человека)
+  function unthread(S, fx) {
+    const T = BK.Threads; if (!T || !T.list || !T.clear) return null;
+    let n = 0;
+    for (const t of T.list(S)) {
+      if ((fx.src && t.src === fx.src) || (fx.id && t.id === fx.id) || (fx.who && t.who === fx.who)) { if (T.clear(S, t.id)) n++; }
+    }
+    return n ? `нитей закрыто: ${n}` : null;
+  }
+
+  /* Кто появляется рядом (решение владельца: семья/партнёр, вариант «в» — docs/story-v2.md п. 8).
+     Помощница или самодур — не случайность и не кубик, а следствие характера партии: честность,
+     справедливость, забота, закрытые линии «за людей», отношения с домом, откуда взяты деньги.
+     Считается один раз, к 9-му году, и остаётся в f.mateKind: вторая партия на другом характере
+     даст другого человека. Строку «кто идёт рядом» игрок видит в «Требует внимания» задолго
+     до сцены — это и есть прозрачность, о которой просил владелец. */
+  function mateScore(R) {
+    const m = R.m || {}, f = R.f || {}, rel = R.rel || {};
+    let v = (m.honesty | 0) + (m.fair | 0) + Math.round((m.care | 0) / 2);
+    v += (f.lineWarm | 0) * 8 - (f.lineCold | 0) * 8;
+    if ((rel.family | 0) >= 25) v += 5;
+    if (f.lineKin === 'far') v -= 6;
+    if (f.lineDebt === 'deep') v -= 6;              // деньги «Быстрых денег» — не про людей
+    if (f.lineDamir === 'thief') v -= 5;            // человека выбросили
+    if (f.linePaper === 'open') v -= 4;             // от проверки отмахнулись
+    return v;
+  }
+  function mateKind(R) {
+    const v = mateScore(R);
+    if (v >= 15) return 'helper';
+    if (v <= -5) return 'tyrant';
+    return 'none';
+  }
+  const MATE_TEXT = {
+    helper: 'Рядом с вами — человек, который считает лучше вас и говорит это вслух. Команда такого не любит.',
+    tyrant: 'Рядом с вами — человек с деньгами и своими идеями. Отказать ему — потерять вливания.',
+    none: 'Пока рядом никого: работа и есть ваш дом.',
+  };
+
   /* ---------------- условия триггера ---------------- */
   function cond(S, R, c) {
     if (c.stores != null) return openStores(S).length >= c.stores;
@@ -197,6 +284,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
         return n ? `«Двор» открыл ${n} ${n === 1 ? 'точку' : 'точки'} рядом с вашими` : null;
       }
       case 'journal': R.log.push({ day: S.day, id: 'j' + S.day, title: fx.text, choice: '', chapter: R.ch, fx: ['journal'] }); return fx.text;
+      case 'line': return closeLine(S, R, fx);                       // линия дошла до конца: счёт для концовки
+      case 'unthread': return unthread(S, fx);                       // помирились — нить закрыта (BK.Threads.clear)
+      case 'loan': {                                                 // деньги банка как эффект сцены (кредит настоящий)
+        try { E().takeLoan(S, Math.round(fx.v || 0)); return `кредит ${BK.fmtMoney(Math.round(fx.v || 0))}`; } catch (e) { return null; }
+      }
       case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
       case 'schedule': {
         const a = fx.after;
@@ -232,6 +324,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!K().ON || !S || S.lost) return;
     const R = ensure(S); if (!R) return;
     if (R.mode === 'off') return;
+    wire(S, R);                                   // сквозные линии: нити пролога переезжают в BK.Threads
+    // Кто идёт рядом (см. mateKind): считаем с 6-го года или после трёх закрытых линий — этого
+    // хватает, чтобы характер партии был уже виден, а игрок успевал прочитать строку заранее.
+    // Первое «есть кто-то» фиксируется и больше не пересчитывается: человек не меняется задним числом.
+    if (!R.seen.kf3 && (year(S) >= 6 || ((R.f.lineWarm | 0) + (R.f.lineCold | 0)) >= 3)) {
+      const k = mateKind(R);
+      if (k !== 'none') { if (R.f.mateKind !== k) R.f.mateKind = k; }
+      else if (R.f.mateKind == null) R.f.mateKind = 'none';
+    }
     // отложенные записи
     if (R.queue.length) {
       R.queue = R.queue.filter((q) => {
@@ -357,6 +458,35 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const sc = scene(R.pending.id);
       if (sc) out.push({ lvl: 'info', ic: 'chat', t: `Сюжет: «${sc.title}»`, d: 'Ждёт вашего решения.', b: { act: 'story', label: 'Открыть', primary: true } });
     }
+    // Линия Олега: владелец просил, чтобы решение было прозрачным, — игрок заранее знает,
+    // что главный финал этой линии разговор о партнёрстве, а не расправа. Строка живёт до финала.
+    if (R && R.f && R.f.olegDeal && R.f.olegDeal !== 'done' && !R.seen.sf1) {
+      out.push({
+        lvl: 'info', ic: 'chat', t: 'Олег предлагает поговорить о будущем',
+        d: R.f.olegDeal === 'word'
+          ? 'Пока разговор идёт, «Двор» не режет цены и не встаёт рядом. В финале он позовёт к воде — говорить на равных.'
+          : 'Он не зовёт и не угрожает. Просто ждёт, чем закончится война.',
+        b: { act: 'threads', label: 'Подробнее' },
+      });
+    }
+    // Линия Дамира: кем он станет, решают встречи, а не пролог. Игрок видит вектор заранее.
+    if (R && R.f && R.f.lineDamir && !R.seen.kd3) {
+      const DAM = {
+        owe: 'Он вернётся — вы за него выходили, когда он «болел». Кем станет, решится на встрече.',
+        shadow: 'Он вернётся, и разговор будет неприятным: в тот день он не болел.',
+        served: 'Он работает у вас смену. Дальше — как себя покажет.',
+        close: 'Вы отказали ему дважды. Он из тех, кто это помнит.',
+        trusted: 'Вы поверили ему на слово. Теперь он или управляющий, или подстава.',
+        smeared: 'Тему закрыли, не разобравшись. Он это запомнил — как и Рашид.',
+        thief: 'Он подставлял вас перед Рашидом. Это ещё всплывёт.',
+        boss: 'Он ведёт город и обязан вам. Пока — ведёт честно.',
+      };
+      out.push({ lvl: 'info', ic: 'chat', t: 'Дамир: чем это кончится', d: DAM[R.f.lineDamir] || 'Он вернётся — вы его знаете.', b: { act: 'threads', label: 'Подробнее' } });
+    }
+    // Кто появляется рядом (партнёр): видно задолго до сцены — и это следствие игры, а не случайности.
+    if (R && R.f && R.f.mateKind && !R.seen.kf3 && R.f.mateKind !== 'none') {
+      out.push({ lvl: R.f.mateKind === 'tyrant' ? 'warn' : 'info', ic: 'chat', t: R.f.mateKind === 'helper' ? 'Рядом появляется человек, который считает' : 'Рядом появляется человек с деньгами', d: MATE_TEXT[R.f.mateKind], b: { act: 'threads', label: 'Подробнее' } });
+    }
     return out;
   }
 
@@ -377,5 +507,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond,
+    wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
   };
 })();

@@ -34,7 +34,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   let DEMO = true;   // живой пример нити владельца (обиженный завсегдатай → инспектор). Боты модуль не грузят.
 
   /* ---------------- состояние ---------------- */
-  function defaults() { return { v: 1, list: [], n: 0 }; }
+  function defaults() { return { v: 1, list: [], n: 0, closed: {} }; }
   function state(S) { return S && S.threads && S.threads.v ? S.threads : null; }
   function ensure(S) {                       // безопасные значения по умолчанию (в т. ч. для старых сохранений)
     if (!S) return null;
@@ -42,6 +42,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const R = S.threads;
       if (!Array.isArray(R.list)) R.list = [];
       if (R.n == null) R.n = R.list.length;
+      if (!R.closed || typeof R.closed !== 'object') R.closed = {};
       return R;
     }
     S.threads = defaults();
@@ -81,9 +82,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function nwd(n, a, b, c) { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return n + ' ' + (x > 10 && x < 20 ? c : y === 1 ? a : y >= 2 && y <= 4 ? b : c); }
   function date(S, day) { try { return BK.Engine.fmtDate(day); } catch (e) { return 'день ' + Math.round(day); } }
   function openText(S, t) {              // «в Самаре открытие точек дольше на 29 дней (50 вместо 21)»
-    const e = t.effect || {}; if (!e.openK || !t.city) return '';
+    const e = t.effect || {}; if (!e.openK) return '';
+    const where = t.city ? cityIn(t.city) : 'в новых городах';   // город null — нить про всю сеть («на вас обижен инспектор»)
     const d = openDays(S, t.city), b = base(), add = Math.abs(d - b);
-    return `${cityIn(t.city)} открытие точек ${e.openK >= 1 ? 'дольше' : 'быстрее'} на ${nwd(add, 'день', 'дня', 'дней')} (${d} вместо ${b})`;
+    return `${where} открытие точек ${e.openK >= 1 ? 'дольше' : 'быстрее'} на ${nwd(add, 'день', 'дня', 'дней')} (${d} вместо ${b})`;
   }
   function effectText(S, t) {
     const e = t.effect || {}, out = [];
@@ -138,6 +140,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const R = state(S); if (!R) return null;
     const i = R.list.findIndex((t) => t.id === id); if (i < 0) return null;
     const t = R.list.splice(i, 1)[0];
+    // «закрыто» помним отдельно: иначе демо-нить (обиженный завсегдатай → инспектор)
+    // завела бы ту же обиду заново, когда игрок входит в следующий город, — и помириться было бы нельзя
+    if (t.src) { R.closed = R.closed || {}; R.closed[t.src] = S.day; }
     const I_ = I(); if (I_.log) I_.log(S, `Вас больше не помнит ${t.who}: нить закрыта.`, 'info');
     refresh(S);
     return t;
@@ -217,6 +222,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!DEMO || !S || !S.corp || S.corp.unlockedDay == null) return null;
     const R = state(S);
     if (R && R.list.some((t) => t.src === 'inspector')) return null;
+    if (R && R.closed && R.closed.inspector) return null;        // с ним уже помирились — второй раз он не приходит
     const ids = Object.keys(S.corp.cities || {});
     if (ids.length < 2) return null;                                  // второго города ещё нет
     const city = S.corp.active && S.corp.active !== 'ufa' ? S.corp.active : ids.filter((x) => x !== 'ufa')[0];
