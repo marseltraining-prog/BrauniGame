@@ -16,6 +16,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const LET = 'АБВГДЕЖЗИК';
+  // Финалы-победы (src/data/story.js: endings) — их встречает победная тема; «Пустой зал», «Сделка»,
+  // «Жизнь в найме» и банкротство остаются тяжёлыми, как раньше (для них — тема тяжёлых заставок).
+  const WIN_END = { empire: 1, city: 1, twocrusts: 1 };
 
   /* ---------- подстановки в текстах сцен: {name}, {street}, {n}, {city}, {inCity} ----------
      Тексты сцен пишутся с плейсхолдерами (docs/writing.md, разбор C3). Без подстановки игрок
@@ -336,7 +339,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     setTimeout(() => el.remove(), 9000);
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
-    if (BK.Sound) BK.Sound.play(end ? 'warn' : 'fanfare');
+    // Победа в истории звучит победной темой (большое событие), тяжёлые финалы — как раньше.
+    const winEnd = end && WIN_END[n.id];
+    if (BK.Sound) { if (winEnd) BK.Sound.music('victory'); else BK.Sound.play(end ? 'warn' : 'fanfare'); }
   }
 
   /* ---------- клавиши: Enter/Space — дальше, Esc сцену НЕ закрывает ---------- */
