@@ -14,6 +14,17 @@ const issues = [];
 const RUNS = [['d1440', false], ['d1440', true], ['m390', false], ['m390', true], ['m360', false], ['m360', true]];
 
 async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + '.png') }); }
+// Стадия 1 проверяется на «обычной Уфе»: истории (BK.Scenario) — это отдельные правила с первого дня, и,
+// например, «Спаси сеть» выдаёт готовую сеть из 6 точек, свой сюжет и свой финал. Тогда партия идёт не по
+// сценарию главы: кофейня тонет вместе с чужой сетью, открывается карточка «Кофейня закрылась» — и дальше
+// тест жмёт кнопки под её подложкой (.s1-ovbg, position: fixed на весь экран) и получает вечный таймаут.
+// Обучение новичка в общих сценариях так же выключается (qa/lib.js). Отмечаем истории пройденными: тогда
+// стартовая форма с «scen: random» не выбирает ни одной (BK.Scenario.pick → null → обычная Уфа). В браузере
+// выбора истории на форме нет, так что это единственный способ задать обычную партию — и он же штатный
+// (кнопка «Сбросить пройденные» на стартовом экране чистит ровно этот ключ).
+async function noStories(p) {
+  await p.evaluate(() => { try { localStorage.setItem('bk-ufa-scen-done', JSON.stringify(Object.keys((window.BK && BK.SCEN && BK.SCEN.list) || {}))); } catch (e) {} });
+}
 async function check(p, label, root, mobile) { for (const x of await layoutCheck(p, label, { root, mobile })) issues.push(x); }
 // пиксельная сцена кофейни: canvas с целым множителем и непустой картинкой (как в qa/pixel.js)
 async function canvases(p, label, sel) {
@@ -84,6 +95,7 @@ async function toStage1(p, tag, mobile, full) {
   for (const [vp, dark] of RUNS) {
     const tag = `${vp}${dark ? '-dark' : ''}`, mobile = vp.startsWith('m'), full = (vp === 'd1440' && !dark) || (vp === 'm390' && dark);
     const p = await openPage(browser, vp, { dark });
+    await noStories(p);   // партия — «обычная Уфа», без случайной истории (см. noStories)
     try {
       await toStage1(p, tag, mobile, full);
       const s0 = await p.evaluate(() => { const S = BK.App.state; return { cash: S.cash, spots: S.stage1.spots.length, pro: S.prologue.status, phase: S.phase }; });
