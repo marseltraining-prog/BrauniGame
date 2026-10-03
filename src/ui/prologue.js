@@ -20,6 +20,42 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const PREF = 'bk-ufa-start';
   const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
 
+  /* ---------------- есть ли физическая клавиатура (задание владельца) ----------------
+     Подсказки про клавиши (1-2-3 / Q-W-E / A-S-D, Пробел, Enter) показываем ТОЛЬКО там, где за столом
+     есть клавиатура: на телефоне и планшете их быть не должно — там играют касаниями.
+     Смотрим не ширину экрана, а сами указатели: fine + hover — мышь/трекпад; coarse вместе с touch —
+     палец. Ноутбук с тачскрином остаётся «с клавиатурой» (основной указатель — мышь), телефон — нет. */
+  let kbCache = null;
+  function hasKb() {
+    if (kbCache !== null) return kbCache;
+    let fine = true, hover = true, coarse = false;
+    try {
+      const m = globalThis.matchMedia ? globalThis.matchMedia.bind(globalThis) : null;
+      if (m) { fine = m('(pointer: fine)').matches; hover = m('(hover: hover)').matches; coarse = m('(pointer: coarse)').matches; }
+    } catch (e) { /* старый браузер: считаем, что клавиатура есть */ }
+    const touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in globalThis;
+    kbCache = !!fine && !!hover && !(coarse && touch);
+    return kbCache;
+  }
+  function kbWatch(root) {
+    root.classList.toggle('pro-kb', hasKb());
+    try {
+      const m = globalThis.matchMedia ? globalThis.matchMedia.bind(globalThis) : null; if (!m) return;
+      const upd = () => { kbCache = null; const r = $('#prologue'); if (r) { r.classList.toggle('pro-kb', hasKb()); ui.dirty = true; } };
+      const q = m('(pointer: fine)'); if (q.addEventListener) q.addEventListener('change', upd);
+      const h = m('(hover: hover)'); if (h.addEventListener) h.addEventListener('change', upd);
+    } catch (e) {}
+  }
+  // в поле ввода (имя сети на стартовом экране и т. п.) клавиши пролога и смены не перехватываем
+  function inField(e) {
+    const t = (e && e.target) || document.activeElement;
+    if (!t) return false;
+    const tag = String(t.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable === true;
+  }
+  // полка «Смены»: позиция → клавиша. По e.code, а не по e.key: на русской раскладке e.key для Q/W/E/A/S/D — «йцуфыв».
+  const SHELF_KEY = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2, KeyQ: 3, KeyW: 4, KeyE: 5, KeyA: 6, KeyS: 7, KeyD: 8 };
+
   /* ---------------- звук (src/sound.js) ----------------
      Тихий и ненавязчивый: это не аркада. Главное правило — звук привязан к СОБЫТИЮ, а не к отрисовке.
      Цикл пролога (loop → render/bar/drainFx) вызывается десятки раз в секунду, поэтому «звенеть по факту
@@ -123,6 +159,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       root.addEventListener('pointerup', up, true); root.addEventListener('pointercancel', up, true);
     }
     ui.open = true; ui.parts = {}; ui.dirty = true;
+    kbWatch(root);
     if (BK.Sound) BK.Sound.music('prologue'); // музыка пролога — та же петля, но выше и светлее
     document.documentElement.classList.add('pro-on');
     render(true);
@@ -146,6 +183,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ui.menu) { bar(); return; }
     if (p.status !== 'run') { if (ui.mode !== 'final' && ui.mode !== 'card') showFinal(); }
     else if (p.cards.length) { if (ui.mode !== 'card') showCard(); }
+    // смена пришла сама (расписание BK.Prologue): открываем её, как только время идёт и нет решений — пропустить нельзя
+    else if (!ui.mode && ui.speed > 0 && !ui.menu && !document.hidden && PR().dueShift(p)) { shiftOpen(true); }
     else if (!ui.mode && ui.speed > 0 && !ui.menu && !document.hidden) {
       const r = PR().advance(s, dt * ui.speed);
       if (r === 'month') onMonth();
@@ -327,13 +366,32 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="pmy" id="proBox"><span class="pmy-i" aria-hidden="true">🐷</span><span class="pmy-n">Копилка</span><b>${fm(p.box)}</b><small>срывы её не трогают</small><span class="pmy-b"><button type="button" class="btn sm" data-pa="toDep">На вклад</button><button type="button" class="btn sm" data-pa="fromBox" ${p.box > 0 ? '' : 'disabled'}>Достать</button></span></div>
       <div class="pmy" id="proDep"><span class="pmy-i" aria-hidden="true">🏦</span><span class="pmy-n">Вклад · ${Math.round(rate * 100)} %</span><b>${fm(p.dep + p.depInt)}</b><small>${p.depInt > 0 ? `проценты ${fm(p.depInt)} — раз в год` : 'проценты раз в год'}</small>${ui.ask === 'dep' ? `<span class="pmy-b"><button type="button" class="btn sm danger" data-pa="fromDepYes">Снять, сгорит ${fm(p.depInt)}</button><button type="button" class="btn sm" data-pa="askNo">Нет</button></span>` : `<button type="button" class="btn sm" data-pa="fromDep" ${p.dep > 0 ? '' : 'disabled'}>Снять</button>`}</div></div>`;
     s += `</section>`;
-    // герой: стойка, должность, «Смена», состояние, навыки
-    const why = PR().shiftWhy(p);
+    // герой: стойка, должность, расписание смен (смены приходят сами), состояние, навыки
     s += `<section class="pc pro-hero">${scene()}${jobLadder(p)}
-      <button type="button" class="btn primary block pro-big pro-shiftbtn${!why ? ' ready' : ''}" data-pa="shift" ${why ? 'disabled' : ''}><span aria-hidden="true">☕</span> Выйти на смену<small>${why ? esc(why) : 'чаевые, навык и оценка начальника · 40 с'}</small></button>
+      ${shiftBlock(p)}
       <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
       <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
     return s;
+  }
+  // расписание смен: смены приходят сами (5–10 за пролог), игрок их не выбирает и не может пропустить,
+  // но может оказаться не готовым. Кнопка только одна — «встать за стойку», и лишь когда смена уже ждёт.
+  function shiftBlock(p) {
+    const list = PR().shiftAt(), done = Math.min(PR().shiftsDone(p), list.length);
+    const due = PR().dueShift(p), tired = PR().shiftTired(p);
+    const when = (m) => cap(PR().monName(p, m));
+    const dots = list.map((m, i) => `<i class="${i < done ? 'on' : ''}${i === done && due ? ' now' : ''}" title="${i < done ? `Смена прошла: ${when(m)}` : `Смена: ${when(m)}`}"></i>`).join('');
+    let note;
+    if (done >= list.length) note = 'Все смены пролога прошли — дальше только своя точка.';
+    else if (due) note = `Смена пришла сама: <b>${when(list[done])}</b>. Пропустить её нельзя${tired ? ' — а вы к ней не готовы' : ''}.`;
+    else note = `Следующая смена придёт сама — <b>${when(list[done])}</b>. К ней можно быть не готовым.`;
+    if (tired && done < list.length) note += ' Вы не выспались: гости будут нетерпеливее.';
+    return `<div class="pro-shift" id="proShiftAnchor">
+      <div class="ps-top"><span class="ps-t"><span aria-hidden="true">☕</span> Смены в «Калаче»</span><span class="ps-c">${done} из ${list.length}</span></div>
+      <div class="ps-dots" role="img" aria-label="Смен пройдено: ${done} из ${list.length}">${dots}</div>
+      <p class="ps-w">${note}</p>
+      ${due ? `<button type="button" class="btn primary block pro-big pro-shiftbtn ready" data-pa="shift">Встать за стойку<small>смена ждёт вас · ${C().SHIFT_SEC} с</small></button>` : ''}
+      <p class="ps-k" data-kb>Продукт — <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> · <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> · <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · допродажа — <kbd>Пробел</kbd> · отдать заказ — <kbd>Enter</kbd></p>
+    </div>`;
   }
   // значки последствий: ▲/▼ × сила (как в окне события основной игры)
   const FXN = { rub: ['₽', 'Деньги'], hp: ['❤️', 'Силы'], mood: ['🙂', 'Настроение'], rep: ['👔', 'Начальник'], skill: ['⭐', 'Навык'], rel: ['🤝', 'Отношения'] };
@@ -457,8 +515,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (hadOv && !p.cards.length && !$('#proOv .pro-card')) { const o = $('#proOv'); if (o) o.innerHTML = ''; ui.mode = null; }
     if (p.status !== 'run') { APP().save(); showFinal(); return; }
     if (p.cards.length) showCard();
-    // после сцены П1 — первая «Смена»; карточку закрываем: иначе она остаётся под окном смены и перехватывает нажатия
-    else if (p.m === 0 && p.stats.shifts === 0 && !ui.firstShift) { ui.firstShift = true; hideOv(); shiftOpen(true); }
+    // смену после карточки не запускаем вручную: её откроет цикл (BK.Prologue.dueShift) — расписание одно для всех
     APP().save();
   }
 
@@ -553,17 +610,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (o.dataset.h !== h) { o.innerHTML = h; o.dataset.h = h; }
   }
 
-  /* ---------------- мини-игра «Смена» ---------------- */
+  /* ---------------- мини-игра «Смена» ----------------
+     Смены приходят сами по расписанию (BK.Prologue.dueShift) — игрок их не выбирает. Полка — три ряда
+     по три позиции; на ПК каждая берётся своей клавишей (1-2-3 / Q-W-E / A-S-D), допродажа — Пробелом.
+     Подсказки клавиш (элементы data-kb) видны только при физической клавиатуре: класс .pro-kb на слое. */
   function mul(seed) { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   const FACES = ['🧔', '👩', '👨‍🦳', '👧', '🧑‍💼', '👵', '🧑‍🎓', '👩‍🦰', '👨', '👱‍♀️'];
-  function shiftOpen(first) {
-    const p = Pp(), why = PR().shiftWhy(p); if (why) { APP().toast('Смена', why, 'warn'); sfx('deny'); return; }
+  // auto — смена пришла сама (расписание): пропустить её нельзя, поэтому «Не сейчас» не показываем
+  function shiftOpen(auto) {
+    const p = Pp(), why = PR().shiftWhy(p);
+    if (why) { if (!auto) { APP().toast('Смена', why, 'warn'); sfx('deny'); } return; }
     if (ui.mode === 'shift' && ui.sh) return;   // уже идёт — второе окно не открываем
     hideOv();                                    // карточка и меню не должны оставаться под окном смены
     ui.menu = false; const mm = $('#proMenu'); if (mm) mm.remove();
-    const plan = PR().shiftPlan(p);
+    const plan = PR().shiftPlan(p), first = PR().shiftsDone(p) === 0;
     ui.mode = 'shift';
-    ui.sh = { plan, rnd: mul(plan.seed), state: 'intro', t: 0, guests: [], next: 0, tray: [], served: 0, errors: 0, upsells: 0, lost: 0, total: 0, tips: 0, id: 0, first, msg: null, tired: p.flags.tired === p.m - 1 || p.flags.tired === p.m };
+    ui.sh = { plan, rnd: mul(plan.seed), state: 'intro', t: 0, guests: [], next: 0, tray: [], served: 0, errors: 0, upsells: 0, lost: 0, total: 0, tips: 0, id: 0, first, auto: !!auto, msg: null, tired: !!plan.tired };
+    if (auto) play('win');                       // «смена пришла» — звук окна (один раз на смену)
     shiftRender();
   }
   const itemById = (id) => PR().ITEMS.find((x) => x.id === id);
@@ -603,10 +666,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sh = ui.sh, p = Pp(); if (!sh) return;
     let h;
     if (sh.state === 'intro') {
-      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : 'Смена в «Калаче»'}</h2>
+      h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-intro">${PX() ? '<div class="sh-scene" id="shScene"></div>' : '<span class="sh-big" aria-hidden="true">☕</span>'}<h2 id="shT">${sh.first ? 'Первая смена' : sh.auto ? 'Смена пришла сама' : 'Смена в «Калаче»'}</h2>
+        ${sh.auto ? '<p class="pro-note">Бариста не выбирает, когда работать: смена пришла сама, и пропустить её нельзя.</p>' : ''}
         <ol class="sh-how"><li>Гость показывает заказ — нажмите нужные позиции.</li><li>«Отдать заказ» — если всё верно, будут чаевые.</li><li>«Предложить к заказу» — допродажа: чаевые и навык продаж.</li><li>В час пик очередь растёт, а терпение гостей короче.</li></ol>
-        ${sh.tired ? '<p class="pro-note">Вы не выспались после ночной смены — гости покажутся нетерпеливее.</p>' : ''}
-        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftGo">Начать смену · ${sh.plan.sec} с</button><button type="button" class="btn block" data-pa="shiftCancel">Не сейчас</button></div></div></div>`;
+        ${sh.tired ? '<p class="pro-note">Вы не выспались: гости покажутся нетерпеливее.</p>' : ''}
+        <p class="sh-keys" data-kb>Полка — три ряда по три позиции. Продукт: <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> — верхний ряд, <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> — средний, <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> — нижний. Допродажа — <kbd>Пробел</kbd>, отдать заказ — <kbd>Enter</kbd>, убрать с подноса — <kbd>Backspace</kbd>.</p>
+        <div class="pf-btns"><button type="button" class="btn primary block pro-big" data-pa="shiftGo">Начать смену · ${sh.plan.sec} с</button>${sh.auto ? '' : '<button type="button" class="btn block" data-pa="shiftCancel">Не сейчас</button>'}</div></div></div>`;
     } else if (sh.state === 'play') {
       const g = sh.guests[0];
       const q = PX() ? sh.guests.map((x, i) => `<span class="sh-g${i === 0 ? ' front' : ''}" id="shg${x.id}" role="img" aria-label="Гость ${i + 1}"></span>`).join('')
@@ -617,9 +682,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="sh-top"><div class="sh-tb"><i id="shTime" style="width:${(100 - sh.t / sh.plan.sec * 100).toFixed(1)}%"></i></div><span class="sh-rush" id="shRush" hidden>Час пик!</span>
           <span class="sh-sc"><span title="Обслужено">✅ ${sh.served}</span><span title="Ошибки">❌ ${sh.errors}</span><span title="Ушли">😠 ${sh.lost}</span><b title="Чаевые (примерно)">${fm(sh.tips)}</b></span><button type="button" class="btn sm" data-pa="shiftEnd">Закончить</button></div>
         ${PX() ? `<div class="sh-scene" id="shScene"></div><div class="sh-queue sr" aria-label="Очередь: ${sh.guests.length}">${q}</div>` : `<div class="sh-queue" aria-label="Очередь: ${sh.guests.length}">${q || '<span class="sh-empty">Пока никого — протрите стойку</span>'}</div>`}
-        <div class="sh-order">${g ? `<div class="sh-bub">${g.note ? `<span class="sh-note">${esc(g.note)}</span>` : ''}<span class="sh-ol">${order}</span></div>${canUp ? `<button type="button" class="btn sh-upb" data-pa="shiftUp">🥐 Предложить к заказу</button>` : ''}` : ''}<span class="sh-msg" id="shMsg" aria-live="polite"></span></div>
-        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itIc(id)}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ</button></div>
-        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}">${itIc(x.id)}<small>${esc(x.name)}</small><kbd>${i + 1}</kbd></button>`).join('')}</div></div></div>`;
+        <div class="sh-order">${g ? `<div class="sh-bub">${g.note ? `<span class="sh-note">${esc(g.note)}</span>` : ''}<span class="sh-ol">${order}</span></div>${canUp ? `<button type="button" class="btn sh-upb" data-pa="shiftUp">🥐 Предложить к заказу<kbd data-kb>Пробел</kbd></button>` : ''}` : ''}<span class="sh-msg" id="shMsg" aria-live="polite"></span></div>
+        <div class="sh-tray" aria-label="Поднос">${sh.tray.length ? sh.tray.map((id, i) => `<button type="button" class="sh-ti" data-pa="shiftTray" data-v="${i}" title="Убрать с подноса" aria-label="Убрать ${esc(itemById(id).name)}">${itIc(id)}</button>`).join('') : '<span class="sh-empty">Поднос пуст</span>'}<button type="button" class="btn primary sh-serve" data-pa="shiftServe" ${g && sh.tray.length ? '' : 'disabled'}>Отдать заказ<kbd data-kb>Enter</kbd></button></div>
+        <div class="sh-items">${sh.plan.items.map((x, i) => `<button type="button" class="sh-it ${x.cat}" data-pa="shiftItem" data-v="${x.id}" aria-label="${esc(x.name)}${hasKb() ? `, клавиша ${esc((sh.plan.keys || [])[i] || '')}` : ''}">${itIc(x.id)}<small>${esc(x.name)}</small><kbd data-kb>${esc((sh.plan.keys || [])[i] || '')}</kbd></button>`).join('')}</div></div></div>`;
     } else {
       const r = sh.result, st = r.stars;
       h = `<div class="pro-sh" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="sh-in sh-res"><span class="sh-stars" aria-label="Оценка ${st} из 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= st ? 'on' : ''}" style="animation-delay:${i * 0.12}s">★</i>`).join('')}</span>
@@ -653,8 +718,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ui.pxShift.attach(slot);
   }
   function shiftItem(id) { const sh = ui.sh; if (!sh || sh.state !== 'play') return; if (sh.tray.length >= 4) { flash('Поднос полон', 'dn'); play('deny'); return; } sh.tray.push(id); play('tap'); shiftRender(); }
+  // позиция полки по клавише: берёт продукт так же, как клик; пустая позиция — понятный отказ, а не молчание
+  function shiftCell(i) {
+    const sh = ui.sh; if (!sh || sh.state !== 'play') return;
+    const x = sh.plan.items[i];
+    if (!x) { flash('Здесь ничего нет', 'dn'); play('deny'); return; }
+    shiftItem(x.id);
+  }
   function shiftServe() {
-    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || !sh.tray.length) return;
+    const sh = ui.sh, g = sh && sh.guests[0];
+    if (!g || !sh.tray.length) { flash(g ? 'Поднос пуст' : 'Гостей нет', 'dn'); play('deny'); return; }
     const a = sh.tray.slice().sort().join(), b = g.order.slice().sort().join();
     if (a === b) {
       sh.served++; if (g.up != null) sh.upsells++;
@@ -667,7 +740,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     shiftRender();
   }
   function shiftUp() {
-    const sh = ui.sh, g = sh && sh.guests[0]; if (!g || g.asked) return;
+    const sh = ui.sh, g = sh && sh.guests[0];
+    if (!g) { flash('Гостей нет', 'dn'); play('deny'); return; }
+    if (g.asked) { flash('Этому гостю уже предлагали', 'dn'); play('deny'); return; }
     g.asked = true;
     if (sh.rnd() < sh.plan.upsell) {
       const bake = sh.plan.items.filter((x) => x.cat === 'bake' && !g.order.includes(x.id));
@@ -731,8 +806,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'fromDepYes': { const r = res(PR().fromDep(s)); if (r && r.ok) play('coin'); break; }
       case 'openOwn': { const r = PR().openOwn(s); if (r.ok) { play('fanfare'); showCard(); } break; }
       case 'choose': choose(+v); break;
-      case 'shift': shiftOpen(false); break;
-      case 'shiftGo': if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; play('tap'); play('win'); shiftRender(); } break;
+      case 'shift': shiftOpen(true); break;   // «встать за стойку»: смена уже пришла сама (кнопка только когда она ждёт)
+      case 'shiftGo': startShift(); break;
       case 'shiftCancel': { const el = $('#proSh'); if (el) el.remove(); ui.sh = null; ui.mode = null; play('win', { down: 1 }); break; }
       case 'shiftItem': shiftItem(v); break;
       case 'shiftTray': if (ui.sh) { ui.sh.tray.splice(+v, 1); play('click'); shiftRender(); } break;
@@ -747,23 +822,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
       default: break;
     }
   }
-  // клавиатура: пробел — пауза, 1/2 — скорость; в «Смене» 1–8 — позиции, Enter — отдать, Backspace — убрать
+  // клавиатура (ПК): пробел — пауза, 1/2 — скорость; в «Смене» полка берётся 1-2-3 / Q-W-E / A-S-D,
+  // допродажа — пробел, Enter — отдать заказ, Backspace — убрать с подноса. Клавиши по e.code:
+  // на русской раскладке e.key для Q/W/E/A/S/D — «йцуфыв». В поле ввода и при удержании — не перехватываем.
   window.addEventListener('keydown', (e) => {
     if (!ui.open) return;
-    const tg = e.target && e.target.tagName;
-    if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT' || e.ctrlKey || e.metaKey || e.altKey) return;
-    e.stopPropagation(); // основной игре эти клавиши сейчас не нужны
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (inField(e)) return;                 // фокус в текстовом поле — клавиши смены и пролога не наши
+    e.stopPropagation();                    // основной игре эти клавиши сейчас не нужны
     const sh = ui.sh;
-    if (ui.mode === 'shift' && sh && sh.state === 'play') {
-      const n = +e.key; if (n >= 1 && n <= sh.plan.items.length) { shiftItem(sh.plan.items[n - 1].id); e.preventDefault(); return; }
-      if (e.key === 'Enter') { shiftServe(); e.preventDefault(); return; }
-      if (e.key === 'Backspace') { sh.tray.pop(); shiftRender(); e.preventDefault(); return; }
+    if (ui.mode === 'shift' && sh) {
+      if (sh.state === 'intro') {           // смену всё равно не пропустить: Enter/пробел — начать
+        if (e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) startShift(); }
+        return;
+      }
+      if (sh.state === 'res') {             // итог смены — Enter/пробел закрывают, как кнопка «Готово»
+        if (e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) shiftClose(); }
+        return;
+      }
+      if (sh.state !== 'play') return;
+      if (e.repeat) { e.preventDefault(); return; }   // удержание клавиши не должно «залипать» и копить поднос
+      const i = SHELF_KEY[e.code];
+      if (i != null) { e.preventDefault(); shiftCell(i); return; }
+      if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); shiftUp(); return; }   // отдельная клавиша допродажи
+      if (e.key === 'Enter') { e.preventDefault(); shiftServe(); return; }
+      if (e.key === 'Backspace') { e.preventDefault(); if (sh.tray.length) { sh.tray.pop(); shiftRender(); } else { flash('Поднос пуст', 'dn'); play('deny'); } return; }
       return;
     }
-    if (e.code === 'Space' && !ui.mode) { e.preventDefault(); if (ui.speed) { ui.prev = ui.speed; ui.speed = 0; } else ui.speed = ui.prev || 1; ui.dirty = true; render(true); }
-    else if (e.key === '1' && !ui.mode) { ui.speed = 1; render(true); } else if ((e.key === '2' || e.key === '3') && !ui.mode) { ui.speed = 3; render(true); }
+    if (ui.mode) return;                                                                  // карточка и финал: клавиши пролога ждут
+    if (e.code === 'Space') { e.preventDefault(); if (ui.speed) { ui.prev = ui.speed; ui.speed = 0; } else ui.speed = ui.prev || 1; ui.dirty = true; render(true); }
+    else if (e.key === '1') { ui.speed = 1; render(true); } else if ((e.key === '2' || e.key === '3')) { ui.speed = 3; render(true); }
     else if (e.key === 'Escape' && ui.menu) { ui.menu = false; const m = $('#proMenu'); if (m) m.remove(); }
   }, true);
+  function startShift() { if (ui.sh) { ui.sh.state = 'play'; ui.sh.next = 0.2; play('tap'); play('win'); shiftRender(); } }
 
   BK.PrologueUI = { startOpt, bindStart, picked, begin, active, resume, open, close, toMain, render, get ui() { return ui; }, shiftOpen };
 })();

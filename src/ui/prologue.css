@@ -98,6 +98,24 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 .pro-shiftbtn { margin-top: 12px; }
 .pro-shiftbtn.ready { animation: pro-pulse 2.2s ease-in-out infinite; }
 @keyframes pro-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--crust) 45%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+/* расписание смен: смены приходят сами, игрок их не выбирает (src/prologue.js — SHIFT_AT) */
+.pro-shift { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); display: flex; flex-direction: column; gap: 7px; }
+.ps-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.ps-t { font-weight: 600; }
+.ps-c { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+.ps-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.ps-dots i { width: 22px; height: 8px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); }
+.ps-dots i.on { background: var(--good); border-color: var(--good); }
+.ps-dots i.now { background: var(--crust); border-color: var(--crust); animation: pro-blink 1.4s ease-in-out infinite; }
+.ps-w { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.ps-k { margin: 0; font-size: 12px; color: var(--ink-2); line-height: 1.7; }
+.ps-k kbd, .sh-keys kbd { margin: 0 1px; }
+/* подсказки клавиш: только там, где есть физическая клавиатура — класс .pro-kb ставит src/ui/prologue.js
+   (нет клавиатуры — на телефоне и планшете — подсказок нет совсем, играют касаниями) */
+.pro [data-kb] { display: none; }
+.pro.pro-kb [data-kb] { display: inline-flex; }
+.pro.pro-kb p[data-kb] { display: block; }
+.pro kbd { font-family: var(--f-mono); font-size: 11px; line-height: 1; padding: 2px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 5px; background: var(--surface); color: var(--ink-2); }
 .pro-ms { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .pro-m { display: grid; grid-template-columns: 24px 96px minmax(0, 1fr) 26px; align-items: center; gap: 8px; font-size: 13.5px; }
 .pm-i { font-size: 17px; text-align: center; } .pm-n { color: var(--ink-2); } .pm-f { font-size: 20px; text-align: center; }
@@ -232,6 +250,7 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 .sh-big { font-size: 60px; line-height: 1; }
 .sh-in h2 { font-family: var(--f-display); font-size: 22px; font-weight: 700; margin: 4px 0; }
 .sh-how { text-align: left; margin: 6px 0; padding-left: 20px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.sh-keys { text-align: left; margin: 4px 0; padding: 8px 10px; font-size: 12.5px; line-height: 1.8; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
 .sh-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .sh-tb { flex: 1 1 160px; height: 12px; border-radius: 99px; background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; }
 .sh-tb i { display: block; height: 100%; background: var(--river); border-radius: 99px; }
@@ -254,19 +273,20 @@ html.pro-on, html.pro-on body { overflow: hidden; }
 .sh-oi { display: flex; flex-direction: column; align-items: center; font-size: 30px; line-height: 1.1; }
 .sh-oi small { font-size: 11px; color: var(--ink-2); }
 .sh-oi.up { animation: pro-bump .5s ease; } .sh-oi.up small { color: var(--good-t); font-weight: 700; }
-.sh-upb { min-height: 44px; border-radius: 12px; }
+.sh-upb { min-height: 44px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .sh-msg { position: absolute; right: 0; top: 0; font-family: var(--f-display); font-weight: 700; font-size: 15px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .sh-msg.show { opacity: 1; animation: pro-up 1.1s ease-out forwards; }
 .sh-msg.up { color: var(--good-t); } .sh-msg.dn { color: var(--bad-t); }
 .sh-tray { display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 8px 10px; background: var(--surface); border: 1.5px dashed var(--line-2); border-radius: 16px; flex-wrap: wrap; }
 .sh-ti { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); font-size: 26px; cursor: pointer; display: grid; place-items: center; animation: pro-pop .2s ease; }
-.sh-serve { margin-left: auto; min-height: 48px; padding: 10px 16px; font-size: 15px; font-weight: 600; }
-.sh-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.sh-serve { margin-left: auto; min-height: 48px; padding: 10px 16px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+/* полка: три ряда по три позиции — порядок позиций и клавиши задаёт src/prologue.js (SHELF_KEYS) */
+.sh-items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .sh-it { position: relative; font: inherit; color: var(--ink); min-height: 76px; border-radius: 16px; border: 1.5px solid var(--line-2); background: var(--surface); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 30px; line-height: 1.1; touch-action: manipulation; }
 .sh-it small { font-size: 12px; color: var(--ink-2); }
 .sh-it.coffee { background: color-mix(in srgb, var(--rye) 10%, var(--surface)); }
 .sh-it.bake { background: color-mix(in srgb, var(--crust-2) 12%, var(--surface)); }
-.sh-it kbd { position: absolute; top: 5px; left: 7px; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); }
+.sh-it kbd { position: absolute; top: 5px; left: 7px; }
 .sh-it:hover { border-color: var(--crust); }
 .sh-stars { font-size: 42px; display: flex; justify-content: center; gap: 4px; }
 .sh-stars i { font-style: normal; color: var(--line-2); animation: pro-pop .4s ease both; }
@@ -318,7 +338,7 @@ html.pro-on, html.pro-on body { overflow: hidden; }
   .pro-ovbg { padding: 10px; }
   .pf-r { grid-template-columns: 20px minmax(0, 1fr) 60px auto; }
   .sh-in { padding: 10px 12px 18px; gap: 10px; }
-  .sh-items { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .sh-items { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .sh-it { min-height: 68px; font-size: 26px; border-radius: 14px; }
   .sh-it small { font-size: 11px; }
   .sh-queue { gap: 6px; padding: 8px; min-height: 70px; }

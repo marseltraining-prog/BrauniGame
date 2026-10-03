@@ -8,7 +8,10 @@
        job 0..2, jobM, stazh, rep, hp, mood, sk: {sales, coffee, people}, cash, box, dep, depInt,
        home, food, extra, saveRate, study, done{}, payK, rentK, cut, sickNow, fired, wantsCd{}, sale, loans[], inv[],
        rel: {rashid, gulya, oleg, elvira, family, semyon} (−100…100, как S.story.rel), sf (флаги сюжета, как S.story.f), sm (стили),
-       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift, earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+       shares[], seen{}, slog[], flags{}, cards[], evAt[], shift (последний итог смены), earned{}, spent{}, mo, hist[], feed[], fx[], stats{}, won, carry }
+   Мини-игра «Смена» идёт по расписанию (shiftAt/dueShift): смены приходят сами 5–10 раз за пролог, игрок их не выбирает
+   и не может пропустить (счётчик — stats.shifts, он же в сохранении). Полка — три ряда по три позиции (SHELF_KEYS).
+   Числа расписания — SHIFT_AT (место в BK.CFG.PROLOGUE, как остальные числа пролога).
    Сюжетные решения пролога копируются в S.story по схеме docs/story.md §4.5 (syncStory) — их прочитает будущий сюжетный модуль.
    Свой ГСЧ (S.prologue.rng, от зерна игры): основной поток случайностей игры не сдвигается.
    Переход в основную игру — finish()/applyCarry(): бонус к капиталу (≤ +15 %), навыки игрока (S.player.skills, система тренеров),
@@ -707,21 +710,57 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return note || null;
   }
   // меню стойки: чем выше должность и навык кофе, тем больше позиций
-  const ITEMS = [
+  /* ---------------- мини-игра «Смена» ----------------
+     Полка — три ряда по три позиции (ITEMS): у каждой позиции своя клавиша на ПК
+     (верхний ряд 1-2-3, средний Q-W-E, нижний A-S-D) — порядок ITEMS и есть порядок полки. */
+  const SHELF_KEYS = ['1', '2', '3', 'Q', 'W', 'E', 'A', 'S', 'D'];  const ITEMS = [
     { id: 'esp', name: 'Американо', icon: '☕', cat: 'coffee' },
     { id: 'cap', name: 'Капучино', icon: '🥛', cat: 'coffee' },
     { id: 'lat', name: 'Латте', icon: '🍶', cat: 'coffee' },
-    { id: 'tea', name: 'Чай', icon: '🍵', cat: 'coffee' },
     { id: 'cro', name: 'Круассан', icon: '🥐', cat: 'bake' },
     { id: 'bun', name: 'Булочка', icon: '🥯', cat: 'bake' },
     { id: 'ech', name: 'Эчпочмак', icon: '🥟', cat: 'bake' },
+    { id: 'tea', name: 'Чай', icon: '🍵', cat: 'coffee' },
+    { id: 'cocoa', name: 'Какао', icon: '🍫', cat: 'coffee' },
     { id: 'chk', name: 'Чак-чак', icon: '🍯', cat: 'bake' },
   ];
-  function shiftPlan(P) {
-    const c = C(), n = P.job >= 1 || P.sk.coffee >= 30 ? 8 : 6, vm = V2('shiftMods', P) || { cloth: 0, pat: 0, speed: 1 };
-    const items = ITEMS.slice(0, 4).slice(0, n >= 8 ? 4 : 3).concat(ITEMS.slice(4, n >= 8 ? 8 : 7));
-    return { sec: c.SHIFT_SEC, items, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + (vm.pat || 0)), upsell: 0.35 + P.sk.sales / 250 - (vm.cloth || 0), speed: vm.speed || 1, v2: vm };
+  /* Расписание смен (задание владельца, docs/story-v2.md): смены приходят САМИ, 5–10 раз за пролог.
+     Игрок их не выбирает и не может пропустить — может только оказаться не готовым.
+     Месяцы пролога (0 — февраль первого года): промежутки растут вместе с должностью, а после 26-го месяца
+     сюжетная жизнь бариста уже позади — дальше только своя точка или «жизнь в найме».
+     7 смен: быстрый игрок успевает 6 (≥5), долгая «жизнь в найме» — 7 (≤10). Числа — как CFG.PROLOGUE.SHIFT_AT. */
+  const SHIFT_AT_DEF = [0, 3, 6, 10, 14, 19, 25];
+  const shiftAt = () => {
+    const a = C().SHIFT_AT;
+    return (a && a.length) ? a : SHIFT_AT_DEF;
+  };
+  const shiftsDone = (P) => ((P && P.stats && P.stats.shifts) || 0) | 0;   // счётчик смен лежит в P.stats.shifts (и в сохранении)
+  const SHIFT_TIRED_HP = 45;   // «к смене не готов»: не выспались после ночной (сцена П5) или совсем без сил
+  function shiftTired(P) {
+    if (!P) return false;
+    const f = P.flags || {};
+    return f.tired === P.m - 1 || f.tired === P.m || P.hp < SHIFT_TIRED_HP;
   }
+  // смена, которая уже пришла и ждёт игрока: null — ждать нечего
+  function dueShift(P) {
+    if (!P || P.status !== 'run') return null;
+    const list = shiftAt(), n = shiftsDone(P);
+    if (n >= list.length) return null;      // расписание пройдено
+    if (P.fired > 0) return null;           // без работы смен не бывает — смена дождётся возвращения
+    if (P.cards.length) return null;        // сначала решение по карточке
+    if (P.m < list[n]) return null;         // ещё не время
+    return { n: n + 1, all: list.length, month: list[n], late: P.m > list[n], first: n === 0, tired: shiftTired(P) };
+  }
+  function shiftWhy(P) {
+    if (!P || P.status !== 'run') return 'Пролог окончен';
+    if (P.fired > 0) return 'Сейчас вы без работы';
+    if (P.cards.length) return 'Сначала решите, что делать';
+    if (!dueShift(P)) return shiftsDone(P) >= shiftAt().length ? 'Смены пролога уже прошли' : 'Эта смена ещё не пришла';
+    return null;
+  }
+  function shiftPlan(P) {
+    const c = C();
+    return { sec: c.SHIFT_SEC, items: ITEMS.slice(0, 9), keys: SHELF_KEYS, seed: (P.seed ^ (P.m * 7919)) | 0, maxItems: P.sk.coffee >= 40 ? 3 : 2, patience: Math.max(5, 11 + P.sk.people / 12 + (vm.pat || 0)), upsell: 0.35 + P.sk.sales / 250, tired: shiftTired(P) };  }
   // итог смены: stats = { served, errors, upsells, lost, total }
   function shiftResult(S, st) {
     const c = C(), P = S.prologue;
@@ -739,20 +778,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.mood = clamp(P.mood + mood, 0, 100);
     P.hp = clamp(P.hp - 2, 0, 100);
     earn(P, tips, 'tips');
-    P.shift = { m: P.m, stars, tips, served, errors, ups, lost };
-    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)
-    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
+    // номер смены в расписании — по счётчику итогов; сам P.shift хранит только последний итог (его читает интерфейс)
+    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost, n: shiftsDone(P) + 1 });
+    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost });   // счётчик смены (n) не теряем
+    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
     fx(P, 'rub', tips, 'shift');
     // тон смены — для звука интерфейса («Смена»): удачная (+) / провальная (−) / обычная
     P.lastShift = { stars: stars, tips: tips, tone: stars >= 4 ? 'pos' : stars <= 2 ? 'neg' : '' };
     feed(P, `Смена: ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}, чаевые ${fm(tips)}.`, stars >= 4 ? 'good' : stars <= 2 ? 'bad' : 'info');
     return { tips, stars, add, rep, mood };
   }
-  // для ботов: смена с качеством q (0..1) без интерфейса
+  // для ботов: смена с качеством q (0..1) без интерфейса; не выспались — играется хуже (как в интерфейсе)
   function simShift(P, q) {
     const vm = V2('shiftMods', P);
     if (vm) q = Math.max(0.15, q - (vm.cloth || 0));
-    const n = 14 + Math.round(10 * q + rr(P, -2, 2));
+    q = clamp(q * (shiftTired(P) ? 0.88 : 1), 0, 1);    const n = 14 + Math.round(10 * q + rr(P, -2, 2));
     const lost = Math.max(0, Math.round((1 - q) * 6 + rr(P, -1, 1)));
     return { served: Math.max(0, n - lost), errors: Math.max(0, Math.round((1 - q) * 5 + rr(P, -1, 1))), upsells: Math.max(0, Math.round(q * 5 + rr(P, -1, 1))), lost, total: n };
   }
@@ -870,9 +910,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Prologue = {
     HEROES, CARDS, POOL, ITEMS, SK_NAME, SPENT_NAME, TRAITS, MONTHS,
-    create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule,
-    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
+    create, start, on, advance, nextCard, card, choose, endMonth, openOwn, schedule, SHELF_KEYS,    savings, goal, promoCheck, payOf, homeCost, studyFee, monthCost, maxExtra, monthMs, age, year, monName, skAvg,
     setHome, setFood, setFun, setExtra, setSaveRate, startStudy, studyWhy, buyWant, wantWhy, wantPrice, toBox, fromBox, toDep, fromDep,
-    shiftWhy, shiftPlan, shiftResult, simShift, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
+    shiftWhy, shiftPlan, shiftResult, simShift, dueShift, shiftAt, shiftsDone, shiftTired, finish, carry, applyCarry, skip, summary, trait, wrap, syncStory, storyDefaults, hookSms, MENTOR, PERKS, _rnd: rnd,
   };
 })();
