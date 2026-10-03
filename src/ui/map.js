@@ -43,6 +43,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // сдвиги подписей районов, чтобы не садились на скопления точек (как в макете)
   const LABEL_DY = { center: -46, zaton: -46, dema: -48, nizh: -36, glumilino: -44, inors: -44 };
   const LABEL_DX = { zaton: -20, glumilino: 20 };
+  // цвет точки притяжения по типу соседства (id из BK.LANDMARKS и «промзона»)
+  const POI_COL = { station: 'var(--map-rail)', bc: 'var(--crust)', mall: 'var(--crust)', market: 'var(--warn)',
+    park: 'var(--good)', uni: 'var(--good)', fitness: 'var(--good)', theatre: 'var(--crust)', lux: 'var(--crust)',
+    clinic: 'var(--map-rail)', school: 'var(--map-label)', sleep: 'var(--map-label)', industrial: 'var(--ink-3)' };
 
   function staticLayer(opts) {
     const M = BK.MAP, id = opts.id;
@@ -58,9 +62,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // миллиметровка: один элемент с паттерном поверх земли и районов
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#${id}-g5)" pointer-events="none"/>`;
     s += `<path class="m-city-edge" d="${city}"/>`;
+    // магистрали и кольца (Москва и Петербург — данные в cities-big.js): тонкий штрих «чертежа»,
+    // реки рисуются поверх — мосты читаются сами
+    for (const rd of M.roads || []) {
+      s += `<path class="m-road${rd.ring ? ' ring' : ''}" style="fill:none;stroke:${rd.ring ? 'var(--map-edge)' : 'var(--map-label)'};stroke-width:${(rd.w || 1).toFixed(1)};opacity:${rd.ring ? '.5' : '.32'}" d="${smooth(rd.pts)}"/>`;
+    }
     for (const p of M.parks) s += `<circle class="m-park" cx="${p.x}" cy="${p.y}" r="${p.r}"/>`;
-    s += `<path class="m-rail" d="${smooth(M.rail)}"/>`;
-    // море / залив (сгенерированные города у воды)
+    for (const rl of (M.rails || (M.rail ? [M.rail] : []))) s += `<path class="m-rail" d="${smooth(rl)}"/>`;
+    // море / залив (сгенерированные города и Петербург у воды)
     for (const w of M.sea || []) s += `<path class="m-sea" d="${pathOf(w.pts, true)}"/><path class="m-coast" d="${pathOf(w.pts.slice(0, -2))}"/>`;
     // реки: мягкий «разлив» и русло
     if (M.rivers) {
@@ -70,10 +79,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
       s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
     }
+    // точки притяжения — соседство районов (вокзалы, БЦ, метро, рынки, вузы, парки)
+    for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
-      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (LABEL_DX[d.id] || 0)}" y="${d.y + (LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      // характер района мелкой строкой под названием (центр, спальный, промзона, частный сектор)
+      for (const d of BK.DISTRICTS) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
       for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
+      // подписи соседства — отдельным слоем: их показывает только приближение (см. render)
+      let pl = '';
+      for (const p of M.pois || []) if (p.lbl && p.name) pl += `<text class="m-small" x="${p.x + 5}" y="${p.y + 3.5}">${p.name}</text>`;
+      if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
     return s;
@@ -159,6 +176,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = el.querySelector('.routes'); this.gM = el.querySelector('.markers');
+    this.gPoi = el.querySelector('.m-poilabels'); // подписи соседства районов: видны только вблизи
     this.cityId = (BK.CITY && BK.CITY.id) || 'ufa'; this.cityMap = BK.MAP;
     this.wrap = el.parentNode;
     this.px = { w: 800, h: 800 };
@@ -398,6 +416,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;
+    this.gPoi = this.el.querySelector('.m-poilabels'); this.lastPoiL = null;
     this.invalidate();
     this.el.setAttribute('aria-label', `Карта: ${(BK.CITY && BK.CITY.name) || 'Уфа'}, точки сети`);
     this.anim = null; this.vb = { x: 0, y: 0, w: 1000, h: 1000 }; this.el.setAttribute('viewBox', '0 0 1000 1000');
@@ -414,6 +433,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lk = Math.max(0.45, Math.min(1.6, upp * 0.95)).toFixed(2);
     if (lk !== this.lastLk) { this.el.style.setProperty('--lk', lk); this.lastLk = lk; }
     const far = upp > 1.9; if (far !== this.lastFar) { this.el.classList.toggle('far', far); this.lastFar = far; }
+    // подписи соседства (вокзалы, БЦ, метро, рынки) показываем только при приближении — иначе карта рябит
+    if (this.gPoi) { const showPoi = this.vb.w <= 620; if (showPoi !== this.lastPoiL) { this.gPoi.style.display = showPoi ? '' : 'none'; this.lastPoiL = showPoi; } }
     const wrap = this.wrap;
     if (wrap) { const play = S.phase === 'play'; if (play !== this.lastPlay) { wrap.classList.toggle('m-setup', !play); this.lastPlay = play; } }
     if (wrap) { const cs = !!(E.citySetup && E.citySetup(S)); if (cs !== this.lastCs) { wrap.classList.toggle('m-citysetup', cs); this.lastCs = cs; } } // запуск нового города (Россия)

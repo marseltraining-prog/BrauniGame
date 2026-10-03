@@ -247,6 +247,93 @@ function storyPass() {
   }
 }
 
+/* ---- 6.5. проектные карты Москвы и Петербурга (PLAN.md этап 8.3) ----
+   Проверяем не «красивость», а то, что карта читается и данные районов полны:
+     • у каждого района есть характер, 3+ реальные улицы, соседство (lm) и точки притяжения,
+       размер помещения (sizeW) и все id соседей существуют в BK.LANDMARKS;
+     • районы не стоят в воде и не ближе 40 ед. друг к другу, контур города замкнут и все
+       районы и точки притяжения внутри него;
+     • id/arch/вес районов совпадают с прежним генератором (иначе старые сохранения
+       и партии не найдут район);
+     • «характер соседства» не сдвигает экономику города: взвешенное среднее множителей
+       соседей по районам совпадает со средним по всем BK.LANDMARKS (±6 %). */
+function polyDist(p, pts) {
+  let best = 1e9;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / L));
+    best = Math.min(best, Math.hypot(p.x - (a[0] + t * dx), p.y - (a[1] + t * dy)));
+  }
+  return best;
+}
+function inPoly(p, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+    if ((yi > p.y) !== (yj > p.y) && p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function cityMaps() {
+  console.log('\n# 6.5. Проектные карты Москвы и Петербурга (районы, улицы, соседство, схема)');
+  const LEGACY = { // как эти города строились генератором до этапа 8.3 (id, arch, вес)
+    moscow: [['center', 1.4], ['biz', 1.3], ['biz', 1.3], ['biz', 1.3], ['prestige', 1.2], ['prestige', 1.2], ['sleep', 1.1], ['sleep', 1.1], ['sleep', 1.1], ['far', 0.9], ['outskirts', 0.5], ['industrial', 0.5]],
+    spb: [['center', 1.4], ['biz', 1.3], ['biz', 1.3], ['prestige', 1.2], ['sleep', 1.1], ['sleep', 1.1], ['sleep', 1.1], ['sleep', 1.1], ['student', 1.2], ['far', 0.9], ['industrial', 0.5]],
+  };
+  const lmean = (ids, key) => {
+    const ls = ids.map((id) => BK.LANDMARKS.find((l) => l.id === id)).filter(Boolean);
+    return ls.length ? ls.reduce((a, l) => a + l[key], 0) / ls.length : 0;
+  };
+  const allMean = {};
+  for (const key of ['tr', 'solv', 'rent']) allMean[key] = BK.LANDMARKS.reduce((a, l) => a + l[key], 0) / BK.LANDMARKS.length;
+  for (const city of ['moscow', 'spb']) {
+    BK.useCity(city, 7919);
+    const M = BK.MAP, D = BK.DISTRICTS, legacy = LEGACY[city];
+    const badStreets = D.filter((d) => !d.streets || d.streets.length < 3).map((d) => d.name);
+    const noKind = D.filter((d) => !d.kind).map((d) => d.name);
+    const noLm = D.filter((d) => !d.lm || !d.lm.length).map((d) => d.name);
+    const badLm = [];
+    for (const d of D) for (const id of (d.lm || [])) if (!BK.LANDMARKS.some((l) => l.id === id)) badLm.push(d.name + ':' + id);
+    const noPois = D.filter((d) => !(M.pois || []).some((p) => p.d === d.id)).map((d) => d.name);
+    const badSize = D.filter((d) => { const w = d.sizeW; return !w || Math.abs(w.small + w.standard + w.large - 1) > 0.02; }).map((d) => d.name);
+    const mism = D.filter((d, i) => !legacy[i] || legacy[i][0] !== d.arch || Math.abs(legacy[i][1] - d.w) > 1e-6).map((d) => d.name + '/' + d.arch + '/' + d.w);
+    const idsOk = D.every((d, i) => d.id === city + i);
+    // вода: районы не в реке/море и не ближе 18 ед. к воде; точки притяжения — то же, но не ближе 6
+    const rv = (p) => Math.min(...(M.rivers || []).map((r) => polyDist(p, r.pts) - r.w / 2), 1e9);
+    const inWater = D.filter((d) => rv(d) < 18).map((d) => `${d.name} (${rv(d).toFixed(0)})`);
+    const poisBad = (M.pois || []).filter((p) => !inPoly(p, M.city) || rv(p) < 6).map((p) => p.name + '(' + p.x + ',' + p.y + ')');
+    const poisOut = (M.pois || []).filter((p) => !p.d || !D.some((d) => d.id === p.d)).length;
+    const dOut = D.filter((d) => !inPoly(d, M.city)).map((d) => d.name);
+    let near = 1e9, pair = '';
+    for (let i = 0; i < D.length; i++) for (let j = i + 1; j < D.length; j++) { const t = Math.hypot(D[i].x - D[j].x, D[i].y - D[j].y); if (t < near) { near = t; pair = D[i].name + '–' + D[j].name; } }
+    const groups = (M.prodGroups || []).flat();
+    const groupsOk = (M.prodGroups || []).length === 3 && D.every((d) => groups.indexOf(d.id) >= 0);
+    const roads = (M.roads || []).length, rails = (M.rails || []).length, rings = (M.roads || []).filter((r) => r.ring).length;
+    let wsum = 0, solvK = 0, trK = 0, rentK = 0;
+    for (const d of D) { wsum += d.w; solvK += d.w * lmean(d.lm, 'solv'); trK += d.w * lmean(d.lm, 'tr'); rentK += d.w * lmean(d.lm, 'rent'); }
+    console.log(`  ${BK.CITY.name}: районов ${D.length}, улиц у района ${med(D.map((d) => d.streets.length))}, точек притяжения ${(M.pois || []).length}`
+      + `, дорог и колец ${roads} (кольца: ${rings}), ж/д линий ${rails}, рек ${(M.rivers || []).length}, парков ${M.parks.length}`);
+    console.log(`    соседство: solv ×${(solvK / wsum).toFixed(3)} (эталон ×${allMean.solv.toFixed(3)}), tr ×${(trK / wsum).toFixed(3)} (${allMean.tr.toFixed(3)}), rent ×${(rentK / wsum).toFixed(3)} (${allMean.rent.toFixed(3)})`);
+    console.log('    ' + D.map((d) => `${d.name} [${d.kind}]`).join('; '));
+    ok(idsOk && D.length === legacy.length, `${city}: id районов и их число прежние (старые сохранения находят район)`, D.map((d) => d.id).join(','));
+    ok(!mism.length, `${city}: arch и вес районов совпадают с прежней картой`, mism.join(', ') || 'все');
+    ok(!badStreets.length, `${city}: у каждого района не меньше 3 реальных улиц`, badStreets.join(', ') || `минимум ${Math.min(...D.map((d) => d.streets.length))}`);
+    ok(!noKind.length && !noLm.length && !badSize.length, `${city}: у каждого района есть характер, соседство (lm) и типичный размер помещения`, (noKind.concat(noLm, badSize).join(', ') || 'все 100 %'));
+    ok(!badLm.length, `${city}: все соседи районов есть в BK.LANDMARKS`, badLm.join(', ') || BK.LANDMARKS.length + ' видов');
+    ok(!noPois.length && !poisOut, `${city}: у каждого района есть точки притяжения (вокзалы, БЦ, метро, рынки, парки)`, noPois.join(', ') || `${(M.pois || []).length} точек`);
+    ok(!dOut.length && !inWater.length, `${city}: все районы внутри контура города и не в воде`, dOut.concat(inWater).join(', ') || `ближайшая вода ${Math.min(...D.map((d) => rv(d))).toFixed(0)} ед.`);
+    ok(near > 40, `${city}: районы не налезают друг на друга`, `ближайшая пара ${pair} — ${near.toFixed(0)} ед.`);
+    ok(!poisBad.length, `${city}: точки притяжения внутри города и не в воде`, poisBad.slice(0, 4).join(', ') || 'все');
+    ok(roads >= 4 && rails >= 1 && M.city.length >= 8 && (M.rivers || []).length >= 1, `${city}: на схеме есть магистрали и кольца, ж/д, контур и река`, `${roads} дорог, ${rails} ж/д, контур ${M.city.length} точек, ${(M.rivers || []).length} рек`);
+    ok(groupsOk, `${city}: группы районов для цехов покрывают все районы`, JSON.stringify(M.prodGroups));
+    ok(Math.abs(solvK / wsum - allMean.solv) < 0.06 && Math.abs(trK / wsum - allMean.tr) < 0.06 && Math.abs(rentK / wsum - allMean.rent) < 0.06,
+      `${city}: характер соседства не сдвигает экономику города (средние множители в пределах ±6 %)`,
+      `solv ${((solvK / wsum - allMean.solv) * 100).toFixed(1)} %, tr ${((trK / wsum - allMean.tr) * 100).toFixed(1)} %, rent ${((rentK / wsum - allMean.rent) * 100).toFixed(1)} %`);
+  }
+  // обычная игра после этих проверок — снова Уфа
+  BK.useCity(null, 7919);
+}
+
 /* ---- 6. темп и числа: Москва против Уфы, сюжет выключен (как канонические прогоны ботов) ---- */
 function oneRun(kind, i, scen, storyOn) {
   const m = run('good', i * 7919, kind === 'moscow' ? 'moscow' : null, scen, !!storyOn);
@@ -301,6 +388,7 @@ function cityOnlyPass() {
 starts();
 saveLoad();
 russiaHome();
+cityMaps();
 storyPass();
 const P = pacePass();
 const C = cityOnlyPass();

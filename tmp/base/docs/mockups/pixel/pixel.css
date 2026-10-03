@@ -1,0 +1,31 @@
+@import url('../vision/vision.css');
+
+/* Пиксельный слой поверх обычного интерфейса игры.
+   1 «пиксель» сцены = 3 CSS-пикселя (canvas 480×300 → 1440×900). */
+:root { --u: 3px; --pxo: #2a1a1c; --pxi: #fff4dd; --pxb: #fbf3e3; }
+:root[data-theme="dark"] { --pxo: #05070f; --pxi: #3a4466; --pxb: #141a2b; }
+
+canvas.scene { position: absolute; left: 0; top: 0; image-rendering: pixelated; display: block; }
+.stage { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+
+/* Пиксельная рамка: ступенчатые углы, двойной кант (тёмный + светлый) */
+.pxbox {
+  position: relative; background: var(--pxb);
+  clip-path: polygon(var(--u) 0, calc(100% - var(--u)) 0, calc(100% - var(--u)) var(--u), 100% var(--u), 100% calc(100% - var(--u)), calc(100% - var(--u)) calc(100% - var(--u)), calc(100% - var(--u)) 100%, var(--u) 100%, var(--u) calc(100% - var(--u)), 0 calc(100% - var(--u)), 0 var(--u), var(--u) var(--u));
+  box-shadow: inset 0 0 0 var(--u) var(--pxo), inset 0 0 0 calc(var(--u) * 2) var(--pxi);
+}
+.pxshadow { filter: drop-shadow(0 var(--u) 0 rgba(20, 10, 10, .35)); }
+
+/* Заголовок сцены пиксельным шрифтом рисуется в canvas; подпись — обычным */
+.pxlabel canvas { display: block; image-rendering: pixelated; }
+
+/* Портрет в рамке */
+.pport { position: relative; flex: none; padding: calc(var(--u) * 2); }
+.pport canvas { display: block; image-rendering: pixelated; }
+
+/* Кнопки выбора в тёмной сцене — поверх стиля .opt из vision.css */
+.opt.px { border-radius: 0; border: 0; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: inset 0 0 0 1.5px var(--line-2); }
+.opt.px.on { box-shadow: inset 0 0 0 2px var(--crust), 0 0 0 3px color-mix(in srgb, var(--crust) 22%, transparent); }
+.opt.px .L { border-radius: 0; }
+.opt.px.lock { opacity: .55; box-shadow: inset 0 0 0 1.5px var(--line); background: transparent; }
+kbd.k { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; }

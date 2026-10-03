@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Корпорация — макет</title>
+<link rel="stylesheet" href="common.css">
+<style id="hud2css"></style>
+<style>
+  .app { display: grid; grid-template-rows: 64px 46px 1fr; height: 100vh; }
+  .app > .tabs { background: var(--surface); padding: 0 20px; }
+  .wrap { padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+  .head { display: flex; align-items: center; gap: 14px; }
+  .head h1 { font-family: var(--f-display); font-size: 19px; font-weight: 600; letter-spacing: -.005em; }
+  .head .muted { font-size: 13px; }
+  .head .muted b { font-family: var(--f-mono); color: var(--ink); font-weight: 600; }
+  .head .warnchip { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); }
+  .head .warnchip b { font-family: var(--f-mono); color: var(--ink); }
+  .head .warnchip i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+  .hq { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .dept { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 8px; display: grid; grid-template-columns: 34px 1fr; gap: 0 11px; position: relative; }
+  .dept.off { background: color-mix(in srgb, var(--surface) 55%, var(--paper)); border-style: dashed; border-color: var(--line-2); }
+  .dept.key { border: 1.5px solid var(--crust); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--crust) 12%, transparent); }
+  .dept .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--river-soft); color: var(--river-t); grid-row: span 3; }
+  .dept.off .ic { background: var(--surface-3); color: var(--ink-3); }
+  .dept.key .ic { background: var(--crust-soft); color: var(--crust-t); }
+  .dept .ic svg { width: 18px; height: 18px; }
+  .dept .nm { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+  .dept .st { margin-left: auto; font-size: 10.5px; font-weight: 600; border-radius: 9px; padding: 2px 7px; white-space: nowrap; }
+  .st.on { background: var(--good-soft); color: var(--good-t); }
+  .st.no { background: var(--surface-3); color: var(--ink-3); }
+  .st.lv { background: var(--river-soft); color: var(--river-t); }
+  .dept .ef { font-size: 12px; color: var(--ink-2); line-height: 1.35; margin-top: 2px; min-height: 32px; }
+  .dept .ft { display: flex; align-items: center; gap: 8px; margin-top: 5px; padding-top: 5px; min-height: 31px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--ink-3); }
+  .dept .ft .num { color: var(--ink); font-weight: 600; font-size: 11.5px; }
+  .dept .ft .btn { margin-left: auto; height: 26px; padding: 0 10px; font-size: 12px; }
+  .dept .pips { display: inline-flex; gap: 2px; margin-left: 2px; }
+  .dept .pips i { width: 10px; height: 4px; border-radius: 2px; background: var(--line-2); }
+  .dept .pips i.on { background: var(--river); }
+  .dept .flag { position: absolute; top: -9px; left: 12px; font-size: 10px; font-weight: 600; background: var(--crust); color: #fff; border-radius: 8px; padding: 2px 8px; font-family: var(--f-body); }
+
+  .bottom { display: grid; grid-template-columns: 404px minmax(0, 1fr); gap: 12px; min-height: 0; flex: 1; }
+  .card { padding: 13px 15px; }
+  .uni .lvl { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 10px; }
+  .uni .lvl .steps { display: flex; gap: 3px; }
+  .uni .lvl .steps i { height: 6px; width: 22px; border-radius: 3px; background: var(--surface-3); }
+  .uni .lvl .steps i.on { background: var(--river); }
+  .uni .lvl b { font-family: var(--f-mono); color: var(--ink); }
+  .stu { display: grid; grid-template-columns: 28px 1fr auto; gap: 1px 10px; align-items: center; padding: 5px 0; border-top: 1px solid var(--line); }
+  .stu:first-of-type { border-top: 0; }
+  .stu .av { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-family: var(--f-display); font-size: 9px; font-weight: 600; color: var(--ink-2); grid-row: span 2; }
+  .stu .who { font-size: 12.5px; font-weight: 600; }
+  .stu .who span { font-weight: 400; color: var(--ink-3); }
+  .stu .pr { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-3); }
+  .stu .pr .t { width: 54px; height: 5px; border-radius: 3px; background: var(--surface-3); position: relative; }
+  .stu .pr .t i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--river); }
+  .stu .eff { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; color: var(--good-t); }
+  .stu .pr { grid-column: 2 / 4; }
+  .stu.empty .av { background: transparent; border: 1.3px dashed var(--line-2); color: var(--ink-3); }
+  .prog { margin-top: 8px; }
+  .prog table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .prog th { text-align: left; font-size: 10.5px; font-weight: 500; color: var(--ink-3); padding: 5px 6px; background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .prog td { padding: 0 6px; height: 25px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .prog td.r, .prog th.r { text-align: right; }
+  .prog tr.lock td { color: var(--ink-3); }
+  .prog .eff { font-family: var(--f-mono); font-size: 11.5px; color: var(--good-t); font-weight: 600; }
+  .prog tr.lock .eff { color: var(--ink-3); font-weight: 500; }
+  .own { margin-top: 9px; display: flex; gap: 9px; align-items: center; font-size: 12px; color: var(--ink-2); background: var(--river-soft); border-radius: 8px; padding: 7px 10px; line-height: 1.35; }
+  .own svg { width: 16px; height: 16px; color: var(--river-t); flex: none; }
+  .own b { font-weight: 600; color: var(--ink); }
+
+  .table { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .table .top { display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; }
+  .table .top .fchip { height: 24px; padding: 0 9px; }
+  .table .top h3 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); margin-right: 6px; }
+  .fchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; font-weight: 500; border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+  .fchip b { font-family: var(--f-mono); font-size: 11px; }
+  .fchip.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .fchip.bad b { color: var(--bad-t); }
+  .fchip.warn b { color: var(--warn-t); }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cmp th { text-align: left; font-size: 11px; font-weight: 500; color: var(--ink-3); padding: 7px 7px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+  .cmp th.r, .cmp td.r { text-align: right; }
+  .cmp th.sorted { color: var(--ink); font-weight: 600; }
+  .cmp td { padding: 0 7px; height: 44px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .cmp td:first-child, .cmp th:first-child { padding-left: 16px; } .cmp td:last-child, .cmp th:last-child { padding-right: 16px; }
+  .cmp .city { display: flex; align-items: center; gap: 9px; }
+  .cmp .city .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--crust); color: #fff; display: grid; place-items: center; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4.5px var(--ring); }
+  .cmp .city .dot.launch { background: radial-gradient(circle, var(--surface) 0 7px, transparent 7.5px), repeating-linear-gradient(45deg, var(--crust-soft) 0 3px, var(--crust) 3px 5px); color: var(--ink); }
+  .cmp .city b { font-weight: 600; display: block; }
+  .cmp .city small { font-size: 11px; color: var(--ink-3); }
+  .cmp .dir { display: flex; align-items: center; gap: 8px; }
+  .cmp .dir .av { width: 24px; height: 24px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-family: var(--f-display); font-size: 8.5px; font-weight: 600; color: var(--ink-2); }
+  .cmp .dir .av.none { background: var(--bad-soft); color: var(--bad-t); font-family: var(--f-mono); font-size: 12px; }
+  .cmp .dir .nm { font-size: 12.5px; }
+  .cmp .dir .loy { display: flex; align-items: center; gap: 5px; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+  .cmp .dir .loy .t { width: 38px; height: 4px; border-radius: 2px; background: var(--surface-3); position: relative; }
+  .cmp .dir .loy .t i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+  .dev { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .dev .b { width: 64px; height: 8px; border-radius: 4px; background: var(--surface-3); position: relative; overflow: hidden; }
+  .dev .b:before { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--ink-3); }
+  .dev .b i { position: absolute; top: 0; bottom: 0; }
+  .dev .b .th { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-2); }
+  .dev .num { width: 50px; text-align: right; font-weight: 600; font-size: 12.5px; }
+  .rev { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .rev .num { font-size: 12.5px; }
+  .rt { display: inline-flex; align-items: center; gap: 4px; font-family: var(--f-mono); font-size: 12.5px; }
+  .rt svg { width: 13px; height: 13px; color: var(--crust-2); }
+  tr.hl td { background: color-mix(in srgb, var(--bad) 6%, var(--surface)); }
+  tr.hl td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+  tr.hw td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+  .act { color: var(--crust-t); font-size: 12px; font-weight: 600; }
+  .act.btn { color: var(--on-primary); height: 28px; }
+  .tnote { display: flex; gap: 16px; padding: 10px 16px; font-size: 11.5px; color: var(--ink-3); align-items: center; }
+  .tnote i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  tfoot td { background: var(--surface-2); font-weight: 600; height: 38px; border-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div id="tabs"></div>
+  <div class="wrap">
+    <div class="head"><h1>Корпорация</h1><span class="muted">Штаб в Уфе · отделов <b>5</b> из 8 · расходы <b>41,2 млн ₽/мес</b> — 4,7 % оборота</span>
+      <span class="warnchip"><i></i>Опционы и доли директоров: <b>3,1 %</b> прибыли · порог 15 %</span></div>
+    <div class="hq" id="hq"></div>
+    <div class="bottom">
+      <div class="card uni">
+        <div class="sec-h"><h3>Корпоративный университет</h3><span class="act">Записать →</span></div>
+        <div class="lvl"><span class="steps"><i class="on"></i><i class="on"></i><i></i></span><span>Уровень <b>2</b> из 3 · мест занято <b>3/4</b> · цены −30 %</span></div>
+        <div id="stu"></div>
+        <div class="prog"><table><thead><tr><th>Программа</th><th>Срок</th><th class="r">Цена</th><th class="r">Эффект</th></tr></thead><tbody id="prog"></tbody></table></div>
+        <div class="own"><span id="ownic"></span><span>Свой кандидат: <b>Регина Сафина</b>, наставник №17 в Уфе — готова в марте 2041</span></div>
+      </div>
+      <div class="card table">
+        <div class="top"><h3>Сравнение городов</h3>
+          <span class="fchip on">Все <b>6</b></span><span class="fchip bad">Убыточные <b>1</b></span><span class="fchip bad">Без директора <b>1</b></span><span class="fchip warn">Ниже прогноза <b>2</b></span>
+          <span class="muted" style="margin-left:auto;font-size:12px">12 мес.</span></div>
+        <table class="cmp">
+          <thead><tr><th>Город</th><th>Директор · лояльность</th><th class="r">Выручка, 12 мес.</th><th class="r sorted">На точку к прогнозу <span style="color:var(--crust-t)">▲</span></th><th class="r">Маржа</th><th>Рейтинг</th><th class="r">Текучка</th><th class="r">Что сделать</th></tr></thead>
+          <tbody id="tb"></tbody>
+          <tfoot><tr><td>Вся сеть · 112 точек</td><td class="muted" style="font-weight:500">5 директоров · в среднем 64</td><td class="r num">10,4 млрд</td><td class="r num">−0,4 %</td><td class="r num">14,0 %</td><td class="num">4,4</td><td class="r num">23 %</td><td></td></tr></tfoot>
+        </table>
+        <div class="tnote"><span><i style="background:var(--warn)"></i>ниже прогноза на 3 %+</span><span><i style="background:var(--bad)"></i>на 5 %+ — вероятны воровство, плохие места или слабый директор</span><span style="margin-left:auto">Сортировка — клик по заголовку</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script src="map.js"></script>
+<script src="russia.js"></script>
+<script>
+  document.getElementById('hud2css').textContent = RU.HUD2_CSS;
+  document.getElementById('hud').innerHTML = RU.HUD2();
+  document.getElementById('tabs').innerHTML = `<nav class="tabs">${['Корпорация', 'Города', 'Директора', 'Штаб', 'Отчёты', 'Журнал'].map((x, i) => `<span class="${i === 0 ? 'on' : ''}">${x}${x === 'Отчёты' ? '<em class="badge">3</em>' : ''}</span>`).join('')}</nav>`;
+  const I = {
+    cap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5M22 9v5"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>',
+    mega: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 10v4h4l8 5V5L7 10z"/><path d="M18.5 8.5a5 5 0 0 1 0 7"/></svg>',
+    columns: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 9l9-5 9 5zM5 9v9M10 9v9M14 9v9M19 9v9M3 20h18"/></svg>',
+  };
+  const pips = (n, of) => `<span class="pips">${Array.from({ length: of }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const HQ = [
+    ['key', IC.rub, 'Финансовый департамент', '<span class="st no">не открыт</span>', 'Отчёты без шума ±5 %, ловит «приукрашивание», кредит −0,5 п. п.', 'Открыть <span class="num">35 млн</span> · <span class="num">3,5 млн</span>/мес', '<span class="btn primary">Открыть</span>', 'Откроет Москву и Петербург'],
+    ['', IC.team, 'HR-департамент', '<span class="st on">работает</span>', '5 кандидатов вместо 3, хедхантер, переманивание −25 %', '<span class="num">3,5 млн</span>/мес · с марта 2039', ''],
+    ['', I.cap, 'Университет', `<span class="st lv">ур. 2 ${pips(2, 3)}</span>`, 'Все программы −30 %, 4 места, раз в год свой кандидат', '<span class="num">7,0 млн</span>/мес · ур. 3 — <span class="num">263 млн</span>', '<span class="btn">Улучшить</span>'],
+    ['', IC.guests, 'Закупки', '<span class="st on">работает</span>', 'Фудкост −1 % при 112 точках (−2 % со 200), мука дорожает мягче', '<span class="num">5,3 млн</span>/мес · окупился за 9 мес.', ''],
+    ['', IC.truck, 'Логистика', `<span class="st lv">ур. 2 ${pips(2, 2)}</span>`, 'Фабрика заморозки в Уфе снабжает Самару и Оренбург', '<span class="num">22,8 млн</span>/мес · фудкост там +3 %', ''],
+    ['off', I.mega, 'Бренд', '<span class="st no">не открыт</span>', 'Узнаваемость растёт ×1,5, новые города стартуют с +10 %', 'Открыть <span class="num">53 млн</span> · <span class="num">8,8 млн</span>/мес', '<span class="btn">Открыть</span>'],
+    ['', I.shield, 'Служба безопасности', '<span class="st on">работает</span>', 'Проверка директоров 10 %/мес, аудит дешевле вдвое', '<span class="num">2,6 млн</span>/мес · сигналов нет', ''],
+    ['off', I.columns, 'GR и юристы', '<span class="st no">не открыт</span>', 'Вход в город на 30 % быстрее, штрафы −30 %', 'Открыть <span class="num">26 млн</span> · <span class="num">2,6 млн</span>/мес', '<span class="btn">Открыть</span>'],
+  ];
+  document.getElementById('hq').innerHTML = HQ.map(([c, ic, nm, st, ef, ft, b, flag]) => `<div class="dept ${c}">${flag ? `<span class="flag">${flag}</span>` : ''}<span class="ic">${ic}</span><div class="nm">${nm}${st}</div><div class="ef">${ef}</div><div class="ft"><span>${ft}</span>${b}</div></div>`).join('');
+  const STU = [
+    ['ДВ', 'Дмитрий Воронцов', 'Челябинск', 'Лидерство и команда', 2, 3, 'Люди +10'],
+    ['ИЮ', 'Ильдар Юсупов', 'Стерлитамак', 'Финансы для директоров', 1, 3, 'Экономия +10'],
+    ['ЕК', 'Елена Кравцова', 'Оренбург', 'Стандарты бренда · вечер', 1, 1.5, '+0,1★'],
+  ];
+  document.getElementById('stu').innerHTML = STU.map(([a, n, c, p, d, of, e]) => `<div class="stu"><span class="av">${a}</span><span class="who">${n} <span>· ${c}</span></span><span class="eff">${e}</span><span class="pr"><span class="t"><i style="width:${d / of * 100}%"></i></span>${p} · ${String(d).replace('.', ',')} из ${String(of).replace('.', ',')} мес.</span></div>`).join('')
+;
+  const PR = [
+    ['Операционное управление', '3 мес.', '2,5 млн', 'Операции +10'], ['Финансы для директоров', '3 мес.', '2,5 млн', 'Экономия +10'],
+    ['Лидерство и команда', '3 мес.', '2,5 млн', 'Люди +10'], ['Развитие сети', '3 мес.', '3,1 млн', 'Рост +10'],
+    ['Стандарты бренда', '1 мес.', '1,2 млн', 'Рейтинг +0,1★'], ['Executive MBA (ур. 3)', '6 мес.', '26 млн', 'Грейд +1'],
+  ];
+  document.getElementById('prog').innerHTML = PR.map(([n, d, p, e], i) => `<tr class="${i === 5 ? 'lock' : ''}"><td>${i === 5 ? `<svg width="11" height="12" viewBox="-6 -8 12 16" style="vertical-align:-1px;margin-right:5px">${RU.LOCK('var(--ink-3)')}</svg>` : ''}${n}</td><td class="muted">${d}</td><td class="r num">${p}</td><td class="r"><span class="eff">${e}</span></td></tr>`).join('');
+  document.getElementById('ownic').innerHTML = IC.team;
+
+  const ring = (o) => o.launch ? 'var(--crust)' : o.profit < 0 ? 'var(--bad)' : o.profit / o.rev >= 0.15 ? 'var(--good)' : 'var(--warn)';
+  const NAME = { ufa: 'Уфа', kazan: 'Казань', chel: 'Челябинск', sterl: 'Стерлитамак', samara: 'Самара', oren: 'Оренбург' };
+  const SUB = { ufa: 'активный · с 2027', kazan: 'с апр. 2038', chel: 'с нояб. 2038', sterl: 'с июня 2037 · из цеха Уфы', samara: 'с мая 2039 · заморозка', oren: 'запуск 60 % · заморозка' };
+  const ACT = { sterl: ['Аудит', 1], samara: ['Назначить', 1], chel: ['Мотивация', 0], kazan: ['Ответить', 0], ufa: ['', 0], oren: ['Запуск', 0] };
+  const order = ['sterl', 'samara', 'chel', 'ufa', 'kazan', 'oren'];
+  const fmt = RU.fmt;
+  document.getElementById('tb').innerHTML = order.map((id) => {
+    const o = RU.OWN[id];
+    const loyC = o.loyal == null ? '' : o.loyal >= 60 ? 'var(--good)' : o.loyal >= 45 ? 'var(--warn)' : 'var(--bad)';
+    const dir = o.dir ? `<div class="dir"><span class="av">${o.dir}</span><div><div class="nm">${o.dirName}</div><div class="loy"><span class="t"><i style="width:${o.loyal}%;background:${loyC}"></i></span>${o.loyal} ${o.lt > 0 ? '<span class="up">▲</span>' : o.lt < 0 ? '<span class="down">▼</span>' : '<span>·</span>'}</div></div></div>`
+      : `<div class="dir"><span class="av none">!</span><div><div class="nm" style="color:var(--bad-t);font-weight:600">Нет директора</div><div class="loy">2-й месяц</div></div></div>`;
+    let dev;
+    if (o.dev == null) dev = `<span class="muted" style="font-size:12px">через 6 мес.</span>`;
+    else {
+      const w = Math.min(50, Math.abs(o.dev) / 6 * 50), col = o.dev <= -5 ? 'var(--bad)' : o.dev <= -3 ? 'var(--warn)' : o.dev < 0 ? 'var(--ink-3)' : 'var(--good)';
+      const bar = o.dev < 0 ? `<i style="right:50%;width:${w}%;background:${col}"></i>` : `<i style="left:50%;width:${w}%;background:${col}"></i>`;
+      dev = `<div class="dev"><span class="b">${bar}<span class="th" style="left:25%"></span><span class="th" style="left:8.3%"></span></span><span class="num ${o.dev <= -3 ? 'down' : o.dev > 0 ? 'up' : ''}">${o.dev > 0 ? '+' : ''}${fmt(o.dev)} %</span></div>`;
+    }
+    const m = o.profit / o.rev * 100;
+    const [a, p] = ACT[id];
+    return `<tr class="${id === 'sterl' ? 'hl' : id === 'samara' ? 'hw' : ''}">
+      <td><div class="city"><span class="dot ${o.launch ? 'launch' : ''}" style="--ring:${ring(o)}">${o.n}</span><div><b>${NAME[id]}</b><small>${SUB[id]}</small></div></div></td>
+      <td>${dir}</td>
+      <td class="r"><div class="rev">${MK.spark(o.hist, 46, 18, { last: ring(o) })}<span class="num">${o.rev >= 1 ? fmt(o.rev, 2) + ' млрд' : Math.round(o.rev * 1000) + ' млн'}</span></div></td>
+      <td class="r">${dev}</td>
+      <td class="r num ${m < 0 ? 'down' : ''}" style="font-weight:600">${o.launch ? '—' : fmt(m) + ' %'}</td>
+      <td><span class="rt">${IC.starFill}${fmt(o.rating)}</span></td>
+      <td class="r num ${o.churn >= 30 ? 'down' : ''}">${o.launch ? '—' : o.churn + ' %'}</td>
+      <td class="r">${a ? (p ? `<span class="btn primary act">${a}</span>` : `<span class="act">${a} →</span>`) : '<span class="muted" style="font-size:12px">—</span>'}</td></tr>`;
+  }).join('');
+</script>
+</body>
+</html>

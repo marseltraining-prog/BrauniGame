@@ -1,0 +1,19 @@
+/* Личные тренеры игрока (src/ui/trainers-ui.js) — WIP: базовые стили */
+.trn-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font: 600 11px var(--f-body); background: var(--crust-soft); color: var(--crust-t); vertical-align: middle; }
+.trn-dots { display: inline-flex; gap: 3px; } .trn-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .trn-dots i.on { background: var(--crust); }
+.trn-skills { display: flex; flex-wrap: wrap; gap: 6px; } .trn-chip svg, .trn-store h3 svg { width: 13px; height: 13px; } .trn-h { display: inline-flex; align-items: center; gap: 6px; }
+.trn-prog { display: flex; flex-direction: column; gap: 4px; } .trn-pl { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; } .trn-pl small { font-size: 11px; color: var(--ink-3); }
+.trn-area { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; } .trn-area.locked { opacity: .75; }
+.trn-ah { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.trn-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.trn-tier { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: 400 12px var(--f-body); cursor: pointer; min-width: 0; }
+.trn-tier:disabled { cursor: default; opacity: .6; } .trn-tier.done { background: var(--good-soft); opacity: 1; } .trn-tier.now { background: var(--crust-soft); opacity: 1; }
+.trn-tier .tl, .trn-tier .tw { font-size: 11px; color: var(--ink-3); } .trn-tier .tc { font-family: var(--f-mono); font-size: 11px; }
+.trn-load { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.trn-hint { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.trn-store .trn-hint { grid-template-columns: minmax(0, 1fr) auto; }
+.trn-hint .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); } .trn-hint .ic svg { width: 15px; height: 15px; }
+.trn-hint .tt { font-weight: 600; font-size: 13px; } .trn-hint .ds { font-size: 12px; color: var(--ink-2); } .trn-more { color: var(--ink-3); }
+.m-bdg.trn rect { fill: var(--crust); } .m-bdg-l { fill: none; stroke: #fff; stroke-width: 1.2; stroke-linecap: round; }
+@media (max-width: 560px) { .trn-tiers { grid-template-columns: 1fr; } .trn-hint { grid-template-columns: auto minmax(0, 1fr); } .trn-hint .btn { grid-column: 2; justify-self: start; } }
+.att .ic.trn { background: var(--crust-soft); color: var(--crust-t); }

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Стадия 4 — совет директоров и IPO</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: var(--paper); }
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 18px; padding: 18px; min-height: 0; }
+  .left { display: grid; grid-template-rows: 1fr 290px; gap: 16px; min-width: 0; min-height: 0; }
+  .card { box-shadow: var(--shadow); }
+  .room { position: relative; overflow: hidden; padding: 16px 20px; background: radial-gradient(700px 300px at 50% 55%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%), var(--surface); }
+  .room .sec-h h3 { color: var(--gold); }
+  .room svg.tbl { position: absolute; left: 52px; top: 0; }
+  .seat { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 130px; text-align: center; }
+  .seat b { font-size: 12.5px; font-weight: 600; }
+  .seat small { font-size: 10.5px; color: var(--ink-3); line-height: 1.2; }
+  .vote { font-size: 10.5px; font-weight: 600; border-radius: 10px; padding: 1px 8px; }
+  .vote.y { background: var(--good-soft); color: var(--good-t); }
+  .vote.n { background: var(--bad-soft); color: var(--bad-t); }
+  .vote.m { background: var(--warn-soft); color: var(--warn-t); }
+  .vote.me { background: var(--crust-soft); color: var(--crust-t); }
+  .chart { padding: 14px 18px 10px; position: relative; }
+  .chart svg { display: block; }
+  .chart text { font-family: var(--f-mono); font-size: 10.5px; fill: var(--ink-3); }
+  .chart .ms { font-family: var(--f-body); font-size: 11px; fill: var(--ink-2); }
+  .dec { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line-2); }
+  .dh { position: relative; padding: 18px 22px 14px; border-top: 4px solid var(--gold); background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent); }
+  .dh .kick { color: var(--gold); }
+  .dh h2 { font-family: var(--f-display); font-size: 24px; font-weight: 700; margin: 8px 0 6px; }
+  .dh p { font-size: 13.5px; color: var(--ink-2); max-width: 330px; }
+  .dh .stampx { position: absolute; right: 22px; top: 22px; transform: rotate(-9deg); color: var(--gold); }
+  .dh .stampx b { font-size: 22px; }
+  .db { padding: 6px 22px 0; display: flex; flex-direction: column; gap: 8px; }
+  .db .say .tx { font-size: 13.5px; }
+  .opt { padding: 9px 12px 10px; }
+  .opt .t { font-size: 13.5px; }
+  .opt .d { font-size: 12px; }
+  .share { padding: 10px 22px 0; }
+  .share .sb { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 6px 0 6px; }
+  .share .sb i { display: block; height: 100%; }
+  .share .lg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--ink-2); }
+  .share .lg span { display: inline-flex; gap: 5px; align-items: center; }
+  .share .lg i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+  .df { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding: 12px 22px 18px; }
+  .df .btn { height: 40px; padding: 0 22px; font-size: 14px; font-weight: 600; background: var(--gold); border-color: var(--gold); color: #1b1206; }
+  .df .note { font-size: 12px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <div class="left">
+      <div class="card room" id="room">
+        <div class="sec-h" style="position:relative;z-index:2"><h3>Совет директоров · 14 апреля 2046</h3><span class="muted">Уфа, ул. Ленина, 28 — второй этаж над первой точкой</span></div>
+        <svg class="tbl" id="tbl" width="760" height="470" viewBox="0 0 760 470"></svg>
+      </div>
+      <div class="card chart"><div class="sec-h"><h3>Капитализация холдинга</h3><span class="muted">оценка, млрд ₽ · 2031–2050</span></div><svg id="cap" width="826" height="230" viewBox="0 0 826 230"></svg></div>
+    </div>
+    <div class="card dec">
+      <div class="dh">
+        <div class="kick" id="kk"></div>
+        <h2>Выйти на биржу?</h2>
+        <p>Холдинг оценивают в 54–62 млрд ₽. Деньги рынка — это рывок за рубеж и вторая мельница. Цена — отчёт каждый квартал и чужие глаза в каждом решении.</p>
+        <div class="stampx"><div class="in"><b>IPO</b><small>ПРОЕКТ · 2046</small></div></div>
+      </div>
+      <div class="db">
+        <div class="say"><span id="ev"></span><div><div class="nm" style="color:var(--gold)">Эльвира<em>партнёр фонда «Уральская высота»</em></div><div class="bub tx">«Колокол звонит один раз. Потом каждый квартал звонит рынок — и спрашивает план. Я бы позвонила».</div></div></div>
+        <div id="opts"></div>
+      </div>
+      <div class="share"><span class="caps">Доли после выбора «А»</span><div class="sb"><i style="width:56%;background:var(--crust)"></i><i style="width:20%;background:var(--river)"></i><i style="width:20%;background:var(--gold)"></i><i style="width:4%;background:var(--good)"></i></div>
+        <div class="lg"><span><i style="background:var(--crust)"></i>вы 56 %</span><span><i style="background:var(--river)"></i>фонд 20 %</span><span><i style="background:var(--gold)"></i>биржа 20 %</span><span><i style="background:var(--good)"></i>команда 4 %</span></div></div>
+      <div style="padding:14px 22px 0;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--ink-2)" id="chg"></div>
+      <div class="df"><span class="note">Голосование: 3 за · 1 против · 1 думает</span><span class="btn">Выбрать «А»</span></div>
+    </div>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('hud').innerHTML = ART.hud({
+    brand: 'Холдинг «Тёплый угол»', sub: 'Хлебная карта', stage: 'Холдинг', date: '14 апреля 2046', speed: 0,
+    metrics: [
+      { l: 'Выручка, год', v: '47,0 млрд ₽', d: '▲ 18 %', dc: 'up' },
+      { l: 'EBITDA', v: '6,8 млрд ₽', d: 'маржа 14,5 %' },
+      { l: 'Ваша доля', v: '71 %', d: 'фонд 25 · команда 4' },
+    ],
+    goal: { l: 'Оценка холдинга', pct: 90, v: '54 млрд ₽', note: 'IPO от 60', ms: [50], w: 220 },
+  });
+  $('chg').innerHTML = '<span class="caps">Что изменится при «А»</span>' + [[IC.chart, 'план для рынка каждый квартал — провал даёт сцену «Акции упали»'], [IC.target, 'открывается выход за рубеж: Казахстан, Узбекистан'], [IC.book, 'у книги Семёна появится глава «Колокол»']].map(([i, t]) => '<div style="display:flex;gap:8px;align-items:center">' + i.replace('<svg', '<svg width="14" height="14" style="flex:none;color:var(--gold)"') + t + '</div>').join('');
+  $('kk').innerHTML = IC.bell + 'Развилка · финал «Колокол»';
+  $('ev').innerHTML = ART.portrait('elvira', 46, { ring: 'var(--gold)' });
+
+  // стол совета (вид сверху)
+  const INK = ART.INK;
+  let t = `<rect x="150" y="190" width="460" height="130" rx="65" fill="#4a3424" stroke="#2a1d14" stroke-width="2"/><rect x="164" y="204" width="432" height="102" rx="51" fill="none" stroke="#6b4a2e" stroke-width="1.2" opacity=".7"/>`;
+  // бумаги, чай, колокол
+  [[220, 230], [330, 272], [440, 230], [540, 272]].forEach(([x, y], i) => { t += `<rect x="${x - 16}" y="${y - 11}" width="32" height="22" rx="2" fill="#f3ede3" opacity=".9" transform="rotate(${i % 2 ? 6 : -5} ${x} ${y})"/><path d="M${x - 10} ${y - 4}h20M${x - 10} ${y + 1}h14M${x - 10} ${y + 6}h17" stroke="#9a8f7c" stroke-width="1"/>`; });
+  [[266, 272], [498, 232], [590, 262]].forEach(([x, y]) => { t += `<circle cx="${x}" cy="${y}" r="7.5" fill="#f4efe6" stroke="${INK}" stroke-width="1"/><circle cx="${x}" cy="${y}" r="4.6" fill="#b8612a" opacity=".7"/>`; });
+  t += `<g transform="translate(380,255)"><circle r="20" fill="var(--gold)" opacity=".18"/><path d="M-11,7 V-1 a11,11 0 0 1 22,0 V7 l3,4 h-28z" fill="var(--gold)" stroke="${INK}" stroke-width="1.3"/><circle cy="14" r="3" fill="var(--gold)" stroke="${INK}"/></g>`;
+  t += ART.pastry('loaf', 596, 300, .9);
+  $('tbl').innerHTML = t;
+  const seats = [
+    ['elvira', 'Эльвира', 'фонд · 25 %', 'y', 'за', 176, 48],
+    ['gulya', 'Гуля', 'производство · 2 %', 'm', 'думает', 316, 48],
+    ['aidar', 'Айдар', 'директор Уфы · 1 %', 'y', 'за', 456, 48],
+    ['hero', 'Вы', 'председатель · 71 %', 'me', 'решаете', 176, 334],
+    ['fund', 'Лев Маркович', 'независимый директор', 'y', 'за', 316, 334],
+    ['rashid', 'Рашид', 'почётный гость · чай', 'n', 'против', 456, 334],
+  ];
+  $('room').insertAdjacentHTML('beforeend', seats.map(([p, n, s, v, vt, x, y]) => `<div class="seat" style="left:${x + 52}px;top:${y}px">${ART.portrait(p, 64, { ring: v === 'me' ? 'var(--crust)' : null })}<b>${n}</b><small>${s}</small><span class="vote ${v}">${vt}</span></div>`).join('') +
+    `<div class="thought" style="left:612px;top:318px;font-size:11.5px">${IC.msg}«Хлеб на бирже не растёт»</div>`);
+
+  // капитализация
+  const pts = [[2031, 1.2], [2032, 2.1], [2033, 4.8], [2034, 6.2], [2035, 8.9], [2036, 13.4], [2037, 15.8], [2038, 19.6], [2039, 22.1], [2040, 26.5], [2041, 31.8], [2042, 35.2], [2043, 40.6], [2044, 44.9], [2045, 49.7], [2046, 54]];
+  const X = (y) => 40 + (y - 2031) * 39.6, Y = (v) => 200 - v * 1.9;
+  let c = '';
+  [0, 20, 40, 60, 80].forEach((v) => { c += `<path d="M40 ${Y(v)}H800" stroke="var(--line)" stroke-width="1"/><text x="32" y="${Y(v) + 4}" text-anchor="end">${v}</text>`; });
+  [2031, 2035, 2040, 2045, 2050].forEach((y) => { c += `<text x="${X(y)}" y="222" text-anchor="middle">${y}</text>`; });
+  const d = pts.map(([y, v], i) => (i ? 'L' : 'M') + X(y) + ',' + Y(v)).join('');
+  c += `<path d="${d}L${X(2046)},200L${X(2031)},200Z" fill="var(--crust)" opacity=".1"/><path d="${d}" stroke="var(--crust)" stroke-width="2.6" fill="none" stroke-linejoin="round"/>`;
+  // прогноз: IPO и без
+  c += `<path d="M${X(2046)},${Y(54)} C${X(2047)},${Y(62)} ${X(2049)},${Y(80)} ${X(2050)},${Y(92)} L${X(2050)},${Y(70)} C${X(2049)},${Y(66)} ${X(2047)},${Y(58)} ${X(2046)},${Y(54)}Z" fill="var(--gold)" opacity=".18"/>`;
+  c += `<path d="M${X(2046)},${Y(54)} C${X(2047)},${Y(60)} ${X(2049)},${Y(72)} ${X(2050)},${Y(80)}" stroke="var(--gold)" stroke-width="2" stroke-dasharray="5 4" fill="none"/>`;
+  c += `<path d="M${X(2046)},${Y(54)} C${X(2047)},${Y(57)} ${X(2049)},${Y(62)} ${X(2050)},${Y(65)}" stroke="var(--ink-3)" stroke-width="1.6" stroke-dasharray="3 4" fill="none"/>`;
+  c += `<text x="${X(2050) - 4}" y="${Y(84)}" text-anchor="end" style="fill:var(--gold)">с IPO ≈ 80</text><text x="${X(2050) - 4}" y="${Y(58) + 26}" text-anchor="end">без ≈ 65</text>`;
+  const MS = [[2033, 'фонд Эльвиры 25 %'], [2036, 'выход в Россию'], [2041, 'своя мельница'], [2043, 'франшиза']];
+  MS.forEach(([y, l], i) => { const v = pts.find((p) => p[0] === y)[1]; c += `<circle cx="${X(y)}" cy="${Y(v)}" r="4.5" fill="var(--surface)" stroke="var(--crust)" stroke-width="2"/><text class="ms" x="${X(y) - 6}" y="${Y(v) - 12 - (i % 2) * 16}" text-anchor="middle">${l}</text>`; });
+  c += `<circle cx="${X(2046)}" cy="${Y(54)}" r="6" fill="var(--crust)" stroke="var(--surface)" stroke-width="2"/><text class="ms" x="${X(2046) + 4}" y="${Y(54) + 24}" text-anchor="middle" style="font-weight:600;fill:var(--ink)">сейчас · 54 млрд</text>`;
+  $('cap').innerHTML = c;
+
+  const O = [
+    ['А', 'IPO: 20 % акций на Мосбирже', '«Колокол»: деньги на рывок за рубеж и вторую мельницу', '+12,4 млрд', 'сразу', [['rub', 3], ['ctrl', -2], ['risk', -1], ['who', 2, 'Эльвира'], ['who', -1, 'Рашид']], 'sel'],
+    ['Б', 'Частное размещение фонду', 'фонд докупает 10 %, без биржи и квартальных отчётов', '+5,6 млрд', 'сразу', [['rub', 1], ['ctrl', -1], ['who', 1, 'Эльвира']]],
+    ['В', 'Остаться семейным бизнесом', 'выкупить долю фонда в рассрочку на 5 лет', '−13,5 млрд', 'за 5 лет', [['rub', -2], ['ctrl', 2], ['who', 1, 'Семья'], ['who', -2, 'Эльвира']]],
+  ];
+  $('opts').innerHTML = O.map(([l, tt, dd, cc, cs, f, st]) => `<div class="opt ${st || ''}" style="margin-bottom:8px"><span class="L">${l}</span><div><div class="t">${tt}</div><div class="d">${dd}</div></div><div class="cost">${cc}<small>${cs}</small></div>${ART.fx(f)}</div>`).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* ===== Пиксельный слой (src/pixel/*): сцены, портреты, иконки. Масштаб — целый множитель, размер canvas задаёт JS (сцены) или класс (портреты). ===== */
+canvas.pxs, canvas.pxp, canvas.pxi { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+canvas.pxs { image-rendering: pixelated; max-width: 100%; }
+/* пиксельная рамка: ступенчатые углы и двойной кант */
+.pxframe { --u: 2px; position: relative; background: #2a1a1c; padding: var(--u); flex: none;
+  clip-path: polygon(var(--u) 0, calc(100% - var(--u)) 0, calc(100% - var(--u)) var(--u), 100% var(--u), 100% calc(100% - var(--u)), calc(100% - var(--u)) calc(100% - var(--u)), calc(100% - var(--u)) 100%, var(--u) 100%, var(--u) calc(100% - var(--u)), 0 calc(100% - var(--u)), 0 var(--u), var(--u) var(--u)); }
+:root[data-theme="dark"] .pxframe { background: #05070f; box-shadow: inset 0 0 0 1px #3a4466; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pxframe { background: #05070f; } }
+canvas.pxp { width: 96px; height: 96px; }
+canvas.pxp.sm { width: 48px; height: 48px; }
+canvas.pxi { width: 27px; height: 27px; }
+canvas.pxi.sm { width: 18px; height: 18px; }
+
+/* --- «живая точка» в карточке точки --- */
+.pxlive .pxl-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.pxlive .pxl-h h3 { margin: 0; }
+.pxl-seg button { padding: 4px 8px; }
+.pxl-cap { font-size: 12px; color: var(--ink-2); margin: 0 0 6px; min-height: 17px; }
+.pxl-slot { width: 100%; border-radius: 10px; overflow: hidden; background: var(--surface-2); line-height: 0; box-shadow: 0 0 0 1px var(--line); }
+.pxl-slot canvas { margin: 0 auto; }
+.pxl-kpis { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+.pxl-kpis span { white-space: nowrap; }
+.pxl-kpis b { font-family: var(--f-mono); font-size: 13px; color: var(--ink); font-weight: 600; }
+.pxl-kpis .negc b { color: var(--bad-t); } .pxl-kpis .warnc b { color: var(--warn-t); }
+.pxl-th { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; min-height: 20px; }
+.pxl-th .chip { font-size: 11.5px; }
+
+/* --- «живая точка» прямо на карте при сильном приближении: мини-сцена вместо кружка с номером --- */
+.maplive { position: absolute; inset: 0; z-index: 1; pointer-events: none; } /* указатель проходит к маркерам SVG */
+.maplive .mlv { position: absolute; line-height: 0; box-shadow: 0 0 0 1px var(--line), 0 2px 6px rgba(0, 0, 0, .18); }
+.maplive .mlv.on { box-shadow: 0 0 0 2px var(--crust), 0 2px 6px rgba(0, 0, 0, .22); }
+.maplive .mlv[hidden] { display: none; }
+.maplive canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+/* прозрачная цель маркера под сценой: наведение подсказки и нажатие работают как раньше */
+.m-store .hit { fill: none; pointer-events: all; }
+/* у точки со сценой кружок с номером не рисуем: остаётся только невидимая отметка (для подсказок и нажатия) */
+.m-store.live circle.b, .m-store.live text { visibility: hidden; }
+
+/* --- пролог «Бариста» --- */
+.pro-px { width: 100%; border-radius: 14px; overflow: hidden; line-height: 0; background: #f1dcb4; }
+.pro-px canvas { margin: 0 auto; }
+.pro-card .pcd-h .pxframe { --u: 3px; }
+.pro-card .pcd-h canvas.pxp { width: 96px; height: 96px; }
+.pro-card .pcd-duo { display: flex; align-items: flex-end; gap: 6px; flex: none; }
+.pro-card .pcd-duo canvas.pxp.sm { width: 48px; height: 48px; }
+.pf-px { margin: -2px -2px 10px; border-radius: 14px; overflow: hidden; line-height: 0; background: #1f2a44; }
+.pf-px canvas { margin: 0 auto; }
+.sh-scene { width: 100%; border-radius: 14px; overflow: hidden; line-height: 0; background: #f1dcb4; box-shadow: 0 0 0 1px var(--line); position: relative; }
+.sh-scene canvas { margin: 0 auto; }
+.sh-queue.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; border: 0; min-height: 0; background: none; }
+.sh-queue.sr .sh-g { position: absolute; left: 0; top: 0; width: 1px; height: 1px; background: none; animation: none; }
+.sh-it canvas.pxi, .sh-oi canvas.pxi, .sh-ti canvas.pxi { margin: 0 auto; }
+.sh-it canvas.pxi, .sh-oi canvas.pxi { width: 36px; height: 36px; }

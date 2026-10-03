@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Стадия 0 «Бариста» — месяц жизни</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: var(--paper); }
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 336px; gap: 16px; padding: 16px; min-height: 0;
+    background: radial-gradient(1200px 600px at 20% 0%, color-mix(in srgb, var(--crust) 7%, transparent), transparent 70%); }
+  .col { min-width: 0; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .card { padding: 14px 16px; box-shadow: var(--shadow); }
+  .hero-art { height: 192px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); position: relative; background: var(--warm); }
+  .hero-art svg { display: block; }
+  .hero-art .thought { left: 128px; top: 14px; font-size: 11.5px; }
+  .idrow { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 0 10px; }
+  .idrow b { font-family: var(--f-display); font-size: 16px; font-weight: 600; }
+  .idrow span { font-size: 12px; color: var(--ink-3); }
+  .meters { display: flex; flex-direction: column; gap: 9px; }
+  .skills { margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--line-2); display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; font-size: 12.5px; align-items: center; }
+  .skills .note { grid-column: 1 / -1; font-size: 11.5px; color: var(--ink-3); }
+  .people { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 2px; }
+  .people > div { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+  .people b { font-size: 11px; font-weight: 600; line-height: 1.15; }
+  .people small { font-size: 10px; color: var(--ink-3); line-height: 1.15; }
+  .rel { display: inline-flex; gap: 1px; color: var(--bad); }
+  .rel svg { width: 9px; height: 9px; } .rel .o { color: var(--line-2); }
+
+  .mh { display: flex; align-items: flex-end; justify-content: space-between; }
+  .mh h1 { font-family: var(--f-display); font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+  .mh h1 small { font-family: var(--f-body); font-size: 13px; font-weight: 400; color: var(--ink-3); margin-left: 8px; letter-spacing: 0; }
+  .tick { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+  .tick .ring { width: 26px; height: 26px; }
+  .grid4 { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 14px; min-height: 0; }
+  .dc { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; }
+  .dc .hd { display: flex; align-items: center; gap: 8px; }
+  .dc .hd .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+  .dc .hd .ic svg { width: 16px; height: 16px; }
+  .dc .hd h3 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+  .dc .hd .r { margin-left: auto; font-size: 11.5px; color: var(--ink-3); }
+  .ch { display: grid; grid-template-columns: 16px 1fr auto; gap: 3px 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; align-items: center; }
+  .ch .rd { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+  .ch.on { border-color: var(--crust); background: color-mix(in srgb, var(--crust) 6%, var(--surface)); }
+  .ch.on .rd { border: 4px solid var(--crust); }
+  .ch .n { font-size: 13px; font-weight: 600; }
+  .ch .n small { font-weight: 400; color: var(--ink-3); font-size: 11.5px; margin-left: 4px; }
+  .ch .p { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; text-align: right; }
+  .ch .fx { grid-column: 2 / -1; }
+  .ch.risk .n { color: var(--bad-t); }
+  .warnline { display: flex; gap: 6px; align-items: center; font-size: 11.5px; color: var(--bad-t); grid-column: 2 / -1; }
+  .warnline svg { width: 12px; height: 12px; flex: none; }
+
+  .tempt { border-top: 4px solid var(--crust); background: linear-gradient(180deg, color-mix(in srgb, var(--crust) 8%, var(--surface)), var(--surface) 55%); }
+  .tempt .top { display: grid; grid-template-columns: minmax(0,1fr) 112px; gap: 10px; align-items: center; }
+  .tempt h4 { font-family: var(--f-display); font-size: 17px; font-weight: 600; line-height: 1.2; }
+  .tempt .pr { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+  .tempt .pr b { font-family: var(--f-mono); font-size: 18px; font-weight: 700; color: var(--crust-t); }
+  .tempt .pr s { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-3); }
+  .tempt .tag { position: absolute; }
+  .quote { font-size: 12px; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 7px 10px; display: flex; gap: 8px; align-items: center; }
+  .quote i { font-style: italic; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bchoice { border: 1px solid var(--line-2); border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .bchoice b { font-size: 13px; }
+  .bchoice.on { border-color: var(--crust); box-shadow: 0 0 0 1px var(--crust); }
+
+  .bankrow { display: flex; align-items: baseline; justify-content: space-between; }
+  .bankrow b { font-family: var(--f-mono); font-size: 20px; font-weight: 700; }
+  .slider { position: relative; height: 26px; margin: 2px 0 0; }
+  .slider .tr { position: absolute; left: 0; right: 0; top: 11px; height: 5px; border-radius: 3px; background: var(--surface-3); }
+  .slider .tr i { position: absolute; left: 0; top: 0; bottom: 0; width: 78%; border-radius: 3px; background: var(--river); }
+  .slider .kn { position: absolute; left: calc(78% - 9px); top: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); border: 2px solid var(--river); box-shadow: var(--shadow); }
+  .scale { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); }
+
+  .wallet .ln { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 12.5px; padding: 3px 0; }
+  .wallet .ln .v { font-family: var(--f-mono); font-weight: 600; }
+  .wallet .ln .bar2 { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--surface-3); position: relative; }
+  .wallet .ln .bar2 i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+  .wallet .sub { font-family: var(--f-display); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 8px 0 2px; display: flex; justify-content: space-between; }
+  .wallet .tot { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+  .wallet .tot b { font-family: var(--f-mono); font-size: 16px; color: var(--good-t); }
+
+  .goalc { background: var(--crust-soft); border-color: color-mix(in srgb, var(--crust) 35%, transparent); }
+  .goalc .big { font-family: var(--f-display); font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  .goalc .big small { font-family: var(--f-body); font-size: 14px; font-weight: 500; color: var(--ink-2); }
+  .gbar { position: relative; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--surface) 70%, transparent); margin: 10px 0 26px; }
+  .gbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 12.4%; background: var(--crust); border-radius: 5px; }
+  .gbar .mk { position: absolute; left: 30%; top: -4px; width: 2px; height: 18px; background: var(--river); }
+  .gbar .mk span { position: absolute; top: 19px; left: -40px; width: 120px; font-size: 10.5px; color: var(--river-t); font-weight: 600; }
+  .gl { display: grid; grid-template-columns: 1fr auto; font-size: 12px; gap: 3px 10px; color: var(--ink-2); }
+  .gl b { font-family: var(--f-mono); font-weight: 600; color: var(--ink); }
+  .nexts { display: flex; flex-direction: column; gap: 8px; }
+  .nx { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; font-size: 12.5px; }
+  .nx .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+  .nx .ic svg { width: 16px; height: 16px; }
+  .nx b { display: block; font-size: 13px; }
+  .nx small { color: var(--ink-3); font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <!-- ЛЕВО: герой -->
+    <div class="col">
+      <div class="card">
+        <div class="hero-art"><svg id="heroart" width="266" height="192" viewBox="0 0 296 214"></svg><span class="thought warn" id="th1"></span></div>
+        <div class="idrow"><b>Азат, 21 год</b><span>8 мес. в «Калаче»</span></div>
+        <div class="meters" id="meters"></div>
+        <div class="skills" id="skills"></div>
+      </div>
+      <div class="card">
+        <div class="sec-h"><h3>Свои люди</h3><span class="muted">кто рядом</span></div>
+        <div class="people" id="people"></div>
+      </div>
+    </div>
+
+    <!-- ЦЕНТР: решения месяца -->
+    <div class="col">
+      <div class="mh">
+        <h1>Сентябрь<small>месяц 8 · решения месяца</small></h1>
+        <span class="tick"><svg class="ring" viewBox="0 0 26 26"><circle cx="13" cy="13" r="10" fill="none" stroke="var(--surface-3)" stroke-width="3"/><circle cx="13" cy="13" r="10" fill="none" stroke="var(--crust)" stroke-width="3" stroke-dasharray="40 63" transform="rotate(-90 13 13)" stroke-linecap="round"/></svg>до 1 октября — 11 с · выбор можно менять</span>
+      </div>
+      <div class="grid4">
+        <div class="dc" id="house"></div>
+        <div class="dc" id="food"></div>
+        <div class="dc tempt" id="tempt"></div>
+        <div class="dc" id="bank"></div>
+      </div>
+    </div>
+
+    <!-- ПРАВО: кошелёк и цель -->
+    <div class="col">
+      <div class="card wallet" id="wallet"></div>
+      <div class="card goalc" id="goal"></div>
+      <div class="card">
+        <div class="sec-h"><h3>Скоро</h3><span class="muted">сентябрь</span></div>
+        <div class="nexts" id="nexts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('hud').innerHTML = ART.hud({
+    who: { p: 'hero', name: 'Азат Галимов', sub: 'Бариста · «Калач», ул. Пушкина' }, stage: 'Пролог · бариста',
+    date: 'сентябрь 2026 <small>· мес. 8</small>', speed: 1,
+    metrics: [
+      { l: 'На карте', v: '8 340 ₽', d: 'зарплата через 6 дн.' },
+      { l: 'Накопления', v: '186 400 ₽', spark: [12, 25, 41, 52, 80, 108, 151, 186], d: '▲ 27 600 за авг.', dc: 'up' },
+      
+    ],
+    goal: { l: 'Цель · своя точка', pct: 12.4, v: '186 400 ₽', note: 'из 1,5 млн', ms: [30], w: 230 },
+  });
+
+  // герой за стойкой «Калача»
+  $('heroart').innerHTML = `
+    <rect width="296" height="214" fill="var(--warm)"/>
+    <path d="M0 150H296" stroke="${ART.INK}" stroke-width="1.2"/><rect y="150" width="296" height="64" fill="var(--warm-2)"/>
+    <rect x="18" y="20" width="118" height="30" rx="4" fill="#6b4a2e" stroke="${ART.INK}" stroke-width="1.2"/>
+    <text x="77" y="40" text-anchor="middle" font-family="var(--f-display)" font-size="13" font-weight="700" fill="#fbf4e8" letter-spacing=".16em">КАЛАЧ</text>
+    <text x="77" y="62" text-anchor="middle" font-family="var(--f-mono)" font-size="9" fill="var(--ink-3)">ул. Пушкина · с 1994</text>
+    <path d="M18 104H120M18 138H120" stroke="${ART.INK}" stroke-width="1.6"/>
+    ${ART.pastry('loaf', 36, 94, 1) + ART.pastry('loaf', 70, 94, 1) + ART.pastry('baguette', 104, 94, 1) + ART.pastry('echpochmak', 34, 128, .9) + ART.pastry('echpochmak', 60, 128, .9) + ART.pastry('bun', 88, 128, .9) + ART.steam(52, 80, .7, .4)}
+    ${ART.person(214, 200, { s: 2.05, shirt: '#f4efe6', apron: 'var(--crust)', hair: 'short', hc: '#3a2a20', mood: 'happy', hold: 'cup' })}
+    <rect x="140" y="160" width="156" height="54" fill="#b07a4f" stroke="${ART.INK}" stroke-width="1.2"/><rect x="136" y="152" width="164" height="10" rx="3" fill="#8a5a3a" stroke="${ART.INK}" stroke-width="1.2"/>
+    ${ART.pastry('cup', 262, 142, 1.05)}${ART.steam(262, 128, .6, .45)}`;
+  $('th1').innerHTML = IC.bag + 'кроссовки −30 %…';
+
+  const meter = (ic, col, soft, lb, v, w, note) => `<div class="meter"><span class="ic" style="background:${soft};color:${col}">${IC[ic]}</span><span class="lb">${lb}${note ? `<span class="muted" style="font-weight:400;font-size:11.5px"> · ${note}</span>` : ''}</span><span class="vv">${v}</span><span class="tr"><i style="width:${w}%;background:${col}"></i></span></div>`;
+  $('meters').innerHTML =
+    meter('heart', 'var(--good)', 'var(--good-soft)', 'Здоровье и силы', '68', 68) +
+    meter('mood', 'var(--warn)', 'var(--warn-soft)', 'Настроение', '54', 54, 'хочется обновок') +
+    meter('store', 'var(--crust)', 'var(--crust-soft)', 'Рашид доволен', '72', 72);
+  const pips = (n) => `<span class="pips">${[1, 2, 3].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  $('skills').innerHTML = `<span>Кофе</span>${pips(2)}<span>Продажи · допродажи</span>${pips(2)}<span>Люди · смена</span>${pips(1)}<span class="note">«Люди 2» → управляющий сменой</span>`;
+
+  const heartRow = (n) => `<span class="rel">${[1, 2, 3].map((i) => i <= n ? IC.heart.replace('fill="none"', 'fill="currentColor"') : `<span class="o">${IC.heart}</span>`).join('')}</span>`;
+  $('people').innerHTML = [['rashid', 'Рашид', 'наставник', 2], ['gulya', 'Гуля', 'пекарь', 3], ['semyon', 'Семён', 'гость', 2], ['mama', 'Мама', 'Черниковка', 3], ['elvira', 'Эльвира', 'банк', 1]]
+    .map(([p, n, s, r]) => `<div>${ART.portrait(p, 46)}<b>${n}</b><small>${s}</small>${heartRow(r)}</div>`).join('');
+
+  // решения
+  $('house').innerHTML = `<div class="hd"><span class="ic">${IC.home}</span><h3>Жильё</h3><span class="r">в месяц</span></div>
+    <div class="ch"><span class="rd"></span><span class="n">У родителей<small>Черниковка, 1 ч 10 мин</small></span><span class="p">3 000 ₽</span>${ART.fx([['rub', 2], ['mood', -1], ['time', -1]])}</div>
+    <div class="ch on"><span class="rd"></span><span class="n">Комната<small>ул. Гоголя, 8 мин пешком</small></span><span class="p">11 000 ₽</span>${ART.fx([['rub', -1], ['mood', 1], ['time', 1]])}</div>
+    <div class="ch"><span class="rd"></span><span class="n">Своя студия<small>Зелёная роща</small></span><span class="p">24 000 ₽</span>${ART.fx([['rub', -3], ['mood', 2]])}</div>
+    <div class="quote" style="margin-top:auto">${ART.portrait('mama', 26)}<i>«Переехал — так хоть в воскресенье приходи. Суп сварю»</i></div>`;
+  $('food').innerHTML = `<div class="hd"><span class="ic">${IC.guests}</span><h3>Еда</h3><span class="r">в месяц</span></div>
+    <div class="ch risk"><span class="rd"></span><span class="n">Голодать</span><span class="p">1 500 ₽</span>${ART.fx([['rub', 2], ['hp', -3], ['mood', -1]])}<span class="warnline">${IC.alert}больничный без денег, ошибки на смене</span></div>
+    <div class="ch on"><span class="rd"></span><span class="n">Экономно<small>готовлю сам</small></span><span class="p">7 500 ₽</span>${ART.fx([['rub', 1], ['hp', -1]])}</div>
+    <div class="ch"><span class="rd"></span><span class="n">Нормально</span><span class="p">12 000 ₽</span>${ART.fx([['hp', 1], ['mood', 1]])}</div>
+    <div class="ch"><span class="rd"></span><span class="n">Кафе и доставка</span><span class="p">21 000 ₽</span>${ART.fx([['rub', -2], ['mood', 2]])}</div>`;
+  const shoe = `<svg width="112" height="70" viewBox="0 -4 116 74"><path d="M8 50 C8 36 14 28 22 26 L40 22 C46 30 58 34 70 36 C86 38 100 42 104 50 L104 56 C104 60 100 62 96 62 L14 62 C10 62 8 58 8 54 Z" fill="#fbf9f5" stroke="${ART.INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 54 H104" stroke="${ART.INK}" stroke-width="1.4"/><path d="M8 56 L104 56 L104 58 C104 61 100 62 96 62 L14 62 C10 62 8 60 8 58Z" fill="var(--crust)"/><path d="M40 22 C44 34 56 40 70 42" fill="none" stroke="var(--crust)" stroke-width="5" stroke-linecap="round"/><path d="M30 30 l6 -4 M34 36 l6 -4 M38 42 l6 -4" stroke="${ART.INK}" stroke-width="1.4" stroke-linecap="round"/><circle cx="96" cy="12" r="15" fill="var(--bad)"/><text x="96" y="15.5" text-anchor="middle" font-family="var(--f-display)" font-size="9.5" font-weight="700" fill="#fff">−30%</text></svg>`;
+  $('tempt').innerHTML = `<div class="hd"><span class="ic" style="background:var(--crust-soft);color:var(--crust-t)">${IC.bag}</span><h3 style="color:var(--crust-t)">Соблазн</h3><span class="r">до воскресенья</span></div>
+    <div class="top"><div><h4>Кроссовки со скидкой</h4><div class="pr"><b>8 990 ₽</b><s>12 850 ₽</s></div><div class="muted" style="font-size:12px;margin-top:2px">ТЦ «Планета», последний 42-й</div></div>${shoe}</div>
+    <div class="quote">${ART.portrait('sania', 26)}<i>«На кроссовки я тебе в прошлый раз давала»</i></div>
+    <div class="btns"><div class="bchoice"><b>Купить</b>${ART.fx([['mood', 2], ['save', -1]])}</div><div class="bchoice on"><b>Пройти мимо</b>${ART.fx([['mood', -1], ['save', 0]])}</div></div>`;
+  $('bank').innerHTML = `<div class="hd"><span class="ic" style="background:var(--river-soft);color:var(--river-t)">${IC.bank}</span><h3>Вклад «Семь рек»</h3><span class="r">17 % годовых</span></div>
+    <div class="bankrow"><span class="muted" style="font-size:12px">на вкладе</span><b>150 000 ₽</b></div>
+    <div class="bankrow" style="margin-top:-4px"><span class="muted" style="font-size:12px">проценты в месяц</span><span class="num up" style="font-weight:600">+2 125 ₽</span></div>
+    <div style="font-size:12.5px;font-weight:600;margin-top:4px">Отложить в сентябре: <span class="num" style="color:var(--river-t)">20 000 ₽</span></div>
+    <div class="slider"><div class="tr"><i></i></div><span class="kn"></span></div>
+    <div class="scale"><span>0</span><span>свободно 27 600 ₽</span></div>
+    <div class="quote" style="margin-top:2px">${ART.portrait('elvira', 26)}<i>«Снимете раньше срока — проценты сгорят»</i></div>`;
+
+  // кошелёк
+  const ln = (n, v, w, c) => `<div class="ln"><span>${n}</span><span class="v">${v}</span><span class="bar2"><i style="width:${w}%;background:${c}"></i></span></div>`;
+  $('wallet').innerHTML = `<div class="sec-h" style="margin:0"><h3>Кошелёк · сентябрь</h3><span class="muted">прогноз</span></div>
+    <div class="sub"><span>Приходит</span><span class="num">49 325 ₽</span></div>
+    ${ln('Оклад', '34 000', 69, 'var(--good)')}${ln('Чаевые со смен', '7 200', 15, 'var(--good)')}${ln('Доп. смены × 3', '6 000', 12, 'var(--good)')}${ln('Проценты по вкладу', '2 125', 4, 'var(--river)')}
+    <div class="sub"><span>Уходит</span><span class="num">21 700 ₽</span></div>
+    ${ln('Комната', '11 000', 22, 'var(--bad)')}${ln('Еда · экономно', '7 500', 15, 'var(--bad)')}${ln('Проезд и связь', '2 000', 4, 'var(--bad)')}${ln('Кино с Гулей', '1 200', 2.5, 'var(--warn)')}
+    <div class="tot"><span style="font-weight:600;font-size:13px">Останется</span><b>+27 625 ₽</b></div>`;
+  $('goal').innerHTML = `<div class="sec-h" style="margin:0 0 6px"><h3 style="color:var(--crust-t)">Цель · своя точка</h3>${IC.target.replace('<svg', '<svg width="16" height="16" style="color:var(--crust-t)"')}</div>
+    <div class="big">186 400 <small>из 1 500 000 ₽</small></div>
+    <div class="gbar"><i></i><span class="mk"><span>450 тыс. + кредит</span></span></div>
+    <div class="gl"><span>Копить самому</span><b>≈ 3,5 года</b><span>С кредитом Эльвиры, стаж 12 мес.</span><b>≈ 8 мес.</b><span>Навык «управляющий»</span><b>Люди 1 из 2</b></div>`;
+  $('nexts').innerHTML = `
+    <div class="nx"><span class="ic" style="background:var(--crust-soft);color:var(--crust-t)">${IC.cup}</span><div><b>Смена, пн 7:00 · час пик</b><small>мини-игра · чаевые и оценка Рашида</small></div><span class="btn primary">За стойку</span></div>
+    <div class="nx"><span class="ic">${IC.heart}</span><div><b>Мамин день рождения</b><small>14 сент. · подарок или ужин</small></div><span class="chip">через 5 дн.</span></div>`;
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+const BK = require('./sim/load'); const E = BK.Engine;
+const orig = E.newGame;
+E.newGame = function (o) { return orig.call(this, Object.assign({}, o || {}, { city: 'moscow' })); };
+const SC = BK.Scenario;
+const S = E.newGame({ seed: 7919 });
+SC.set(S, 'moscow'); SC.applyStart(S);
+const off = S.offers.concat(S.prodOffers);
+console.log('аренда', off.map(o=>o.rentM2).join(' '), 'медиана', off.map(o=>o.rentM2).sort((a,b)=>a-b)[3]);
+console.log('чек  ', off.map(o=>o.solv).join(' '), 'медиана', off.map(o=>o.solv).sort((a,b)=>a-b)[3]);
+console.log('площадь', off.map(o=>o.area).join(' '), 'размеры', off.map(o=>o.size).join(' '));
+console.log('районы', S.offers.map(o => (BK.DISTRICTS.find(d=>d.id===o.district)||{}).name).join(', '));
+console.log('соседи', S.offers.map(o => o.landmarks.map(l=>(BK.LANDMARKS.find(x=>x.id===l)||{}).name).join('+')).join(' | '));
+console.log('поток', off.map(o=>o.traffic).join(' '));

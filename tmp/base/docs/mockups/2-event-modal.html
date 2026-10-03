@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Событие с выбором — макет</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  .app { display: grid; grid-template-rows: 64px 1fr; height: 100vh; }
+  .main { display: grid; grid-template-columns: minmax(0,1fr) 440px; min-height: 0; }
+  .mapwrap { position: relative; overflow: hidden; background: var(--map-land); }
+  .mapwrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  aside { background: var(--surface); border-left: 1px solid var(--line); padding: 0; }
+  .ghost-card { margin: 14px 18px 0; height: 150px; border-radius: 12px; background: var(--surface-2); }
+  .ghost-card.s { height: 90px; } .ghost-card.l { height: 230px; }
+  .backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(4, 6, 10, .62); backdrop-filter: blur(1.5px); }
+
+  .modal { z-index: 11; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 720px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px; box-shadow: var(--shadow-lg); overflow: hidden; }
+  .m-head { position: relative; padding: 18px 26px 16px; border-top: 4px solid var(--bad);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bad) 10%, transparent), transparent 100%),
+                repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--bad) 7%, transparent) 9px 10px); }
+  .kicker { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--bad-t); }
+  .kicker svg { width: 15px; height: 15px; }
+  .m-head h2 { font-family: var(--f-display); font-size: 20px; font-weight: 600; line-height: 1.25; margin: 8px 0 8px; max-width: 470px; letter-spacing: -.005em; }
+  .m-head p { color: var(--ink-2); font-size: 14px; line-height: 1.5; max-width: 500px; }
+  .stamp { position: absolute; right: 26px; top: 26px; transform: rotate(-11deg); color: var(--bad-t); border: 2.5px solid currentColor; padding: 3px; border-radius: 4px; opacity: .92; }
+  .stamp .in { border: 1px solid currentColor; padding: 6px 14px 5px; text-align: center; border-radius: 2px; }
+  .stamp b { display: block; font-family: var(--f-display); font-size: 21px; font-weight: 700; letter-spacing: .22em; margin-right: -.22em; }
+  .stamp small { display: block; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; margin-top: 1px; }
+  .effects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .effects .chip { background: var(--bad-soft); color: var(--bad-t); height: 24px; font-family: var(--f-mono); font-size: 11.5px; }
+  .effects .chip.n { background: var(--surface-2); color: var(--ink-2); font-family: var(--f-body); }
+  .m-body { padding: 14px 26px 4px; }
+  .m-body .q { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .m-body .q h4 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+  .m-body .q span { font-size: 12px; color: var(--ink-3); }
+  .opt { display: grid; grid-template-columns: 28px 1fr auto; gap: 2px 12px; padding: 10px 14px 11px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; background: var(--surface); }
+  .opt .L { grid-row: span 2; width: 26px; height: 26px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-family: var(--f-display); font-size: 11px; font-weight: 600; color: var(--ink-2); margin-top: 1px; }
+  .opt .t { font-size: 14px; font-weight: 600; }
+  .opt .d { font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+  .opt .cost { font-family: var(--f-mono); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+  .opt .cost small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 400; color: var(--ink-3); }
+  .opt .fx { grid-column: 2 / -1; display: flex; gap: 6px; margin-top: 7px; }
+  .fxc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); }
+  .fxc svg { width: 13px; height: 13px; }
+  .fxc .ar { font-size: 9px; letter-spacing: -1px; font-family: var(--f-body); }
+  .fxc.up { background: var(--good-soft); color: var(--good-t); }
+  .fxc.dn { background: var(--bad-soft); color: var(--bad-t); }
+  .fxc.zero { background: transparent; color: var(--ink-3); opacity: .55; border: 1px dashed var(--line-2); }
+  .opt.sel { border-color: var(--crust); box-shadow: 0 0 0 1px var(--crust), 0 0 0 5px color-mix(in srgb, var(--crust) 16%, transparent); }
+  .opt.sel .L { background: var(--crust); color: var(--on-primary); }
+  .opt.off { background: transparent; border-style: dashed; }
+  .opt.off .t, .opt.off .cost, .opt.off .d { color: var(--ink-3); }
+  .opt.off .t { font-weight: 500; }
+  .opt.off .fx { opacity: .45; }
+  .why { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn-t); margin-top: 6px; }
+  .why svg { width: 14px; height: 14px; }
+  .m-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 26px 18px; }
+  .m-foot .note { font-size: 12px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; }
+  .m-foot .note b { color: var(--ink-2); font-weight: 600; font-family: var(--f-mono); }
+  .m-foot .btn { height: 38px; padding: 0 20px; font-size: 14px; font-weight: 600; }
+  .pause { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--surface-2); font-size: 11px; color: var(--ink-2); }
+  .pause svg { width: 10px; height: 10px; }
+
+  /* образцы тона */
+  .tones { z-index: 11; position: fixed; left: 28px; bottom: 28px; width: 250px; display: flex; flex-direction: column; gap: 8px; }
+  .tones .caps { color: var(--ink-2); margin-bottom: 2px; }
+  .tone { background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; padding: 9px 12px 10px; border-top: 3px solid; opacity: .96; }
+  .tone .k { display: flex; align-items: center; gap: 6px; font-family: var(--f-display); font-size: 9px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
+  .tone .k svg { width: 12px; height: 12px; }
+  .tone .h { font-size: 13px; font-weight: 600; margin-top: 3px; }
+  .tone .s { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="hud"></div>
+  <div class="main">
+    <div class="mapwrap"><svg id="map"></svg></div>
+    <aside><div id="tabs"></div><div class="ghost-card"></div><div class="ghost-card s"></div><div class="ghost-card l"></div><div class="ghost-card s"></div></aside>
+  </div>
+</div>
+<div class="backdrop"></div>
+
+<div class="tones">
+  <span class="caps">Тон события</span>
+  <div class="tone" style="border-top-color:var(--bad)"><div class="k" style="color:var(--bad-t)" id="tk1"></div><div class="h">Жалоба в Роспотребнадзор</div></div>
+  <div class="tone" style="border-top-color:var(--good)"><div class="k" style="color:var(--good-t)" id="tk2"></div><div class="h">Блогер снял обзор на №5</div></div>
+  <div class="tone" style="border-top-color:var(--warn)"><div class="k" style="color:var(--warn-t)">↩ Последствие</div><div class="h">Аварийный ремонт печи в цехе</div><div class="s">решения «отложить ТО» от 12.11.2038</div></div>
+</div>
+
+<div class="modal">
+  <div class="m-head">
+    <div class="kicker" id="kick"></div>
+    <h2>Рецессия: заводы Северной промзоны сокращают смены</h2>
+    <p>Безработица растёт, гости считают каждую копейку и реже берут выпечку «к чаю». Банк поднял ставку, конкуренты уже режут цены.</p>
+    <div class="effects">
+      <span class="chip">Трафик −15 % · 180 дн.</span>
+      <span class="chip">Ключевая ставка +4 п.п.</span>
+      <span class="chip">Зарплаты рынка +8 %</span>
+      <span class="chip n">Вся сеть</span>
+    </div>
+    <div class="stamp"><div class="in"><b>КРИЗИС</b><small>14.03.2039 · №5</small></div></div>
+  </div>
+  <div class="m-body">
+    <div class="q"><h4>Как ответим?</h4><span>Последствия: ▲ — лучше, ▼ — хуже, число стрелок — сила</span></div>
+    <div id="opts"></div>
+  </div>
+  <div class="m-foot">
+    <span class="note"><span class="pause" id="pz"></span>Резерв <b>412 млн ₽</b> закроет кассовый разрыв ≈ 5 мес.</span>
+    <span class="btn primary">Выбрать «Б»</span>
+  </div>
+</div>
+
+<script src="icons.js"></script>
+<script src="map.js"></script>
+<script src="ui.js"></script>
+<script>
+  document.getElementById('hud').innerHTML = HUD({ speed: 0 });
+  document.getElementById('tabs').innerHTML = TABS('Сводка', null, ['Сводка', 'Точки', 'Команда', 'Финансы', 'Рынок']);
+  MK.render(document.getElementById('map'), { vb: [-10, 250, 960, 800], k: 1.05, moodStroke: true, par: 'xMidYMid meet', labelDy: { center: -46, zaton: -46, dema: -48, nizh: -36, glumilino: -44, inors: -44 }, labelDx: { zaton: -20, glumilino: 20 } });
+  document.getElementById('kick').innerHTML = IC.alert + 'Экономический кризис · раз в 2–3 года';
+  document.getElementById('tk1').innerHTML = IC.alert + 'Негатив';
+  document.getElementById('tk2').innerHTML = IC.starFill + 'Удача';
+  document.getElementById('pz').innerHTML = IC.pause + 'пауза';
+  const K = { rub: ['', '₽'], team: [IC.team, 'Команда'], guests: [IC.guests, 'Гости'], rate: [IC.star, 'Рейтинг'] };
+  const fx = (m) => ['rub', 'team', 'guests', 'rate'].map((k) => {
+    const v = m[k] || 0, cls = v > 0 ? 'up' : v < 0 ? 'dn' : 'zero';
+    const ar = v ? (v > 0 ? '▲' : '▼').repeat(Math.abs(v)) : '·';
+    return `<span class="fxc ${cls}">${K[k][0]}${K[k][1]} <span class="ar">${ar}</span></span>`;
+  }).join('');
+  const O = [
+    ['А', 'Снизить цены на хлеб и завтраки на 10 %', 'Гости останутся, но маржа просядет на полгода', '0 ₽', 'сразу', { rub: -2, guests: 2, rate: 1 }],
+    ['Б', 'Запустить «Корзину дня» за 199 ₽', 'Реклама по районам + комбо из остатков вечерней выпечки', '18 млн ₽', 'сразу', { rub: -1, team: 1, guests: 2, rate: 2 }, 'sel'],
+    ['В', 'Сократить смены и заморозить найм', 'Экономия ФОТ, но люди устанут, начнётся текучка', '+26 млн ₽', 'за 6 мес.', { rub: 2, team: -3, rate: -1 }],
+    ['Г', 'Выкупить помещения у арендодателей', 'Аренда упадёт навсегда, кризис — лучшее время для сделки', '4,8 млрд ₽', 'сразу', { rub: 3 }, 'off'],
+  ];
+  document.getElementById('opts').innerHTML = O.map(([l, t, d, c, cs, m, st]) => `<div class="opt ${st || ''}"><span class="L">${l}</span><div><div class="t">${t}</div><div class="d">${d}</div></div><div class="cost">${c}<small>${cs}</small></div>${st === 'off' ? `<div class="why">${IC.alert}Недоступно: не хватает 1,96 млрд ₽ на счёте (есть 2,84 млрд)</div>` : ''}<div class="fx">${fx(m)}</div></div>`).join('');
+</script>
+</body>
+</html>

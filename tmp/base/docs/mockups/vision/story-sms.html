@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Сюжет — «Увидимся на карте»</title>
+<link rel="stylesheet" href="vision.css">
+<style>
+  body { background: #0b0f16; }
+  .stage { position: fixed; inset: 0; }
+  #map { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; }
+  .vign { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 60% 62% at 42% 52%, transparent 40%, rgba(5, 8, 12, .78) 100%); }
+  .bar { position: absolute; left: 0; right: 0; height: 52px; background: #06080c; z-index: 3; display: flex; align-items: center; padding: 0 28px; color: #7d8799; font-size: 12px; gap: 14px; }
+  .bar.t { top: 0; } .bar.b { bottom: 0; justify-content: space-between; }
+  .bar .caps { color: #8e97a8; }
+  .skip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid #2d3645; border-radius: 7px; padding: 5px 10px; color: #b8c0cf; font-size: 12px; }
+  .skip kbd { font-family: var(--f-mono); font-size: 10px; border: 1px solid #3d4a5e; border-radius: 4px; padding: 0 4px; }
+
+  .chap { position: absolute; z-index: 4; left: 40px; top: 84px; width: 360px; }
+  .chap .caps { color: var(--crust-2); font-size: 10.5px; letter-spacing: .18em; }
+  .chap h1 { font-family: var(--f-display); font-size: 34px; font-weight: 700; line-height: 1.1; margin: 8px 0 10px; color: #f1ece3; }
+  .chap p { color: #b8c0cf; font-size: 14px; line-height: 1.55; }
+  .chap .nx { margin-top: 14px; display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; color: #e7eaf0; border: 1px dashed #3d4a5e; border-radius: 8px; padding: 7px 12px; }
+  .chap .nx b { color: var(--crust-2); font-family: var(--f-display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+
+  .post { position: absolute; z-index: 4; left: 40px; bottom: 84px; width: 360px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow-lg); }
+  .post .hd { display: flex; gap: 10px; align-items: center; }
+  .post .hd b { font-size: 13.5px; display: block; }
+  .post .hd small { color: var(--ink-3); font-size: 11.5px; }
+  .post p { margin-top: 10px; font-size: 14.5px; line-height: 1.5; }
+  .post .meta { margin-top: 10px; display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-3); font-family: var(--f-mono); }
+
+  .phone { position: absolute; z-index: 5; right: 60px; top: 84px; width: 330px; height: 712px; border-radius: 42px; background: #10151e; border: 2px solid #2d3645; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 6px #0b0f16; overflow: hidden; transform: rotate(3deg); }
+  .phone .notch { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); width: 96px; height: 26px; border-radius: 14px; background: #05070a; }
+  .phone .sb { display: flex; justify-content: space-between; padding: 16px 30px 0; font-family: var(--f-mono); font-size: 12px; color: #b8c0cf; }
+  .phone .ch { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid #222a37; }
+  .phone .ch b { font-size: 14px; color: #e7eaf0; }
+  .phone .ch small { font-size: 11px; color: #939cb0; }
+  .msgs { padding: 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .day { text-align: center; font-size: 10.5px; color: #7d8799; margin: 4px 0; }
+  .m { max-width: 86%; background: #222a37; color: #e7eaf0; border-radius: 18px 18px 18px 6px; padding: 8px 12px; font-size: 13.5px; line-height: 1.42; }
+  .m.me { align-self: flex-end; background: var(--crust); color: #1b1206; border-radius: 18px 18px 6px 18px; }
+  .m.new { background: #2c2538; border: 1px solid var(--rival); font-size: 15.5px; }
+  .m small { display: block; font-size: 10px; color: #939cb0; margin-top: 3px; text-align: right; font-family: var(--f-mono); }
+  .m.me small { color: #5a3a12; }
+  .typing { align-self: flex-start; display: flex; gap: 4px; padding: 10px 14px; background: #1a202b; border-radius: 16px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: #5d6576; }
+  .reply { position: absolute; left: 14px; right: 14px; bottom: 22px; display: flex; flex-direction: column; gap: 7px; }
+  .reply .caps { color: #7d8799; font-size: 9px; text-align: center; margin-bottom: 2px; }
+  .reply span.o { display: block; border: 1px solid #3d4a5e; border-radius: 12px; padding: 8px 12px; font-size: 12.5px; color: #e7eaf0; background: #151b25; }
+  .reply span.o.sel { border-color: var(--crust); box-shadow: 0 0 0 1px var(--crust); }
+  .reply em { font-style: normal; font-size: 10.5px; color: #939cb0; display: block; margin-top: 2px; }
+
+  .plate { left: 44px; top: 410px; z-index: 4; width: 300px; }
+  .legend { position: absolute; z-index: 4; left: 470px; bottom: 80px; display: flex; gap: 16px; font-size: 12px; color: #b8c0cf; background: rgba(15,20,28,.8); border: 1px solid #2d3645; border-radius: 10px; padding: 8px 12px; }
+  .legend span { display: inline-flex; gap: 6px; align-items: center; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg id="map" viewBox="0 0 1440 900"></svg>
+  <div class="vign"></div>
+  <div class="bar t"><span class="caps">Глава 1 · кульминация</span><span style="flex:1"></span><span>камера отдаляется: впервые видна вся Уфа</span></div>
+
+  <div class="chap">
+    <span class="caps">Конец главы 1 · «Своя точка»</span>
+    <h1>Две точки. Город становится тесным.</h1>
+    <p>Ленточка, «дзынь», фото с командой. Гуля в кадре моргнула. Рашид прислал буханку — без записки, но тёплую. А потом телефон завибрировал ещё раз.</p>
+    <span class="nx"><b>Дальше</b>Глава 2 «Сеть» · открыта вся карта</span>
+  </div>
+
+  <div class="post">
+    <div class="hd"><span id="sem"></span><div><b>Уфа жуёт</b><small>Семён Аркадьевич · 3 140 подписчиков</small></div></div>
+    <p>«Две точки. Город становится тесным — и это хорошо. Американо на Ленина по-прежнему честный. Эчпочмаки — сегодняшние, я проверял зубами».</p>
+    <div class="meta"><span>♥ 412</span><span>↻ 38</span><span>21:47</span></div>
+  </div>
+
+
+  <div class="plate"><div class="h"><span class="caps">Генплан сети</span><b>УФА · ЛИСТ 1</b></div>
+    <div class="r"><div><span class="caps">Ваши точки</span><span class="mono"><svg width="11" height="11" viewBox="-7 -7 14 14" style="vertical-align:-1px;margin-right:5px"><circle r="5" fill="none" stroke="var(--crust)" stroke-width="2.4"/></svg>2</span></div><div><span class="caps">«Хлебный двор»</span><span class="mono"><svg width="11" height="11" viewBox="-7 -7 14 14" style="vertical-align:-1px;margin-right:5px"><rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="rotate(45)" fill="var(--rival)"/></svg>12</span></div></div>
+    <div class="r"><div><span class="caps">Дата</span><span class="mono">14.09.2027</span></div><div><span class="caps">Исполнил</span><span class="mono">«Тёплый угол»</span></div></div></div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="sb"><span>23:14</span><span>●●● 4G</span></div>
+    <div class="ch"><span id="op"></span><b>Олег · «Хлебный двор»</b><small>был(а) в сети только что</small></div>
+    <div class="msgs">
+      <div class="day">12 апреля</div>
+      <div class="m">Хороший у тебя кофе. У меня дешевле.<small>19:02</small></div>
+      <div class="m me">Посмотрим, чей хлеб вкуснее.<small>19:05</small></div>
+      <div class="day">сегодня</div>
+      <div class="m new">Две точки. Мило. У меня двенадцать. Увидимся на карте.<small>23:14</small></div>
+    </div>
+    <div class="reply"><span class="caps">Ответить? (можно промолчать)</span>
+      <span class="o">«Увидимся»<em>Олег: уважает прямоту</em></span>
+      <span class="o sel">Промолчать и выключить телефон<em>Гуля завтра спросит, что с лицом</em></span>
+    </div>
+  </div>
+
+  <div class="bar b"><span>Сцена · СМС ночью</span><span class="skip">Продолжить <kbd>пробел</kbd></span></div>
+</div>
+<script src="../icons.js"></script>
+<script src="../map.js"></script>
+<script src="art.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('sem').innerHTML = ART.portrait('semyon', 40);
+  $('op').innerHTML = ART.portrait('oleg', 54, { ring: 'var(--rival)' });
+  // карта Уфы целиком, без точек «Каравая»: только основа
+  const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  MK.render(tmp, { vb: [-60, -20, 1120, 1040], clusters: false, routes: false, id: 'u', lk: 1.1 });
+  tmp.querySelectorAll('.m-pt,.m-cl,.m-prod,.m-hq,.m-offer,.m-alert,.m-route').forEach((e) => e.remove());
+  // размещаем карту в кадре: масштаб и сдвиг
+  const g = `<g transform="translate(440,52) scale(.74)">${tmp.innerHTML}`;
+  const X = (x, y) => [x, y];
+  const RV = [[380, 772], [340, 830], [540, 590], [580, 640], [620, 450], [590, 505], [700, 610], [668, 660], [420, 470], [120, 890], [470, 920], [210, 760]];
+  let o = '';
+  RV.forEach(([x, y], i) => { o += `<g transform="translate(${x},${y})"><rect x="-8" y="-8" width="16" height="16" rx="2.5" transform="rotate(45)" fill="var(--rival)" fill-opacity=".85" stroke="#0f141c" stroke-width="2"/></g>`; });
+  // ваши две точки с подписью и свечением
+  const OURS = [[356, 792, '№1 · ул. Ленина'], [488, 702, '№2 · открыта сегодня']];
+  OURS.forEach(([x, y, t], i) => {
+    o += `<circle cx="${x}" cy="${y}" r="34" fill="var(--crust)" opacity=".16"/><circle cx="${x}" cy="${y}" r="22" fill="var(--crust)" opacity=".2"/>`;
+    o += `<g class="m-pt" transform="translate(${x},${y})"><circle class="b" r="13" stroke="var(--crust)" stroke-width="3"/><text style="font-size:12px">${i + 1}</text></g>`;
+    o += `<text text-anchor="${i ? 'end' : 'start'}" x="${x + (i ? -26 : 22)}" y="${y + (i ? 6 : 30)}" font-family="var(--f-body)" font-size="15" font-weight="600" fill="#f2b066" stroke="#0f141c" stroke-width="5" paint-order="stroke">${t}</text>`;
+  });
+  // «напротив» — ромб у точки №1
+  o += `<path d="M362 780 Q372 770 376 772" stroke="var(--rival)" stroke-width="1.5" fill="none" stroke-dasharray="2 3"/>`;
+  $('map').innerHTML = g + o + '</g>';
+</script>
+</body>
+</html>
