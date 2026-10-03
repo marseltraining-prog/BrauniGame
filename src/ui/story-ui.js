@@ -17,6 +17,48 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const LET = 'АБВГДЕЖЗИК';
 
+  /* ---------- подстановки в текстах сцен: {name}, {street}, {n}, {city}, {inCity} ----------
+     Тексты сцен пишутся с плейсхолдерами (docs/writing.md, разбор C3). Без подстановки игрок
+     читает «Уфа жуёт: очередь на {street}» и «На №{n} тесто вчерашнее» — поэтому подставляем
+     ровно здесь, на отрисовке: данные не переписываем, старые сохранения не трогаем.
+       {name}   — имя героя; если игрок его не задавал, зовём «шеф» (как src/data/story-lines.js);
+       {street} — адрес точки, о которой сцена (самая сильная по рейтингу, не открывающаяся);
+       {n}      — её номер; {city} — название города сцены: чужой, если сеть уже в других
+                  городах, иначе активный; {inCity} — та же мысль в падеже («в Казани»).        */
+  function subStore(S) {
+    const list = (S && S.stores) || [];
+    let best = null;
+    for (const st of list) {
+      if (!st || st.status === 'opening' || !st.address) continue;
+      if (!best || (st.rating || 0) > (best.rating || 0)) best = st;
+    }
+    return best || list[0] || null;
+  }
+  function subCityDef(S) {
+    const by = BK.CITY_BY_ID || {}, cr = S && S.corp && S.corp.cities;
+    if (cr) for (const id in cr) if (id !== 'ufa' && by[id]) return by[id];
+    return BK.CITY || by.ufa || null;
+  }
+  function subCity(S) { const d = subCityDef(S); return (d && d.name) || 'Уфа'; }
+  function subCityIn(S) {
+    const d = subCityDef(S);
+    if (d && d.in) return d.in;
+    const f = (BK.CITY_FORMS || {})[subCity(S)];
+    return (f && f.in) || ('в городе ' + subCity(S));
+  }
+  function sub(S, txt) {
+    let s = String(txt == null ? '' : txt);
+    if (s.indexOf('{') < 0) return s;
+    const R = ST.state(S) || {};
+    const st = subStore(S);
+    const name = (R.hero && R.hero.name) || (S && S.story && S.story.hero && S.story.hero.name) || 'шеф';
+    return s.split('{name}').join(name)
+      .split('{inCity}').join(subCityIn(S))
+      .split('{city}').join(subCity(S))
+      .split('{street}').join((st && st.address) || 'Пушкина')
+      .split('{n}').join(String(st && st.num != null ? st.num : 1));
+  }
+
   const BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></svg>';
   const WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>';
   const CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 15a3 3 0 0 1-3 3H8l-4 3V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/><path d="M8 9h8M8 13h5"/></svg>';
@@ -87,13 +129,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const need = needText(S, c.need), fx = fxChips(c.effects);
     const dis = need.dis ? ' disabled' : '';
     if (!multi) {
-      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(c.label)}${c.desc ? `<small class="st-desc">${esc(c.desc)}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
+      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.desc ? `<small class="st-desc">${esc(sub(S, c.desc))}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
     }
     return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
       <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
-      <b>${esc(c.label)}</b>
-      ${c.desc ? `<span class="cd">${esc(c.desc)}</span>` : ''}
-      ${c.cost ? `<span class="cc">${esc(c.cost)}</span>` : ''}
+      <b>${esc(sub(S, c.label))}</b>
+      ${c.desc ? `<span class="cd">${esc(sub(S, c.desc))}</span>` : ''}
+      ${c.cost ? `<span class="cc">${esc(sub(S, c.cost))}</span>` : ''}
       ${need.dis ? `<span class="cwhy">${WARN}${esc(need.text)}</span>` : ''}
       ${fx ? `<span class="fx">${fx}</span>` : ''}
     </button>`;
@@ -111,7 +153,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lines = sc.lines || [];
     const who = (sc.who && sc.who[0]) || (lines[0] && lines[0].who) || 'semyon';
     const h = hero(who), isPost = sc.form === 'post';
-    const body = lines.map((l) => `${lines.length > 1 && l.who && l.who !== who ? `<span class="st-pw">${esc(whoName(l.who))}:</span> ` : ''}${esc(l.text)}`).join('</p><p>');
+    const body = lines.map((l) => `${lines.length > 1 && l.who && l.who !== who ? `<span class="st-pw">${esc(whoName(l.who))}:</span> ` : ''}${esc(sub(S, l.text))}`).join('</p><p>');
     return `<article class="st-paper ${isPost ? 'post' : 'letter'}">
       <header class="st-ph">${portrait(who, isPost ? 'smirk' : 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
       <div class="st-pb"><p>${body}</p></div>
@@ -122,7 +164,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const c = (sc.choices || [])[0];
     if (!c) return '';
     const need = needText(S, c.need);
-    return `<div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="0"${need.dis ? ' disabled' : ''}>Прочитано${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>${c.desc && !need.dis ? `<p class="st-note">${esc(c.desc)}</p>` : ''}</div>`;
+    return `<div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="0"${need.dis ? ' disabled' : ''}>Прочитано${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>${c.desc && !need.dis ? `<p class="st-note">${esc(sub(S, c.desc))}</p>` : ''}</div>`;
   }
 
   /* ---------- тело окна ---------- */
@@ -138,7 +180,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${portrait(L.who, L.emo)}
         <div class="st-say">
           <div class="st-meta"><b class="st-who">${esc(whoName(L.who))}</b><span class="st-role">${esc(hero(L.who).role || '')}</span></div>
-          <p class="st-text">${esc(L.text || '')}</p>
+          <p class="st-text">${esc(sub(S, L.text || ''))}</p>
           ${many ? `<div class="st-foot">${prog}${dots}</div>` : ''}
           ${last ? '' : '<button type="button" class="btn primary block st-next" data-act="storyNext">Дальше <span aria-hidden="true">›</span></button>'}
         </div>
@@ -156,7 +198,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="modal-h st-h${climax ? ' climax' : ''}">
         <span class="eyebrow st-ey">${esc(ey)}</span>
         ${climax ? `<span class="st-ch">${esc(ch)}</span>` : ''}
-        <h2>${esc(sc.title)}</h2>
+        <h2>${esc(sub(S, sc.title))}</h2>
       </div>
       <div class="modal-b story-m">${bodyHtml(S, sc)}</div>`;
   }
@@ -217,9 +259,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const who = m.who || ((m.lines && m.lines[0] && m.lines[0].who) || 'semyon');
     const h = hero(who);
     const lines = m.lines || (m.text ? [{ who, text: m.text }] : []);
-    const body = lines.map((l) => esc(l.text)).join('</p><p>');
+    const body = lines.map((l) => esc(sub(S, l.text))).join('</p><p>');
     const isPost = m.form === 'post';
-    return `<div class="modal-h st-h"><span class="eyebrow st-ey">${isPost ? 'Пост' : 'Входящее'}</span><h2>${esc(m.title || (isPost ? 'Новый пост' : 'Письмо'))}</h2></div>
+    return `<div class="modal-h st-h"><span class="eyebrow st-ey">${isPost ? 'Пост' : 'Входящее'}</span><h2>${esc(sub(S, m.title || (isPost ? 'Новый пост' : 'Письмо')))}</h2></div>
       <div class="modal-b story-m"><article class="st-paper ${isPost ? 'post' : 'letter'}">
         <header class="st-ph">${portrait(who, 'smile', 'sm')}<span class="st-pw2"><b>${esc(h.name)}</b><small>${esc(h.role || '')} · ${E().fmtDate(day)}</small></span><span class="st-kind">${isPost ? 'Пост' : 'Письмо'}</span></header>
         <div class="st-pb"><p>${body}</p></div><div class="st-ps">— ${esc(whoName(who))}</div>
@@ -245,10 +287,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let inner;
     if (pend) {
       const title = pend.title || (pend.text ? String(pend.text).slice(0, 60) : 'Письмо');
-      inner = `<div class="st-pend"><span class="st-pi" aria-hidden="true">${CHAT}</span><span class="st-pt"><b>«${esc(title)}»</b><small>Ждёт вашего решения</small></span><button class="btn sm primary" data-act="story">Открыть</button></div>`;
+      inner = `<div class="st-pend"><span class="st-pi" aria-hidden="true">${CHAT}</span><span class="st-pt"><b>«${esc(sub(S, title))}»</b><small>Ждёт вашего решения</small></span><button class="btn sm primary" data-act="story">Открыть</button></div>`;
     } else {
       const ch = last.chapter ? ST.chapterName(last.chapter) : '';
-      inner = `<div class="st-last"><span class="st-ld">${E().fmtDate(last.day)}</span><span class="st-lt"><b>${esc(last.title || 'Решение')}</b>${last.choice ? `<small>${esc(last.choice)}</small>` : ''}${ch ? `<small class="st-lc">${esc(ch)}</small>` : ''}</span></div>`;
+      inner = `<div class="st-last"><span class="st-ld">${E().fmtDate(last.day)}</span><span class="st-lt"><b>${esc(sub(S, last.title || 'Решение'))}</b>${last.choice ? `<small>${esc(sub(S, last.choice))}</small>` : ''}${ch ? `<small class="st-lc">${esc(ch)}</small>` : ''}</span></div>`;
     }
     return `<div class="sec storyb"><h3><span class="st-h">${BOOK}История</span><button class="linkbtn" data-act="storyLog">Вся летопись →</button></h3>${inner}</div>`;
   }
@@ -261,10 +303,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `${head}<div class="modal-b story-m st-logm">`;
     for (const ch of h.chapters) {
       s += `<h4 class="st-ch-h">${esc(ch.name)}<small>${ch.items.length}</small></h4><ul class="st-log">`;
-      for (const it of ch.items) s += `<li><span class="st-d">${E().fmtDate(it.day)}</span><span class="st-lb"><b>${esc(it.title || '')}</b>${it.choice ? `<span class="st-c">${esc(it.choice)}</span>` : ''}</span></li>`;
+      for (const it of ch.items) s += `<li><span class="st-d">${E().fmtDate(it.day)}</span><span class="st-lb"><b>${esc(sub(S, it.title || ''))}</b>${it.choice ? `<span class="st-c">${esc(sub(S, it.choice))}</span>` : ''}</span></li>`;
       s += '</ul>';
     }
-    if (h.ending) s += `<div class="st-end"><b>${esc(h.ending.name)}</b><span>${esc(h.ending.text)}</span></div>`;
+    if (h.ending) s += `<div class="st-end"><b>${esc(sub(S, h.ending.name))}</b><span>${esc(sub(S, h.ending.text))}</span></div>`;
     return `${s}</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
   }
   function openLog() {
@@ -279,14 +321,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!n) return;
     if (n.phase === 'scene') { openScene(); return; }
     const box = document.getElementById('toasts'); if (!box) return;
+    const S = APP() && APP().state;
     const end = n.phase === 'ending';
     const el = document.createElement('div');
     el.className = 'toast sttoast ' + (end ? 'warn' : 'good');
     el.setAttribute('role', 'status');
     if (end) {
-      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">История закончилась</span><b>${esc(n.name || '')}</b>${n.text ? `<span class="md">${esc(n.text)}</span>` : ''}</span>`;
+      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">История закончилась</span><b>${esc(sub(S, n.name || ''))}</b>${n.text ? `<span class="md">${esc(sub(S, n.text))}</span>` : ''}</span>`;
     } else {
-      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">Решение</span><b>${esc(n.title || 'Сцена')}</b><span class="md">${esc(n.choice || '')}${n.out ? ` · ${esc(n.out)}` : ''}</span></span>`;
+      el.innerHTML = `<span class="mi" aria-hidden="true">${BOOK}</span><span class="mt"><span class="ey">Решение</span><b>${esc(sub(S, n.title || 'Сцена'))}</b><span class="md">${esc(sub(S, n.choice || ''))}${n.out ? ` · ${esc(sub(S, n.out))}` : ''}</span></span>`;
     }
     el.title = 'Открыть летопись';
     el.addEventListener('click', () => { el.remove(); openLog(); });
@@ -353,5 +396,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   document.addEventListener('keydown', onKey);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.StoryUI = { openScene, openLog, block, logHtml, sceneHtml, notify, toast: notify, portrait, pxKey, PX_NOTE, ICON: BOOK, get ui() { return ui; } };
+  BK.StoryUI = { openScene, openLog, block, logHtml, sceneHtml, notify, toast: notify, portrait, pxKey, PX_NOTE, ICON: BOOK, sub, get ui() { return ui; } };
 })();
