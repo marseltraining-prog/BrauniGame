@@ -246,6 +246,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .emp { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--line); }
 .emp:last-child { border-bottom: 0; }
 .emp .nm { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* на узком экране длинные имена (например, управляющих) переносим, а не режем многоточием */
+@media (max-width: 430px) { .emp .nm { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; } }
 .emp .meta { font-size: 11px; color: var(--ink-3); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .emp .acts { display: flex; gap: 4px; }
 .stars { display: inline-flex; gap: 2px; }
