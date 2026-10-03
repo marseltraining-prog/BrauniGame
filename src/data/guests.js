@@ -360,7 +360,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: () => '«Я у них тоже заказы вожу, — курьер понижает голос. — У них упаковка мокрая, картон разъезжается, а вам бумагу кладут нормальную. И ещё: они в Черниковке помещение смотрят, большое, у рынка. Вы не говорили, что слышали. Это я так, к слову, мне за это не платят».',
       choices: () => [
         { label: '«Расскажи подробнее. Кофе — за счёт заведения»', desc: 'Вы узнаете про планы «Двора» раньше соседей', fx: { rel: 2, skill: 2 },
-          do(P) { relP(P, { artur: 8 }); sfP(P, 'g_artur', 'warm'); skP(P, { sales: 3 }); feedP(P, 'Артур рассказал про два помещения, которые смотрит «Хлебный двор». Одно — у рынка в Черниковке.'); } },
+          do(P) { relP(P, { artur: 8 }); sfP(P, 'g_artur', 'warm'); skP(P, { sales: 3 }); feedP(P, '{artur} рассказал про два помещения, которые смотрит «{rivalChain}». Одно — у рынка в Черниковке.'); } },
         { label: '«Запомнил. И тебе совет: не рассказывай чужое всем подряд»', desc: 'Он смутится, но поймёт, что вы за него', fx: { rel: 1, skill: 1 },
           do(P) { relP(P, { artur: 4 }); skP(P, { people: 2 }); } },
         { label: '«Не сплетничай. Работай»', desc: 'Он уйдёт и будет возить чужой хлеб', fx: { rel: -2 },
@@ -573,10 +573,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         { label: '«Пока нет места. Приходи, когда будет»',
           desc: 'Она кивнёт и пойдёт искать дальше',
           effects: [{ t: 'rel', who: 'aliya', add: -5 }] },
-        { label: '«Иди в „Хлебный двор“. У них платят больше»',
+        { label: '«Иди в „{rivalChain}“. У них платят больше»',
           desc: 'Через год она будет старшей смены у Олега, и это будет ваша ошибка',
           effects: [{ t: 'rel', who: 'aliya', add: -15 }, { t: 'competitor', m: 0.99, d: 365 },
-            { t: 'journal', text: 'Алия ушла в «Хлебный двор» — и выросла там' }] },
+            { t: 'journal', text: '{aliya} ушла в «{rivalChain}» — и выросла там' }] },
       ],
     },
 
@@ -736,7 +736,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function addThread(S, rec) {
     const T = BK.Threads;
     if (!T || typeof T.add !== 'function' || !rec) return false;
-    try { T.add(S, rec); return true; } catch (e) { return false; }
+    // Местный слой (src/data/story-cast.js): в «Вас помнят» человек должен быть из своего города.
+    // Для Уфы swap возвращает строку как есть, поэтому записи нитей и их текст не меняются.
+    const C = BK.STORY_CAST;
+    let r = rec;
+    if (C && C.swap && C.cityOf(S) !== 'ufa') {
+      r = Object.assign({}, rec);
+      r.who = C.swap(S, rec.who || ''); r.role = C.swap(S, rec.role || ''); r.text = C.swap(S, rec.text || '');
+      if (rec.effect) { r.effect = Object.assign({}, rec.effect); r.effect.text = C.swap(S, rec.effect.text || ''); }
+    }
+    try { T.add(S, r); return true; } catch (e) { return false; }
   }
   function wrapEffects() {
     const Eng = BK.Engine;

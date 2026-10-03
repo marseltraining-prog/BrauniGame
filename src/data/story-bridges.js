@@ -81,7 +81,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ],
       choices: [
         { label: 'Спасибо. Вечерняя скидка, посуда для черствого.', desc: 'Списаний меньше, себестоимость ниже на полгода.', cost: 'внимание к цеху',
-          effects: [{ t: 'foodcost', m: 0.99, d: 180 }, { t: 'rel', who: 'rashid', add: 10 }, { t: 'journal', text: 'Рашид научил продавать вечером' }] },
+          effects: [{ t: 'foodcost', m: 0.99, d: 180 }, { t: 'rel', who: 'rashid', add: 10 }, { t: 'journal', text: '{mentor} научил продавать вечером' }] },
       ],
     },
     {
@@ -612,7 +612,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         effect: { fx: [{ t: 'cash', v: -300000 }], text: 'вам это ещё припомнят' } },
 
       poach: { flag: ['lineOleg', 'sold'], who: 'Гуля Сафина', role: 'пекарня «Калач»', kind: 'grudge',
-        text: 'вы сосватали её «Хлебному двору»', after: 300,
+        text: 'вы сосватали её «{rivalChainDat}»', after: 300,
         effect: { fx: [{ t: 'loyalty', add: -2 }], text: 'она узнала, откуда у Олега её телефон' } },
 
       burnout: { flag: ['lineBody', 'sick'], flagOnly: true },
