@@ -504,7 +504,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let n = 0;
     const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
     BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${cfg.OPEN_DAYS} дн.`, 'good');
+    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${BK.Corp && BK.Corp.openDays ? BK.Corp.openDays(S, id) : 21} дн.`, 'good');
     return { ok: true, opened: n };
   }
 

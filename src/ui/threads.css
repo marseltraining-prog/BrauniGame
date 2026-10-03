@@ -1,0 +1,42 @@
+/* Нити истории (src/ui/threads-ui.js): блок «Вас помнят» в «Сводке» и окно-реестр.
+   Базовые элементы (.sec, .card, .chip, .hint, .linkbtn) — из styles.css; здесь только своё. */
+
+/* --- блок в «Сводке» --- */
+.sec.thr-block .thr-h { display: inline-flex; align-items: center; gap: 6px; }
+.sec.thr-block .thr-h svg { width: 14px; height: 14px; color: var(--crust); }
+.sec.thr-block .thr-h .cnt { margin-left: 2px; padding: 0 6px; border-radius: 8px; background: var(--warn-soft); color: var(--warn-t); font-size: 11px; font-weight: 700; }
+.thr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.thr-list li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.thr-list li:first-child { border-top: 0; }
+.thr-list .ic { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-2); color: var(--crust); }
+.thr-list .ic svg { width: 14px; height: 14px; }
+.thr-list .tx { min-width: 0; }
+.thr-list .tx b { display: block; font-size: 13px; }
+.thr-list .tx small { display: block; color: var(--ink-3); font-size: 12px; line-height: 1.35; }
+.thr-when2 { color: var(--ink-3); font-size: 11px; white-space: nowrap; }
+
+/* --- окно-реестр --- */
+.thr-lead { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.thr-note { margin: 0 0 8px; }
+.thr-card { margin: 8px 0; border-left: 3px solid var(--line-2); }
+.thr-card.thr-bad { border-left-color: var(--bad); }
+.thr-card.thr-warn { border-left-color: var(--warn); }
+.thr-card.thr-good { border-left-color: var(--good); }
+.thr-card .card-t { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.thr-kind { font-size: 11px; }
+.thr-when { display: flex; flex-direction: column; align-items: flex-end; color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+.thr-when small { color: var(--crust); font-size: 11px; }
+.thr-body { padding: 0 2px 2px; }
+.thr-text { margin: 6px 0; font-size: 13px; line-height: 1.45; }
+.thr-eff { margin: 6px 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.thr-eff b { color: var(--ink); }
+.thr-until { color: var(--warn-t); }
+.thr-fx { margin: 6px 0; font-size: 12px; color: var(--ink-3); }
+.thr-meta { margin-top: 6px; color: var(--ink-3); font-size: 11px; }
+
+@media (max-width: 560px) {
+  .thr-list li { grid-template-columns: 24px minmax(0, 1fr); }
+  .thr-list .thr-when2 { grid-column: 2; justify-self: start; }
+  .thr-card .card-h { flex-wrap: wrap; }
+  .thr-when { align-items: flex-start; }
+}

@@ -207,6 +207,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
       if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
       if (BK.Strat && BK.Strat.attItems) for (const x of BK.Strat.attItems(S)) add(x); // стратегия сложилась сама
+      if (BK.Threads && BK.Threads.attItems) for (const x of BK.Threads.attItems(S)) add(x); // нити истории: «вас помнит инспектор» — открытие в городе дольше
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;
@@ -486,6 +487,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)
     if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
+    if (BK.ThreadsUI) s += BK.ThreadsUI.dashBlock(S); // нити истории: кто вас помнит, чем это грозит и когда
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
     const shown = ui.attAll ? items : items.slice(0, MAX);

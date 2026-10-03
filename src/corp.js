@@ -63,7 +63,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function applyGlobals(S) {
     if (!BK.useCity) return;
     const a = S && S.corp && S.corp.active, c = a && S.corp.cities[a];
+    syncOpenDays(S, a); // нити истории: срок открытия точки в городе × openGap (обиженный инспектор — дольше, друг — быстрее)
     if (c && a !== 'ufa') BK.useCity(a, c.seed, c.mapGen); else BK.useCity(null);
+  }
+
+  /* ---------------- нити истории (BK.Threads, src/threads.js) ----------------
+     Срок открытия точки в городе = базовый (CFG.OPEN_DAYS_BASE) × поправка нити. Движок читает
+     CFG.OPEN_DAYS как обычно, поэтому меняется только множитель, а не сам движок. */
+  function openK(S, id) { return (S && BK.Threads && BK.Threads.openGap) ? BK.Threads.openGap(S, id) : 1; }
+  function syncOpenDays(S, id) {
+    const cfg = C(); if (!cfg || !cfg.OPEN_DAYS) return 1;
+    if (cfg.OPEN_DAYS_BASE == null) cfg.OPEN_DAYS_BASE = cfg.OPEN_DAYS;
+    cfg.OPEN_DAYS = Math.max(1, Math.round(cfg.OPEN_DAYS_BASE * openK(S, id)));
+    return cfg.OPEN_DAYS;
   }
 
   /* ---------------- множители для движка ---------------- */
@@ -87,7 +99,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.stores = pk.stores; S.productions = pk.productions; S.offers = []; S.prodOffers = []; S.rival = pk.rival || { enabled: false, stores: [] };
     if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
     const w0 = cr._with, a0 = cr._actProd; cr._with = id; if (w0 == null) cr._actProd = keep.productions; // цеха активного города — для снабжения из него (§7.2)
+    const kd0 = C().OPEN_DAYS; syncOpenDays(S, id); // нити истории: у этого города свой срок открытия точки
     try { return withRng(S, c, 'rng', fn); } finally {
+      C().OPEN_DAYS = kd0;
       if (w0 == null) { delete cr._with; delete cr._actProd; } else { cr._with = w0; cr._actProd = a0; }
       S.stores = keep.stores; S.productions = keep.productions; S.offers = keep.offers; S.prodOffers = keep.prodOffers; S.rival = keep.rival;
       BK.DISTRICTS = keep.D; BK.MAP = keep.M; BK.CENTER_POINT = keep.P; BK.CITY = keep.CITY;
@@ -240,6 +254,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
     S.flags.storeNum = c.numSeq || 0;
     cr.active = id;
+    syncOpenDays(S, id); // нити истории: в этом городе срок открытия точки может быть другим
     withRng(S, c, 'rng', () => {
       if (c.packed) {
         const pk = c.packed;
