@@ -85,7 +85,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return false;
   }
   function fits(S, R, sc) {
-    if (!sc || R.seen[sc.id]) return false;
+    if (!sc) return false;
+    if (R.seen[sc.id] && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
     if (sc.once === false) { /* повторяемые сцены разрешены */ }
     const t = sc.trigger || {};
     if (t.after && !t.after.every((id) => R.seen[id])) return false;
@@ -123,8 +124,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (t.after && !t.after.every((id) => R.seen[id])) continue;
       if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
       if (t.all && !t.all.every((c) => cond(S, R, c))) continue;
-      const base = (t.any || []).map((c) => (c.months != null ? c.months : c.year != null ? c.year * 12 : null)).filter((x) => x != null);
-      if (!base.length) continue;
+      // срок запасного варианта: от самого раннего временного условия, а если их нет —
+      // от момента, когда пришли предпосылки (after/afterAny): иначе сцены вроде «обеда с Олегом»
+      // (условие по точкам) не приходили никогда
+      let base = (t.any || []).map((c) => (c.months != null ? c.months : c.year != null ? c.year * 12 : null)).filter((x) => x != null);
+      if (!base.length) {
+        const pre = [].concat(t.after || [], t.afterAny || []).map((id) => R.seen[id]).filter((d) => d != null);
+        if (!pre.length) continue;
+        base = [Math.max.apply(null, pre) / 30.44];
+      }
       if (months(S) >= Math.min.apply(null, base) + sc.fallback.months) return sc;
     }
     return null;
