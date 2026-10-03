@@ -10,6 +10,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const qn = (n) => (/[«»"„“]/.test(n) ? esc(n) : `«${esc(n)}»`);
   const DIFF = { easy: 'Лёгкий', normal: 'Нормальный', hard: 'Хардкор', hardcore: 'Хардкор' };
 
+  /* ---- звук экранов достижений и итогов (этап «озвучка») ----
+     Искорка достижения уже звучит в момент получения (achToast); здесь — только открытие экранов.
+     Итоги — «ленточка» (на банкротстве «bad» уже сыграл из app.js — не дублируем).
+     В скрытой вкладке и при выключенном звуке play() сам молчит. */
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let achSeen = false; // «Достижения» первый раз за сессию — искорка, дальше тихий щелчок: не надоедать
+
   /* =================== СЛОТЫ СОХРАНЕНИЙ ===================
      Слот 1 — прежний ключ 'bk-ufa-save-v1' (старое сохранение игрока автоматически становится слотом 1),
      слоты 2–3 — 'bk-ufa-save-v1-slot2/3'. Активный слот (куда идёт автосохранение) — 'bk-ufa-slot'. */
@@ -148,6 +155,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openAchievements() {
     const S = APP().state; if (!S || !A()) return;
     A().ensure(S);
+    snd(achSeen ? 'click' : 'sparkle'); // экран достижений открылся: первый раз за сессию — искорка, дальше тихий щелчок
+    achSeen = true;
     const draw = (keep) => {
       APP().openModal(achHtml(S), { closable: !S.lost, keepScroll: keep });
       const m = $('#modal .modal'); m.classList.add('wide');
@@ -283,6 +292,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openSummary() {
     const S = APP().state; if (!S || !A()) return;
     A().ensure(S);
+    snd('ribbon'); // итоги игры: мягкая «ленточка» (при банкротстве «bad» уже звучал — не дублируем)
     APP().openModal(summaryHtml(S), { closable: !S.lost });
     $('#modal .modal').classList.add('wide');
     $('#sumNew').addEventListener('click', () => APP().toStart());

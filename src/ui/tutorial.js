@@ -106,6 +106,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const secBy = (re) => { const h = byText('#pbody .sec > h3', re); return h ? h.parentElement : null; };
   const loan5 = () => { APP().ACT.loan({ arg: 5e6 }); };
 
+  /* ---------- звук обучения (этап «озвучка») ----------
+     Одно событие — один звук: появление карточки — тихий щелчок, выполнение шага — короткий «тап»,
+     финал обучения — «ленточка», выключили обучение — тихий щелчок. Идущие подряд события (шаг выполнен
+     и сразу появился следующий) звучат один раз: между своими звуками держим паузу 150 мс. */
+  let sndAt = 0;
+  function snd(name, hard) {
+    const Sd = BK.Sound; if (!Sd || !name) return false;
+    const now = globalThis.performance ? performance.now() : Date.now();
+    if (!hard && now - sndAt < 150) return false; // не строчить
+    if (!Sd.play(name)) return false;             // в скрытой вкладке и при выключенном звуке — тишина
+    sndAt = now; return true;
+  }
+
   /* ---------- шаги ----------
      seq — идут по порядку сразу после старта; остальные срабатывают по ситуации (trig).
      target(S, ui) → элемент для обводки; key — что обязательно должно остаться видно (по умолчанию target).
@@ -257,7 +270,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (id && T.done.indexOf(id) < 0) T.done.push(id);
     T.step = null; delete T.restart;
     cur = null; curHtml = ''; scrolledFor = null;
-    if (id === 'final') { finish(S, false); return; }
+    if (id === 'final') { finish(S, false); return; } // финал озвучивает finish: «ленточка»
+    snd('tap'); // шаг выполнен
     // снять паузу, которую ставило обучение, — если следующий шаг её не требует
     const next = pick(S);
     if (pausedBy && (!next || !STEP[next].pause)) { APP().setSpeed(pausedBy); pausedBy = null; }
@@ -267,6 +281,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const T = st(S); T.on = false; T.step = null; delete T.restart;
     if (pausedBy) { APP().setSpeed(pausedBy); pausedBy = null; }
     cur = null; curHtml = ''; hide();
+    snd(skipped ? 'click' : 'ribbon', !skipped); // финал обучения — «ленточка» (одно событие — один звук)
     if (skipped) APP().toast('Обучение выключено', 'Включить снова — «Меню игры» (шестерёнка) → «Пройти обучение заново».', 'good');
     else APP().toast('Обучение пройдено', 'Удачи! Цель — 5 млрд ₽ оборота за 12 месяцев.', 'good');
     APP().save();
@@ -338,6 +353,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         cur = id; curHtml = ''; scrolledFor = null;
         if (id && id !== 'event') st(S).step = id;
         if (id) {
+          snd('click'); // появилась карточка шага
           const s = STEP[id];
           if (s.start && !ui.modal) s.start(S, ui);
           if (s.pause && ui.speed > 0) { pausedBy = pausedBy || ui.speed; app.setSpeed(0); }
@@ -383,8 +399,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function restart() {
     const S = APP().state; if (!S) return;
     S.tutorial = { on: true, step: null, done: [], restart: true };
-    cur = null; curHtml = ''; pausedBy = null;
+    cur = null; curHtml = ''; pausedBy = null; sndAt = 0;
     APP().closeModal(); APP().toast('Обучение запущено', 'Подсказки появятся по шагам.', 'good');
+    snd('click'); // «пройти заново»: дальше карточку озвучит появление первого шага
   }
   const settingsHtml = () => '<div class="row sp tut-set"><span>Обучение для новичка</span><button type="button" class="btn" data-act="tutRestart">Пройти обучение заново</button></div>';
 
