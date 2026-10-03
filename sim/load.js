@@ -1,7 +1,7 @@
 // Загружает игровые модули в Node (глобальный BK)
 const path = require('path');
 const src = path.join(__dirname, '..', 'src');
-for (const f of ['config.js', 'data/story.js', 'data/scenarios.js', 'data/scen-legacy.js', 'data/scen-rescue.js', 'data/scen-crisis.js', 'data/scen-moscow.js', 'data/story-war.js', 'data/story-russia.js', 'data/story-bridges.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'data/strat-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'investors.js', 'story.js', 'strategy.js', 'scenario.js', 'prologue.js', 'data/prolog-v2.js', 'stage1.js']) {
+for (const f of ['config.js', 'data/story.js', 'data/scenarios.js', 'data/scen-legacy.js', 'data/scen-rescue.js', 'data/scen-crisis.js', 'data/scen-moscow.js', 'data/story-war.js', 'data/story-russia.js', 'data/story-bridges.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/corp-events.js', 'data/strat-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'investors.js', 'story.js', 'strategy.js', 'scenario.js', 'prologue.js', 'data/prolog-v2.js', 'stage1.js', 'data/guests.js']) {
   delete require.cache[require.resolve(path.join(src, f))];
   require(path.join(src, f));
 }
