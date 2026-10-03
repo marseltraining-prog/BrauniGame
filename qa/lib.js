@@ -12,9 +12,11 @@ const VIEWPORTS = {
 
 async function openPage(browser, vpName, opts = {}) {
   const vp = VIEWPORTS[vpName];
+  // WebKit (Safari) не знает разрешения clipboard-write — просим буфер обмена только у Chromium
+  const perms = browser.browserType().name() === 'webkit' ? [] : ['clipboard-read', 'clipboard-write'];
   const ctx = await browser.newContext({
     viewport: { width: vp.width, height: vp.height }, isMobile: !!vp.isMobile, hasTouch: !!vp.hasTouch,
-    deviceScaleFactor: vp.deviceScaleFactor || 1, colorScheme: opts.dark ? 'dark' : 'light', permissions: ['clipboard-read', 'clipboard-write'],
+    deviceScaleFactor: vp.deviceScaleFactor || 1, colorScheme: opts.dark ? 'dark' : 'light', permissions: perms,
   });
   const p = await ctx.newPage();
   p.errs = [];

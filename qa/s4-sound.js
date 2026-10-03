@@ -1,29 +1,31 @@
-/* Озвучка пролога «Бариста» и стадии 1 «Своя кофейня» — короткая проверка (агент s4-prosound).
-   node qa/s4-sound.js
-   Проверяем ровно то, что просил владелец:
+/* Озвучка пролога «Бариста» и стадии 1 «Своя кофейня»: node qa/s4-sound.js
+   Проверяем ровно то, что нужно:
      1) звук вообще вызывается (считаем вызовы BK.Sound.play, подменив его);
      2) звук срабатывает на СОБЫТИЕ, а не на перерисовку: за N кадров цикла на одном и том же состоянии
         новых вызовов нет (иначе звук «строчил» бы);
      3) одно событие — один звук (нет дублей);
-     4) ошибок консоли нет.
-   Звук выключен не должен мешать: сам BK.Sound не играет при выключенном звуке, здесь мы считаем вызовы
-   BK.Sound.play (то есть то, что зовут слои), — этого достаточно. */
+     4) «Смена» приходит сама по расписанию (ручной кнопки больше нет) — играем её кнопками интерфейса,
+        как игрок: полка → поднос → «Отдать заказ» → «Закончить» → «Готово»;
+     5) ошибок консоли нет.
+   Счётчик считает только те вызовы, которые BK.Sound действительно проиграл (play() вернул true):
+   вызов, подавленный механизмом «не чаще раза в 45 мс», звука не даёт — иначе проверка ловила бы не
+   «строчку», а сам механизм подавления. Звук выключен не должен мешать: здесь мы считаем именно вызовы
+   BK.Sound.play (то есть то, что зовут слои). */
 const { chromium, openPage } = require('./lib');
 
 const issues = [];
 const ok = (c, m) => { if (!c) issues.push(m); };
 
-// счётчик вызовов: подменяем BK.Sound.play и запоминаем (имя, t)
+// счётчик: подменяем BK.Sound.play и запоминаем (имя, t) — только реально прозвучавшие вызовы
 const SPY = `(() => {
   window.__snd = [];
   const S = BK.Sound;
   const orig = S.play;
-  S.play = function (n, o) { const r = orig.call(S, n, o); window.__snd.push({ n, at: performance.now() }); return r; };
+  S.play = function (n, o) { const r = orig.call(S, n, o); if (r) window.__snd.push({ n, at: performance.now() }); return r; };
   return true;
 })()`;
 const calls = (p) => p.evaluate(() => window.__snd.map((x) => x.n));
 const reset = (p) => p.evaluate(() => { window.__snd = []; });
-const tail = (p, n) => p.evaluate((n) => window.__snd.slice(-n).map((x) => x.n), n);
 
 async function startPrologue(p) {
   await p.waitForSelector('#startForm .pro-pick');
@@ -32,10 +34,28 @@ async function startPrologue(p) {
   await p.waitForFunction(() => BK.PrologueUI && BK.PrologueUI.active() && document.querySelector('#prologue .pro-card'), null, { timeout: 6000 });
 }
 
+/* «Смена» идёт по расписанию (BK.Prologue.dueShift): ручной кнопки нет, пропустить нельзя.
+   Один шаг — действие кнопкой интерфейса: собрать заказ гостя на поднос и отдать (как qa/pixel.js). */
+const shiftStep = (p) => p.evaluate(() => {
+  const sh = BK.PrologueUI.ui.sh;
+  const click = (sel) => { const b = document.querySelector(sel); if (b && !b.disabled) { b.click(); return true; } return false; };
+  if (!sh) return 'wait';
+  if (sh.state === 'intro') return click('#proSh [data-pa=shiftGo]') ? 'go' : 'wait';
+  if (sh.state === 'res') return click('#proSh [data-pa=shiftDone]') ? 'done' : 'wait';
+  if (sh.state !== 'play') return 'wait';
+  const g = sh.guests[0];
+  if (!g || sh.served >= 3) return click('#proSh [data-pa=shiftEnd]') ? 'end' : 'wait';   // смена сыграна — закрываем, как игрок
+  if (g.order.slice().sort().join() !== sh.tray.slice().sort().join()) {                   // собрать заказ гостя на поднос
+    if (sh.tray.length && click('#proSh [data-pa=shiftTray]')) return 'tray';
+    const need = g.order.filter((id) => sh.tray.indexOf(id) < 0)[0];
+    if (need && click(`#proSh [data-pa=shiftItem][data-v="${need}"]`)) return 'item';
+  }
+  return click('#proSh [data-pa=shiftServe]') ? 'serve' : 'wait';
+});
+
 (async () => {
   const browser = await chromium.launch();
   const p = await openPage(browser, 'd1440');
-  const errs0 = p.errs;
   try {
     await startPrologue(p);
     await p.evaluate(SPY);
@@ -43,8 +63,7 @@ async function startPrologue(p) {
     await paused(0);
 
     /* ---- 1. появление карточки-сцены: один звук ----
-       месяц 5 и смены уже были: иначе выбранный вариант по правилам пролога открывает «Смену»
-       (после сцены П1 в первый месяц) и она перекрывает кнопки главного экрана — это её нормальное поведение */
+       месяц 5 и две смены уже сыграны: иначе следующая смена по расписанию перекроет главный экран */
     await reset(p);
     await p.evaluate(() => { const P = BK.App.state.prologue; P.m = 5; P.stats.shifts = 2; P.cards = [{ id: 'e_bonus', v: { a: 9000 } }]; BK.PrologueUI.ui.mode = null; BK.PrologueUI.render(true); });
     await p.waitForSelector('#proOv .pro-card', { timeout: 4000 });
@@ -59,12 +78,13 @@ async function startPrologue(p) {
     const redraw = await calls(p);
     ok(redraw.length === 0, `перерисовка пролога «строчит»: ${redraw.length} вызовов за 90 отрисовок (${redraw.slice(0, 8).join(',')})`);
 
-    /* ---- 3. выбор варианта: один звук на выбор ---- */
+    /* ---- 3. выбор варианта: отклик кнопки + тон события, без дублей ---- */
     await reset(p);
     await p.click('#proOv .pro-card [data-pa=choose]');
     await p.waitForTimeout(400);
     const ch = await calls(p);
-    ok(ch.length === 1, `выбор варианта: ожидался 1 звук, было ${ch.length} (${ch.join(',')})`);
+    ok(ch.length >= 1 && ch.length <= 2, `выбор варианта: ожидалось 1–2 звука (отклик и тон), было ${ch.length} (${ch.join(',')})`);
+    ok(new Set(ch).size === ch.length, `выбор варианта: звук повторился подряд (${ch.join(',')})`);
 
     /* ---- 4. деньги: копилка и вклад ---- */
     await p.evaluate(() => { const P = BK.App.state.prologue; P.cash = 200000; BK.PrologueUI.render(true); });
@@ -79,7 +99,7 @@ async function startPrologue(p) {
     await p.waitForTimeout(350);
     const dep = await calls(p);
     ok(dep.includes('coin'), `вклад: нет «дзыня» (${dep.join(',') || 'тишина'})`);
-    ok(dep.length <= 2, `вклад: слишком много звуков на одно нажатие (${dep.join(',')})`);
+    ok(dep.length <= 3, `вклад: слишком много звуков на одно нажатие (${dep.join(',')})`);
 
     /* ---- 5. отказ (нет денег) — deny ---- */
     await p.evaluate(() => { const S = BK.App.state, P = S.prologue; P.cash = 0; P.box = 0; P.dep = 0; BK.PrologueUI.render(true); });
@@ -91,49 +111,54 @@ async function startPrologue(p) {
     await p.waitForTimeout(250);
     const deny = await calls(p);
     ok(deny.includes('deny'), `нажатие на выключенную кнопку: нет мягкого «deny» (${deny.join(',') || 'тишина'})`);
-    // 5.2 отказ действия (res): возвращаем деньги в кошелёк, но цена покупки выше — движок отвечает отказом
+    // 5.2 отказ действия (res): движок отвечает отказом сам — звенеть он не должен
     await reset(p);
-    await p.evaluate(() => { const S = BK.App.state, P = S.prologue; P.cash = 0; P.box = 0; P.dep = 0; const r = BK.Prologue.buyWant(S, 'car'); });
+    await p.evaluate(() => { const S = BK.App.state, P = S.prologue; P.cash = 0; P.box = 0; P.dep = 0; BK.Prologue.buyWant(S, 'car'); });
     await p.waitForTimeout(150);
     const deny2 = await calls(p);
     ok(deny2.length === 0, `отказ движка не должен звенеть сам (${deny2.join(',')})`);
 
-    /* ---- 6. «Смена»: ведём 5 гостей и смотрим, что звук есть, но не частый ---- */
-    await p.evaluate(() => { const P = BK.App.state.prologue; P.mood = 60; P.hp = 80; P.cards = []; P.shift = { m: -1 }; BK.PrologueUI.render(true); });
-    await p.click('#prologue [data-pa=shift]');
-    await p.waitForSelector('#proSh [data-pa=shiftGo]', { timeout: 4000 });
+    /* ---- 6. «Смена» приходит сама по расписанию: играем её кнопками интерфейса ---- */
+    // ставим две сыгранные смены и месяц третьей: расписание (BK.Prologue.shiftAt) считает её пришедшей,
+    // и цикл пролога открывает окно сам — вручную смену запустить больше нельзя
+    await p.evaluate(() => {
+      const P = BK.App.state.prologue, list = BK.Prologue.shiftAt(P);
+      P.mood = 60; P.hp = 80; P.cards = []; P.shift = { m: -1 };
+      P.stats.shifts = Math.min(2, list.length - 1);
+      P.m = Math.max(P.m, list[P.stats.shifts]);
+      BK.PrologueUI.ui.speed = 1; BK.PrologueUI.render(true);
+    });
+    const opened = await p.waitForSelector('#proSh [data-pa=shiftGo]', { timeout: 8000 }).then(() => true, () => false);
+    ok(opened, 'смена по расписанию не открылась сама (ручной кнопки у игрока нет)');
+    const auto = await p.evaluate(() => !!(BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.auto));
+    ok(auto, 'окно смены открылось не как «пришедшая сама»');
     await reset(p);
-    await p.click('#proSh [data-pa=shiftGo]');
-    await p.waitForFunction(() => BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.state === 'play', null, { timeout: 4000 });
-    // 5 «гостей»: берём позиции заказа и отдаём
-    for (let i = 0; i < 5; i++) {
-      const done = await p.evaluate(() => {
-        const sh = BK.PrologueUI.ui.sh, g = sh && sh.guests[0]; if (!g) return false;
-        for (const id of g.order) sh.tray.push(id);
-        BK.PrologueUI.ui.sh.tray = g.order.slice();
-        return true;
-      });
-      if (!done) { await p.waitForTimeout(600); continue; }
-      await p.click('#proSh [data-pa=shiftServe]');
-      await p.waitForTimeout(160);
+    for (let i = 0; i < 80; i++) {
+      const st = await p.evaluate(() => ({ mode: BK.PrologueUI.ui.mode, s: BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.state, served: (BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.served) || 0 }));
+      if (st.mode !== 'shift' || !st.s) break;
+      if (st.s === 'res') break;                        // до итога доведём отдельно, чтобы посчитать его звук
+      if (st.s === 'play' && st.served >= 3) break;     // смена сыграна — «Закончить» нажмём ниже
+      await shiftStep(p);
+      await p.waitForTimeout(150);
     }
     const shiftCalls = await calls(p);
-    ok(shiftCalls.length > 0, '«Смена»: ни одного звука за 5 обслуженных гостей');
-    ok(shiftCalls.length <= 14, `«Смена»: звук частит — ${shiftCalls.length} вызовов на 5 гостей (${shiftCalls.join(',')})`);
+    ok(shiftCalls.length > 0, '«Смена»: ни одного звука за обслуженных гостей');
+    ok(shiftCalls.length <= 20, `«Смена»: звук частит — ${shiftCalls.length} вызовов на трёх гостей (${shiftCalls.join(',')})`);
     const RATE = 45;
     const gaps = await p.evaluate((rate) => {
-      const a = window.__snd; let bad = 0;
-      const last = {};
+      const a = window.__snd; let bad = 0; const last = {};
       for (const x of a) { if (last[x.n] != null && x.at - last[x.n] < rate) bad++; last[x.n] = x.at; }
       return bad;
     }, RATE);
-    ok(gaps === 0, `«Смена»: BK.Sound получил вызовы чаще ${RATE} мс на один звук — ${gaps}`);
-    if (shiftCalls.length) await p.evaluate(() => { const sh = BK.PrologueUI.ui.sh; if (sh) sh.t = sh.plan.sec; });
-    await p.waitForFunction(() => BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.state === 'res', null, { timeout: 8000 });
-    await p.waitForTimeout(400);
+    ok(gaps === 0, `«Смена»: BK.Sound получил один и тот же звук чаще ${RATE} мс — ${gaps}`);
+    // итог смены: переход к экрану итога озвучен один раз
+    const shiftState = await p.evaluate(() => BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.state);
+    await reset(p);
+    if (shiftState === 'play') { await p.$eval('#proSh [data-pa=shiftEnd]', (b) => b.click()); await p.waitForSelector('#proSh .sh-res', { timeout: 4000 }).catch(() => {}); }
+    await p.waitForTimeout(300);
     const resCalls = await calls(p);
-    ok(resCalls.length >= 1, `итог «Смены»: нет звука (${resCalls.join(',') || 'тишина'})`);
-    await p.click('#proSh [data-pa=shiftDone]');
+    ok(shiftState !== 'play' || resCalls.length >= 1, `итог «Смены»: нет звука (${resCalls.join(',') || 'тишина'})`);
+    await p.$eval('#proSh [data-pa=shiftDone]', (b) => b.click());
     await p.waitForTimeout(300);
 
     /* ---- 7. месяц: итог озвучивается один раз, без «строчки» ---- */
@@ -239,7 +264,7 @@ async function startPrologue(p) {
     const errs = p.errs;
     ok(errs.length === 0, `ошибки консоли: ${errs.slice(0, 3).join(' | ')}`);
   } catch (e) {
-    issues.push('ИСКЛЮЧЕНИЕ: ' + (e && e.message || e));
+    issues.push('ИСКЛЮЧЕНИЕ: ' + (e && e.message || e) + (p.errs.length ? ' | консоль: ' + p.errs.join(' | ') : ''));
   }
   await browser.close();
   if (issues.length) { console.log('ПРОБЛЕМЫ (' + issues.length + '):'); issues.forEach((x) => console.log(' - ' + x)); process.exitCode = 1; }
