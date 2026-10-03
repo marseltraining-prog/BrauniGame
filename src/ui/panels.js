@@ -208,6 +208,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
       if (BK.Strat && BK.Strat.attItems) for (const x of BK.Strat.attItems(S)) add(x); // стратегия сложилась сама
       if (BK.Threads && BK.Threads.attItems) for (const x of BK.Threads.attItems(S)) add(x); // нити истории: «вас помнит инспектор» — открытие в городе дольше
+      if (BK.ScenarioUI && BK.ScenarioUI.attItems) for (const x of BK.ScenarioUI.attItems(S)) add(x); // истории: срок вышел, цель не выполнена — игра идёт дальше
     const ord = { bad: 0, warn: 1, info: 2 };
     items.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
     counts.dash = items.filter((x) => x.lvl === 'bad').length;

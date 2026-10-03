@@ -298,6 +298,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
         else if (n.type === 'story' && BK.StoryUI) BK.StoryUI.notify(n);
         else if (n.type === 'strat' && BK.StratUI) BK.StratUI.notify(n);
+        else if (n.type === 'scen' && BK.ScenarioUI) { const m = BK.ScenarioUI.notify(n); if (m) ui.modalQueue.push(m); } // истории: «срок вышел — не сложилась» / «сложилась» (scenario-ui.js)
       else if (n.type === 'corp') ui.modalQueue.push(openCorpModal);
       else if (n.type === 'growth' && BK.GrowthUI) ui.modalQueue.push(() => BK.GrowthUI.unlockModal(n)); // рост вглубь: «Новая возможность»
       else if (n.type === 'fed' || n.type === 'fedLegend') ui.modalQueue.push(() => openModal(BK.CorpUI.fedModal(S, n.type === 'fedLegend'), { closable: true }));

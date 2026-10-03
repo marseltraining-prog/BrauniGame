@@ -8,7 +8,10 @@
         одна строка замысла, «Что делать» и что с самого начала не как обычно). Не окно:
         игровой цикл не останавливается, обучение новичка не перекрывается (BK.Tutorial);
      3) экран конца партии — блок «Пройдено N из 4» крупно, сыгранная история, что осталось
-        и кнопка «Начать заново — пройти другую историю» (forSummary зовёт src/ui/extras.js).
+        и кнопка «Начать заново — пройти другую историю» (forSummary зовёт src/ui/extras.js);
+     4) срок истории вышел, а цель не выполнена — отдельное окно «История не сложилась»
+        (notify → app.js.handleNotify), плюс строка в «Требует внимания» до конца партии:
+        игра продолжается, но история не засчитана и «Пройдено N из 4» не растёт.
    В app.js / extras.js — только хуки: startOpt() в форме старта, ACT.scenAgain, forSummary(S).
    Своя разметка — только через data-scen-act: ничего чужого не связываем. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -115,6 +118,63 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s + '</div></div>';
   }
   const forSummary = (S) => (SC().current(S) ? endingHtml(S) : '');
+
+  /* ---------------- 2б. провал истории: «срок вышел, цель не выполнена» ----------------
+     Срок считает src/scenario.js (BK.Scenario.day) — он же кладёт в S.notify уведомление
+     { type:'scen', phase:'expired' | 'saved' }. До правки его никто не читал, поэтому
+     провал («Наследство»: полгода прошли, пекарня не спасена) игрок не видел — партия
+     просто продолжалась. Теперь app.js зовёт notify(n) и ставит вернувшееся окно в очередь,
+     а пока история провалена, в «Требует внимания» висит строка со ссылкой на это окно.
+     Прогресс «Пройдено N из 4» не трогаем: засчитывается по-прежнему только выполненная
+     цель (BK.Scenario.finish → markDone), провал ничего не отмечает. */
+  const dnw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
+  function failHtml(S, n) {
+    const Sc = SC(), cur = Sc.current(S), d = cur ? Sc.info(cur) : null;
+    if (!d) return '';
+    const p = Sc.progress(), st = Sc.state(S) || {};
+    const was = d.days ? dnw(d.days, 'день', 'дня', 'дней') : '';
+    const held = (st.at != null && S.day > st.at) ? S.day - st.at : null;
+    return `<div class="modal-h"><span class="eyebrow neg">История не сложилась</span><h2>«${nm(d, cur)}»: срок вышел</h2></div>
+      <div class="modal-b">
+        <p style="margin:0">Прошло ${held != null ? dnw(held, 'день', 'дня', 'дней') : was || 'отведённое время'}, а цель истории так и не выполнена. <b>История проиграна</b> — в зачёт она не идёт.</p>
+        ${goal(d) ? `<div class="kpis"><div class="kpi wide"><span class="k">Что было нужно</span><span class="v">${esc(goal(d))}</span></div></div>` : ''}
+        <p style="margin:0">Что дальше: <b>игра продолжается</b> обычным ходом — цель сети 5 млрд ₽ и второй акт «Россия» никуда не делись. Просто эта история останется непройденной: при новой игре она снова выпадет из оставшихся, а на экране итогов будет видно «Пройдено ${p.played.length} из ${p.total}».</p>
+        <p class="hint" style="margin:0">Правила истории (спрос, мука, срок) закончились вместе с её сроком — штрафов «за провал» в игре нет.</p>
+      </div>
+      <div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button></div>`;
+  }
+  // app.js (handleNotify) зовёт это на уведомление сценария и, если вернулась функция,
+  // ставит её в очередь модальных окон — тогда «победа» / «банкротство» того же дня
+  // показываются раньше (они кладутся в начало очереди).
+  function notify(n) {
+    if (!n || !n.id) return null;
+    const S = APP() && APP().state, d = SC().info(n.id);
+    if (!S || !d) return null;
+    if (n.phase === 'expired') {
+      if (BK.Sound) BK.Sound.play('warn');
+      return () => APP().openModal(failHtml(S, n), { closable: true });
+    }
+    if (n.phase === 'saved') {
+      if (BK.Sound) BK.Sound.play('fanfare');
+      APP().toast('История сложилась', `«${d.name}»: ${goal(d) || 'цель выполнена'} — зачтено (${SC().progressHtml()}).`, 'good');
+    }
+    return null;
+  }
+  // строка в «Требует внимания» (panels.js), пока история провалена и партия идёт дальше
+  function attItems(S) {
+    if (!S || S.lost || !SC() || !SC().failed || !SC().failed(S)) return [];
+    const cur = SC().current(S), d = cur ? SC().info(cur) : null;
+    if (!d) return [];
+    return [{ lvl: 'warn', ic: 'alert', t: `История «${d.name}» не сложилась`,
+      d: `Срок вышел, цель не выполнена${goal(d) ? ': ' + esc(goal(d)) : ''}. Игра идёт дальше, история не засчитана.`,
+      b: { act: 'scenFail', label: 'Подробнее' } }];
+  }
+  function openFail() {
+    const S = APP() && APP().state;
+    if (!S) return;
+    const html = failHtml(S);
+    if (html) APP().openModal(html, { closable: true });
+  }
 
   /* ---------------- 3. начало партии: «выпала история» ---------------- */
   /* Уведомление { type:'scen', phase:'start' } движок кладёт в S.notify, но обработчика под него
@@ -243,8 +303,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     hook();
     const A = APP() && APP().ACT; if (!A || A.__scenUI) return; A.__scenUI = true;
     A.scenAgain = again;
+    A.scenFail = openFail; // «Подробнее» в «Требует внимания»: окно «История не сложилась»
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, pips, ICON };
+  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
 })();
