@@ -77,7 +77,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const what = t.done ? (ot || T_.effectText(S, t)) : `${t.text.slice(0, 90)}${t.text.length > 90 ? '…' : ''}`;
       return `<li><span class="ic">${KIND_ICON[t.kind] || KIND_ICON.promise}</span><div class="tx"><b>${esc(t.who)}</b><small>${esc(what)}</small></div><span class="thr-when2">${t.done ? (t.until ? 'до ' + date(S, t.until) : 'уже было') : date(S, t.due)}</span></li>`;
     };
-    const list = act.concat(wait).slice(0, 3), hidden = act.length + wait.length - list.length;
+    // личные (семейные) дела показывает свой блок «Свои люди» (BK.Story.famDash) со счётчиком
+    // «осталось N дней» и кнопкой «Решить» — здесь они не дублируются
+    const own = act.concat(wait).filter((t) => t.src !== 'family');
+    const list = own.slice(0, 3), hidden = own.length - list.length;
     return `<div class="sec thr-block"><h3><span class="thr-h">${ICON}Вас помнят${act.length ? `<span class="cnt">${act.length}</span>` : ''}</span><button class="linkbtn" data-act="threads">Подробнее →</button></h3>
       <ul class="thr-list">${list.map(line).join('')}</ul>
       ${hidden > 0 ? `<p class="hint">И ещё ${hidden}…</p>` : ''}</div>`;

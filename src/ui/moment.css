@@ -1,0 +1,88 @@
+/* =====================================================================
+   ЗАСТАВКА ТЯЖЁЛОГО МОМЕНТА И ЛИЧНЫЕ ЛИНИИ (BK.Moment, BK.Story.fam*)
+   Разметку рисуют src/ui/moment.js (заставка) и src/ui/story-ui.js (личные линии),
+   логику — src/story.js. Здесь только внешний вид: медленное затемнение, проявление сцены,
+   строки и кнопка; отдельно — строки семейных дел в «Требует внимания» и «Сводке».
+
+   Тайминги (те же числа, что в moment.js): затемнение 3,2 с, проявление 2,2 с,
+   первая строка на 5,6 с, вторая — на 6,8 с, кнопка — на 7,6 с.
+   prefers-reduced-motion: переходы почти мгновенные.
+   ===================================================================== */
+#moment.mom {
+  position: fixed; inset: 0; z-index: 55;
+  display: grid; grid-template-rows: 1fr auto auto; place-items: center;
+  background: none; pointer-events: auto;      /* заставка держит клики: нельзя случайно щёлкнуть по игре под ней */
+  --mom-dim: .45;                              /* до какой черноты «проявляется» сцена */
+}
+#moment .mom-black {
+  position: absolute; inset: 0; background: #000; opacity: 0;
+  transition: opacity 0s linear;               /* состояние задаётся классами ниже */
+  pointer-events: none;
+}
+#moment.mom-dark .mom-black { opacity: 1; transition: opacity 3.2s linear; }
+#moment.mom-reveal .mom-black { opacity: var(--mom-dim); transition: opacity 2.2s linear; }
+#moment.mom-snap .mom-black { transition: none; }
+#moment.mom-out .mom-black { opacity: 1; transition: opacity .7s linear; }
+
+/* сцена-намёк: появляется из черноты и остаётся приглушённой */
+#moment .mom-scene {
+  position: relative; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(6px); transition: opacity 1.4s linear, transform 2.4s ease-out;
+  pointer-events: none;
+}
+#moment .mom-frame { position: absolute; inset: -10px; border: 1px solid rgba(255, 255, 255, .07); }
+#moment .mom-scene-cv { display: block; image-rendering: pixelated; filter: saturate(.72) contrast(1.04); }
+#moment.mom-reveal .mom-scene { opacity: 1; transform: none; }
+
+/* строки: одна-две, без объяснений; появляются по одной */
+/* строки лежат на тёмной подложке: под ними может оказаться что угодно (карта, панель, окно события) */
+#moment .mom-text {
+  grid-row: 2; width: min(600px, calc(100vw - 32px)); margin: 0 16px; text-align: left;
+  background: linear-gradient(to bottom, rgba(6, 8, 12, .78), rgba(6, 8, 12, .9));
+  border-radius: 12px; padding: 10px 16px 16px;
+}
+#moment .mom-line {
+  margin: 10px 0 0; color: #f2f4f7; font-size: 17px; line-height: 1.5;
+  opacity: 0; transform: translateY(4px); transition: opacity .9s linear, transform .9s ease-out;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .85);
+}
+#moment .mom-line .mom-who { display: block; margin-bottom: 2px; color: #a9b3bd; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+#moment.mom-l1 .mom-line[data-i="0"], #moment.mom-l2 .mom-line[data-i="1"] { opacity: 1; transform: none; }
+#moment.mom-l2 .mom-line[data-i="0"] { opacity: .82; }
+
+/* кнопка: только когда сцена и строки уже показаны */
+#moment .mom-act { grid-row: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px)); opacity: 0; transition: opacity .8s linear; }
+#moment.mom-ready .mom-act { opacity: 1; }
+#moment .mom-act .btn { pointer-events: auto; min-width: 190px; }
+#moment .mom-hint { color: #8b949e; font-size: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+#moment.mom-ready .mom-next:focus-visible { outline: 2px solid #e3b341; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  #moment .mom-line { font-size: 15px; line-height: 1.45; }
+  #moment .mom-text { padding: 8px 12px 14px; }
+  #moment .mom-act { padding-top: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #moment.mom-dark .mom-black { transition-duration: .2s; }
+  #moment.mom-reveal .mom-black { transition-duration: .2s; }
+  #moment.mom-out .mom-black { transition-duration: .2s; }
+  #moment .mom-scene, #moment .mom-line, #moment .mom-act { transition-duration: .2s; }
+}
+
+/* ---------- личные (семейные) линии: «Мама болеет — 4 дня, чтобы решить» ----------
+   Строки в «Требует внимания» рисует сама панель (классы .att не трогаем), а блок в «Сводке»
+   собирает BK.Story.famDash — он говорит теми же классами, что «Вас помнят» (thr-list/thr-block),
+   поэтому здесь только мелочи: срок и кнопка «Решить». */
+.fam-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fam-list li { display: flex; align-items: flex-start; gap: 8px; }
+.fam-list li .tx { flex: 1 1 auto; min-width: 0; }
+.fam-list li .tx b { display: block; font-size: 13px; }
+.fam-list li .tx small { display: block; color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+.fam-when { flex: 0 0 auto; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); padding-top: 1px; }
+.fam-sec h3 .fam-h { display: inline-flex; align-items: center; gap: 6px; }
+.fam-left { color: var(--warn, #b06a1c); font-weight: 600; }
+.fam-opt { display: grid; gap: 8px; }
+.fam-opt .cd { color: var(--ink-2); }
+.fam-note { margin: 0; color: var(--ink-2); font-size: 13px; }
+.fam-lead { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }

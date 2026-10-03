@@ -15,8 +15,10 @@
      — лёгкая романтичная 8-битная тема (чиптюн): ведущая партия — квадрат (square) через фильтр низких
        частот, бас — треугольник рисунком вальса «раз-два-три», мягкое арпеджио восьмыми и очень тихий
        «тик»-перкуссия (шум через полосовой фильтр). Никаких «пэдов» и «блеска» — они владельцу не нравились;
-     — две разные темы: 'game' — фа мажор, 92 BPM, 3/4, петля 24 такта ≈ 47 с; 'prologue' — до мажор,
-       84 BPM, 3/4, петля 24 такта ≈ 51 с, выше регистр, мягче тембр и тише. Форма A–A'–B с вариациями;
+     — три разные темы: 'game' — фа мажор, 92 BPM, 3/4, петля 24 такта ≈ 47 с; 'prologue' — до мажор,
+       84 BPM, 3/4, петля 24 такта ≈ 51 с, выше регистр, мягче тембр и тише; 'sad' — ре минор, 63 BPM,
+       3/4, петля 16 тактов ≈ 46 с: тема тяжёлого момента (заставка BK.Moment), без перкуссии, ниже и тише.
+       Форма A–A'–B с вариациями (у 'sad' — A–B из восьмитактовых фраз);
      — каждая нота — свой короткоживущий осциллятор: частота ставится до старта, огибающая только рампами
        (атака 24 мс, спад 90 мс), stop() — после нуля; выключение и скрытая вкладка — плавный спад шины;
        после шины стоит мягкий лимитер (DynamicsCompressor) от перегрузки;
@@ -269,7 +271,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   //   • лёгкая перкуссия-«тик» — шум через полосовой фильтр, совсем тихо.
   // Две темы, у каждой своя тональность, темп и мелодия (не «та же петля на тон выше»):
   //   • game — фа мажор, 92 BPM, 3/4, 24 такта ≈ 47 с; спокойная «деловитая» тема сети;
-  //   • prologue — до мажор, 84 BPM, 3/4, 24 такта ≈ 51 с; выше регистр, мягче тембр, тише и короче фраза.
+  //   • prologue — до мажор, 84 BPM, 3/4, 24 такта ≈ 51 с; выше регистр, мягче тембр, тише и короче фраза;
+  //   • sad — ре минор, 63 BPM, 3/4, 16 тактов ≈ 46 с; тема тяжёлого момента (заставка BK.Moment):
+  //     тот же чиптюн-движок, но без перкуссии (tick = 0), ниже регистр, тише шина и мягче срез фильтра.
+  //     Владелец: «заставка с грустной 8-битной музыкой» — поэтому тема отдельная (BK.Sound.music('sad')),
+  //     а не «игровая на тон ниже»: у неё свой темп, своя мелодия и своя гармония.
   // Форма петли A (8 тактов) – A' (8) – B (8), повторяется с вариациями.
   //
   // Почему больше нет скрипов и хрустов:
@@ -282,6 +288,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const MUS = {
     GAIN: 0.06,          // громкость шины музыки (дальше общий MASTER 0,16 — вместе тихо, как раньше)
     PRO_K: 0.72,         // пролог тише игры
+    SAD_K: 0.8,          // тема тяжёлого момента тише игры: она звучит под затемнением и не должна бить в уши
     DUCK: 0.45,          // под открытым окном — тише, но не останавливаемся
     FADE_IN: 0.5,        // τ, с: появление подложки
     FADE_OUT: 0.25,      // τ, с: затухание при выключении
@@ -293,7 +300,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Темп, мелодия и инструменты от этого не меняются — только то, за сколько нот мы «успели» их поставить.
     LOOK: 1.0,
     TICK: 250,           // мс: как часто планировщик просыпается (реже, чем раньше, — меньше работы в момент нажатий)
-    CUT: { game: 3000, prologue: 2300 }, // Гц: в прологе тембр мягче (меньше верхов у квадрата)
+    CUT: { game: 3000, prologue: 2300, sad: 1900 }, // Гц: в прологе тембр мягче (меньше верхов у квадрата), в тяжёлом моменте — самый глухой
   };
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);   // MIDI-номер → Гц
 
@@ -360,13 +367,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
       [[0, 79, 2], [2, 76, 1], [3, 72, 3]],
       [[0, 74, 1], [1, 76, 1], [2, 77, 2], [4, 79, 2]],
     ],
+    // ——— тяжёлый момент: ре минор, медленно и низко; фразы длинные, дыхания много ———
+    // Ноты тянутся по 2–4 восьмых: это «неспешный темп», а не просто редкие удары.
+    // Тональность ре минор (Dm–Bb–F–C / Dm–Gm–Am–Dm) — минор без надрыва, без хроматики.
+    sad: [
+      // ——— A (8 тактов): Dm — Bb — F — C — Dm — Gm — Am — Dm
+      [[0, 69, 2], [2, 72, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 72, 1], [3, 70, 3]],
+      [[0, 69, 2], [2, 65, 1], [3, 67, 3]],
+      [[0, 72, 4], [4, 71, 1], [5, 67, 1]],
+      [[0, 69, 2], [2, 74, 1], [3, 72, 2], [5, 69, 1]],
+      [[0, 70, 2], [2, 74, 1], [3, 77, 3]],
+      [[0, 76, 2], [2, 72, 1], [3, 69, 3]],
+      [[0, 74, 3], [3, 72, 1], [4, 69, 1], [5, 65, 1]],
+      // ——— B (8 тактов): подъём и мягкий возврат домой (Bb — F — Gm — Dm — Bb — C — Am — Dm)
+      [[0, 70, 3], [3, 74, 2], [5, 77, 1]],
+      [[0, 77, 2], [2, 76, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 70, 1], [3, 67, 3]],
+      [[0, 69, 2], [2, 72, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 77, 1], [3, 79, 3]],
+      [[0, 76, 3], [3, 72, 2], [5, 74, 1]],
+      [[0, 72, 2], [2, 69, 1], [3, 67, 3]],
+      [[0, 69, 4], [4, 65, 2]],
+    ],
   };
   // Гармония по тактам (A – A' – B). Вальс: I–IV–V–I / vi–ii–V–I.
+  // sad — ре минор: Dm – Bb – F – C – Dm – Gm – Am – Dm (вторая фраза поднимается на Bb и возвращается).
   const MUS_PROG = {
     game: ['F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F', 'F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F',
       'Bb', 'F', 'Gm', 'C', 'F', 'Dm', 'Bb', 'C'],
     prologue: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G',
       'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'G'],
+    sad: ['Dm', 'Bb', 'F', 'C', 'Dm', 'Gm', 'Am', 'Dm',
+      'Bb', 'F', 'Gm', 'Dm', 'Bb', 'C', 'Am', 'Dm'],
   };
   const MUS_THEMES = {
     game: {
@@ -377,9 +410,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: MUS.CUT.prologue,
       lev: { lead: 0.272, bass: 0.208, arp: 0.049, tick: 0.025 },
     },
+    sad: {
+      mood: 'sad', key: 'ре минор', bpm: 63, beats: 3, steps: 6, gain: MUS.GAIN * MUS.SAD_K, cut: MUS.CUT.sad,
+      // перкуссии нет вовсе (tick: 0): в тяжёлом моменте «тик» звучал бы как метроном
+      lev: { lead: 0.28, bass: 0.22, arp: 0.04, tick: 0 },
+    },
   };
   Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });
-  const theme = (m) => (m === 'prologue' ? MUS_THEMES.prologue : MUS_THEMES.game);
+  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
   const stepDur = (th) => (60 / th.bpm) / (th.steps / th.beats);   // длительность восьмой, с
   const loopSec = (th) => th.bars * th.beats * 60 / th.bpm;        // длина полной петли, с
 
@@ -529,9 +567,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       Math.round(fade * 1000) + 120);
     return true;
   }
-  // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога
+  // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога,
+  // 'sad' — тема тяжёлого момента (заставка BK.Moment: смерть близкого, потеря, непоправимое)
   function musMood(m) {
-    if (m !== 'game' && m !== 'prologue') return mus.mood;
+    if (!MUS_THEMES[m]) return mus.mood;
     if (mus.mood === m) return mus.mood;
     mus.mood = m;
     const nd = mus.nodes;
@@ -553,7 +592,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // справка о теме (для проверки музыки, qa/music8.js): темп, тональность, длина петли, тембр, регистр
   function musInfo(m) {
-    const th = theme(m === 'prologue' || m === 'game' ? m : mus.mood);
+    const th = theme(MUS_THEMES[m] ? m : mus.mood);
     let sum = 0, n = 0, lo = 127, hi = 0;
     th.mel.forEach((bar) => bar.forEach((v) => { sum += v[1]; n++; if (v[1] < lo) lo = v[1]; if (v[1] > hi) hi = v[1]; }));
     return { mood: th.mood, key: th.key, bpm: th.bpm, beats: th.beats, steps: th.steps, bars: th.bars,
@@ -565,7 +604,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function renderMusic(mood, seconds, srIn, opts) {
     const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
     if (!OAC) return null;
-    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    const m = MUS_THEMES[mood] ? mood : 'game', th = theme(m);
     const sr = srIn || 44100, sec = Math.max(4, Math.min(120, seconds || 44));
     const c = new OAC(1, Math.ceil(sec * sr), sr);
     const out = c.createGain();                 // как MASTER в игре — иначе замер нельзя сравнивать с живым звуком
@@ -597,7 +636,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function renderMix(mood, seconds, events, opts) {
     const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
     if (!OAC) return null;
-    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    const m = MUS_THEMES[mood] ? mood : 'game', th = theme(m);
     // sr можно задать (opts.sr): проверка qa/crackle.js рендерит звук ещё и на 88,2 кГц — у слитной волны
     // скачок между сэмплами падает вдвое, у ступеньки-щелчка нет. Так «хруст» отличают от скорости тона.
     const sr = (opts && opts.sr) || 44100, sec = Math.max(4, Math.min(60, seconds || 12));
@@ -778,7 +817,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${catRow('money', CAT_NAME.money, 'выручка, монетки 1-го числа')}
         ${catRow('notes', CAT_NAME.notes, 'открытие точки, вехи, достижения')}
         ${catRow('ui', CAT_NAME.ui, 'отклик на нажатия и окна')}
-        ${catRow('music', CAT_NAME.music, 'лёгкая 8-битная тема (игра и пролог — разные)')}
+        ${catRow('music', CAT_NAME.music, 'лёгкая 8-битная тема: игра, пролог и тяжёлый момент — разные')}
       </div></div>`;
   }
 
@@ -828,7 +867,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     settingsHtml,
     tap,
     catOn, catVal, setCat, toggleCat, CATS, CAT_NAME,
-    // музыка: music('game') / music('prologue') — настроение (без аргумента — узнать текущее)
+    // музыка: music('game') / music('prologue') / music('sad') — настроение (без аргумента — узнать текущее)
     music: musMood,
     musicInfo: musInfo,       // справка о теме: темп, тональность, длина петли, тембр (проверка qa/music8.js)
     renderMusic,              // офлайн-рендер музыки в OfflineAudioContext — числа вместо «на слух»
