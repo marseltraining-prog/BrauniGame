@@ -1018,12 +1018,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return true;
   }
   function fireCrisis(S) {
+    const forced = S.ev && S.ev.forcedCrisis;   // сценарий может задать, какой кризис придёт первым (scenario.js)
     const cfg = C();
     S.ev.nextCrisis = S.day + Math.round(30 * diffK(S, 'crisisGap') * ri(S, cfg.CRISIS_MIN_MONTHS, cfg.CRISIS_MAX_MONTHS));
     S.ev.next = Math.max(S.ev.next, S.day + 20);
     if (!S.stores.some((s) => s.status !== 'opening')) return;
     const pool = BK.EVENTS.filter((e) => e.crisis && e.id !== S.ev.lastCrisis);
-    const e = pick(S, pool);
+    const e = (forced && pool.find((x) => x.id === forced)) || pick(S, pool);   // сценарий может задать конкретный кризис
     S.ev.lastCrisis = e.id;
     S.ev.creditSqueezeUntil = S.day + (cfg.CRISIS_CREDIT_DAYS || 0); // банки ужесточают кредитование
     startEvent(S, e);
