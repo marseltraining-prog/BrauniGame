@@ -48,8 +48,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     park: 'var(--good)', uni: 'var(--good)', fitness: 'var(--good)', theatre: 'var(--crust)', lux: 'var(--crust)',
     clinic: 'var(--map-rail)', school: 'var(--map-label)', sleep: 'var(--map-label)', industrial: 'var(--ink-3)' };
 
+  /* Статичный слой (районы, кольца, магистрали, рельсы, реки, парки, точки притяжения, подписи)
+     зависит ТОЛЬКО от активного города и набора опций — не от состояния игры. На подробной карте
+     большого города (Москва: 12 районов, 10 магистралей, 48 точек притяжения) он собирается из
+     нескольких сотен кусков строки и пересчитывает ячейки Вороного, поэтому держим результат в кэше:
+     ключ — город + опции, значение — готовая строка SVG. Кэш сбрасывается при смене BK.MAP/BK.DISTRICTS
+     (см. setCity и useCity), поэтому «залипнуть» на прошлом городе он не может. */
+  const staticCache = new globalThis.Map();
+  const staticKey = (id, noLabels) => id + '|' + (noLabels ? 0 : 1) + '|' + (BK.CITY && BK.CITY.id || 'ufa') + '|' + (BK.DISTRICTS && BK.DISTRICTS.length);
+  BK.mapStaticCacheClear = function () { staticCache.clear(); };
   function staticLayer(opts) {
     const M = BK.MAP, id = opts.id;
+    const key = staticKey(id, opts.noLabels);
+    const hit = staticCache.get(key);
+    if (hit != null) return hit;
     const cells = voronoi(BK.DISTRICTS);
     const city = smooth(M.city.concat([M.city[0]])) + 'Z';
     let s = `<defs><clipPath id="${id}-city"><path d="${city}"/></clipPath>
@@ -93,6 +105,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
+    staticCache.set(key, s);
     return s;
   }
 
@@ -413,6 +426,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (this.cityId === id && this.cityMap === BK.MAP) return false;
     const first = this.cityId == null;
     this.cityId = id; this.cityMap = BK.MAP;
+    staticCache.clear(); // карта города могла подмениться (BK.useCity) — кэш статичного слоя не переиспользуем
     if (first) return false;
     this.el.innerHTML = staticLayer({ id: 'mm' }) + '<g class="routes"></g><g class="markers"></g>';
     this.gR = this.el.querySelector('.routes'); this.gM = this.el.querySelector('.markers'); this.gRv = null;

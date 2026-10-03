@@ -41,6 +41,16 @@ async function perf(b, vp, st, throttle) {
   if (throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
   await p.evaluate((raw) => { localStorage.setItem('bk-ufa-save-v1', raw); BK.App.ACT.continue(); BK.App.setSpeed(0); window.scrollTo(0, 0); }, JSON.stringify(st));
   await p.waitForTimeout(300);
+  // Сеть собрана копиями со сдвигом (см. moscowSave): мощности цехов на них не хватает, и баланс
+  // уходит в минус — к концу замера игра «банкротится» и останавливается (проверка r.lost ниже ловила бы
+  // это как проблему, хотя интерфейс тут ни при чём). Банкротство наступает только при счёте в минусе
+  // И пустом резерве, поэтому держим резерв пополненным: это надёжнее, чем сбрасывать S.lost по таймеру
+  // (между проверками тик успевал уйти в фазу 'lost'). Замер — про отрисовку и тик, не про баланс.
+  await p.evaluate(() => {
+    const S = BK.App.state;
+    const keep = () => { if (S.reserve < 1e9) S.reserve = 1e9; if (S.cash < 5e7) S.cash = 5e7; };
+    keep(); setInterval(keep, 50);
+  });
   const chk = await p.evaluate(() => ({ city: BK.CITY && BK.CITY.name, stores: BK.App.state.stores.length, marks: document.querySelectorAll('#map .m-store, #map [data-kind="store"], #map .mk').length }));
   if (chk.city !== 'Москва' || chk.stores < N) issues.push(`[${vp}] загрузка: ${JSON.stringify(chk)}`);
   await p.evaluate(() => {
