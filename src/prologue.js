@@ -647,7 +647,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const d = BK.PrologV2 && BK.PrologV2.DILEMMAS && BK.PrologV2.DILEMMAS[id]; if (!d) return null;
     return {
       kind: 'hero', who: d.who, v2: 1,
-      title: () => d.title, text: () => d.text,
+      // у дилемм живого сюжета title/text — функции: вызываем, иначе игрок увидит исходный код
+      title: () => (typeof d.title === 'function' ? d.title() : d.title),
+      text: () => (typeof d.text === 'function' ? d.text() : d.text),
       choices: (P) => d.choices(P),
     };
   }
