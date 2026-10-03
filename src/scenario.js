@@ -60,12 +60,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return S.scen;
   }
   // Выбрать сценарий партии. id === 'random' — случайный из непройденных (по зерну игры).
-  function set(S, id) {
+  function set(S, id, o) {
     const st = ensure(S); if (!st) return null;
     let real = id;
     if (id === 'random') real = pick(S.seed);
     if (real && !info(real)) real = null;
     st.id = real === 'ufa' ? null : real;      // «обычная Уфа» — это отсутствие сценария
+    st.defer = !!(o && o.defer);               // истина — если партия начнётся с пролога и кофейни
     st.at = S.day;
     if (S.story) S.story.scenario = st.id || 'ufa';
     if (real && S.notify) S.notify.push({ type: 'scen', phase: 'start', id: real });
@@ -78,6 +79,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Полный набор — в src/data/scenarios.js (BK.SCEN.list[id].start).
   function applyStart(S) {
     const st = state(S); if (!st || !st.id) return null;
+    const defer = !!st.defer;
     const d = info(st.id); if (!d || !d.start) return null;
     const s = d.start, out = [];
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
@@ -102,8 +104,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     // старт «с готовой сетью» — только для обычной партии: в прологе и в «Своей кофейне» он бы всё сломал
     const midGame = !!((S.prologue && !S.prologue.won) || S.stage1) || S.phase === 'prologue' || S.phase === 'stage1';
-    const setupFn = midGame ? null : ((typeof s.setup === 'function' && s.setup) || (typeof d.setup === 'function' && d.setup));
-    if (setupFn) {
+    const setupFn = (typeof s.setup === 'function' && s.setup) || (typeof d.setup === 'function' && d.setup);
+    // Если игрок идёт через пролог и «Свою кофейню», сеть нельзя выдавать сейчас — иначе чужая сеть
+    // появится прямо в прологе/кофейне и всё сломает. Запоминаем и выдаём, когда начнётся основная игра.
+    if (setupFn && (midGame || defer)) { st.pending = true; out.push('сеть — позже'); }
+    if (setupFn && !st.pending) {
       // история может начаться не с нуля: своя сеть, цех, люди (например, «Спаси сеть»)
       try { const r = setupFn(S); out.push(r && r.stores ? `сеть: ${r.stores}` : 'сеть'); } catch (e) { out.push('сеть не встала'); }
     }
@@ -116,8 +121,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- день ---------------- */
+  // Отложенная выдача сети: ждём, пока пролог и «Своя кофейня» позади и началась основная игра.
+  function pendingSetup(S) {
+    const st = state(S); if (!st || !st.pending || !st.id) return false;
+    const d = info(st.id); const fn = d && ((typeof d.setup === 'function' && d.setup) || (d.start && typeof d.start.setup === 'function' && d.start.setup));
+    if (!fn) { st.pending = false; return false; }
+    if ((S.prologue && !S.prologue.won) || S.stage1 || S.phase === 'prologue' || S.phase === 'stage1') return false;
+    try { fn(S); st.pending = false; if (S.notify) S.notify.push({ type: 'scen', phase: 'applied', id: st.id, what: 'сеть' }); return true; }
+    catch (e) { st.pending = false; return false; }
+  }
   function day(S) {
     if (!S || S.lost) return;
+    pendingSetup(S);
     const st = state(S);
     if (!st || !st.id) return;
     const d = info(st.id); if (!d) return;
