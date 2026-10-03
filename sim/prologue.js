@@ -105,7 +105,9 @@ function run(profile, seed, verbose) {
   }
   const g = PR.goal(P), cr = P.status === 'won' ? PR.carry(P, { cash: BK.CFG.START_CASH }) : null, sm = PR.summary(P);
   return { T, seed, status: P.status, months: P.won ? P.won.m : P.m, min: sec / 60, sav: g.sav, job: P.job, credit: P.won ? P.won.credit : null, cards, shifts, sick: P.stats.sick, splurge: P.stats.splurge, fired: P.stats.fired,
-    trait: cr ? cr.trait : PR.trait(P), bonus: cr ? cr.bonus : 0, skills: cr ? Object.keys(cr.skills).join('+') : '', baker: cr && cr.baker ? cr.baker.lvl : 0, fun: sm.fun, earned: sm.earned };
+    trait: cr ? cr.trait : PR.trait(P), bonus: cr ? cr.bonus : 0, skills: cr ? Object.keys(cr.skills).join('+') : '', baker: cr && cr.baker ? cr.baker.lvl : 0, fun: sm.fun, earned: sm.earned,
+    // что дошло до игрока: история, дилеммы живого сюжета, карточки гостей (проверка — sim/prologue-reach.js)
+    story: (P.v2 && P.v2.story) || null, dils: Object.keys((P.v2 && P.v2.seen) || {}), guests: Object.keys(P.flags || {}).filter((k) => k.indexOf('gs_') === 0).map((k) => k.slice(3)) };
 }
 
 if (require.main === module) {

@@ -527,12 +527,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function schedule(P) {
     const c = C(); P.evAt = [];
-    if (V2('overlay', P) && P.cards.length && P.cards[P.cards.length - 1].v2) { /* дилемма уже в очереди */ }
+    const dil = V2('overlay', P) && P.cards.length && P.cards[P.cards.length - 1].v2; // дилемма уже в очереди
     const h = P.m > 0 ? heroScene(P) : null;
     if (h) { P.flags[h] = 1; P.evAt.push({ t: 0.15 + rnd(P) * 0.15, hero: h }); }
     const k = year(P) >= c.EV_LATE[0] ? c.EV_LATE[1] : 1;
-    if (rnd(P) < c.EV_P1 * k) P.evAt.push({ t: 0.35 + rnd(P) * 0.25 });
-    if (rnd(P) < c.EV_P2 * k) P.evAt.push({ t: 0.65 + rnd(P) * 0.25 });
+    // Разводим карточки по времени: в месяц, где уже стоит сцена или дилемма живого сюжета,
+    // случайных событий нет. Раньше за один игровой месяц приходило 3–4 окна подряд
+    // (сцена + два события + гость) — читать это было нельзя, а «окон» на партию выходило 76.
+    if (!h && !dil) {
+      if (rnd(P) < c.EV_P1 * k) P.evAt.push({ t: 0.35 + rnd(P) * 0.25 });
+      if (rnd(P) < c.EV_P2 * k) P.evAt.push({ t: 0.65 + rnd(P) * 0.25 });
+    }
     P.evAt.sort((a, b) => a.t - b.t);
   }
 
@@ -779,9 +784,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     P.hp = clamp(P.hp - 2, 0, 100);
     earn(P, tips, 'tips');
     // номер смены в расписании — по счётчику итогов; сам P.shift хранит только последний итог (его читает интерфейс)
-    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost, n: shiftsDone(P) + 1 });
-    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost });   // счётчик смены (n) не теряем
-    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
+    P.shift = Object.assign({}, P.shift, { m: P.m, stars, tips, served, errors, ups, lost, n: shiftsDone(P) + 1 });   // счётчик смены (n) не теряем
+    V2('shiftOutcome', P, P.shift, { stars, errors, served, lost, ups, tips }); // больной на смене, срыв, «Рашид узнал» (prolog-v2.js)
+    // счётчик смен: по нему расписание SHIFT_AT решает, какая смена следующая (было съедено комментарием при слиянии — из-за
+    // этого dueShift() считал расписание непройденным и «Смена» приходила каждый месяц: 34–41 смена за партию вместо 5–10).
+    P.stats.shifts++; P.stats.best = Math.max(P.stats.best, stars);
     fx(P, 'rub', tips, 'shift');
     // тон смены — для звука интерфейса («Смена»): удачная (+) / провальная (−) / обычная
     P.lastShift = { stars: stars, tips: tips, tone: stars >= 4 ? 'pos' : stars <= 2 ? 'neg' : '' };
