@@ -70,13 +70,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- новая игра ---------------- */
   function newGame(opts) {
     const cfg = C();
-    if (BK.useCity) BK.useCity(null); // карта и районы — Уфы (после игры в другом городе)
+    // Зерно и город известны ДО генерации предложений (задача 1 «Задачи по каркасу»): история может начинаться
+    // не в Уфе («Старт в Москве»), и тогда районы, аренда и чек должны быть уже московскими. Без opts.city —
+    // прежняя Уфа; при загрузке карту активного города ставит BK.Corp.applyGlobals (src/corp.js).
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const city = (opts && opts.city) || null;
+    if (BK.useCity) BK.useCity(city, seed);
     const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const dk = (k) => diffK({ difficulty }, k);
     const S = {
       v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
+      startCity: city,   // город старта партии (null — Уфа): по нему applyGlobals возвращает карту при загрузке
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
       cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
@@ -188,7 +193,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, far[Math.min(far.length - 1, i * 2 + ri(S, 0, 1))]));
       return;
     }
-    for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, byId(BK.DISTRICTS, pick(S, groups[i % 3]))));
+    for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, byId(BK.DISTRICTS, pick(S, groups[i % 3])) || BK.DISTRICTS[0]));
   }
 
   /* ---------------- персонал ---------------- */
@@ -1233,7 +1238,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.phase !== 'setup_prod') p.status = 'opening';
     S.productions.push(p);
     S.prodOffers = [];
-    log(S, `Арендовано помещение под производство: ${o.address} (${d.name}), ${o.area} м².`, 'good');
+    log(S, `Арендовано помещение под производство: ${o.address} (${(d || {}).name || (BK.CITY && BK.CITY.name) || 'городе'}), ${o.area} м².`, 'good');
     if (S.phase === 'setup_prod') { S.phase = 'setup_store'; }
     return { ok: true };
   }
@@ -1259,7 +1264,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.stores.push(st);
     S.offers = S.offers.filter((x) => x.id !== offerId);
     if (S.stores.length === 1) S.nextOfferDay = S.day + 3;
-    log(S, `Арендована точка: ${o.address} (${byId(BK.DISTRICTS, o.district).name}), ${o.area} м². Открытие через ${cfg.OPEN_DAYS} дн.`, 'good');
+    log(S, `Арендована точка: ${o.address} (${(byId(BK.DISTRICTS, o.district) || {}).name || (BK.CITY && BK.CITY.name) || 'городе'}), ${o.area} м². Открытие через ${cfg.OPEN_DAYS} дн.`, 'good');
     if (S.phase === 'setup_store') { S.phase = 'play'; S.ev.next = 45; }
     return { ok: true, store: st };
   }

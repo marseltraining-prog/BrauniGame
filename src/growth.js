@@ -124,7 +124,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { x: d.x, y: d.y };
   }
   const street = (G, d, n) => `${pick(G, d.streets)}, ${ri(G, 1, n || 90)}`;
-  const dist = (id) => BK.DISTRICTS.find((x) => x.id === id);
+  const dist = (id) => (BK.DISTRICTS || []).find((x) => x.id === id);
+  // Имя района активной карты. Района может не быть (старое сохранение, площадка из другого города) —
+  // тогда вместо TypeError берём название города.
+  const dname = (id) => (dist(id) || {}).name || (BK.CITY && BK.CITY.name) || 'городе';
+  /* Площадки берём из АКТИВНОЙ карты города (задача 2 «Задачи по каркасу»): у сгенерированных городов районы
+     различаются архетипом (arch), а не уфимскими id — фабрика ставится в промзоне или на окраине, флагман — в центре.
+     Для Уфы архетипов нет: берём прежний список id, чтобы поток случайностей и баланс первого акта не менялись. */
+  function sitePool(ufaIds, arch, archAlt) {
+    const D = (BK.DISTRICTS || []).slice();
+    if (!D.some((d) => d.arch)) return ufaIds.map(dist).filter(Boolean);
+    let pref = D.filter((d) => arch.indexOf(d.arch) >= 0);
+    if (!pref.length && archAlt) pref = D.filter((d) => archAlt.indexOf(d.arch) >= 0);
+    return pref.length ? pref : D;
+  }
 
   /* ---------------- открытие направлений ---------------- */
   function checkUnlock(S, day) {
@@ -153,7 +166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ================= ФАБРИКА ================= */
   function genFacSites(S) {
     const G = S.growth, k = K();
-    const pool = ['north', 'shaksha', 'inors', 'nizh', 'zaton', 'dema'].map(dist).filter(Boolean);
+    const pool = sitePool(['north', 'shaksha', 'inors', 'nizh', 'zaton', 'dema'], ['industrial', 'outskirts', 'far'], ['sleep']);
     G.facSites = [];
     for (let i = 0; i < k.FAC_SITES && pool.length; i++) {
       const d = pool.splice(Math.floor(rnd(G) * pool.length), 1)[0], p = spot(S, G, d, 40);
@@ -171,7 +184,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cost(S, 'factory', c, 'capex');
     G.fac = Object.assign({}, site, { id: nid(G, 'fac'), status: 'build', day: S.day, readyDay: S.day + K().FAC_DAYS, lvl: 1, expDay: null, down: 0, maint: 1, semis: 1, breaks: 0, hedge: null, opened: null, capex: c });
     G.facSites = [];
-    I().log(S, `Начата стройка фабрики: ${site.address} (${dist(site.district).name}). Запуск — ${E().fmtDate(G.fac.readyDay)}.`, 'good');
+    I().log(S, `Начата стройка фабрики: ${site.address} (${dname(site.district)}). Запуск — ${E().fmtDate(G.fac.readyDay)}.`, 'good');
     return { ok: true };
   }
   function facCap(S) { const f = S.growth && S.growth.fac; if (!f || f.status !== 'open') return 0; return K().FAC_CAP[f.lvl - 1] || 0; }
@@ -300,7 +313,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fee = Math.round(c.fee * pl(S));
     addRev(S, 'fran', fee, true);
     F.list.push({ id: nid(G, 'fr'), partner: c.partner, district: c.district, x: c.x, y: c.y, address: c.address, q: c.q, seen: c.seen, fee, day: S.day, openDay: S.day + k.FR_OPEN_DAYS, status: 'opening', sales: 0, inc: 0, scandals: 0, hit: 0 });
-    I().log(S, `Франшиза: договор с ${c.partner} (${dist(c.district).name}), паушальный взнос ${fm(fee)}. Открытие через ${Math.round(k.FR_OPEN_DAYS / 30)} мес.`, 'good');
+    I().log(S, `Франшиза: договор с ${c.partner} (${dname(c.district)}), паушальный взнос ${fm(fee)}. Открытие через ${Math.round(k.FR_OPEN_DAYS / 30)} мес.`, 'good');
     return { ok: true, fee };
   }
   function closeFran(S, id, noComp) {
@@ -317,9 +330,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ================= ФЛАГМАН ================= */
   function genFlagSites(S) {
     const G = S.growth, k = K(); G.flagSites = [];
-    const ds = ['center', 'center', 'october', 'grove'].map(dist).filter(Boolean);
-    for (let i = 0; i < k.FLAG_SITES; i++) {
-      const d = i === 0 ? ds[0] : pick(G, ds.slice(1)), p = spot(S, G, d, 30);
+    const D = (BK.DISTRICTS || []).slice();
+    let ds = sitePool(['center', 'center', 'october', 'grove'], ['center']);
+    if (D.some((d) => d.arch) && ds.length) ds = [ds[0]].concat(D.filter((d) => ['biz', 'prestige'].indexOf(d.arch) >= 0));
+    if (!ds.length) ds = D;
+    for (let i = 0; i < k.FLAG_SITES && ds.length; i++) {
+      const d = i === 0 ? ds[0] : pick(G, ds.slice(1).length ? ds.slice(1) : ds), p = spot(S, G, d, 30);
       const tk = +rr(G, 0.9, 1.2).toFixed(2); // туристический поток места
       G.flagSites.push({ id: nid(G, 'gs'), district: d.id, x: p.x, y: p.y, address: street(G, d, 60), tk, rentK: +(tk * rr(G, 0.9, 1.05)).toFixed(2), area: ri(G, 380, 520) });
     }
@@ -333,7 +349,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cost(S, 'flag', c, 'capex');
     G.flag = Object.assign({}, s, { id: nid(G, 'fl'), status: 'build', day: S.day, readyDay: S.day + K().FLAG_DAYS, tour: false, opened: null, capex: c });
     G.flagSites = [];
-    I().log(S, `Флагман: начат ремонт помещения ${s.address} (${dist(s.district).name}), открытие ${E().fmtDate(G.flag.readyDay)}.`, 'good');
+    I().log(S, `Флагман: начат ремонт помещения ${s.address} (${dname(s.district)}), открытие ${E().fmtDate(G.flag.readyDay)}.`, 'good');
     return { ok: true };
   }
   function setTour(S, v) { const f = ensure(S).flag; if (!f) return { ok: false }; f.tour = !!v; return { ok: true }; }
@@ -603,7 +619,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function prepEventText(S) { // имя партнёра — в тексте события (текст фиксируется в момент показа)
     const G = S.growth, q = S.ev.queue || []; if (!q.some((x) => x.id === 'g01')) return;
     const f = G.fr.list.find((x) => x.id === G.evFr), def = GEV[0];
-    def.text = f ? `Видео с грязной кухни франчайзи ${f.partner} (${f.address}, ${(dist(f.district) || {}).name || 'Уфа'}) разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.` : def.text;
+    def.text = f ? `Видео с грязной кухни франчайзи ${f.partner} (${f.address}, ${dname(f.district)}) разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.` : def.text;
   }
   // бот: выбор в событиях направлений
   function botChoice(S, inst, level) {

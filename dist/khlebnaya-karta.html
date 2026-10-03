@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026, 15:57";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="03.10.2026, 16:11";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -11499,13 +11499,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- новая игра ---------------- */
   function newGame(opts) {
     const cfg = C();
-    if (BK.useCity) BK.useCity(null); // карта и районы — Уфы (после игры в другом городе)
+    // Зерно и город известны ДО генерации предложений (задача 1 «Задачи по каркасу»): история может начинаться
+    // не в Уфе («Старт в Москве»), и тогда районы, аренда и чек должны быть уже московскими. Без opts.city —
+    // прежняя Уфа; при загрузке карту активного города ставит BK.Corp.applyGlobals (src/corp.js).
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const city = (opts && opts.city) || null;
+    if (BK.useCity) BK.useCity(city, seed);
     const difficulty = opts && cfg.DIFFICULTY && cfg.DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const dk = (k) => diffK({ difficulty }, k);
     const S = {
       v: 1, seed, rng: seed, ids: 0, day: 0, difficulty,
       company: (opts && opts.company) || 'Пекарня «Каравай»',
+      startCity: city,   // город старта партии (null — Уфа): по нему applyGlobals возвращает карту при загрузке
       phase: 'setup_prod', won: false, wonDay: null, lost: false,
       cash: Math.round(cfg.START_CASH * dk('cash')), reserve: 0, loan: 0, cumRevenue: 0,
       macro: { keyRate: cfg.KEY_RATE, inflation: cfg.INFLATION_BASE, inflAdd: 0, priceLevel: 1, taxAdd: 0, regime: 'usn' },
@@ -11617,7 +11622,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, far[Math.min(far.length - 1, i * 2 + ri(S, 0, 1))]));
       return;
     }
-    for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, byId(BK.DISTRICTS, pick(S, groups[i % 3]))));
+    for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, byId(BK.DISTRICTS, pick(S, groups[i % 3])) || BK.DISTRICTS[0]));
   }
 
   /* ---------------- персонал ---------------- */
@@ -12662,7 +12667,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.phase !== 'setup_prod') p.status = 'opening';
     S.productions.push(p);
     S.prodOffers = [];
-    log(S, `Арендовано помещение под производство: ${o.address} (${d.name}), ${o.area} м².`, 'good');
+    log(S, `Арендовано помещение под производство: ${o.address} (${(d || {}).name || (BK.CITY && BK.CITY.name) || 'городе'}), ${o.area} м².`, 'good');
     if (S.phase === 'setup_prod') { S.phase = 'setup_store'; }
     return { ok: true };
   }
@@ -12688,7 +12693,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.stores.push(st);
     S.offers = S.offers.filter((x) => x.id !== offerId);
     if (S.stores.length === 1) S.nextOfferDay = S.day + 3;
-    log(S, `Арендована точка: ${o.address} (${byId(BK.DISTRICTS, o.district).name}), ${o.area} м². Открытие через ${cfg.OPEN_DAYS} дн.`, 'good');
+    log(S, `Арендована точка: ${o.address} (${(byId(BK.DISTRICTS, o.district) || {}).name || (BK.CITY && BK.CITY.name) || 'городе'}), ${o.area} м². Открытие через ${cfg.OPEN_DAYS} дн.`, 'good');
     if (S.phase === 'setup_store') { S.phase = 'play'; S.ev.next = 45; }
     return { ok: true, store: st };
   }
@@ -13372,12 +13377,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     applyGlobals(S);
   }
-  // глобальные ссылки на карту активного города (BK.DISTRICTS / BK.MAP / BK.CITY)
+  // Глобальные ссылки на карту активного города (BK.DISTRICTS / BK.MAP / BK.CITY)
+  // Город партии, когда второго акта ещё нет: поле S.startCity (новые партии — engine.newGame) или город
+  // истории. Благодаря ему загрузка «Старта в Москве» открывается в Москве, а не в Уфе (задача 1 «Задачи по каркасу»).
+  function startCityOf(S) {
+    if (S && typeof S.startCity === 'string' && S.startCity) return S.startCity === 'ufa' ? null : S.startCity;
+    const id = S && S.scen && S.scen.id;
+    const d = id && BK.SCEN && BK.SCEN.list && BK.SCEN.list[id];
+    const c = (d && d.start && d.start.city) || null;
+    if (!c || c === 'ufa') return null;
+    // Страховка старых сохранений: до правки каркаса история «Старт в Москве» игралась в Уфе, и её мир
+    // (районы точек, предложений и площадок) — уфимский. Такому сохранению Москва сломала бы игру — оставляем Уфу.
+    return worldFits(S, c) ? c : null;
+  }
+  function worldFits(S, cityId) {
+    const def = BK.CITY_BY_ID && BK.CITY_BY_ID[cityId];
+    if (!def || def.builtin || !BK.genCityGeo) return false;
+    let g = null; try { g = BK.genCityGeo(def, (S && S.seed | 0) || 0, 1); } catch (e) { return false; }
+    const ids = {}; for (const d of (g && g.DISTRICTS) || []) ids[d.id] = 1;
+    const world = [].concat((S && S.stores) || [], (S && S.offers) || [], (S && S.productions) || [], (S && S.prodOffers) || [], (S && S.rival && S.rival.stores) || []);
+    for (const o of world) if (o && o.district && !ids[o.district]) return false;
+    return true;
+  }
+  // Карта города для движка: «уфа» в состоянии корпорации — это домашний город партии, а он не всегда Уфа
+  // («Старт в Москве»). Остальные города — сами собой (id + зерно + mapGen из S.corp.cities).
+  function useCityFor(S, id, c) {
+    if (id && id !== 'ufa' && c) BK.useCity(id, c.seed, c.mapGen);
+    else BK.useCity(startCityOf(S), (S && S.seed) || 0);
+  }
   function applyGlobals(S) {
     if (!BK.useCity) return;
     const a = S && S.corp && S.corp.active, c = a && S.corp.cities[a];
     syncOpenDays(S, a); // нити истории: срок открытия точки в городе × openGap (обиженный инспектор — дольше, друг — быстрее)
-    if (c && a !== 'ufa') BK.useCity(a, c.seed, c.mapGen); else BK.useCity(null);
+    useCityFor(S, a || 'ufa', c); // подробно считается активный город; без корпорации — город истории, иначе Уфа
   }
 
   /* ---------------- нити истории (BK.Threads, src/threads.js) ----------------
@@ -13410,7 +13442,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const keep = { stores: S.stores, productions: S.productions, offers: S.offers, prodOffers: S.prodOffers, rival: S.rival, D: BK.DISTRICTS, M: BK.MAP, P: BK.CENTER_POINT, CITY: BK.CITY };
     const pk = c.packed;
     S.stores = pk.stores; S.productions = pk.productions; S.offers = []; S.prodOffers = []; S.rival = pk.rival || { enabled: false, stores: [] };
-    if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
+    useCityFor(S, id, c);
     const w0 = cr._with, a0 = cr._actProd; cr._with = id; if (w0 == null) cr._actProd = keep.productions; // цеха активного города — для снабжения из него (§7.2)
     const kd0 = C().OPEN_DAYS; syncOpenDays(S, id); // нити истории: у этого города свой срок открытия точки
     try { return withRng(S, c, 'rng', fn); } finally {
@@ -13561,7 +13593,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function mount(S, id) {
     const cr = S.corp, c = cr.cities[id];
     if (c.packed) settleAgg(S, c); // упакованная часть месяца — по агрегированной модели
-    if (id === 'ufa') BK.useCity(null); else BK.useCity(id, c.seed, c.mapGen);
+    useCityFor(S, id, c);
     const m0 = cr.market0, w = def(id).wage;
     S.market = { seller: m0.seller * w, baker: m0.baker * w };
     S.pay = { seller: Math.round(S.market.seller * (c.payK || 1)), baker: Math.round(S.market.baker * (c.payKb || c.payK || 1)) };
@@ -17240,7 +17272,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { x: d.x, y: d.y };
   }
   const street = (G, d, n) => `${pick(G, d.streets)}, ${ri(G, 1, n || 90)}`;
-  const dist = (id) => BK.DISTRICTS.find((x) => x.id === id);
+  const dist = (id) => (BK.DISTRICTS || []).find((x) => x.id === id);
+  // Имя района активной карты. Района может не быть (старое сохранение, площадка из другого города) —
+  // тогда вместо TypeError берём название города.
+  const dname = (id) => (dist(id) || {}).name || (BK.CITY && BK.CITY.name) || 'городе';
+  /* Площадки берём из АКТИВНОЙ карты города (задача 2 «Задачи по каркасу»): у сгенерированных городов районы
+     различаются архетипом (arch), а не уфимскими id — фабрика ставится в промзоне или на окраине, флагман — в центре.
+     Для Уфы архетипов нет: берём прежний список id, чтобы поток случайностей и баланс первого акта не менялись. */
+  function sitePool(ufaIds, arch, archAlt) {
+    const D = (BK.DISTRICTS || []).slice();
+    if (!D.some((d) => d.arch)) return ufaIds.map(dist).filter(Boolean);
+    let pref = D.filter((d) => arch.indexOf(d.arch) >= 0);
+    if (!pref.length && archAlt) pref = D.filter((d) => archAlt.indexOf(d.arch) >= 0);
+    return pref.length ? pref : D;
+  }
 
   /* ---------------- открытие направлений ---------------- */
   function checkUnlock(S, day) {
@@ -17269,7 +17314,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ================= ФАБРИКА ================= */
   function genFacSites(S) {
     const G = S.growth, k = K();
-    const pool = ['north', 'shaksha', 'inors', 'nizh', 'zaton', 'dema'].map(dist).filter(Boolean);
+    const pool = sitePool(['north', 'shaksha', 'inors', 'nizh', 'zaton', 'dema'], ['industrial', 'outskirts', 'far'], ['sleep']);
     G.facSites = [];
     for (let i = 0; i < k.FAC_SITES && pool.length; i++) {
       const d = pool.splice(Math.floor(rnd(G) * pool.length), 1)[0], p = spot(S, G, d, 40);
@@ -17287,7 +17332,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cost(S, 'factory', c, 'capex');
     G.fac = Object.assign({}, site, { id: nid(G, 'fac'), status: 'build', day: S.day, readyDay: S.day + K().FAC_DAYS, lvl: 1, expDay: null, down: 0, maint: 1, semis: 1, breaks: 0, hedge: null, opened: null, capex: c });
     G.facSites = [];
-    I().log(S, `Начата стройка фабрики: ${site.address} (${dist(site.district).name}). Запуск — ${E().fmtDate(G.fac.readyDay)}.`, 'good');
+    I().log(S, `Начата стройка фабрики: ${site.address} (${dname(site.district)}). Запуск — ${E().fmtDate(G.fac.readyDay)}.`, 'good');
     return { ok: true };
   }
   function facCap(S) { const f = S.growth && S.growth.fac; if (!f || f.status !== 'open') return 0; return K().FAC_CAP[f.lvl - 1] || 0; }
@@ -17416,7 +17461,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const fee = Math.round(c.fee * pl(S));
     addRev(S, 'fran', fee, true);
     F.list.push({ id: nid(G, 'fr'), partner: c.partner, district: c.district, x: c.x, y: c.y, address: c.address, q: c.q, seen: c.seen, fee, day: S.day, openDay: S.day + k.FR_OPEN_DAYS, status: 'opening', sales: 0, inc: 0, scandals: 0, hit: 0 });
-    I().log(S, `Франшиза: договор с ${c.partner} (${dist(c.district).name}), паушальный взнос ${fm(fee)}. Открытие через ${Math.round(k.FR_OPEN_DAYS / 30)} мес.`, 'good');
+    I().log(S, `Франшиза: договор с ${c.partner} (${dname(c.district)}), паушальный взнос ${fm(fee)}. Открытие через ${Math.round(k.FR_OPEN_DAYS / 30)} мес.`, 'good');
     return { ok: true, fee };
   }
   function closeFran(S, id, noComp) {
@@ -17433,9 +17478,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ================= ФЛАГМАН ================= */
   function genFlagSites(S) {
     const G = S.growth, k = K(); G.flagSites = [];
-    const ds = ['center', 'center', 'october', 'grove'].map(dist).filter(Boolean);
-    for (let i = 0; i < k.FLAG_SITES; i++) {
-      const d = i === 0 ? ds[0] : pick(G, ds.slice(1)), p = spot(S, G, d, 30);
+    const D = (BK.DISTRICTS || []).slice();
+    let ds = sitePool(['center', 'center', 'october', 'grove'], ['center']);
+    if (D.some((d) => d.arch) && ds.length) ds = [ds[0]].concat(D.filter((d) => ['biz', 'prestige'].indexOf(d.arch) >= 0));
+    if (!ds.length) ds = D;
+    for (let i = 0; i < k.FLAG_SITES && ds.length; i++) {
+      const d = i === 0 ? ds[0] : pick(G, ds.slice(1).length ? ds.slice(1) : ds), p = spot(S, G, d, 30);
       const tk = +rr(G, 0.9, 1.2).toFixed(2); // туристический поток места
       G.flagSites.push({ id: nid(G, 'gs'), district: d.id, x: p.x, y: p.y, address: street(G, d, 60), tk, rentK: +(tk * rr(G, 0.9, 1.05)).toFixed(2), area: ri(G, 380, 520) });
     }
@@ -17449,7 +17497,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     cost(S, 'flag', c, 'capex');
     G.flag = Object.assign({}, s, { id: nid(G, 'fl'), status: 'build', day: S.day, readyDay: S.day + K().FLAG_DAYS, tour: false, opened: null, capex: c });
     G.flagSites = [];
-    I().log(S, `Флагман: начат ремонт помещения ${s.address} (${dist(s.district).name}), открытие ${E().fmtDate(G.flag.readyDay)}.`, 'good');
+    I().log(S, `Флагман: начат ремонт помещения ${s.address} (${dname(s.district)}), открытие ${E().fmtDate(G.flag.readyDay)}.`, 'good');
     return { ok: true };
   }
   function setTour(S, v) { const f = ensure(S).flag; if (!f) return { ok: false }; f.tour = !!v; return { ok: true }; }
@@ -17719,7 +17767,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function prepEventText(S) { // имя партнёра — в тексте события (текст фиксируется в момент показа)
     const G = S.growth, q = S.ev.queue || []; if (!q.some((x) => x.id === 'g01')) return;
     const f = G.fr.list.find((x) => x.id === G.evFr), def = GEV[0];
-    def.text = f ? `Видео с грязной кухни франчайзи ${f.partner} (${f.address}, ${(dist(f.district) || {}).name || 'Уфа'}) разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.` : def.text;
+    def.text = f ? `Видео с грязной кухни франчайзи ${f.partner} (${f.address}, ${dname(f.district)}) разошлось по городским пабликам. Гости не различают, где ваша точка, а где партнёр.` : def.text;
   }
   // бот: выбор в событиях направлений
   function botChoice(S, inst, level) {
@@ -19410,9 +19458,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
     if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
     if (s.city) {
-      // история может начинаться в другом городе (например, «Старт в Москве»)
-      if (BK.useCity) { try { BK.useCity(s.city, S.seed); out.push('город'); } catch (e) {} }
-      if (BK.Corp && BK.Corp.applyGlobals) { try { BK.Corp.applyGlobals(S); } catch (e) {} }
+      // Город истории выбран ещё при создании мира (engine.newGame: opts.city, src/ui/app.js) — предложения
+      // помещений и цехов сгенерированы уже в нём. Здесь его повторно не переключаем: пока сети в городах
+      // нет, BK.Corp.applyGlobals вернул бы Уфу и сам себя отменил (задача 1 «Задачи по каркасу»).
+      out.push('город');
     }
     if (s.stores) {
       // старт не с нуля: выдаём готовые точки (для истории «спаси сеть в кризисе»)
@@ -32923,7 +32972,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
     if (BK.Stage1UI) BK.Stage1UI.close();
-    S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    // Зерно и история известны ДО создания мира (задача 1 «Задачи по каркасу»): предложения помещений и цехов
+    // должны генерироваться уже в городе истории, иначе «Старт в Москве» идёт по уфимским районам.
+    // Выбор истории детерминирован от зерна (BK.Scenario.pick), поэтому Scenario.set ниже даст тот же id.
+    const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed) : opts.scen) : null;
+    const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
+    const city = (scDef && scDef.start && scDef.start.city) || null;
+    S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно

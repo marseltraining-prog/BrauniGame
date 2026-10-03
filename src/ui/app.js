@@ -207,7 +207,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
     if (BK.Stage1UI) BK.Stage1UI.close();
-    S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    // Зерно и история известны ДО создания мира (задача 1 «Задачи по каркасу»): предложения помещений и цехов
+    // должны генерироваться уже в городе истории, иначе «Старт в Москве» идёт по уфимским районам.
+    // Выбор истории детерминирован от зерна (BK.Scenario.pick), поэтому Scenario.set ниже даст тот же id.
+    const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
+    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed) : opts.scen) : null;
+    const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
+    const city = (scDef && scDef.start && scDef.start.city) || null;
+    S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
     if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
