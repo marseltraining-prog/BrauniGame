@@ -346,5 +346,84 @@ var BK = globalThis.BK || (globalThis.BK = {});
     put(b, Px.fig('hero', { emo: 'happy', pose: ((t * 2) | 0) % 2 ? 'wave' : null }), hx, gy, true);
   }
 
-  Object.assign(Px, { scenes: { kalach, own, ITEM_IC, P, steam, loaf, bricks, rug, floorPlanks } });
+  /* ---------------- заставка тяжёлого момента (BK.Moment) ----------------
+     Владелец: «намёк, что пошло что-то не так — например, врач, который качает головой».
+     Поэтому сцена — не «больница», а ночной коридор: дождь в окно, лампа над дверью, пальто на
+     гвозде и человек в дверях, который качает головой. Ни палат, ни капельниц, ни диагнозов —
+     ничего, что объясняло бы случившееся словами; игрок дочитывает сам.
+     Качание — сдвиг фигуры на пиксель влево-вправо (у спрайта 16×30 это читается как «нет-нет»),
+     дождь и пылинки — по времени t. Функция ничего не кэширует: кадров мало, сцена одна. */
+  const MP = {
+    wall: ['#4d5462', '#434a57', '#5b6473'], floor: ['#6d5d50', '#5a4c41', '#7d6b5c'],
+    sky: ['#1b232e', '#2b3745'], rain: '#9fb4cc', wood: ['#6b4a2e', '#4a3220', '#8a6440'],
+    coat: ['#9aa0aa', '#767c86'], lamp: '#ffc27a', door: ['#2a2420', '#443a32'],
+  };
+  function momentScene(b, t, W, H, o) {
+    const g = Math.max(34, Math.min(H - 12, Math.round(H * 0.72)));      // линия пола
+    const floorH = Math.max(2, H - g);
+    // стена и пол
+    b.rect(0, 0, W, g, MP.wall[0]);
+    for (let y = 0; y < g; y++) b.hl(0, y, W, y < g * 0.35 ? MP.wall[1] : MP.wall[0]);
+    b.hl(0, g - 1, W, MP.wall[2]);
+    for (let y = g; y < H; y++) b.hl(0, y, W, MP.floor[1 + (y - g) % 2]);
+    b.hl(0, g, W, MP.wood[1]);
+    b.dith(0, g + 1, W, floorH, MP.floor[0], (x, y) => 0.5 - (y - g) * 0.16);
+    // окно слева: ночь и дождь
+    const wx = 6, ww = Math.max(20, Math.min(40, Math.round(W * 0.26))), wy = 7, wh = Math.max(14, g - 20);
+    b.rect(wx - 2, wy - 2, ww + 4, wh + 4, MP.wood[1]);
+    for (let y = wy; y < wy + wh; y++) b.hl(wx, y, ww, MP.sky[y - wy < wh * 0.5 ? 0 : 1]);
+    const R = rng(((t * 6) | 0) + 5);
+    for (let i = 0; i < Math.round(ww * 0.5); i++) {
+      const rx = wx + Math.floor(R() * ww), ry = wy + Math.floor(R() * wh), rl = 2 + Math.floor(R() * 3);
+      b.line(rx, ry, rx - 1, ry + rl, MP.rain, 0.5 + R() * 0.35);
+    }
+    b.rect(wx + (ww >> 1) - 1, wy, 2, wh, MP.wood[1]);
+    b.hl(wx, wy + Math.round(wh * 0.5), ww, MP.wood[1]);
+    // лампа над дверью: тёплое пятно — единственный свет в коридоре
+    const dx = W - Math.max(26, Math.round(W * 0.24)) - 2, dw = Math.max(22, Math.round(W * 0.24)), dt = 4;
+    b.glow(dx + dw / 2, dt + 2, Math.round(dw * 0.9), MP.lamp, 0.5, { ry: Math.round(g * 0.5), steps: 5 });
+    b.rect(dx, dt, dw, g - dt, MP.door[1]);
+    b.rect(dx + 3, dt + 3, dw - 6, g - dt - 3, MP.door[0], 0.55);
+    b.vl(dx, dt, g - dt, MP.wood[0]); b.vl(dx + dw - 1, dt, g - dt, MP.wood[1]);
+    b.rect(dx, dt, dw, 2, MP.wood[2]);
+    b.hl(dx + 2, dt + 5, dw - 4, MP.lamp, 0.35);
+    // пальто на гвозде у двери — деталь вместо слов
+    const cx = dx - 9;
+    if (cx > wx + ww + 4 && g > 30) {
+      b.set(cx, dt + 8, MP.wood[2]);
+      b.rect(cx - 4, dt + 9, 9, Math.min(20, g - dt - 12), MP.coat[0]);
+      b.vl(cx - 4, dt + 9, Math.min(20, g - dt - 12), MP.coat[1]);
+      b.hl(cx - 4, dt + 9, 9, MP.coat[1]);
+      b.set(cx, dt + 12, MP.coat[1]);
+    }
+    // лавка под окном
+    const bx = wx - 2, bw = ww + 12, by = g - 5;
+    b.rect(bx, by, bw, 3, MP.wood[0]); b.hl(bx, by, bw, MP.wood[2]); b.hl(bx, by + 2, bw, MP.wood[1]);
+    b.vl(bx + 1, by + 3, 4, MP.wood[1]); b.vl(bx + bw - 2, by + 3, 4, MP.wood[1]);
+    // герой сидит спиной (верх фигуры, посаженный на лавку) — лица не видно.
+    // Он в тени, свет только из двери: так фигура не «светит» и не перетягивает взгляд с врача.
+    try {
+      const seat = Px.memo('mom-hero', () => Px.figure(BK.Px.CAST.hero, { view: 'back', upper: true }).tint('#556072', 0.5));
+      b.blit(seat, Math.round(bx + bw * 0.34), by - 8);
+    } catch (e) { /* без героя сцена всё равно рисуется */ }
+    // врач в дверях: качает головой — вся фигура на пиксель влево-вправо
+    const shake = Math.sin(t * 2.1) > 0 ? 1 : -1;
+    const fx2 = dx + Math.round((dw - 16) / 2) + shake;
+    const fy = g - 29;
+    try {
+      const doc = Px.memo('mom-doc', () => Px.figure(BK.Px.CAST.doctor, { emo: 'sad' }));
+      b.blit(doc, fx2, fy);
+    } catch (e) { /* нет врача — остаётся свет и дождь */ }
+    // пылинки в свете лампы
+    const Rd = rng(((t * 2) | 0) + 21);
+    for (let i = 0; i < Math.round(W / 22); i++) b.set(dx + Rd() * dw, dt + 6 + Rd() * (g - dt - 8), '#ffffff', 0.12 + Rd() * 0.12);
+    // общая виньетка: края темнее, центр — там, где свет
+    const ox = dx + dw / 2;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const dd = Math.sqrt(((x - ox) / (W * 0.95)) * ((x - ox) / (W * 0.95)) + ((y - g * 0.5) / (H * 0.95)) * ((y - g * 0.5) / (H * 0.95)));
+      if (dd > 0.35) b.shade(x, y, '#12161c', Math.min(0.5, (dd - 0.35) * 0.85));
+    }
+  }
+
+  Object.assign(Px, { scenes: { kalach, own, moment: momentScene, ITEM_IC, P, steam, loaf, bricks, rug, floorPlanks } });
 })();

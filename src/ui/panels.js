@@ -122,7 +122,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   let attMemo = null;
   function attention(S) {
     let inc = 0; for (const st of S.stores) inc += st.staff.length * 7 + st.incoming.length + st.staffTarget * 3 + (st.status === 'open' ? 1 : 0);
-    const key = [S.day, S.stores.length, inc, Math.round(S.cash / 1e4), Math.round(S.reserve / 1e4), S.loan, !!S.chef.pending, S.office.hr, S.office.academy, S.pay.seller, S.prodOffers.length, S.productions.length, S.phase, S.cache ? S.cache.capUse : 0].join('|');
+    const key = [S.day, S.stores.length, inc, Math.round(S.cash / 1e4), Math.round(S.reserve / 1e4), S.loan, !!S.chef.pending, S.office.hr, S.office.academy, S.pay.seller, S.prodOffers.length, S.productions.length, S.phase, S.cache ? S.cache.capUse : 0,
+      (BK.Story && BK.Story.famKey) ? BK.Story.famKey(S) : ''].join('|');   // личные дела: срок виден всегда, даже если денег не тронули
     if (attMemo && attMemo.S === S && attMemo.key === key) return attMemo.r;
     const r = attentionCalc(S);
     attMemo = { S, key, r };
@@ -486,6 +487,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+    if (BK.Story && BK.Story.famDash) s += BK.Story.famDash(S); // свои люди: личное дело со сроком («Мама болеет — 4 дня, чтобы решить»)
     if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)
     if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
     if (BK.ThreadsUI) s += BK.ThreadsUI.dashBlock(S); // нити истории: кто вас помнит, чем это грозит и когда

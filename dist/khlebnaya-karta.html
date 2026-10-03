@@ -10,8 +10,186 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 17:59 UTC";</script><title>Хлебная карта</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
+})();window.__BK_BUILD="03.10.2026 18:00 UTC";</script><title>Хлебная карта</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap
+/* =====================================================================
+   ЗАСТАВКА ТЯЖЁЛОГО МОМЕНТА И ЛИЧНЫЕ ЛИНИИ (BK.Moment, BK.Story.fam*)
+   Разметку рисуют src/ui/moment.js (заставка) и src/ui/story-ui.js (личные линии),
+   логику — src/story.js. Здесь только внешний вид: медленное затемнение, проявление сцены,
+   строки и кнопка; отдельно — строки семейных дел в «Требует внимания» и «Сводке».
+
+   Тайминги (те же числа, что в moment.js): затемнение 3,2 с, проявление 2,2 с,
+   первая строка на 5,6 с, вторая — на 6,8 с, кнопка — на 7,6 с.
+   prefers-reduced-motion: переходы почти мгновенные.
+   ===================================================================== */
+#moment.mom {
+  position: fixed; inset: 0; z-index: 55;
+  display: grid; grid-template-rows: 1fr auto auto; place-items: center;
+  background: none; pointer-events: auto;      /* заставка держит клики: нельзя случайно щёлкнуть по игре под ней */
+  --mom-dim: .45;                              /* до какой черноты «проявляется» сцена */
+}
+#moment .mom-black {
+  position: absolute; inset: 0; background: #000; opacity: 0;
+  transition: opacity 0s linear;               /* состояние задаётся классами ниже */
+  pointer-events: none;
+}
+#moment.mom-dark .mom-black { opacity: 1; transition: opacity 3.2s linear; }
+#moment.mom-reveal .mom-black { opacity: var(--mom-dim); transition: opacity 2.2s linear; }
+#moment.mom-snap .mom-black { transition: none; }
+#moment.mom-out .mom-black { opacity: 1; transition: opacity .7s linear; }
+
+/* сцена-намёк: появляется из черноты и остаётся приглушённой */
+#moment .mom-scene {
+  position: relative; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(6px); transition: opacity 1.4s linear, transform 2.4s ease-out;
+  pointer-events: none;
+}
+#moment .mom-frame { position: absolute; inset: -10px; border: 1px solid rgba(255, 255, 255, .07); }
+#moment .mom-scene-cv { display: block; image-rendering: pixelated; filter: saturate(.72) contrast(1.04); }
+#moment.mom-reveal .mom-scene { opacity: 1; transform: none; }
+
+/* строки: одна-две, без объяснений; появляются по одной */
+/* строки лежат на тёмной подложке: под ними может оказаться что угодно (карта, панель, окно события) */
+#moment .mom-text {
+  grid-row: 2; width: min(600px, calc(100vw - 32px)); margin: 0 16px; text-align: left;
+  background: linear-gradient(to bottom, rgba(6, 8, 12, .78), rgba(6, 8, 12, .9));
+  border-radius: 12px; padding: 10px 16px 16px;
+}
+#moment .mom-line {
+  margin: 10px 0 0; color: #f2f4f7; font-size: 17px; line-height: 1.5;
+  opacity: 0; transform: translateY(4px); transition: opacity .9s linear, transform .9s ease-out;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .85);
+}
+#moment .mom-line .mom-who { display: block; margin-bottom: 2px; color: #a9b3bd; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+#moment.mom-l1 .mom-line[data-i="0"], #moment.mom-l2 .mom-line[data-i="1"] { opacity: 1; transform: none; }
+#moment.mom-l2 .mom-line[data-i="0"] { opacity: .82; }
+
+/* кнопка: только когда сцена и строки уже показаны */
+#moment .mom-act { grid-row: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px)); opacity: 0; transition: opacity .8s linear; }
+#moment.mom-ready .mom-act { opacity: 1; }
+#moment .mom-act .btn { pointer-events: auto; min-width: 190px; }
+#moment .mom-hint { color: #8b949e; font-size: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+#moment.mom-ready .mom-next:focus-visible { outline: 2px solid #e3b341; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  #moment .mom-line { font-size: 15px; line-height: 1.45; }
+  #moment .mom-text { padding: 8px 12px 14px; }
+  #moment .mom-act { padding-top: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #moment.mom-dark .mom-black { transition-duration: .2s; }
+  #moment.mom-reveal .mom-black { transition-duration: .2s; }
+  #moment.mom-out .mom-black { transition-duration: .2s; }
+  #moment .mom-scene, #moment .mom-line, #moment .mom-act { transition-duration: .2s; }
+}
+
+/* ---------- личные (семейные) линии: «Мама болеет — 4 дня, чтобы решить» ----------
+   Строки в «Требует внимания» рисует сама панель (классы .att не трогаем), а блок в «Сводке»
+   собирает BK.Story.famDash — он говорит теми же классами, что «Вас помнят» (thr-list/thr-block),
+   поэтому здесь только мелочи: срок и кнопка «Решить». */
+.fam-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fam-list li { display: flex; align-items: flex-start; gap: 8px; }
+.fam-list li .tx { flex: 1 1 auto; min-width: 0; }
+.fam-list li .tx b { display: block; font-size: 13px; }
+.fam-list li .tx small { display: block; color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+.fam-when { flex: 0 0 auto; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); padding-top: 1px; }
+.fam-sec h3 .fam-h { display: inline-flex; align-items: center; gap: 6px; }
+.fam-left { color: var(--warn, #b06a1c); font-weight: 600; }
+.fam-opt { display: grid; gap: 8px; }
+.fam-opt .cd { color: var(--ink-2); }
+.fam-note { margin: 0; color: var(--ink-2); font-size: 13px; }
+.fam-lead { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap
+/* =====================================================================
+   ЗАСТАВКА ТЯЖЁЛОГО МОМЕНТА И ЛИЧНЫЕ ЛИНИИ (BK.Moment, BK.Story.fam*)
+   Разметку рисуют src/ui/moment.js (заставка) и src/ui/story-ui.js (личные линии),
+   логику — src/story.js. Здесь только внешний вид: медленное затемнение, проявление сцены,
+   строки и кнопка; отдельно — строки семейных дел в «Требует внимания» и «Сводке».
+
+   Тайминги (те же числа, что в moment.js): затемнение 3,2 с, проявление 2,2 с,
+   первая строка на 5,6 с, вторая — на 6,8 с, кнопка — на 7,6 с.
+   prefers-reduced-motion: переходы почти мгновенные.
+   ===================================================================== */
+#moment.mom {
+  position: fixed; inset: 0; z-index: 55;
+  display: grid; grid-template-rows: 1fr auto auto; place-items: center;
+  background: none; pointer-events: auto;      /* заставка держит клики: нельзя случайно щёлкнуть по игре под ней */
+  --mom-dim: .45;                              /* до какой черноты «проявляется» сцена */
+}
+#moment .mom-black {
+  position: absolute; inset: 0; background: #000; opacity: 0;
+  transition: opacity 0s linear;               /* состояние задаётся классами ниже */
+  pointer-events: none;
+}
+#moment.mom-dark .mom-black { opacity: 1; transition: opacity 3.2s linear; }
+#moment.mom-reveal .mom-black { opacity: var(--mom-dim); transition: opacity 2.2s linear; }
+#moment.mom-snap .mom-black { transition: none; }
+#moment.mom-out .mom-black { opacity: 1; transition: opacity .7s linear; }
+
+/* сцена-намёк: появляется из черноты и остаётся приглушённой */
+#moment .mom-scene {
+  position: relative; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(6px); transition: opacity 1.4s linear, transform 2.4s ease-out;
+  pointer-events: none;
+}
+#moment .mom-frame { position: absolute; inset: -10px; border: 1px solid rgba(255, 255, 255, .07); }
+#moment .mom-scene-cv { display: block; image-rendering: pixelated; filter: saturate(.72) contrast(1.04); }
+#moment.mom-reveal .mom-scene { opacity: 1; transform: none; }
+
+/* строки: одна-две, без объяснений; появляются по одной */
+/* строки лежат на тёмной подложке: под ними может оказаться что угодно (карта, панель, окно события) */
+#moment .mom-text {
+  grid-row: 2; width: min(600px, calc(100vw - 32px)); margin: 0 16px; text-align: left;
+  background: linear-gradient(to bottom, rgba(6, 8, 12, .78), rgba(6, 8, 12, .9));
+  border-radius: 12px; padding: 10px 16px 16px;
+}
+#moment .mom-line {
+  margin: 10px 0 0; color: #f2f4f7; font-size: 17px; line-height: 1.5;
+  opacity: 0; transform: translateY(4px); transition: opacity .9s linear, transform .9s ease-out;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .85);
+}
+#moment .mom-line .mom-who { display: block; margin-bottom: 2px; color: #a9b3bd; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+#moment.mom-l1 .mom-line[data-i="0"], #moment.mom-l2 .mom-line[data-i="1"] { opacity: 1; transform: none; }
+#moment.mom-l2 .mom-line[data-i="0"] { opacity: .82; }
+
+/* кнопка: только когда сцена и строки уже показаны */
+#moment .mom-act { grid-row: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px)); opacity: 0; transition: opacity .8s linear; }
+#moment.mom-ready .mom-act { opacity: 1; }
+#moment .mom-act .btn { pointer-events: auto; min-width: 190px; }
+#moment .mom-hint { color: #8b949e; font-size: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+#moment.mom-ready .mom-next:focus-visible { outline: 2px solid #e3b341; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  #moment .mom-line { font-size: 15px; line-height: 1.45; }
+  #moment .mom-text { padding: 8px 12px 14px; }
+  #moment .mom-act { padding-top: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #moment.mom-dark .mom-black { transition-duration: .2s; }
+  #moment.mom-reveal .mom-black { transition-duration: .2s; }
+  #moment.mom-out .mom-black { transition-duration: .2s; }
+  #moment .mom-scene, #moment .mom-line, #moment .mom-act { transition-duration: .2s; }
+}
+
+/* ---------- личные (семейные) линии: «Мама болеет — 4 дня, чтобы решить» ----------
+   Строки в «Требует внимания» рисует сама панель (классы .att не трогаем), а блок в «Сводке»
+   собирает BK.Story.famDash — он говорит теми же классами, что «Вас помнят» (thr-list/thr-block),
+   поэтому здесь только мелочи: срок и кнопка «Решить». */
+.fam-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fam-list li { display: flex; align-items: flex-start; gap: 8px; }
+.fam-list li .tx { flex: 1 1 auto; min-width: 0; }
+.fam-list li .tx b { display: block; font-size: 13px; }
+.fam-list li .tx small { display: block; color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+.fam-when { flex: 0 0 auto; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); padding-top: 1px; }
+.fam-sec h3 .fam-h { display: inline-flex; align-items: center; gap: 6px; }
+.fam-left { color: var(--warn, #b06a1c); font-weight: 600; }
+.fam-opt { display: grid; gap: 8px; }
+.fam-opt .cd { color: var(--ink-2); }
+.fam-note { margin: 0; color: var(--ink-2); font-size: 13px; }
+.fam-lead { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+"></noscript>
 <style>
 :root {
   --paper: #e7ebee;
@@ -4851,7 +5029,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       first: ['d_mama_money', 'd_colleague', 'd_truth'] },
 
     { id: 'sick_mother', name: 'Мама болеет', who: 'лекарства дороже зарплаты',
-      welcome: 'Уфа, февраль. Вам 21. Мама третий месяц на больничном, лекарства покупаете вы. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».',
+      welcome: 'Уфа, февраль. Вам 21. Мама болеет третий месяц, лекарства покупаете вы. В телефоне объявление: «В пекарню „Калач“ нужен бариста. Опыт не важен, важно не опаздывать».',
       intro: 'Вы не считаете, сколько отдаёте. Вы просто каждый раз достаёте карту.',
       start: (P) => { P.rel.family = 18; P.cash = Math.max(1200, P.cash - 2500); P.flags.v2Mother = 1; },
       first: ['d_mama_money', 'd_truth', 'd_sick_shift'] },
@@ -5106,12 +5284,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ],
     },
 
-    /* ---- здоровье против денег: больничный ---- */
+    /* ---- здоровье против денег: пропустить смены или работать ---- */
     d_sick_pay: {
-      who: 'rashid', title: 'Брать ли больничный',
-      text: () => 'Вы третий день кашляете и спите по пять часов. Рашид: «Иди домой, я как-нибудь выкручусь. Больничный оплачивается половиной. Или работай — но не дыши на витрину».',
+      who: 'rashid', title: 'Работать или отлежаться',
+      text: () => 'Вы третий день кашляете и спите по пять часов. Рашид: «Отлежись, я как-нибудь выкручусь. За пропущенные дни заплачу половину. Или работай — но не дыши на витрину».',
       choices: () => [
-        { label: 'Взять больничный', desc: 'Половина оклада и три дня дома.', fx: { rub: -1, hp: 2 }, do(P) {
+        { label: 'Отлежаться дома', desc: 'Половина оплаты и три дня дома.', fx: { rub: -1, hp: 2 }, do(P) {
           P.sickNow = true; P.hp = clamp(P.hp + 30, 0, 100); P.stats.sick++;
           BK.Prologue.rel2(P, { rashid: 3 });
           BK.Prologue.feed2(P, 'Три дня на диване, чай с малиной и сериал. Вы почти забыли, что бывает так.', 'good');
@@ -7467,6 +7645,94 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.STORY.perks.dvorBought = { name: '«Двор» куплен', text: 'точки «Двора» переходят сети: гостей +5 %', mods: [{ t: 'traffic', m: 1.025, d: 1825 }] };
   BK.STORY.perks.twocrusts = { name: 'Две корки', text: 'одна карта на двоих: давление соперника падает', mods: [{ t: 'traffic', m: 1.02, d: 3650 }], flag: { k: 'olegEnd', v: 'merge' } };
 
+  /* =====================================================================
+     ЛИЧНЫЕ (СЕМЕЙНЫЕ) ЛИНИИ — BK.STORY.family (механика — src/story.js, BK.Story.fam*).
+
+     Требование владельца: «Игрок должен заранее видеть, что линия идёт и к чему подводит:
+     строка/блок в „Требует внимания“ и в „Сводке“: например „Мама болеет — 4 дня, чтобы решить“».
+
+     Как устроено: каждое дело живёт в реестре нитей (BK.Threads) — у него есть срок, и он виден
+     в «Требует внимания», в «Вас помнят» и в блоке «Свои люди» в «Сводке». Предупреждения приходят
+     за 7 / 3 / 1 день тостами. Срок вышел — дело решается само, и цена этого решения («решится само»)
+     тоже названа заранее: ничего не падает на голову.
+
+     Поля дела:
+       id, who (герой BK.STORY.heroes), name (если у героя нет своего имени в списке),
+       role, ask (короткая строка со счётчиком), title, text (что происходит),
+       effect (чем отзовётся, если не решить), waitRel (цена «не решили»), days (срок),
+       gap (пауза до следующего дела), from ('prologue' — дело пришло из пролога),
+       when: { flag|flagAny, rel, day, year } — когда дело может начаться;
+       opts: [{ label, desc, cost (₽), rel, traffic, days, care }] — варианты «Решить».
+
+     Числа намеренно скромные: семейное дело не должно решать исход партии — оно про людей.
+     Правило: у каждого варианта есть цена, и у «ничего не делать» — тоже.
+     ===================================================================== */
+  BK.STORY.family = [
+    /* --- пришли из пролога: чем жил герой до своей точки --- */
+    {
+      id: 'mama', from: 'prologue', who: 'family', role: 'мама', days: 4, gap: 900, waitRel: -14,
+      ask: 'Мама болеет', title: 'Свои люди: мама болеет',
+      when: { flag: { v2Mother: 1 } },
+      text: 'Мама третий месяц на лекарствах — платите вы. Она говорит «всё хорошо» и первой кладёт трубку.',
+      effect: 'она перестанет просить и начнёт говорить, что всё хорошо',
+      opts: [
+        { label: 'Уехать к маме на неделю', desc: 'Неделю сеть без вас: выручка −3 %. Дома вас увидят.', rel: 18, traffic: 0.97, days: 7, care: 5 },
+        { label: 'Отправить деньги и остаться', desc: 'Лекарства и дорога — из своих, 1,2 млн ₽. Разговор будет коротким.', cost: 1.2e6, rel: -6 },
+        { label: 'Звонить каждый вечер', desc: 'Пять минут перед сном. Ни денег, ни дороги — и всё равно не рядом.', rel: 8 },
+      ],
+    },
+    {
+      id: 'sister', from: 'prologue', who: 'family', name: 'Сестра Айгуль', role: 'младшая сестра',
+      days: 6, gap: 900, waitRel: -14,
+      ask: 'Сестра ждёт ответа', title: 'Свои люди: сестра и учёба',
+      when: { flag: { v2Sister: 1 } },
+      text: 'Сестра подала документы. Родители уже посчитали, что часть оплаты — ваша: они не просят, они ждут.',
+      effect: 'она пойдёт на заочное и на работу',
+      opts: [
+        { label: 'Заплатить за первый год', desc: '2,4 млн ₽. Она будет учиться и не скажет «спасибо» — постесняется.', cost: 2.4e6, rel: 20, care: 5 },
+        { label: 'Дать половину и предупредить', desc: '1,2 млн ₽. Остальное — её работа по вечерам. Дома будут считать.', cost: 1.2e6, rel: 8 },
+        { label: 'Сказать, что сейчас не время', desc: 'Деньги остаются в деле. Она поймёт. Годами.', rel: -16 },
+      ],
+    },
+    {
+      id: 'room', from: 'prologue', who: 'family', role: 'мама и брат', days: 5, gap: 900, waitRel: -12,
+      ask: 'Дома тесно', title: 'Свои люди: ремонт в Черниковке',
+      when: { flag: { v2Village: 1 } },
+      text: 'В комнате сыро, брат спит на кухне. Мама говорит, что это не срочно, — и меняет тему.',
+      effect: 'просушат как получится — ещё на одну зиму',
+      opts: [
+        { label: 'Оплатить ремонт целиком', desc: '4 млн ₽ из дела. Брат получит свою комнату.', cost: 4e6, rel: 22, care: 6 },
+        { label: 'Дать на материалы', desc: '1,5 млн ₽. Сделают сами, к осени.', cost: 1.5e6, rel: 10 },
+        { label: 'Взять брата на работу в сеть', desc: 'Свои руки в цехе: он переедет и снимет комнату сам. Мама останется одна.', rel: -6, traffic: 1.01, days: 90 },
+      ],
+    },
+    /* --- общие дела: приходят и в других партиях --- */
+    {
+      id: 'mamaMoney', who: 'family', role: 'мама', days: 6, gap: 900, waitRel: -12,
+      ask: 'Мама просит денег', title: 'Свои люди: мама просит денег',
+      when: { year: 3, rel: 0 },
+      text: 'Мама никогда не просит первой. Значит, уже пора: «Сынок, у тебя не займёшь? Я отдам, как смогу».',
+      effect: 'она займёт у соседки и скажет вам об этом при других',
+      opts: [
+        { label: 'Дать и не считать', desc: '1,5 млн ₽. Она будет благодарить так, что станет неловко.', cost: 1.5e6, rel: 14 },
+        { label: 'Дать меньше и объяснить почему', desc: '500 тыс. ₽: идёт ремонт точки, каждую копейку считаете.', cost: 5e5, rel: 6 },
+        { label: 'Приехать вместо денег', desc: 'Выходные в Черниковке: мама, пирог, разговоры до ночи. Денег не будет.', rel: 10, traffic: 0.99, days: 4, care: 4 },
+      ],
+    },
+    {
+      id: 'babushka', who: 'babushka', role: 'бабушка', days: 5, gap: 900, waitRel: -12,
+      ask: 'Бабушка ждёт', title: 'Свои люди: бабушка Сания',
+      when: { year: 10.5 },
+      text: 'Бабушка звонит каждый вечер и не говорит, что ей тяжело. Просто звонит: «Приедешь? Пирог остынет».',
+      effect: 'она перестанет звонить вечером',
+      opts: [
+        { label: 'Уехать на месяц', desc: 'Месяц дел на автопилоте: выручка сети −2 %. Её это не вернёт, но вас запомнят.', rel: 20, traffic: 0.98, days: 30, care: 8 },
+        { label: 'Приехать на два дня', desc: 'Суббота и воскресенье, поездом. Всё остальное подождёт.', rel: 8, care: 3 },
+        { label: 'Позвонить и прислать деньги', desc: 'Она скажет «спасибо» и положит трубку первой. Так у вас уже было.', cost: 8e5, rel: -4 },
+      ],
+    },
+  ];
+
   BK.STORY.scenes.push(
     /* =====================================================================
        ВЕТКА «ГЛУБИНА» (Р6 = остаться в Уфе). Сцены идут первыми,
@@ -7657,7 +7923,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       who: ['family', 'babushka'],
       trigger: { after: ['s42'], all: [{ flag: { ufa: 'russia' } }], any: [{ year: 11 }, { rel: { family: 20 } }] },
       lines: [
-        { who: 'family', emo: 'serious', text: 'Әби сдала. Врач сказал — сердце. Она не жалуется, ты же знаешь, она вообще не жалуется. Приезжай, если можешь.' },
+        /* Болезнь близкого — без больницы и без диагноза (требование владельца): только тревога,
+           голос в трубке и выбор «успеть / найти деньги / выбрать дела». Ни палат, ни капельниц,
+           ни слов «сердце», «анализы», «врач сказал» — всё, что нужно, игрок слышит в интонации. */
+        { who: 'family', emo: 'serious', text: 'Әби сдала. Она не жалуется — ты же знаешь, она вообще не жалуется. Но голос у неё другой, и я это слышу. Приезжай, если можешь.' },
         { who: 'babushka', emo: 'calm', text: 'Не слушай мать. Я ещё тебя переживу. Но эчпочмаки в этот раз не передам — приезжай сам.' },
       ],
       choices: [
@@ -7804,6 +8073,49 @@ var BK = globalThis.BK || (globalThis.BK = {});
     },
 
     /* =====================================================================
+       ТЯЖЁЛЫЙ МОМЕНТ (form: 'moment') — заставка, а не сцена с репликами.
+       Показывает её BK.Moment (src/ui/moment.js + moment.css): экран медленно темнеет 3,2 с,
+       играет своя грустная 8-битная тема (BK.Sound.music('sad')), из темноты проявляется
+       пиксельная сцена-намёк (src/pixel/scenes.js → Px.scenes.moment: ночной коридор, дождь,
+       врач в дверях качает головой), потом две короткие строки — и кнопка «Дальше».
+       Смерти в кадре нет и в тексте нет: слова только о том, что осталось (банка с ложкой,
+       запертая дверь). Что случилось — игрок понимает сам.
+
+       Рашид уходит тихо и поздно: закваску он уже отдал (3.6 «Закваска 1987 года»), дело — тоже.
+       Флаг rashidGone закрывает финальный вариант «Привести Рашида» (Ф1, лодочная станция) и
+       не даёт реплике месяца приходить от него (src/story.js, wrapLines).
+       ===================================================================== */
+    {
+      id: 's4m1', ch: 'russia', form: 'moment', title: 'Ночной звонок',
+      who: ['gulya'],
+      /* Триггер намеренно не требует «Закваски» (3.6): она приходит только при высокой
+         близости с Рашидом и в иных партиях не случается вовсе — а тяжёлый момент должен
+         прийти к каждому, кто дошёл до главы 4. Достаточно кульминации главы 3 и 11-го года. */
+      trigger: { afterAny: ['s36', 's36b', 's37'], all: [{ year: 10.5 }] },
+      fallback: { months: 20 },
+      moment: {
+        figure: 'doctor',
+        lines: [
+          { who: 'gulya', text: 'Рашид не пришёл утром. В цеху осталась его банка — открытая, с ложкой.' },
+          { who: 'gulya', text: 'Я заперла дверь и поставила тесто. Так он и учил.' },
+        ],
+      },
+      // тот же текст — запасной вид, если заставки нет (старая сборка, Node, тесты без DOM)
+      lines: [
+        { who: 'gulya', emo: 'sad', text: 'Рашид не пришёл утром. В цеху осталась его банка — открытая, с ложкой.' },
+        { who: 'gulya', emo: 'sad', text: 'Я заперла дверь изнутри и поставила тесто. Так он и учил.' },
+      ],
+      choices: [
+        { label: 'Дальше', desc: '', log: 'Рашида Хайруллина больше нет',
+          effects: [
+            { t: 'flag', k: 'rashidGone', v: true },
+            { t: 'rel', who: 'gulya', add: 5 }, { t: 'meter', k: 'care', add: 5 },
+            { t: 'journal', text: 'Рашида Хайруллина больше нет. Банку 1987 года он оставил нам' },
+          ] },
+      ],
+    },
+
+    /* =====================================================================
        ФИНАЛ. Ф1 «Лодочная станция» — развязка с Олегом; Ф2 «Последний ужин» —
        как история называется (концовки §5).
        ===================================================================== */
@@ -7833,7 +8145,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
             { t: 'perk', id: 'twocrusts' }, { t: 'journal', text: 'Финал: слияние «Две корки»' }, { t: 'schedule', id: 'sf1b', after: 1 }],
         },
         {
-          label: 'Привести Рашида. Пусть они поговорят при вас.', need: { rel: { rashid: 40, oleg: 30 } },
+          /* Рашида может уже не быть (тяжёлый момент, сцена s4m1): тогда этого разговора не будет,
+             и кнопка честно говорит почему — BK.StoryUI.needText умеет noFlag. */
+          label: 'Привести Рашида. Пусть они поговорят при вас.', need: { rel: { rashid: 40, oleg: 30 }, noFlag: { rashidGone: true } },
           desc: '«Маргарин был дрянной». — «Знаю. Но аренду он заплатил». Дальше — как слияние, и в книге будет отдельная глава.',
           effects: [{ t: 'flag', k: 'olegEnd', v: 'merge' }, { t: 'rel', who: 'oleg', add: 20 }, { t: 'rel', who: 'rashid', add: 20 },
             { t: 'meter', k: 'fair', add: 20 }, { t: 'meter', k: 'care', add: 10 }, { t: 'perk', id: 'twocrusts' },
@@ -20402,7 +20716,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return {
       v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'own',
       rng: ((seed | 0) ^ 0x5f3a1) | 0, seen: {}, queue: [], pending: null, inbox: [],
-      lastScene: 0, lastLetter: 0, lastLine: 0,
+      lastScene: 0, lastLetter: 0, lastLine: 0, famNext: 0, famSeen: {},
       rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0, ildar: 0, babushka: 0 },
       m: { care: 0, risk: 0, honesty: 0, fair: 0 },
       f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
@@ -20429,6 +20743,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!Array.isArray(R.log)) R.log = [];
     if (!Array.isArray(R.inbox)) R.inbox = [];
     if (!Array.isArray(R.queue)) R.queue = [];
+    if (R.famNext == null) R.famNext = 0;
+    if (!R.famSeen || typeof R.famSeen !== 'object') R.famSeen = {};
     return R;
   }
   function rnd(R) { R.rng = (Math.imul(R.rng >>> 0, 1664525) + 1013904223) >>> 0; return R.rng / 4294967296; }
@@ -20598,6 +20914,175 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
+  /* ===================== личные (семейные) линии =====================
+     Требование владельца: «строка/блок в „Требует внимания“ и в „Сводке“: например „Мама болеет —
+     4 дня, чтобы решить“ … когда срок подходит — предупреждение через те же механизмы, что уже есть
+     (BK.Threads, attItems, тосты). Ничего не должно падать на голову».
+
+     Поэтому семейное дело живёт в реестре нитей (src/threads.js, BK.Threads): у записи есть who/role/
+     text/срок, её видно в «Требует внимания», в окне «Вас помнят» и в «Сводке». Две добавки к нитям
+     (в threads.js, там же объяснено): поле `ask` — короткая человеческая строка («Мама болеет») и
+     поля `act`/`arg` — кнопка «Решить», которая открывает окно выбора (src/ui/story-ui.js).
+     Тексты и числа дел — в данных: BK.STORY.family (src/data/story-russia.js).
+
+     Срок — это и есть «ничего не делать»: не решили за N дней — дело решается само (цена у него своя,
+     мягче решения, и она тоже названа заранее). Баланса не касается: живёт только при включённом
+     сюжете (CFG.STORY.ON), в прогонах ботов его нет. */
+  const FAM = () => (D() && D().family) || null;
+  // свои мелкие помощники: story.js — логика без DOM, но блок «Свои люди» собирает разметку сам
+  const nwd = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return n + ' ' + (x > 10 && x < 20 ? c : y === 1 ? a : y >= 2 && y <= 4 ? b : c); };
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const famDefs = () => { const f = FAM(); return Array.isArray(f) ? f : (f ? Object.keys(f).map((k) => f[k]) : []); };
+  const famById = (id) => famDefs().filter((d) => d && d.id === id)[0] || null;
+  const famName = (d) => d.name || (hero(d.who) ? hero(d.who).name : d.who);
+  // без лишних копий: список нитей бывает длинным, а личных дел в нём единицы.
+  // Пустой реестр — вовсе без выделения памяти (это вызывается на каждый день и на каждую панель).
+  const famThreads = (S, open) => {
+    const T = BK.Threads; if (!T || !T.state) return [];
+    const R = T.state(S); if (!R || !Array.isArray(R.list) || !R.list.length) return [];
+    const out = [];
+    for (const t of R.list) if (t && t.src === 'family' && (open ? !t.done : true)) out.push(t);
+    return out;
+  };
+  const famLeft = (S, t) => Math.max(0, Math.round(t.due - S.day));
+
+  // завести дело: обычная нить + ask/act/arg для окна и счётчика
+  function famStart(S, def) {
+    const T = BK.Threads, R = ensure(S);
+    if (!T || !def || !R) return null;
+    if (R.famSeen[def.id]) return null;
+    if (famThreads(S, true).length) return null;                       // одно личное дело за раз — не заваливаем игрока
+    const id = 'fam-' + def.id;
+    const t = T.add(S, {
+      id, who: famName(def), role: def.role || 'свои люди', kind: 'promise',
+      ask: def.ask || def.title || famName(def),
+      text: def.text || '',
+      due: S.day + (def.days || 4),
+      city: null, src: 'family', act: 'fam', arg: id,
+      effect: { text: def.effect || 'решится само, и не так, как вы хотели' },
+    });
+    R.famSeen[def.id] = S.day;
+    R.famNext = S.day + (def.gap || 0);
+    const I = E()._int || {};
+    if (I.toast) I.toast(S, def.title || ('Свои люди: ' + (def.ask || famName(def))), `${def.text || ''} ${T.askText ? T.askText(S, t) : ''}`.trim(), 'info');
+    if (I.log) I.log(S, `Свои люди: ${def.ask || famName(def)} — ${def.days || 4} дн., чтобы решить. ${def.text || ''}`, 'info');
+    return t;
+  }
+  // день: заводим новое дело, предупреждаем о сроке, отпускаем просроченное
+  function famDay(S) {
+    const R = state(S); if (!R || R.mode === 'off') return;
+    const T = BK.Threads; if (!T) return;
+    const open = famThreads(S, true);
+    if (!open.length && S.day < (R.famNext || 0)) return;      // ни дела, ни срока — дальше работы нет вовсе
+    // 1) просроченные: «не решили — решилось само» (цену игрок видел заранее)
+    const still = [];
+    for (const t of open) {
+      if (S.day >= t.due) { const def = famById(String(t.id).replace(/^fam-/, '')); famClose(S, t, def, null, true); }
+      else still.push(t);
+    }
+    // 2) предупреждения за 7 / 3 / 1 день
+    for (const t of still) {
+      const left = famLeft(S, t);
+      if (left > 7) continue;
+      t.warned = t.warned || {};
+      const th = left <= 1 ? 1 : left <= 3 ? 3 : 7;
+      if (t.warned[th]) continue;
+      t.warned[th] = 1;
+      const I = E()._int || {};
+      const days = nwd(left, 'день', 'дня', 'дней');
+      if (I.toast) I.toast(S, t.ask || ('Свои люди: ' + t.who), `${t.who}: ${t.text} ${left > 0 ? `Осталось ${days} — решите или решится само.` : 'Срок вышел.'}`, th <= 1 ? 'warn' : 'info');
+    }
+    // 3) пора завести следующее дело
+    if (still.length || S.day < (R.famNext || 0)) return;
+    const def = pickFam(S, R);
+    if (def) famStart(S, def);
+  }
+  // какое дело начать: сначала те, что пришли из пролога (мама болеет, сестра, комната), потом общие
+  function pickFam(S, R) {
+    const list = famDefs();
+    const ready = (d) => {
+      if (!d || R.famSeen[d.id]) return false;
+      const w = d.when || {};
+      if (w.flag) for (const k of Object.keys(w.flag)) { if (R.f[k] !== w.flag[k]) return false; }
+      if (w.flagAny) { if (!Object.keys(w.flagAny).some((k) => R.f[k] === w.flagAny[k])) return false; }
+      if (w.rel != null && (R.rel[d.rel || 'family'] || 0) < w.rel) return false;
+      if (w.day != null && S.day < w.day) return false;
+      if (w.year != null && year(S) < w.year) return false;
+      return true;
+    };
+    const prolog = list.filter((d) => d.from === 'prologue' && ready(d));
+    if (prolog.length) return prolog[0];
+    const any = list.filter((d) => d.from !== 'prologue' && ready(d));
+    if (!any.length) return null;
+    // общие дела идут по кругу: берём самое «давно не виденное»
+    any.sort((a, b) => (R.famSeen[a.id] || 0) - (R.famSeen[b.id] || 0));
+    return any[0];
+  }
+  // варианты дела — для окна (src/ui/story-ui.js)
+  function famOpts(S, id) {
+    const t = famThreads(S, true).filter((x) => x.id === id)[0];
+    const def = t ? famById(String(id).replace(/^fam-/, '')) : null;
+    return (def && def.opts) ? def.opts : [];
+  }
+  // решение игрока: применяем цену и последствие, нить уходит в «уже отозвалось»
+  function famPick(S, id, idx) {
+    const T = BK.Threads, R = ensure(S);
+    const t = T && T.byId ? T.byId(S, id) : null;
+    const def = famById(String(id || '').replace(/^fam-/, ''));
+    if (!t || t.done || !def) return { ok: false, msg: 'Этого дела уже нет' };
+    const o = (def.opts || [])[+idx];
+    if (!o) return { ok: false, msg: 'Нет такого решения' };
+    return famClose(S, t, def, o, false);
+  }
+  function famClose(S, t, def, o, missed) {
+    const R = ensure(S), I = E()._int || {}, out = [];
+    const relWho = (def && def.rel) || 'family';
+    const d = def || {};
+    if (o) {
+      if (o.cost) { const v = Math.round(o.cost); if (I.spend) I.spend(S, v, 'other'); else S.cash -= v; out.push('деньги'); }
+      if (o.rel) { R.rel[relWho] = clamp((R.rel[relWho] || 0) + o.rel, -100, 100); out.push(`${relWho}: отношения ${o.rel > 0 ? '+' : ''}${o.rel}`); }
+      if (o.traffic) S.mods.push({ t: 'traffic', m: o.traffic, until: S.day + (o.days || 7), scope: 'global', target: null, src: 'fam' });
+      if (o.care) R.m.care = clamp((R.m.care || 0) + o.care, -100, 100);
+    } else {
+      // не решили: цена названа заранее («решится само»)
+      const rel = d.waitRel == null ? -12 : d.waitRel;
+      R.rel[relWho] = clamp((R.rel[relWho] || 0) + rel, -100, 100);
+      out.push(`${relWho}: отношения ${rel}`);
+    }
+    t.done = true; t.doneAt = S.day;
+    t.ask = null;                                                   // счётчика больше нет: дело закрыто
+    const label = o ? (o.label || 'Решено') : 'Не решили — решилось само';
+    const line = `${d.ask || t.who}: ${label}.${out.length ? ' ' + out.join('; ') + '.' : ''}`;
+    R.log.push({ day: S.day, id: 'fam_' + t.id + '_' + S.day, title: 'Свои люди: ' + (d.ask || t.who), choice: label, chapter: chapter(S, R), fx: ['fam'] });
+    while (R.log.length > 120) R.log.shift();
+    if (I.log) I.log(S, line, missed ? 'bad' : 'info');
+    if (I.toast) I.toast(S, missed ? 'Не успели' : 'Решено', line, missed ? 'warn' : 'good');
+    R.famNext = Math.max(R.famNext || 0, S.day + (d.gap || 0));
+    try { if (BK.App && BK.App.save) BK.App.save(); } catch (e) { /* сохранит автосейв */ }
+    return { ok: true, missed: !!missed, label, out };
+  }
+  // блок «Свои люди» в «Сводке»: кто ждёт, сколько дней, кнопка «Решить»
+  function famDash(S) {
+    const T = BK.Threads; if (!T || !T.askText) return '';
+    const list = famThreads(S, true);
+    if (!list.length) return '';
+    const rows = list.map((t) => {
+      const left = famLeft(S, t);
+      const lvl = left <= 1 ? 'bad' : left <= 7 ? 'warn' : '';
+      return `<li><span class="ic">${FAM_ICON}</span><div class="tx"><b>${esc(t.ask || t.who)}</b><small>${esc(t.text || '')}</small>${lvl ? `<small class="fam-left">${left > 0 ? `Осталось ${nwd(left, 'день', 'дня', 'дней')}` : 'сегодня последний день'}</small>` : ''}</div>` +
+        `<button class="btn sm ${lvl === 'warn' || lvl === 'bad' ? 'primary' : ''}" data-act="fam" data-arg="${esc(t.id)}">Решить</button></li>`;
+    });
+    return `<div class="sec fam-sec thr-block"><h3><span class="fam-h">${FAM_ICON}Свои люди</span></h3>
+      <ul class="fam-list">${rows.join('')}</ul>
+      <p class="hint">Личное дело никуда не денется само: у него есть срок, и он виден здесь каждый день.</p></div>`;
+  }
+  // для памяти «Требует внимания» (panels.js): состав дел и сроки
+  function famKey(S) {
+    const list = famThreads(S, true);
+    return list.length ? list.map((t) => t.id + ':' + famLeft(S, t)).join(',') : '';
+  }
+  const FAM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>';
+
   /* ---------------- показ и выбор ---------------- */
   function start(S, sc) {
     const R = ensure(S); if (!R) return null;
@@ -20623,9 +21108,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     R.lastScene = S.day;
     R.pending = null;
     R.ch = chapter(S, R);
-    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.label, chapter: R.ch, fx: list });
+    // ch.log — что записать в летопись, если подпись кнопки для неё не годится («Дальше» у заставки)
+    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.log || ch.label, chapter: R.ch, fx: list });
     while (R.log.length > 120) R.log.shift();
-    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.label, out: out.join('; ') });
+    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.log || ch.label, out: out.join('; ') });
     return { ok: true, scene: sc, choice: ch, out };
   }
 
@@ -20659,6 +21145,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'loan': {                                                 // деньги банка как эффект сцены (кредит настоящий)
         try { E().takeLoan(S, Math.round(fx.v || 0)); return `кредит ${BK.fmtMoney(Math.round(fx.v || 0))}`; } catch (e) { return null; }
       }
+      // личное (семейное) дело прямо из сцены: { t:'fam', id:'mama', days:5 } — заводим нить с видимым сроком
+      case 'fam': {
+        const def = (fx.def && typeof fx.def === 'object') ? fx.def : famById(fx.id);
+        if (!def) return null;
+        const t = famStart(S, Object.assign({}, def, fx.days ? { days: fx.days } : null));
+        return t ? `свои люди: ${def.ask || famName(def)}` : null;      }
       case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
       case 'schedule': {
         const a = fx.after;
@@ -20697,6 +21189,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- день ---------------- */
   function day(S) {
     if (!K().ON || !S || S.lost) return;
+    wrapLines();          // «мёртвые не говорят» — данные реплик могли подключиться позже (порядок файлов в сборке любой)
     const R = ensure(S); if (!R) return;
     if (R.mode === 'off') return;
     wire(S, R);                                   // сквозные линии: нити пролога переезжают в BK.Threads
@@ -20729,6 +21222,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const data = D();
       if (data && data.recordLineOfMonth) data.recordLineOfMonth(S); // реплику фиксируем один раз после месячного отчёта
     }
+    try { famDay(S); } catch (e) { /* личные дела не должны ломать игру */ }
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
@@ -20871,6 +21365,30 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- подключение ---------------- */
+  // Мёртвые не говорят: после тяжёлого момента (флаг rashidGone) реплика месяца не может прийти
+  // от Рашида. Данные реплик не трогаем — на время одного вызова подменяем «кто говорит»
+  // у его ситуаций (waste/quality/mentor) на героя, у которого таких текстов нет: вариант просто
+  // пропускается, и говорит следующий по весу (src/data/story-lines.js, recordLineOfMonth).
+  function goneHeroes(S) {
+    const R = state(S), out = [];
+    if (R && R.f && R.f.rashidGone) out.push('rashid');
+    return out;
+  }
+  function wrapLines() {
+    const data = D();
+    if (!data || typeof data.recordLineOfMonth !== 'function' || data.__goneWrap) return;
+    data.__goneWrap = true;
+    const orig = data.recordLineOfMonth, map = data.lineSituations;
+    data.recordLineOfMonth = function (S) {
+      const gone = goneHeroes(S);
+      if (!gone.length || !map) return orig.apply(this, arguments);
+      const saved = {};
+      try {
+        for (const k of Object.keys(map)) if (gone.indexOf(map[k]) >= 0) { saved[k] = map[k]; map[k] = 'gone'; }
+        return orig.apply(this, arguments);
+      } finally { for (const k of Object.keys(saved)) map[k] = saved[k]; }
+    };
+  }
   function wrap() {
     const Eng = BK.Engine; if (!Eng || Eng.__story) return;
     Eng.__story = true;
@@ -20883,6 +21401,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     };
   }
   if (BK.Engine) wrap();
+  wrapLines();
+  // story.js собран раньше src/data/story-lines.js? Тогда обёртка «мёртвые не говорят» встанет
+  // на первом же дне (см. wrapLines() в day()): порядок файлов в сборке на это не влияет.
 
   /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии:
      имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть). Обёртка безопасна:
@@ -20902,7 +21423,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond, cityHero,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
-  };
+    chapter, hero, chapterName, defaults, fits, cond,
+    // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
+    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft,  };
 })();
 
 /* threads.js */
@@ -20915,7 +21438,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
    открытие ваших точек в городе (openGap → срок открытия × множитель), благодарный — ускоряет.
 
    Запись: { id, who, role, kind: 'favor'|'grudge'|'promise', text, city, from, due, effect, done,
-              doneAt, until, src }
+              doneAt, until, src, ask, act, arg }
      who    — имя;  role — кто он («пожарный инспектор»);
      text   — что помнит («вы выставили его из кофейни — он этого не забыл»);
      city   — город или null (null — вся сеть);
@@ -20923,6 +21446,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
      effect — что произойдёт: { text, openK (множитель срока открытия в городе), days (сколько длится),
               fx: [обычные эффекты событий — применяет BK.Engine._int.applyEffects] };
      done   — уже отозвалось;  until — до какого дня длится последствие (для openK).
+
+   Личные (семейные) линии (BK.Story.fam*, src/story.js) — те же нити с тремя добавками:
+     ask — короткая человеческая строка вместо «Вас помнит …» («Мама болеет»);
+     act/arg — кнопка вместо «Подробнее» («Решить» → окно дела, src/ui/story-ui.js).
+   Без ask запись выглядит и ведёт себя ровно как раньше: механика нитей не изменилась.
 
    Состояние — S.threads = { v, list, n }. Пока ни одной нити нет, поля нет вовсе: игра и боты
    работают ровно как раньше (проверка — node sim/threads.js, node sim/bot.js good 3 18 --summary).
@@ -21005,6 +21533,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function short(S, t) { return t.role || t.who; }
   function kindName(k) { return KINDS[k] || 'обещание'; }
+  // «Мама болеет — 4 дня, чтобы решить»: строка личного дела с живым счётчиком (ask есть только у них)
+  function askText(S, t) {
+    if (!t || !t.ask) return '';
+    const d = Math.max(0, Math.round(t.due - S.day));
+    return `${t.ask} — ${d > 0 ? nwd(d, 'день', 'дня', 'дней') + ', чтобы решить' : 'последний день'}`;
+  }
 
   /* ---------------- запись ---------------- */
   function normFx(fx) {
@@ -21033,6 +21567,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       effect: normFx(o.effect),
       done: false, doneAt: null, until: null,
       src: o.src || null,
+      // добавки личных линий (BK.Story.fam*): без них запись ведёт себя как раньше
+      ask: o.ask || null, act: o.act || null, arg: o.arg || null,
     };
     R.list.push(t);
     while (R.list.length > 40) R.list.shift();          // реестр не растёт бесконечно
@@ -21060,6 +21596,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     for (const t of R.list) {
       if (t.done || S.day < t.due) continue;
+      // личные (семейные) дела закрывает сам сюжет (BK.Story.famDay): у них своя цена «не решили —
+      // решилось само» и своя запись в летопись. Здесь их не трогаем, иначе порядок обёрток tick
+      // решал бы, каким тоном закончится дело.
+      if (t.src === 'family') continue;
       t.done = true; t.doneAt = S.day;
       const e = t.effect || {};
       if (e.days) t.until = S.day + e.days;
@@ -21110,16 +21650,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
       });
     }
     const p = waiting(S);
-    if (p.length && out.length < 3) {                              // отзовётся: предупреждаем заранее
-      const t = p[0], soon = t.due - S.day;
-      out.push({
-        lvl: soon <= 30 ? 'warn' : 'info', ic: 'chat', icHtml: ICON,
-        t: `Вас помнит ${short(S, t)}`,
-        d: `${t.who}${t.role ? ` — ${t.role}` : ''}: ${t.text} Отзовётся ${date(S, t.due)}${t.city ? ` (${cityIn(t.city)})` : ''}${soon <= 90 ? `, через ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')}` : ''}.`,
-        b: { act: 'threads', label: 'Подробнее' },
-      });
-    }
+    // личное дело показываем первым, даже если у нити-знакомого срок ближе: оно про людей, а не про сроки
+    const famFirst = p.filter((x) => x.ask)[0];
+    if (famFirst && out.length < 3) pushWait(S, out, famFirst, famFirst.due - S.day, askText(S, famFirst));
+    const rest = p.filter((x) => !x.ask)[0];
+    if (rest && out.length < 3) pushWait(S, out, rest, rest.due - S.day, '');
     return out;
+  }
+
+  // одна строка «отзовётся» для «Требует внимания»: личное дело — со сроком и кнопкой «Решить»
+  function pushWait(S, out, t, soon, ask) {
+    if (ask) {
+      out.push({
+        lvl: soon <= 0 ? 'bad' : soon <= 7 ? 'warn' : 'info', ic: 'alert', icHtml: ICON,
+        t: ask,
+        d: `${t.text} ${soon > 0 ? `Осталось ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')} — решите или решится само.` : 'Срок вышел.'}`,
+        b: { act: t.act || 'threads', arg: t.arg, label: t.act ? 'Решить' : 'Подробнее', primary: soon <= 3 },
+      });
+      return;
+    }
+    out.push({
+      lvl: soon <= 30 ? 'warn' : 'info', ic: 'chat', icHtml: ICON,
+      t: `Вас помнит ${short(S, t)}`,
+      d: `${t.who}${t.role ? ` — ${t.role}` : ''}: ${t.text} Отзовётся ${date(S, t.due)}${t.city ? ` (${cityIn(t.city)})` : ''}${soon <= 90 ? `, через ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')}` : ''}.`,
+      b: { act: 'threads', label: 'Подробнее' },
+    });
   }
 
   /* ---------------- пример владельца: обиженный завсегдатай → пожарный инспектор ----------------
@@ -21217,7 +21772,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.CFG && BK.CFG.OPEN_DAYS && BK.CFG.OPEN_DAYS_BASE == null) BK.CFG.OPEN_DAYS_BASE = BK.CFG.OPEN_DAYS;
 
   BK.Threads = {
-    ensure, state, list, byId, due, waiting, active, past, lingering, fire, add, clear, spawn,
+    ensure, state, list, byId, due, waiting, active, past, lingering, fire, add, clear, spawn, askText, nwd,
     openGap, openDays, addDays, base, baseDays: base, attItems, summary, day, refresh, openText, effectText, short, kindName,
     cityName, cityIn, KINDS, TEMPLATES, defaults,
     get demo() { return DEMO; }, set demo(v) { DEMO = !!v; },
@@ -21615,7 +22170,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         победившей партии. Мелкие вехи, достижения и «ленточка» открытия точки остаются как были —
         владелец просил именно разницу между большим и мелким. Под открытым окном момент НЕ
         приглушается (это не подложка); выключатели «Музыка» и общий уважаются, как у фоновых тем;
-     — каждая нота — свой короткоживущий осциллятор: частота ставится до старта, огибающая только рампами
+     — три разные темы: 'game' — фа мажор, 92 BPM, 3/4, петля 24 такта ≈ 47 с; 'prologue' — до мажор,
+       84 BPM, 3/4, петля 24 такта ≈ 51 с, выше регистр, мягче тембр и тише; 'sad' — ре минор, 63 BPM,
+       3/4, петля 16 тактов ≈ 46 с: тема тяжёлого момента (заставка BK.Moment), без перкуссии, ниже и тише.
+       Форма A–A'–B с вариациями (у 'sad' — A–B из восьмитактовых фраз);     — каждая нота — свой короткоживущий осциллятор: частота ставится до старта, огибающая только рампами
        (атака 24 мс, спад 90 мс), stop() — после нуля; выключение и скрытая вкладка — плавный спад шины;
        после шины стоит мягкий лимитер (DynamicsCompressor) от перегрузки;
      — включается после первого жеста игрока (arm()), молчит в скрытой вкладке (visibilitychange),
@@ -21867,7 +22425,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   //   • лёгкая перкуссия-«тик» — шум через полосовой фильтр, совсем тихо.
   // Две темы, у каждой своя тональность, темп и мелодия (не «та же петля на тон выше»):
   //   • game — фа мажор, 92 BPM, 3/4, 24 такта ≈ 47 с; спокойная «деловитая» тема сети;
-  //   • prologue — до мажор, 84 BPM, 3/4, 24 такта ≈ 51 с; выше регистр, мягче тембр, тише и короче фраза.
+  //   • prologue — до мажор, 84 BPM, 3/4, 24 такта ≈ 51 с; выше регистр, мягче тембр, тише и короче фраза;
+  //   • sad — ре минор, 63 BPM, 3/4, 16 тактов ≈ 46 с; тема тяжёлого момента (заставка BK.Moment):
+  //     тот же чиптюн-движок, но без перкуссии (tick = 0), ниже регистр, тише шина и мягче срез фильтра.
+  //     Владелец: «заставка с грустной 8-битной музыкой» — поэтому тема отдельная (BK.Sound.music('sad')),
+  //     а не «игровая на тон ниже»: у неё свой темп, своя мелодия и своя гармония.
   // Форма петли A (8 тактов) – A' (8) – B (8), повторяется с вариациями.
   //
   // Почему больше нет скрипов и хрустов:
@@ -21880,6 +22442,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const MUS = {
     GAIN: 0.06,          // громкость шины музыки (дальше общий MASTER 0,16 — вместе тихо, как раньше)
     PRO_K: 0.72,         // пролог тише игры
+    SAD_K: 0.8,          // тема тяжёлого момента тише игры: она звучит под затемнением и не должна бить в уши
     DUCK: 0.45,          // под открытым окном — тише, но не останавливаемся
     FADE_IN: 0.5,        // τ, с: появление подложки
     FADE_OUT: 0.25,      // τ, с: затухание при выключении
@@ -21893,7 +22456,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     TICK: 250,           // мс: как часто планировщик просыпается (реже, чем раньше, — меньше работы в момент нажатий)
     WIN_K: 1.15,         // победа громче фоновой темы на ~1 дБ — это момент, а не подложка
     WIN_TAIL: 0.25,      // с: сколько ждём после последней ноты момента, прежде чем вернуть прежнюю тему
-    CUT: { game: 3000, prologue: 2300, victory: 3400 }, // Гц: в прологе тембр мягче, у победы ярче (фанфары)
+    SAD_K: 0.8,          // тяжёлый момент тише обычного фона
+    CUT: { game: 3000, prologue: 2300, victory: 3400, sad: 1900 }, // Гц: пролог мягче, победа ярче, тяжёлый момент самый глухой
   };
   const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);   // MIDI-номер → Гц
 
@@ -21975,8 +22539,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
       [[0, 76, 1], [1, 78, 1], [2, 79, 2], [4, 81, 4]],               // A7: E5–F#5–G5–A5, подъём к разрешению
       [[0, 74, 2], [2, 78, 1], [3, 81, 1], [4, 86, 4]],               // D: D5–F#5–A5–D6 — разрешение в тонику
     ],
+    // ——— тяжёлый момент: ре минор, медленно и низко; фразы длинные, дыхания много ———
+    // Ноты тянутся по 2–4 восьмых: это «неспешный темп», а не просто редкие удары.
+    // Тональность ре минор (Dm–Bb–F–C / Dm–Gm–Am–Dm) — минор без надрыва, без хроматики.
+    sad: [
+      // ——— A (8 тактов): Dm — Bb — F — C — Dm — Gm — Am — Dm
+      [[0, 69, 2], [2, 72, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 72, 1], [3, 70, 3]],
+      [[0, 69, 2], [2, 65, 1], [3, 67, 3]],
+      [[0, 72, 4], [4, 71, 1], [5, 67, 1]],
+      [[0, 69, 2], [2, 74, 1], [3, 72, 2], [5, 69, 1]],
+      [[0, 70, 2], [2, 74, 1], [3, 77, 3]],
+      [[0, 76, 2], [2, 72, 1], [3, 69, 3]],
+      [[0, 74, 3], [3, 72, 1], [4, 69, 1], [5, 65, 1]],
+      // ——— B (8 тактов): подъём и мягкий возврат домой (Bb — F — Gm — Dm — Bb — C — Am — Dm)
+      [[0, 70, 3], [3, 74, 2], [5, 77, 1]],
+      [[0, 77, 2], [2, 76, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 70, 1], [3, 67, 3]],
+      [[0, 69, 2], [2, 72, 1], [3, 74, 3]],
+      [[0, 74, 2], [2, 77, 1], [3, 79, 3]],
+      [[0, 76, 3], [3, 72, 2], [5, 74, 1]],
+      [[0, 72, 2], [2, 69, 1], [3, 67, 3]],
+      [[0, 69, 4], [4, 65, 2]],    ],
   };
   // Гармония по тактам (A – A' – B). Вальс: I–IV–V–I / vi–ii–V–I.
+  // sad — ре минор: Dm – Bb – F – C – Dm – Gm – Am – Dm (вторая фраза поднимается на Bb и возвращается).
   const MUS_PROG = {
     game: ['F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F', 'F', 'Bb', 'C', 'F', 'Dm', 'Gm', 'C', 'F',
       'Bb', 'F', 'Gm', 'C', 'F', 'Dm', 'Bb', 'C'],
@@ -21984,7 +22571,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       'F', 'G', 'C', 'Am', 'F', 'G', 'C', 'G'],
     // победа: I–IV–ii–V, потом утверждение и доминанта A7, разрешающаяся в тонику
     victory: ['D', 'G', 'Bm', 'A', 'D', 'G', 'A', 'D', 'A', 'D'],
-  };
+    sad: ['Dm', 'Bb', 'F', 'C', 'Dm', 'Gm', 'Am', 'Dm',
+      'Bb', 'F', 'Gm', 'Dm', 'Bb', 'C', 'Am', 'Dm'],  };
   const MUS_THEMES = {
     game: {
       mood: 'game', key: 'фа мажор', bpm: 92, beats: 3, steps: 6, gain: MUS.GAIN, cut: MUS.CUT.game,
@@ -22002,11 +22590,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       gain: MUS.GAIN * MUS.WIN_K, cut: MUS.CUT.victory,
       lev: { lead: 0.40, bass: 0.25, arp: 0.075, tick: 0.05 },
     },
+    sad: {
+      mood: 'sad', key: 'ре минор', bpm: 63, beats: 3, steps: 6, gain: MUS.GAIN * MUS.SAD_K, cut: MUS.CUT.sad,
+      // перкуссии нет вовсе (tick: 0): в тяжёлом моменте «тик» звучал бы как метроном
+      lev: { lead: 0.28, bass: 0.22, arp: 0.04, tick: 0 },
+    },
   };
-  Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });
-  // Тема по имени. Незнакомое имя — фоновая тема игры: так новая тема, добавленная рядом
-  // (например, «грустная» для тяжёлых заставок), сразу подхватывается без правок этого места.
-  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
+  Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
   const stepDur = (th) => (60 / th.bpm) / (th.steps / th.beats);   // длительность восьмой, с
   const loopSec = (th) => th.bars * th.beats * 60 / th.bpm;        // длина полной петли, с
   const totalSteps = (th) => th.bars * th.steps;                   // шагов в одном проходе темы
@@ -22171,13 +22761,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return true;
   }
   // настроение: 'game' — тема сети, 'prologue' — отдельная, более лёгкая и романтичная тема пролога,
-  // 'victory' — разовый момент победы (см. musMoment ниже). Любая другая тема из MUS_THEMES (например,
-  // «грустная», добавленная рядом) идёт обычным путём: так эта правка не мешает соседям.
+  // 'victory' — разовый момент победы (см. musMoment ниже): в конце сам возвращает прежнюю тему.
+  // 'sad' — тема тяжёлого момента (заставка BK.Moment). Обе идут через MUS_THEMES и друг другу не мешают.
   function musMood(m) {
     if (!MUS_THEMES[m]) return mus.mood;          // темы нет — ничего не трогаем
     if (theme(m).once) return musMoment(m);       // разовый момент — своя логика с возвратом
-    if (mus.moment) { mus.moment = 0; mus.until = 0; }   // обычная тема отменяет незаконченный момент
-    if (mus.mood === m) return mus.mood;
+    if (mus.moment) { mus.moment = 0; mus.until = 0; }   // обычная тема отменяет незаконченный момент    if (mus.mood === m) return mus.mood;
     mus.mood = m;
     const nd = mus.nodes;
     if (nd && ctx) {
@@ -22271,7 +22860,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function renderMix(mood, seconds, events, opts) {
     const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
     if (!OAC) return null;
-    const m = mood === 'prologue' ? 'prologue' : 'game', th = theme(m);
+    const m = MUS_THEMES[mood] ? mood : 'game', th = theme(m);
     // sr можно задать (opts.sr): проверка qa/crackle.js рендерит звук ещё и на 88,2 кГц — у слитной волны
     // скачок между сэмплами падает вдвое, у ступеньки-щелчка нет. Так «хруст» отличают от скорости тона.
     const sr = (opts && opts.sr) || 44100, sec = Math.max(4, Math.min(60, seconds || 12));
@@ -22453,8 +23042,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${catRow('money', CAT_NAME.money, 'выручка, монетки 1-го числа')}
         ${catRow('notes', CAT_NAME.notes, 'открытие точки, вехи, достижения')}
         ${catRow('ui', CAT_NAME.ui, 'отклик на нажатия и окна')}
-        ${catRow('music', CAT_NAME.music, '8-битные темы: игра, пролог и победная — разные')}
-      </div></div>`;
+        ${catRow('music', CAT_NAME.music, '8-битные темы: игра, пролог, победа и тяжёлый момент — разные')}      </div></div>`;
   }
 
   /* ---------- подключение к интерфейсу без правок чужих файлов ---------- */
@@ -22503,7 +23091,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     settingsHtml,
     tap,
     catOn, catVal, setCat, toggleCat, CATS, CAT_NAME,
-    // музыка: music('game') / music('prologue') / music('victory') — настроение (без аргумента — узнать текущее)
+    // музыка: music('game') / music('prologue') / music('victory') / music('sad') — настроение (без аргумента — узнать текущее)
     music: musMood,
     musicInfo: musInfo,       // справка о теме: темп, тональность, длина петли, тембр (проверка qa/music8.js)
     renderMusic,              // офлайн-рендер музыки в OfflineAudioContext — числа вместо «на слух»
@@ -25072,6 +25660,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     damir: { name: 'Дамир', skin: 1, hair: HAIR.black, hairStyle: 'cap', hat: ['#2f8a57', '#1f6a40', '#5ab884', '#1c1418'], top: ['#e3b341', '#b88a24'], pants: ['#2e4570', '#1f3052'], shoes: ['#f5efe3', '#d6ccb9'],
       p: { skin: 1, hair: HAIR.black, hairStyle: 'short', top: ['#e3b341', '#b88a24'], collar: 'hood', eyec: '#2a1a14', bg: ['#e9f0dc', '#d6e4c2'] } },
     courier: { skin: 2, hair: HAIR.black, hairStyle: 'cap', hat: ['#2f8a57', '#1f6a40', '#5ab884', '#1c1418'], top: ['#2f8a57', '#1f6a40'], pants: ['#2a2a33', '#1c1c24'], shoes: ['#1c1418', '#100c10'] },
+    // врач из заставки тяжёлого момента (BK.Moment): новых примитивов не понадобилось —
+    // седые волосы, халат (body 'coat'), очки и усталое лицо из тех же частей, что у Семёна и Рашида.
+    // Никаких «медицинских» атрибутов: ни креста, ни халата до пола с капельницей — только человек в дверях.
+    doctor: { name: 'Врач', skin: 1, hair: HAIR.grey, hairStyle: 'short', coat: true, top: ['#eef0f2', '#c9ced4', '#ffffff'], pants: ['#3f4a56', '#2c343c'], shoes: ['#22242a', '#14161a'], glasses: '#4a5560',
+      p: { skin: 1, hair: HAIR.grey, hairStyle: 'short', top: ['#eef0f2', '#c9ced4'], collar: 'shirt', glasses: '#3a444e', age: 1, browc: '#8f8980', bg: ['#e2e8ec', '#cbd6dd'] } },
   };
   // герой через 15 лет — седина, морщины (финал «Жизнь в найме»)
   CAST.heroOld = Object.assign({}, CAST.hero, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, CAST.hero.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
@@ -25549,7 +26142,86 @@ var BK = globalThis.BK || (globalThis.BK = {});
     put(b, Px.fig('hero', { emo: 'happy', pose: ((t * 2) | 0) % 2 ? 'wave' : null }), hx, gy, true);
   }
 
-  Object.assign(Px, { scenes: { kalach, own, ITEM_IC, P, steam, loaf, bricks, rug, floorPlanks } });
+  /* ---------------- заставка тяжёлого момента (BK.Moment) ----------------
+     Владелец: «намёк, что пошло что-то не так — например, врач, который качает головой».
+     Поэтому сцена — не «больница», а ночной коридор: дождь в окно, лампа над дверью, пальто на
+     гвозде и человек в дверях, который качает головой. Ни палат, ни капельниц, ни диагнозов —
+     ничего, что объясняло бы случившееся словами; игрок дочитывает сам.
+     Качание — сдвиг фигуры на пиксель влево-вправо (у спрайта 16×30 это читается как «нет-нет»),
+     дождь и пылинки — по времени t. Функция ничего не кэширует: кадров мало, сцена одна. */
+  const MP = {
+    wall: ['#4d5462', '#434a57', '#5b6473'], floor: ['#6d5d50', '#5a4c41', '#7d6b5c'],
+    sky: ['#1b232e', '#2b3745'], rain: '#9fb4cc', wood: ['#6b4a2e', '#4a3220', '#8a6440'],
+    coat: ['#9aa0aa', '#767c86'], lamp: '#ffc27a', door: ['#2a2420', '#443a32'],
+  };
+  function momentScene(b, t, W, H, o) {
+    const g = Math.max(34, Math.min(H - 12, Math.round(H * 0.72)));      // линия пола
+    const floorH = Math.max(2, H - g);
+    // стена и пол
+    b.rect(0, 0, W, g, MP.wall[0]);
+    for (let y = 0; y < g; y++) b.hl(0, y, W, y < g * 0.35 ? MP.wall[1] : MP.wall[0]);
+    b.hl(0, g - 1, W, MP.wall[2]);
+    for (let y = g; y < H; y++) b.hl(0, y, W, MP.floor[1 + (y - g) % 2]);
+    b.hl(0, g, W, MP.wood[1]);
+    b.dith(0, g + 1, W, floorH, MP.floor[0], (x, y) => 0.5 - (y - g) * 0.16);
+    // окно слева: ночь и дождь
+    const wx = 6, ww = Math.max(20, Math.min(40, Math.round(W * 0.26))), wy = 7, wh = Math.max(14, g - 20);
+    b.rect(wx - 2, wy - 2, ww + 4, wh + 4, MP.wood[1]);
+    for (let y = wy; y < wy + wh; y++) b.hl(wx, y, ww, MP.sky[y - wy < wh * 0.5 ? 0 : 1]);
+    const R = rng(((t * 6) | 0) + 5);
+    for (let i = 0; i < Math.round(ww * 0.5); i++) {
+      const rx = wx + Math.floor(R() * ww), ry = wy + Math.floor(R() * wh), rl = 2 + Math.floor(R() * 3);
+      b.line(rx, ry, rx - 1, ry + rl, MP.rain, 0.5 + R() * 0.35);
+    }
+    b.rect(wx + (ww >> 1) - 1, wy, 2, wh, MP.wood[1]);
+    b.hl(wx, wy + Math.round(wh * 0.5), ww, MP.wood[1]);
+    // лампа над дверью: тёплое пятно — единственный свет в коридоре
+    const dx = W - Math.max(26, Math.round(W * 0.24)) - 2, dw = Math.max(22, Math.round(W * 0.24)), dt = 4;
+    b.glow(dx + dw / 2, dt + 2, Math.round(dw * 0.9), MP.lamp, 0.5, { ry: Math.round(g * 0.5), steps: 5 });
+    b.rect(dx, dt, dw, g - dt, MP.door[1]);
+    b.rect(dx + 3, dt + 3, dw - 6, g - dt - 3, MP.door[0], 0.55);
+    b.vl(dx, dt, g - dt, MP.wood[0]); b.vl(dx + dw - 1, dt, g - dt, MP.wood[1]);
+    b.rect(dx, dt, dw, 2, MP.wood[2]);
+    b.hl(dx + 2, dt + 5, dw - 4, MP.lamp, 0.35);
+    // пальто на гвозде у двери — деталь вместо слов
+    const cx = dx - 9;
+    if (cx > wx + ww + 4 && g > 30) {
+      b.set(cx, dt + 8, MP.wood[2]);
+      b.rect(cx - 4, dt + 9, 9, Math.min(20, g - dt - 12), MP.coat[0]);
+      b.vl(cx - 4, dt + 9, Math.min(20, g - dt - 12), MP.coat[1]);
+      b.hl(cx - 4, dt + 9, 9, MP.coat[1]);
+      b.set(cx, dt + 12, MP.coat[1]);
+    }
+    // лавка под окном
+    const bx = wx - 2, bw = ww + 12, by = g - 5;
+    b.rect(bx, by, bw, 3, MP.wood[0]); b.hl(bx, by, bw, MP.wood[2]); b.hl(bx, by + 2, bw, MP.wood[1]);
+    b.vl(bx + 1, by + 3, 4, MP.wood[1]); b.vl(bx + bw - 2, by + 3, 4, MP.wood[1]);
+    // герой сидит спиной (верх фигуры, посаженный на лавку) — лица не видно.
+    // Он в тени, свет только из двери: так фигура не «светит» и не перетягивает взгляд с врача.
+    try {
+      const seat = Px.memo('mom-hero', () => Px.figure(BK.Px.CAST.hero, { view: 'back', upper: true }).tint('#556072', 0.5));
+      b.blit(seat, Math.round(bx + bw * 0.34), by - 8);
+    } catch (e) { /* без героя сцена всё равно рисуется */ }
+    // врач в дверях: качает головой — вся фигура на пиксель влево-вправо
+    const shake = Math.sin(t * 2.1) > 0 ? 1 : -1;
+    const fx2 = dx + Math.round((dw - 16) / 2) + shake;
+    const fy = g - 29;
+    try {
+      const doc = Px.memo('mom-doc', () => Px.figure(BK.Px.CAST.doctor, { emo: 'sad' }));
+      b.blit(doc, fx2, fy);
+    } catch (e) { /* нет врача — остаётся свет и дождь */ }
+    // пылинки в свете лампы
+    const Rd = rng(((t * 2) | 0) + 21);
+    for (let i = 0; i < Math.round(W / 22); i++) b.set(dx + Rd() * dw, dt + 6 + Rd() * (g - dt - 8), '#ffffff', 0.12 + Rd() * 0.12);
+    // общая виньетка: края темнее, центр — там, где свет
+    const ox = dx + dw / 2;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const dd = Math.sqrt(((x - ox) / (W * 0.95)) * ((x - ox) / (W * 0.95)) + ((y - g * 0.5) / (H * 0.95)) * ((y - g * 0.5) / (H * 0.95)));
+      if (dd > 0.35) b.shade(x, y, '#12161c', Math.min(0.5, (dd - 0.35) * 0.85));
+    }
+  }
+
+  Object.assign(Px, { scenes: { kalach, own, moment: momentScene, ITEM_IC, P, steam, loaf, bricks, rug, floorPlanks } });
 })();
 
 /* pixel/store.js */
@@ -27892,7 +28564,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   let attMemo = null;
   function attention(S) {
     let inc = 0; for (const st of S.stores) inc += st.staff.length * 7 + st.incoming.length + st.staffTarget * 3 + (st.status === 'open' ? 1 : 0);
-    const key = [S.day, S.stores.length, inc, Math.round(S.cash / 1e4), Math.round(S.reserve / 1e4), S.loan, !!S.chef.pending, S.office.hr, S.office.academy, S.pay.seller, S.prodOffers.length, S.productions.length, S.phase, S.cache ? S.cache.capUse : 0].join('|');
+    const key = [S.day, S.stores.length, inc, Math.round(S.cash / 1e4), Math.round(S.reserve / 1e4), S.loan, !!S.chef.pending, S.office.hr, S.office.academy, S.pay.seller, S.prodOffers.length, S.productions.length, S.phase, S.cache ? S.cache.capUse : 0,
+      (BK.Story && BK.Story.famKey) ? BK.Story.famKey(S) : ''].join('|');   // личные дела: срок виден всегда, даже если денег не тронули
     if (attMemo && attMemo.S === S && attMemo.key === key) return attMemo.r;
     const r = attentionCalc(S);
     attMemo = { S, key, r };
@@ -28256,6 +28929,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+    if (BK.Story && BK.Story.famDash) s += BK.Story.famDash(S); // свои люди: личное дело со сроком («Мама болеет — 4 дня, чтобы решить»)
     if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)
     if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
     if (BK.ThreadsUI) s += BK.ThreadsUI.dashBlock(S); // нити истории: кто вас помнит, чем это грозит и когда
@@ -31092,15 +31766,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------- требование к варианту: честная причина недоступности ---------- */
   const METER_NAME = { care: 'Забота о людях', risk: 'Готовность рисковать', honesty: 'Честность', fair: 'Справедливость' };
   const FLAG_NAME = { mentor: 'выбор наставника', gulya: 'решение про Гулю', kalach: 'судьба «Калача»', lenin: 'отношения с «Двором»', hire1: 'первый наём', fund: 'фонд', war: 'война за город', scandal: 'проверка', ufa: 'будущее Уфы', ildar: 'решение про Ильдара', olegCard: 'карта Олега', regulars: 'постоянные гости' };
+  // noFlag — «этого разговора уже не будет»: тяжёлый момент закрывает вариант навсегда (напр. Рашида больше нет).
+  // Пишем причину отдельной фразой, а не через «нужно …»: «нужно Рашида больше нет» — не по-русски.
+  const NOFLAG_WHY = { rashidGone: 'Рашида больше нет — этот разговор не состоится' };
   function needText(S, need) {
     const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
-    const bad = [];
+    const bad = [], why = [];
     if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
-    if (!bad.length) return { dis: false, text: '' };
-    return { dis: true, text: 'Пока нельзя: нужно ' + sub(S, bad.join(', ')) };   // «судьба „Калача“» — по городу партии
-  }
+    if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (R.f[k] === need.noFlag[k]) why.push(NOFLAG_WHY[k] || 'другой ход событий');
+    if (!bad.length && !why.length) return { dis: false, text: '' };
+    const needTxt = bad.length ? 'нужно ' + sub(S, bad.join(', ')) : '';   // «судьба „Калача“» — по городу партии
+    const whyTxt = why.length ? why.join(', ') : '';
+    return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
 
   /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
   function fxChips(fx) {
@@ -31199,11 +31878,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------- открыть сцену ---------- */
+  // Тяжёлый момент (form:'moment'): окна с репликами нет — есть заставка BK.Moment
+  // (медленное затемнение, грустная 8-битная тема, пиксельная сцена-намёк). Кнопка «Дальше»
+  // разрешает сцену обычным путём (storyPick 0), поэтому последствия и летопись — как у всех.
+  function isMoment(sc) { return !!(sc && sc.form === 'moment'); }
+  function momentLines(S, sc) {
+    const m = sc.moment || {};
+    const src = (m.lines && m.lines.length) ? m.lines : (sc.lines || []);
+    return src.map((l) => ({ who: l.who ? whoName(l.who) : '', text: sub(S, l.text || '') }));
+  }
   function openScene(keep) {
     const S = APP() && APP().state; if (!S) return false;
     const sc = ST.pendingScene(S);
     if (sc) {
       ui.scene = sc.id; ui.line = 0; ui.form = sc.form || 'scene'; ui.letter = null;
+      if (isMoment(sc) && BK.Moment) {
+        // заставку показываем без окна: она сама держит паузу и сама зовёт «Дальше»
+        ui.moment = sc.id;
+        BK.Moment.play(S, { id: sc.id, title: sub(S, sc.title), lines: momentLines(S, sc) }, () => {
+          ui.moment = null;
+          if (APP().state !== S) return;                       // за время заставки загрузили другую игру
+          const A = APP(); if (A && A.ACT && A.ACT.storyPick) A.ACT.storyPick({ arg: '0' });
+        });
+        return true;
+      }
+      ui.moment = null;
       APP().openModal(sceneHtml(S, sc), { closable: false, keepScroll: keep === 'keep' });
       decorate(sc);
       return true;
@@ -31271,6 +31970,43 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!m || m.read) return;
     m.read = true;
     try { APP().save(); } catch (e) { /* сохранит следующий автосейв */ }
+  }
+
+  /* ---------- личное (семейное) дело: окно «Решить» ----------
+     Строку «Мама болеет — 4 дня, чтобы решить» и кнопку «Решить» даёт реестр нитей
+     (BK.Threads.attItems, src/threads.js), блок в «Сводке» — BK.Story.famDash, сам выбор и его
+     последствия — BK.Story.famPick (src/story.js). Здесь только окно: цена названа на кнопке,
+     а цена «ничего не делать» написана прямо в нём — срок вышел, значит решится само, и вот так. */
+  function famHtml(S, id) {
+    const T = BK.Threads, t = (T && T.byId) ? T.byId(S, id) : null;
+    const opts = (ST.famOpts && ST.famOpts(S, id)) || [];
+    if (!t || t.done || !opts.length) return null;
+    const def = (ST.famDefs ? ST.famDefs() : []).filter((x) => x.id === String(id).replace(/^fam-/, ''))[0] || {};
+    const left = ST.famLeft ? ST.famLeft(S, t) : 0;
+    const rows = opts.map((o, i) => `<button type="button" class="choice st-choice" data-act="famPick" data-id="${esc(id)}" data-arg="${i}">
+        <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
+        <b>${esc(sub(S, o.label))}</b>
+        ${o.desc ? `<span class="cd">${esc(sub(S, o.desc))}</span>` : ''}
+        ${o.cost ? `<span class="cc">${esc(BK.fmtMoney ? BK.fmtMoney(o.cost) : Math.round(o.cost))}</span>` : ''}
+      </button>`).join('');
+    const word = left % 10 === 1 && left % 100 !== 11 ? 'день' : (left % 10 >= 2 && left % 10 <= 4 && (left % 100 < 10 || left % 100 >= 20) ? 'дня' : 'дней');
+    const leftTxt = left > 0
+      ? `Осталось ${left} ${word}. Если не решите — решится само: ${esc(def.effect || 'как получится')}.`
+      : `Срок вышел. Решится само: ${esc(def.effect || 'как получится')}.`;
+    return `<div class="modal-h st-h"><span class="eyebrow st-ey">Свои люди</span><h2>${esc(sub(S, t.ask || t.who))}</h2></div>
+      <div class="modal-b story-m">
+        <p class="fam-lead">${esc(sub(S, t.text || ''))}</p>
+        <div class="st-choices">${rows}</div>
+        <p class="fam-note">${leftTxt}</p>
+      </div>`;
+  }
+  function famOpen(id) {
+    const S = APP() && APP().state; if (!S || !ST.famOpts) return false;
+    const html = famHtml(S, id);
+    if (!html) { APP().toast('Свои люди', 'Это дело уже решено.', 'warn'); return false; }
+    APP().openModal(html, { closable: true });
+    if (BK.Sound) BK.Sound.play('win');
+    return true;
   }
 
   /* ---------- лента в «Сводке»: последнее решение + «Вся летопись» ---------- */
@@ -31386,6 +32122,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const S = APP().state; if (!S || !ui.letter) return;
         const m = ui.letter; ui.letter = null; markRead(S, m);
         if (!openScene()) { APP().closeModal(); return; }
+        APP().refresh();
+      },
+      // личные дела (BK.Threads + BK.Story.fam*): строка в «Требует внимания» и блок в «Сводке»
+      // ведут сюда — «Решить» открывает окно, выбор применяет BK.Story.famPick
+      fam: (d) => famOpen(d && (d.arg || d.id)),
+      famPick: (d) => {
+        const S = APP().state; if (!S || !ST.famPick) return;
+        const r = ST.famPick(S, d && d.id, +(d && d.arg));
+        if (!r.ok) { APP().toast('Не получилось', r.msg || '', 'warn'); return; }
+        APP().closeModal();
+        APP().toast(r.missed ? 'Не успели' : 'Решено', r.label || '', r.missed ? 'warn' : 'good');
         APP().refresh();
       },
     });
@@ -31877,7 +32624,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const what = t.done ? (ot || T_.effectText(S, t)) : `${t.text.slice(0, 90)}${t.text.length > 90 ? '…' : ''}`;
       return `<li><span class="ic">${KIND_ICON[t.kind] || KIND_ICON.promise}</span><div class="tx"><b>${esc(t.who)}</b><small>${esc(what)}</small></div><span class="thr-when2">${t.done ? (t.until ? 'до ' + date(S, t.until) : 'уже было') : date(S, t.due)}</span></li>`;
     };
-    const list = act.concat(wait).slice(0, 3), hidden = act.length + wait.length - list.length;
+    // личные (семейные) дела показывает свой блок «Свои люди» (BK.Story.famDash) со счётчиком
+    // «осталось N дней» и кнопкой «Решить» — здесь они не дублируются
+    const own = act.concat(wait).filter((t) => t.src !== 'family');
+    const list = own.slice(0, 3), hidden = own.length - list.length;
     return `<div class="sec thr-block"><h3><span class="thr-h">${ICON}Вас помнят${act.length ? `<span class="cnt">${act.length}</span>` : ''}</span><button class="linkbtn" data-act="threads">Подробнее →</button></h3>
       <ul class="thr-list">${list.map(line).join('')}</ul>
       ${hidden > 0 ? `<p class="hint">И ещё ${hidden}…</p>` : ''}</div>`;
@@ -36830,6 +37580,192 @@ var BK = globalThis.BK || (globalThis.BK = {});
     GUESTS, CARDS: PRO_CARDS, PLAN, THREADS: TH, check,
     portraits, installPrologue, nextGuest, wrapEffects, addThread,
     ids: () => BK.STORY.scenes.filter((s) => /^sg\d+$/.test(s.id)).map((s) => s.id),
+  };
+})();
+
+/* ui/moment.js */
+/* =====================================================================
+   ЗАСТАВКА ТЯЖЁЛОГО МОМЕНТА (BK.Moment) — то, что видит игрок, когда случилось
+   непоправимое: смерть близкого, потеря, то, что уже не переиграть.
+
+   Требование владельца (дословно): «если что-то случилось, как смерть, то точно нужна
+   заставка с грустной 8-битной музыкой, темнеющим экраном, медленно темнеющим, и намёк,
+   что пошло что-то не так — например, врач, который качает головой».
+
+   Что происходит по секундам (полный такт ≈ 8 с, дальше — сколько читает игрок):
+     0,0 с  экран начинает медленно темнеть (линейно, 3,2 с — не рывком); включается
+            грустная тема: BK.Sound.music('sad') — своя категория «Музыка», тот же движок;
+     3,2 с  экран полностью чёрный; под чернотой уже стоит пиксельная сцена-намёк
+            (src/pixel/scenes.js → Px.scenes.moment: ночной коридор, дождь в окно, врач
+            в дверях — он качает головой); чернота за 2,2 с уходит до 45 %, сцена проявляется;
+     5,6 с  первая строка (одна-две, без объяснений и без морали);
+     6,8 с  вторая строка;
+     7,6 с  кнопка «Дальше»: игрок сам решает, когда вернуться;
+     по нажатию — 0,7 с обратного затемнения, музыка возвращается к прежней теме,
+            заставка снимается, пауза кончается и игра продолжается (состояние не меняется:
+            последствия решения применяет сюжет обычным путём — BK.Story.resolve).
+
+   Заставка — слой поверх всего (#moment, z-index выше окна #modal) и одновременно
+   «пустая» модалка (BK.App.openModal + closable:false): так игра встаёт на паузу
+   штатным способом, а события и окна шефа не лезут поверх заставки.
+   prefers-reduced-motion — без долгого затемнения (один быстрый такт).
+
+   Своей игровой логики здесь нет; сцену с form:'moment' показывает src/ui/story-ui.js,
+   она же по кнопке «Дальше» разрешает сцену. Модуль молчит, если DOM нет (боты, Node).
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const HAS_DOM = typeof document !== 'undefined';
+  const APP = () => BK.App;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  // Такты, секунды. SAD_* — множитель для prefers-reduced-motion: тот же смысл, но без долгой темноты.
+  const T = {
+    dark: 3.2,      // медленное затемнение до чёрного
+    reveal: 2.2,    // проявление сцены из черноты
+    line1: 5.6,     // первая строка
+    line2: 6.8,     // вторая строка
+    btn: 7.6,       // кнопка «Дальше»
+    out: 0.7,       // обратное затемнение
+  };
+  const stage = { el: null, timers: [], scene: null, done: null, prev: 'game', on: false, cvs: null, raf: 0, t0: 0 };
+
+  function reduceMotion() { try { return !!(BK.Px && BK.Px.reduceMotion && BK.Px.reduceMotion()); } catch (e) { return false; } }
+  function speed() { return reduceMotion() ? 0.15 : 1; }
+  function clearTimers() { for (const id of stage.timers) clearTimeout(id); stage.timers = []; }
+
+  /* ---------- пиксельная сцена: canvas низкого разрешения, целый множитель ----------
+     Сцена — маленькая, «карманная»: буфер 132×74 (телефон) или 176×99 (шире 520 px),
+     множитель 2 или 3. Крупная сцена на весь экран читалась бы как обои, а нам нужен намёк:
+     окно с дождём, лавка, человек в дверях. */
+  function mountScene(slot, W0) {
+    const W = W0 || 480;
+    const bufW = W < 520 ? 132 : 176;
+    const bufH = Math.round(bufW * 0.56);
+    const cv = document.createElement('canvas');
+    cv.className = 'mom-scene-cv';
+    cv.setAttribute('role', 'img');
+    cv.setAttribute('aria-label', 'Ночной коридор. В дверях стоит врач и качает головой');
+    cv.width = bufW; cv.height = bufH;
+    const k = W < 520 ? 2 : 3;
+    cv.style.width = bufW * k + 'px'; cv.style.height = bufH * k + 'px';
+    slot.appendChild(cv);
+    const Px = BK.Px;
+    if (!Px || !Px.scenes || !Px.scenes.moment) return null;    // без пиксельного слоя остаются текст и звук
+    const b = new Px.Buf(bufW, bufH);
+    const paint = (t) => {
+      try {
+        b.d.fill(0);
+        Px.scenes.moment(b, t, bufW, bufH, {});
+        b.toCanvas(cv);
+      } catch (e) { /* один неудачный кадр не должен ломать заставку */ }
+    };
+    stage.cvs = { cv, paint };
+    paint(0);
+    if (Px.reduceMotion()) return stage.cvs;
+    const loop = () => {
+      stage.raf = 0;
+      if (!stage.on || !cv.isConnected) return;
+      paint((performance.now() - stage.t0) / 1000);
+      stage.raf = requestAnimationFrame(loop);
+    };
+    stage.raf = requestAnimationFrame(loop);
+    return stage.cvs;
+  }
+
+  /* ---------- показать заставку ---------- */
+  // o: { id, title, lines:[{who,text}], hold } — текст уже подставлен (BK.StoryUI.sub)
+  function play(S, o, done) {
+    if (!HAS_DOM) return false;
+    if (stage.on) return false;                                  // вторая заставка поверх первой не нужна
+    const A = APP(); if (!A) return false;
+    const opt = o || {};
+    const lines = (opt.lines || []).filter(Boolean).slice(0, 2);
+    const root = document.createElement('div');
+    root.id = 'moment'; root.className = 'mom';
+    root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', opt.title ? String(opt.title) : 'Тяжёлый момент');
+    root.innerHTML =
+      '<div class="mom-black"></div>' +
+      '<div class="mom-scene"><div class="mom-frame"></div>' +
+      '<div class="mom-canvas"></div></div>' +
+      '<div class="mom-text">' +
+      lines.map((l, i) => `<p class="mom-line" data-i="${i}">${l.who ? `<b class="mom-who">${esc(l.who)}</b>` : ''}<span>${esc(l.text || '')}</span></p>`).join('') +
+      '</div>' +
+      '<div class="mom-act"><button type="button" class="btn primary block mom-next" data-act="momNext">Дальше</button>' +
+      '<span class="mom-hint">Медленно темнеет. Так бывает.</span></div>';
+    document.body.appendChild(root);
+    stage.el = root; stage.done = done || null; stage.on = true; stage.t0 = performance.now();
+
+    // пауза штатным способом: пустая модалка (closable:false) — время стоит, окна не лезут поверх
+    try { A.openModal('<div class="mom-hold"></div>', { closable: false }); } catch (e) { /* без модалки заставка всё равно видна */ }
+
+    // грустная тема: своя категория «Музыка», тот же движок синтеза
+    stage.prev = (BK.Sound && BK.Sound.music && BK.Sound.music()) || 'game';
+    if (BK.Sound) { try { BK.Sound.arm(); BK.Sound.music('sad'); } catch (e) { /* молча: звук не важнее сцены */ } }
+
+    const k = speed();
+    const at = (sec, fn) => { stage.timers.push(setTimeout(fn, Math.round(sec * k * 1000))); };
+    const slot = $('.mom-canvas', root);
+    // 1) медленное затемнение
+    requestAnimationFrame(() => root.classList.add('mom-dark'));
+    // 2) чёрный экран: под ним появляется сцена, чернота уходит до 45 %
+    at(T.dark, () => {
+      mountScene(slot, window.innerWidth || 480);
+      root.classList.add('mom-snap');                          // без перехода: мгновенно в чёрное
+      const black = $('.mom-black', root);
+      if (black) black.style.opacity = '1';
+      requestAnimationFrame(() => {
+        root.classList.remove('mom-snap');
+        root.classList.add('mom-reveal');
+        if (black) black.style.opacity = '';
+      });
+    });
+    at(T.line1, () => root.classList.add('mom-l1'));
+    if (lines.length > 1) at(T.line2, () => root.classList.add('mom-l2'));
+    at(T.btn, () => { root.classList.add('mom-ready'); const b = $('.mom-next', root); if (b) { try { b.focus({ preventScroll: true }); } catch (e) {} } });
+    return true;
+  }
+
+  /* ---------- «Дальше»: обратное затемнение, музыка назад, сцена продолжается ---------- */
+  function finish() {
+    if (!stage.on || !stage.el) return false;
+    const root = stage.el, done = stage.done;
+    stage.on = false; stage.done = null;
+    clearTimers();
+    if (stage.raf) { cancelAnimationFrame(stage.raf); stage.raf = 0; }
+    if (BK.Sound) { try { BK.Sound.music(stage.prev === 'sad' ? 'game' : stage.prev); } catch (e) {} } // тема возвращается под затемнением
+    root.classList.add('mom-out');
+    const drop = () => {
+      try { root.remove(); } catch (e) {}
+      stage.el = null; stage.cvs = null;
+      if (done) { try { done(); } catch (e) { /* сюжет сам разберётся */ } }
+      else { const A = APP(); if (A) { try { A.closeModal(); } catch (e) {} } }   // заставку позвали напрямую — закрываем паузу сами
+    };
+    if (reduceMotion()) drop(); else setTimeout(drop, Math.round(T.out * 1000));
+    return true;
+  }
+
+  function boot() {
+    if (!HAS_DOM) return;
+    const A = APP() && APP().ACT;
+    if (!A) { setTimeout(boot, 150); return; }
+    if (A.__moment) return;
+    A.__moment = true;
+    A.momNext = () => finish();
+    // клавишами тоже можно: Enter/Space/Escape — «Дальше» (заставку нельзя закрыть случайным кликом по фону)
+    document.addEventListener('keydown', (e) => {
+      if (!stage.on) return;
+      if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space' || e.key === 'Escape') { e.preventDefault(); finish(); }
+    });
+  }
+  if (HAS_DOM) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot); }
+
+  BK.Moment = {
+    play, show: play, finish, active: () => stage.on,
+    T,
+    get scene() { return stage.el; },
   };
 })();
 

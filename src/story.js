@@ -32,7 +32,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return {
       v: 1, mode: 'full', scenario: 'ufa', hero: { name: '', g: null }, ch: 'own',
       rng: ((seed | 0) ^ 0x5f3a1) | 0, seen: {}, queue: [], pending: null, inbox: [],
-      lastScene: 0, lastLetter: 0, lastLine: 0,
+      lastScene: 0, lastLetter: 0, lastLine: 0, famNext: 0, famSeen: {},
       rel: { rashid: 0, gulya: 0, oleg: 0, elvira: 0, family: 10, semyon: 0, ildar: 0, babushka: 0 },
       m: { care: 0, risk: 0, honesty: 0, fair: 0 },
       f: { mentor: null, gulya: null, kalach: 'alive', lenin: null, hire1: null, fund: 0, war: null, scandal: null, ufa: null, ildar: null, olegCard: false, regulars: 0 },
@@ -59,6 +59,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!Array.isArray(R.log)) R.log = [];
     if (!Array.isArray(R.inbox)) R.inbox = [];
     if (!Array.isArray(R.queue)) R.queue = [];
+    if (R.famNext == null) R.famNext = 0;
+    if (!R.famSeen || typeof R.famSeen !== 'object') R.famSeen = {};
     return R;
   }
   function rnd(R) { R.rng = (Math.imul(R.rng >>> 0, 1664525) + 1013904223) >>> 0; return R.rng / 4294967296; }
@@ -228,6 +230,175 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
+  /* ===================== личные (семейные) линии =====================
+     Требование владельца: «строка/блок в „Требует внимания“ и в „Сводке“: например „Мама болеет —
+     4 дня, чтобы решить“ … когда срок подходит — предупреждение через те же механизмы, что уже есть
+     (BK.Threads, attItems, тосты). Ничего не должно падать на голову».
+
+     Поэтому семейное дело живёт в реестре нитей (src/threads.js, BK.Threads): у записи есть who/role/
+     text/срок, её видно в «Требует внимания», в окне «Вас помнят» и в «Сводке». Две добавки к нитям
+     (в threads.js, там же объяснено): поле `ask` — короткая человеческая строка («Мама болеет») и
+     поля `act`/`arg` — кнопка «Решить», которая открывает окно выбора (src/ui/story-ui.js).
+     Тексты и числа дел — в данных: BK.STORY.family (src/data/story-russia.js).
+
+     Срок — это и есть «ничего не делать»: не решили за N дней — дело решается само (цена у него своя,
+     мягче решения, и она тоже названа заранее). Баланса не касается: живёт только при включённом
+     сюжете (CFG.STORY.ON), в прогонах ботов его нет. */
+  const FAM = () => (D() && D().family) || null;
+  // свои мелкие помощники: story.js — логика без DOM, но блок «Свои люди» собирает разметку сам
+  const nwd = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return n + ' ' + (x > 10 && x < 20 ? c : y === 1 ? a : y >= 2 && y <= 4 ? b : c); };
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const famDefs = () => { const f = FAM(); return Array.isArray(f) ? f : (f ? Object.keys(f).map((k) => f[k]) : []); };
+  const famById = (id) => famDefs().filter((d) => d && d.id === id)[0] || null;
+  const famName = (d) => d.name || (hero(d.who) ? hero(d.who).name : d.who);
+  // без лишних копий: список нитей бывает длинным, а личных дел в нём единицы.
+  // Пустой реестр — вовсе без выделения памяти (это вызывается на каждый день и на каждую панель).
+  const famThreads = (S, open) => {
+    const T = BK.Threads; if (!T || !T.state) return [];
+    const R = T.state(S); if (!R || !Array.isArray(R.list) || !R.list.length) return [];
+    const out = [];
+    for (const t of R.list) if (t && t.src === 'family' && (open ? !t.done : true)) out.push(t);
+    return out;
+  };
+  const famLeft = (S, t) => Math.max(0, Math.round(t.due - S.day));
+
+  // завести дело: обычная нить + ask/act/arg для окна и счётчика
+  function famStart(S, def) {
+    const T = BK.Threads, R = ensure(S);
+    if (!T || !def || !R) return null;
+    if (R.famSeen[def.id]) return null;
+    if (famThreads(S, true).length) return null;                       // одно личное дело за раз — не заваливаем игрока
+    const id = 'fam-' + def.id;
+    const t = T.add(S, {
+      id, who: famName(def), role: def.role || 'свои люди', kind: 'promise',
+      ask: def.ask || def.title || famName(def),
+      text: def.text || '',
+      due: S.day + (def.days || 4),
+      city: null, src: 'family', act: 'fam', arg: id,
+      effect: { text: def.effect || 'решится само, и не так, как вы хотели' },
+    });
+    R.famSeen[def.id] = S.day;
+    R.famNext = S.day + (def.gap || 0);
+    const I = E()._int || {};
+    if (I.toast) I.toast(S, def.title || ('Свои люди: ' + (def.ask || famName(def))), `${def.text || ''} ${T.askText ? T.askText(S, t) : ''}`.trim(), 'info');
+    if (I.log) I.log(S, `Свои люди: ${def.ask || famName(def)} — ${def.days || 4} дн., чтобы решить. ${def.text || ''}`, 'info');
+    return t;
+  }
+  // день: заводим новое дело, предупреждаем о сроке, отпускаем просроченное
+  function famDay(S) {
+    const R = state(S); if (!R || R.mode === 'off') return;
+    const T = BK.Threads; if (!T) return;
+    const open = famThreads(S, true);
+    if (!open.length && S.day < (R.famNext || 0)) return;      // ни дела, ни срока — дальше работы нет вовсе
+    // 1) просроченные: «не решили — решилось само» (цену игрок видел заранее)
+    const still = [];
+    for (const t of open) {
+      if (S.day >= t.due) { const def = famById(String(t.id).replace(/^fam-/, '')); famClose(S, t, def, null, true); }
+      else still.push(t);
+    }
+    // 2) предупреждения за 7 / 3 / 1 день
+    for (const t of still) {
+      const left = famLeft(S, t);
+      if (left > 7) continue;
+      t.warned = t.warned || {};
+      const th = left <= 1 ? 1 : left <= 3 ? 3 : 7;
+      if (t.warned[th]) continue;
+      t.warned[th] = 1;
+      const I = E()._int || {};
+      const days = nwd(left, 'день', 'дня', 'дней');
+      if (I.toast) I.toast(S, t.ask || ('Свои люди: ' + t.who), `${t.who}: ${t.text} ${left > 0 ? `Осталось ${days} — решите или решится само.` : 'Срок вышел.'}`, th <= 1 ? 'warn' : 'info');
+    }
+    // 3) пора завести следующее дело
+    if (still.length || S.day < (R.famNext || 0)) return;
+    const def = pickFam(S, R);
+    if (def) famStart(S, def);
+  }
+  // какое дело начать: сначала те, что пришли из пролога (мама болеет, сестра, комната), потом общие
+  function pickFam(S, R) {
+    const list = famDefs();
+    const ready = (d) => {
+      if (!d || R.famSeen[d.id]) return false;
+      const w = d.when || {};
+      if (w.flag) for (const k of Object.keys(w.flag)) { if (R.f[k] !== w.flag[k]) return false; }
+      if (w.flagAny) { if (!Object.keys(w.flagAny).some((k) => R.f[k] === w.flagAny[k])) return false; }
+      if (w.rel != null && (R.rel[d.rel || 'family'] || 0) < w.rel) return false;
+      if (w.day != null && S.day < w.day) return false;
+      if (w.year != null && year(S) < w.year) return false;
+      return true;
+    };
+    const prolog = list.filter((d) => d.from === 'prologue' && ready(d));
+    if (prolog.length) return prolog[0];
+    const any = list.filter((d) => d.from !== 'prologue' && ready(d));
+    if (!any.length) return null;
+    // общие дела идут по кругу: берём самое «давно не виденное»
+    any.sort((a, b) => (R.famSeen[a.id] || 0) - (R.famSeen[b.id] || 0));
+    return any[0];
+  }
+  // варианты дела — для окна (src/ui/story-ui.js)
+  function famOpts(S, id) {
+    const t = famThreads(S, true).filter((x) => x.id === id)[0];
+    const def = t ? famById(String(id).replace(/^fam-/, '')) : null;
+    return (def && def.opts) ? def.opts : [];
+  }
+  // решение игрока: применяем цену и последствие, нить уходит в «уже отозвалось»
+  function famPick(S, id, idx) {
+    const T = BK.Threads, R = ensure(S);
+    const t = T && T.byId ? T.byId(S, id) : null;
+    const def = famById(String(id || '').replace(/^fam-/, ''));
+    if (!t || t.done || !def) return { ok: false, msg: 'Этого дела уже нет' };
+    const o = (def.opts || [])[+idx];
+    if (!o) return { ok: false, msg: 'Нет такого решения' };
+    return famClose(S, t, def, o, false);
+  }
+  function famClose(S, t, def, o, missed) {
+    const R = ensure(S), I = E()._int || {}, out = [];
+    const relWho = (def && def.rel) || 'family';
+    const d = def || {};
+    if (o) {
+      if (o.cost) { const v = Math.round(o.cost); if (I.spend) I.spend(S, v, 'other'); else S.cash -= v; out.push('деньги'); }
+      if (o.rel) { R.rel[relWho] = clamp((R.rel[relWho] || 0) + o.rel, -100, 100); out.push(`${relWho}: отношения ${o.rel > 0 ? '+' : ''}${o.rel}`); }
+      if (o.traffic) S.mods.push({ t: 'traffic', m: o.traffic, until: S.day + (o.days || 7), scope: 'global', target: null, src: 'fam' });
+      if (o.care) R.m.care = clamp((R.m.care || 0) + o.care, -100, 100);
+    } else {
+      // не решили: цена названа заранее («решится само»)
+      const rel = d.waitRel == null ? -12 : d.waitRel;
+      R.rel[relWho] = clamp((R.rel[relWho] || 0) + rel, -100, 100);
+      out.push(`${relWho}: отношения ${rel}`);
+    }
+    t.done = true; t.doneAt = S.day;
+    t.ask = null;                                                   // счётчика больше нет: дело закрыто
+    const label = o ? (o.label || 'Решено') : 'Не решили — решилось само';
+    const line = `${d.ask || t.who}: ${label}.${out.length ? ' ' + out.join('; ') + '.' : ''}`;
+    R.log.push({ day: S.day, id: 'fam_' + t.id + '_' + S.day, title: 'Свои люди: ' + (d.ask || t.who), choice: label, chapter: chapter(S, R), fx: ['fam'] });
+    while (R.log.length > 120) R.log.shift();
+    if (I.log) I.log(S, line, missed ? 'bad' : 'info');
+    if (I.toast) I.toast(S, missed ? 'Не успели' : 'Решено', line, missed ? 'warn' : 'good');
+    R.famNext = Math.max(R.famNext || 0, S.day + (d.gap || 0));
+    try { if (BK.App && BK.App.save) BK.App.save(); } catch (e) { /* сохранит автосейв */ }
+    return { ok: true, missed: !!missed, label, out };
+  }
+  // блок «Свои люди» в «Сводке»: кто ждёт, сколько дней, кнопка «Решить»
+  function famDash(S) {
+    const T = BK.Threads; if (!T || !T.askText) return '';
+    const list = famThreads(S, true);
+    if (!list.length) return '';
+    const rows = list.map((t) => {
+      const left = famLeft(S, t);
+      const lvl = left <= 1 ? 'bad' : left <= 7 ? 'warn' : '';
+      return `<li><span class="ic">${FAM_ICON}</span><div class="tx"><b>${esc(t.ask || t.who)}</b><small>${esc(t.text || '')}</small>${lvl ? `<small class="fam-left">${left > 0 ? `Осталось ${nwd(left, 'день', 'дня', 'дней')}` : 'сегодня последний день'}</small>` : ''}</div>` +
+        `<button class="btn sm ${lvl === 'warn' || lvl === 'bad' ? 'primary' : ''}" data-act="fam" data-arg="${esc(t.id)}">Решить</button></li>`;
+    });
+    return `<div class="sec fam-sec thr-block"><h3><span class="fam-h">${FAM_ICON}Свои люди</span></h3>
+      <ul class="fam-list">${rows.join('')}</ul>
+      <p class="hint">Личное дело никуда не денется само: у него есть срок, и он виден здесь каждый день.</p></div>`;
+  }
+  // для памяти «Требует внимания» (panels.js): состав дел и сроки
+  function famKey(S) {
+    const list = famThreads(S, true);
+    return list.length ? list.map((t) => t.id + ':' + famLeft(S, t)).join(',') : '';
+  }
+  const FAM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>';
+
   /* ---------------- показ и выбор ---------------- */
   function start(S, sc) {
     const R = ensure(S); if (!R) return null;
@@ -253,9 +424,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     R.lastScene = S.day;
     R.pending = null;
     R.ch = chapter(S, R);
-    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.label, chapter: R.ch, fx: list });
+    // ch.log — что записать в летопись, если подпись кнопки для неё не годится («Дальше» у заставки)
+    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.log || ch.label, chapter: R.ch, fx: list });
     while (R.log.length > 120) R.log.shift();
-    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.label, out: out.join('; ') });
+    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.log || ch.label, out: out.join('; ') });
     return { ok: true, scene: sc, choice: ch, out };
   }
 
@@ -289,6 +461,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'loan': {                                                 // деньги банка как эффект сцены (кредит настоящий)
         try { E().takeLoan(S, Math.round(fx.v || 0)); return `кредит ${BK.fmtMoney(Math.round(fx.v || 0))}`; } catch (e) { return null; }
       }
+      // личное (семейное) дело прямо из сцены: { t:'fam', id:'mama', days:5 } — заводим нить с видимым сроком
+      case 'fam': {
+        const def = (fx.def && typeof fx.def === 'object') ? fx.def : famById(fx.id);
+        if (!def) return null;
+        const t = famStart(S, Object.assign({}, def, fx.days ? { days: fx.days } : null));
+        return t ? `свои люди: ${def.ask || famName(def)}` : null;      }
       case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
       case 'schedule': {
         const a = fx.after;
@@ -327,6 +505,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- день ---------------- */
   function day(S) {
     if (!K().ON || !S || S.lost) return;
+    wrapLines();          // «мёртвые не говорят» — данные реплик могли подключиться позже (порядок файлов в сборке любой)
     const R = ensure(S); if (!R) return;
     if (R.mode === 'off') return;
     wire(S, R);                                   // сквозные линии: нити пролога переезжают в BK.Threads
@@ -359,6 +538,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const data = D();
       if (data && data.recordLineOfMonth) data.recordLineOfMonth(S); // реплику фиксируем один раз после месячного отчёта
     }
+    try { famDay(S); } catch (e) { /* личные дела не должны ломать игру */ }
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
@@ -501,6 +681,30 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- подключение ---------------- */
+  // Мёртвые не говорят: после тяжёлого момента (флаг rashidGone) реплика месяца не может прийти
+  // от Рашида. Данные реплик не трогаем — на время одного вызова подменяем «кто говорит»
+  // у его ситуаций (waste/quality/mentor) на героя, у которого таких текстов нет: вариант просто
+  // пропускается, и говорит следующий по весу (src/data/story-lines.js, recordLineOfMonth).
+  function goneHeroes(S) {
+    const R = state(S), out = [];
+    if (R && R.f && R.f.rashidGone) out.push('rashid');
+    return out;
+  }
+  function wrapLines() {
+    const data = D();
+    if (!data || typeof data.recordLineOfMonth !== 'function' || data.__goneWrap) return;
+    data.__goneWrap = true;
+    const orig = data.recordLineOfMonth, map = data.lineSituations;
+    data.recordLineOfMonth = function (S) {
+      const gone = goneHeroes(S);
+      if (!gone.length || !map) return orig.apply(this, arguments);
+      const saved = {};
+      try {
+        for (const k of Object.keys(map)) if (gone.indexOf(map[k]) >= 0) { saved[k] = map[k]; map[k] = 'gone'; }
+        return orig.apply(this, arguments);
+      } finally { for (const k of Object.keys(saved)) map[k] = saved[k]; }
+    };
+  }
   function wrap() {
     const Eng = BK.Engine; if (!Eng || Eng.__story) return;
     Eng.__story = true;
@@ -513,6 +717,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     };
   }
   if (BK.Engine) wrap();
+  wrapLines();
+  // story.js собран раньше src/data/story-lines.js? Тогда обёртка «мёртвые не говорят» встанет
+  // на первом же дне (см. wrapLines() в day()): порядок файлов в сборке на это не влияет.
 
   /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии:
      имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть). Обёртка безопасна:
@@ -532,5 +739,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond, cityHero,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
-  };
+    chapter, hero, chapterName, defaults, fits, cond,
+    // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
+    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft,  };
 })();

@@ -35,6 +35,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     damir: { name: 'Дамир', skin: 1, hair: HAIR.black, hairStyle: 'cap', hat: ['#2f8a57', '#1f6a40', '#5ab884', '#1c1418'], top: ['#e3b341', '#b88a24'], pants: ['#2e4570', '#1f3052'], shoes: ['#f5efe3', '#d6ccb9'],
       p: { skin: 1, hair: HAIR.black, hairStyle: 'short', top: ['#e3b341', '#b88a24'], collar: 'hood', eyec: '#2a1a14', bg: ['#e9f0dc', '#d6e4c2'] } },
     courier: { skin: 2, hair: HAIR.black, hairStyle: 'cap', hat: ['#2f8a57', '#1f6a40', '#5ab884', '#1c1418'], top: ['#2f8a57', '#1f6a40'], pants: ['#2a2a33', '#1c1c24'], shoes: ['#1c1418', '#100c10'] },
+    // врач из заставки тяжёлого момента (BK.Moment): новых примитивов не понадобилось —
+    // седые волосы, халат (body 'coat'), очки и усталое лицо из тех же частей, что у Семёна и Рашида.
+    // Никаких «медицинских» атрибутов: ни креста, ни халата до пола с капельницей — только человек в дверях.
+    doctor: { name: 'Врач', skin: 1, hair: HAIR.grey, hairStyle: 'short', coat: true, top: ['#eef0f2', '#c9ced4', '#ffffff'], pants: ['#3f4a56', '#2c343c'], shoes: ['#22242a', '#14161a'], glasses: '#4a5560',
+      p: { skin: 1, hair: HAIR.grey, hairStyle: 'short', top: ['#eef0f2', '#c9ced4'], collar: 'shirt', glasses: '#3a444e', age: 1, browc: '#8f8980', bg: ['#e2e8ec', '#cbd6dd'] } },
   };
   // герой через 15 лет — седина, морщины (финал «Жизнь в найме»)
   CAST.heroOld = Object.assign({}, CAST.hero, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, CAST.hero.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });

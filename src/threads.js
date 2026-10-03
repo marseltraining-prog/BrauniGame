@@ -7,7 +7,7 @@
    открытие ваших точек в городе (openGap → срок открытия × множитель), благодарный — ускоряет.
 
    Запись: { id, who, role, kind: 'favor'|'grudge'|'promise', text, city, from, due, effect, done,
-              doneAt, until, src }
+              doneAt, until, src, ask, act, arg }
      who    — имя;  role — кто он («пожарный инспектор»);
      text   — что помнит («вы выставили его из кофейни — он этого не забыл»);
      city   — город или null (null — вся сеть);
@@ -15,6 +15,11 @@
      effect — что произойдёт: { text, openK (множитель срока открытия в городе), days (сколько длится),
               fx: [обычные эффекты событий — применяет BK.Engine._int.applyEffects] };
      done   — уже отозвалось;  until — до какого дня длится последствие (для openK).
+
+   Личные (семейные) линии (BK.Story.fam*, src/story.js) — те же нити с тремя добавками:
+     ask — короткая человеческая строка вместо «Вас помнит …» («Мама болеет»);
+     act/arg — кнопка вместо «Подробнее» («Решить» → окно дела, src/ui/story-ui.js).
+   Без ask запись выглядит и ведёт себя ровно как раньше: механика нитей не изменилась.
 
    Состояние — S.threads = { v, list, n }. Пока ни одной нити нет, поля нет вовсе: игра и боты
    работают ровно как раньше (проверка — node sim/threads.js, node sim/bot.js good 3 18 --summary).
@@ -97,6 +102,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function short(S, t) { return t.role || t.who; }
   function kindName(k) { return KINDS[k] || 'обещание'; }
+  // «Мама болеет — 4 дня, чтобы решить»: строка личного дела с живым счётчиком (ask есть только у них)
+  function askText(S, t) {
+    if (!t || !t.ask) return '';
+    const d = Math.max(0, Math.round(t.due - S.day));
+    return `${t.ask} — ${d > 0 ? nwd(d, 'день', 'дня', 'дней') + ', чтобы решить' : 'последний день'}`;
+  }
 
   /* ---------------- запись ---------------- */
   function normFx(fx) {
@@ -125,6 +136,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       effect: normFx(o.effect),
       done: false, doneAt: null, until: null,
       src: o.src || null,
+      // добавки личных линий (BK.Story.fam*): без них запись ведёт себя как раньше
+      ask: o.ask || null, act: o.act || null, arg: o.arg || null,
     };
     R.list.push(t);
     while (R.list.length > 40) R.list.shift();          // реестр не растёт бесконечно
@@ -152,6 +165,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     for (const t of R.list) {
       if (t.done || S.day < t.due) continue;
+      // личные (семейные) дела закрывает сам сюжет (BK.Story.famDay): у них своя цена «не решили —
+      // решилось само» и своя запись в летопись. Здесь их не трогаем, иначе порядок обёрток tick
+      // решал бы, каким тоном закончится дело.
+      if (t.src === 'family') continue;
       t.done = true; t.doneAt = S.day;
       const e = t.effect || {};
       if (e.days) t.until = S.day + e.days;
@@ -202,16 +219,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
       });
     }
     const p = waiting(S);
-    if (p.length && out.length < 3) {                              // отзовётся: предупреждаем заранее
-      const t = p[0], soon = t.due - S.day;
-      out.push({
-        lvl: soon <= 30 ? 'warn' : 'info', ic: 'chat', icHtml: ICON,
-        t: `Вас помнит ${short(S, t)}`,
-        d: `${t.who}${t.role ? ` — ${t.role}` : ''}: ${t.text} Отзовётся ${date(S, t.due)}${t.city ? ` (${cityIn(t.city)})` : ''}${soon <= 90 ? `, через ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')}` : ''}.`,
-        b: { act: 'threads', label: 'Подробнее' },
-      });
-    }
+    // личное дело показываем первым, даже если у нити-знакомого срок ближе: оно про людей, а не про сроки
+    const famFirst = p.filter((x) => x.ask)[0];
+    if (famFirst && out.length < 3) pushWait(S, out, famFirst, famFirst.due - S.day, askText(S, famFirst));
+    const rest = p.filter((x) => !x.ask)[0];
+    if (rest && out.length < 3) pushWait(S, out, rest, rest.due - S.day, '');
     return out;
+  }
+
+  // одна строка «отзовётся» для «Требует внимания»: личное дело — со сроком и кнопкой «Решить»
+  function pushWait(S, out, t, soon, ask) {
+    if (ask) {
+      out.push({
+        lvl: soon <= 0 ? 'bad' : soon <= 7 ? 'warn' : 'info', ic: 'alert', icHtml: ICON,
+        t: ask,
+        d: `${t.text} ${soon > 0 ? `Осталось ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')} — решите или решится само.` : 'Срок вышел.'}`,
+        b: { act: t.act || 'threads', arg: t.arg, label: t.act ? 'Решить' : 'Подробнее', primary: soon <= 3 },
+      });
+      return;
+    }
+    out.push({
+      lvl: soon <= 30 ? 'warn' : 'info', ic: 'chat', icHtml: ICON,
+      t: `Вас помнит ${short(S, t)}`,
+      d: `${t.who}${t.role ? ` — ${t.role}` : ''}: ${t.text} Отзовётся ${date(S, t.due)}${t.city ? ` (${cityIn(t.city)})` : ''}${soon <= 90 ? `, через ${nwd(Math.max(0, soon), 'день', 'дня', 'дней')}` : ''}.`,
+      b: { act: 'threads', label: 'Подробнее' },
+    });
   }
 
   /* ---------------- пример владельца: обиженный завсегдатай → пожарный инспектор ----------------
@@ -309,7 +341,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   if (BK.CFG && BK.CFG.OPEN_DAYS && BK.CFG.OPEN_DAYS_BASE == null) BK.CFG.OPEN_DAYS_BASE = BK.CFG.OPEN_DAYS;
 
   BK.Threads = {
-    ensure, state, list, byId, due, waiting, active, past, lingering, fire, add, clear, spawn,
+    ensure, state, list, byId, due, waiting, active, past, lingering, fire, add, clear, spawn, askText, nwd,
     openGap, openDays, addDays, base, baseDays: base, attItems, summary, day, refresh, openText, effectText, short, kindName,
     cityName, cityIn, KINDS, TEMPLATES, defaults,
     get demo() { return DEMO; }, set demo(v) { DEMO = !!v; },

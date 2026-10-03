@@ -115,15 +115,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------- требование к варианту: честная причина недоступности ---------- */
   const METER_NAME = { care: 'Забота о людях', risk: 'Готовность рисковать', honesty: 'Честность', fair: 'Справедливость' };
   const FLAG_NAME = { mentor: 'выбор наставника', gulya: 'решение про Гулю', kalach: 'судьба «Калача»', lenin: 'отношения с «Двором»', hire1: 'первый наём', fund: 'фонд', war: 'война за город', scandal: 'проверка', ufa: 'будущее Уфы', ildar: 'решение про Ильдара', olegCard: 'карта Олега', regulars: 'постоянные гости' };
+  // noFlag — «этого разговора уже не будет»: тяжёлый момент закрывает вариант навсегда (напр. Рашида больше нет).
+  // Пишем причину отдельной фразой, а не через «нужно …»: «нужно Рашида больше нет» — не по-русски.
+  const NOFLAG_WHY = { rashidGone: 'Рашида больше нет — этот разговор не состоится' };
   function needText(S, need) {
     const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
-    const bad = [];
+    const bad = [], why = [];
     if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
-    if (!bad.length) return { dis: false, text: '' };
-    return { dis: true, text: 'Пока нельзя: нужно ' + sub(S, bad.join(', ')) };   // «судьба „Калача“» — по городу партии
-  }
+    if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (R.f[k] === need.noFlag[k]) why.push(NOFLAG_WHY[k] || 'другой ход событий');
+    if (!bad.length && !why.length) return { dis: false, text: '' };
+    const needTxt = bad.length ? 'нужно ' + sub(S, bad.join(', ')) : '';   // «судьба „Калача“» — по городу партии
+    const whyTxt = why.length ? why.join(', ') : '';
+    return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
 
   /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
   function fxChips(fx) {
@@ -222,11 +227,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------- открыть сцену ---------- */
+  // Тяжёлый момент (form:'moment'): окна с репликами нет — есть заставка BK.Moment
+  // (медленное затемнение, грустная 8-битная тема, пиксельная сцена-намёк). Кнопка «Дальше»
+  // разрешает сцену обычным путём (storyPick 0), поэтому последствия и летопись — как у всех.
+  function isMoment(sc) { return !!(sc && sc.form === 'moment'); }
+  function momentLines(S, sc) {
+    const m = sc.moment || {};
+    const src = (m.lines && m.lines.length) ? m.lines : (sc.lines || []);
+    return src.map((l) => ({ who: l.who ? whoName(l.who) : '', text: sub(S, l.text || '') }));
+  }
   function openScene(keep) {
     const S = APP() && APP().state; if (!S) return false;
     const sc = ST.pendingScene(S);
     if (sc) {
       ui.scene = sc.id; ui.line = 0; ui.form = sc.form || 'scene'; ui.letter = null;
+      if (isMoment(sc) && BK.Moment) {
+        // заставку показываем без окна: она сама держит паузу и сама зовёт «Дальше»
+        ui.moment = sc.id;
+        BK.Moment.play(S, { id: sc.id, title: sub(S, sc.title), lines: momentLines(S, sc) }, () => {
+          ui.moment = null;
+          if (APP().state !== S) return;                       // за время заставки загрузили другую игру
+          const A = APP(); if (A && A.ACT && A.ACT.storyPick) A.ACT.storyPick({ arg: '0' });
+        });
+        return true;
+      }
+      ui.moment = null;
       APP().openModal(sceneHtml(S, sc), { closable: false, keepScroll: keep === 'keep' });
       decorate(sc);
       return true;
@@ -294,6 +319,43 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!m || m.read) return;
     m.read = true;
     try { APP().save(); } catch (e) { /* сохранит следующий автосейв */ }
+  }
+
+  /* ---------- личное (семейное) дело: окно «Решить» ----------
+     Строку «Мама болеет — 4 дня, чтобы решить» и кнопку «Решить» даёт реестр нитей
+     (BK.Threads.attItems, src/threads.js), блок в «Сводке» — BK.Story.famDash, сам выбор и его
+     последствия — BK.Story.famPick (src/story.js). Здесь только окно: цена названа на кнопке,
+     а цена «ничего не делать» написана прямо в нём — срок вышел, значит решится само, и вот так. */
+  function famHtml(S, id) {
+    const T = BK.Threads, t = (T && T.byId) ? T.byId(S, id) : null;
+    const opts = (ST.famOpts && ST.famOpts(S, id)) || [];
+    if (!t || t.done || !opts.length) return null;
+    const def = (ST.famDefs ? ST.famDefs() : []).filter((x) => x.id === String(id).replace(/^fam-/, ''))[0] || {};
+    const left = ST.famLeft ? ST.famLeft(S, t) : 0;
+    const rows = opts.map((o, i) => `<button type="button" class="choice st-choice" data-act="famPick" data-id="${esc(id)}" data-arg="${i}">
+        <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
+        <b>${esc(sub(S, o.label))}</b>
+        ${o.desc ? `<span class="cd">${esc(sub(S, o.desc))}</span>` : ''}
+        ${o.cost ? `<span class="cc">${esc(BK.fmtMoney ? BK.fmtMoney(o.cost) : Math.round(o.cost))}</span>` : ''}
+      </button>`).join('');
+    const word = left % 10 === 1 && left % 100 !== 11 ? 'день' : (left % 10 >= 2 && left % 10 <= 4 && (left % 100 < 10 || left % 100 >= 20) ? 'дня' : 'дней');
+    const leftTxt = left > 0
+      ? `Осталось ${left} ${word}. Если не решите — решится само: ${esc(def.effect || 'как получится')}.`
+      : `Срок вышел. Решится само: ${esc(def.effect || 'как получится')}.`;
+    return `<div class="modal-h st-h"><span class="eyebrow st-ey">Свои люди</span><h2>${esc(sub(S, t.ask || t.who))}</h2></div>
+      <div class="modal-b story-m">
+        <p class="fam-lead">${esc(sub(S, t.text || ''))}</p>
+        <div class="st-choices">${rows}</div>
+        <p class="fam-note">${leftTxt}</p>
+      </div>`;
+  }
+  function famOpen(id) {
+    const S = APP() && APP().state; if (!S || !ST.famOpts) return false;
+    const html = famHtml(S, id);
+    if (!html) { APP().toast('Свои люди', 'Это дело уже решено.', 'warn'); return false; }
+    APP().openModal(html, { closable: true });
+    if (BK.Sound) BK.Sound.play('win');
+    return true;
   }
 
   /* ---------- лента в «Сводке»: последнее решение + «Вся летопись» ---------- */
@@ -409,6 +471,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const S = APP().state; if (!S || !ui.letter) return;
         const m = ui.letter; ui.letter = null; markRead(S, m);
         if (!openScene()) { APP().closeModal(); return; }
+        APP().refresh();
+      },
+      // личные дела (BK.Threads + BK.Story.fam*): строка в «Требует внимания» и блок в «Сводке»
+      // ведут сюда — «Решить» открывает окно, выбор применяет BK.Story.famPick
+      fam: (d) => famOpen(d && (d.arg || d.id)),
+      famPick: (d) => {
+        const S = APP().state; if (!S || !ST.famPick) return;
+        const r = ST.famPick(S, d && d.id, +(d && d.arg));
+        if (!r.ok) { APP().toast('Не получилось', r.msg || '', 'warn'); return; }
+        APP().closeModal();
+        APP().toast(r.missed ? 'Не успели' : 'Решено', r.label || '', r.missed ? 'warn' : 'good');
         APP().refresh();
       },
     });
