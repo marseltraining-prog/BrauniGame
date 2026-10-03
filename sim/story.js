@@ -256,6 +256,10 @@ function runOne(prof, seed, yrs, forceMap) {
       else idx = chooseIdx(S, R, sc, prof.policy, rng);
       const nCh = (sc.choices || []).length;
       idx = Math.max(0, Math.min(nCh - 1, idx));
+      // «доступность» варианта считаем ДО применения эффектов: сквозные линии меняют тот же
+      // флаг, которым гейтят свой следующий шаг (lineDamir: served → trusted), и проверка
+      // после resolve ругалась бы на честный выбор
+      const needMet = needOk(S, R, (sc.choices || [])[idx] && sc.choices[idx].need);
       const res = ST.resolve(S, idx);
       const evIds = (S.ev.recent || []).filter((x) => x.day === day).map((x) => x.id);
       if (S.ev.pending && S.ev.pending.day === day && evIds.indexOf(S.ev.pending.id) < 0) evIds.push(S.ev.pending.id);
@@ -264,7 +268,7 @@ function runOne(prof, seed, yrs, forceMap) {
         id: sc.id, day, form: sc.form || 'scene', ch: chNow, idx,
         label: res && res.ok ? res.choice.label : '', out: res && res.ok ? (res.out || []).slice() : [],
         forced, eventSameDay: evSame, evIds, chefSameDay: !!S.chef.pending,
-        needMet: needOk(S, R, (sc.choices || [])[idx] && sc.choices[idx].need),
+        needMet,
       });
     },
   };
@@ -605,6 +609,136 @@ function lines(yrs, sd) {
   return bad ? 1 : 0;
 }
 
+/* ======================= --through: сквозные линии от пролога до финала =======================
+   Обычный прогон показывает сцены, но НЕ показывает главного: боты пролог не играют, поэтому
+   линии из пролога у них не проверяются. Здесь пролог проигрывается по-настоящему (дилеммы
+   выбираются принудительно), переносится в основную игру (BK.Prologue.applyCarry), а дальше
+   идёт обычная партия. Проверяем четыре вещи:
+     1. нити пролога доехали до BK.Threads и их видно в «Требует внимания» (и цену — «50 вместо 21»);
+     2. промежуточные сцены линий пришли (kd/kb/kg/kf/ke/ko) и флаги линий поменялись;
+     3. характер партии считает, кто рядом (f.mateKind: помощница или самодур);
+     4. финал отличается у двух характеров: тёплый пролог → «Вас помнят»/«Две корки»,
+        холодный → «Всё по бумагам»/«Пустой зал».
+   Запуск: node sim/story.js --through [лет]
+*/
+const WARM_PICKS = { d_colleague: 0, d_regular: 0, d_mama_money: 0, d_holiday: 1, d_loose_money: 1, d_dough: 1, d_landlord: 1, d_semyon: 0, d_receipt: 1 };
+const COLD_PICKS = { d_colleague: 1, d_regular: 1, d_mama_money: 2, d_holiday: 0, d_loose_money: 0, d_dough: 0, d_landlord: 0, d_semyon: 2, d_receipt: 0 };
+
+// пролог: проигрываем выбранные дилеммы и переносим результат в основную игру
+function prologueState(seed, picks) {
+  const PR = BK.Prologue, F = BK.PrologV2;
+  const S0 = { seed };
+  const P = PR.start(S0);
+  if (F && !P.v2) F.init(S0);
+  for (const id of Object.keys(picks)) {
+    if (!F || !F.DILEMMAS[id]) continue;
+    P.cards.unshift({ id: id, v: {}, v2: 1 });     // карточка идёт первой: PR.card() читает P.cards[0]
+    if (P.v2) P.v2.seen[id] = P.m;
+    PR.card(S0);
+    PR.choose(S0, picks[id]);
+  }
+  const g = PR.goal(P);
+  P.box = g.full;                        // цель закрыта копилкой — так же, как играет бот пролога
+  PR.finish(P);
+  const S = E.newGame({ seed });
+  S.prologue = P;
+  PR.applyCarry(S);
+  return S;
+}
+// партия на готовом состоянии: play() создаёт S сам, поэтому подменяем E.newGame на один вызов
+function playState(S, years, onDay) {
+  const orig = E.newGame;
+  E.newGame = function () { return S; };
+  try { return play({ level: 'good', seed: S.seed, years, onDay }); }
+  finally { E.newGame = orig; }
+}
+
+function through(yrs) {
+  let bad = 0;
+  const ok = (c, w, x) => { if (!c) { bad++; console.log('  \u2717 ' + w + (x ? ' \u2014 ' + x : '')); } else console.log('  \u2713 ' + w + (x ? ' \u2014 ' + x : '')); };
+  try { require('../src/threads.js'); } catch (e) { console.log('  (BK.Threads не подключён: ' + e.message + ')'); }
+  const T = BK.Threads;
+  console.log(`# Сквозные линии: пролог \u2192 главы 2\u20134 \u2192 финал (${yrs} лет)`);
+  console.log(`Нити в прогоне: BK.Threads ${T ? 'подключён' : 'НЕ подключён'}. Дилемм пролога: ${BK.PrologV2 ? BK.PrologV2.DIL_IDS.length : 0}.\n`);
+  // варианты: тёплый и холодный пролог; в линиях — либо стиль партии, либо прямое прохождение
+  // линии до полюса (choice[id] — индекс, применяется только если вариант доступен)
+  const VARS = [
+    { kind: 'warm', label: 'Тёплый пролог (держал слово, помогал), играет «care»', picks: WARM_PICKS, policy: 'care', walk: { kd1: 0, kd2: 0, kd3: 0, kb1: 0, kb2: 0, kf3: 0, kf4: 0 } },
+    { kind: 'cold', label: 'Холодный пролог (по головам, на любые деньги), играет «cold»', picks: COLD_PICKS, policy: 'cold', walk: { kd1: 2, kd2: 2, kd3: 1, kb1: 3, kb2: 1, kf3: 1, kf4: 2 } },
+  ];
+  const runs = {};
+  for (const V of VARS) {
+    const seed = V.kind === 'warm' ? 7919 : 7919 * 3;
+    const S = prologueState(seed, V.picks);
+    const R = ST.state(S);
+    ST.wire(S, R);                                     // то же, что делает первый день игры
+    const carried = T ? T.list(S) : [];                // нити, доехавшие из пролога
+    // что игрок видит заранее: «Требует внимания» (нити + строки линий) до первой сцены
+    const att0 = ST.attItems(S).concat(T ? T.attItems(S) : []).map((x) => x.t);
+    // цену нити проверяем на копии: зажигаем срок и смотрим срок открытия точки
+    let openDays = null;
+    if (T && carried.length) {
+      const S2 = JSON.parse(JSON.stringify(Object.assign({}, S, { cache: null }))); S2.cache = null;
+      const t0 = T.list(S2).filter((t) => !t.done && t.effect && t.effect.openK).sort((a, b) => a.due - b.due)[0];
+      if (t0) { S2.day = t0.due; T.fire(S2); T.refresh(S2); openDays = T.openDays(S2, 'ufa'); }
+    }
+    const items = [];
+    let rs = (S.seed | 0) ^ 0x77aa11;
+    const rng = () => { rs = (Math.imul(rs, 1664525) + 1013904223) >>> 0; return rs / 4294967296; };
+    const onDay = (St) => {
+      if (!CFG.STORY.ON) return;
+      const RR = ST.state(St); if (!RR || !RR.pending) return;
+      const sc = ST.pendingScene(St); if (!sc) return;
+      let idx = null;
+      if (V.walk && V.walk[sc.id] != null && eligible(St, RR, sc).indexOf(V.walk[sc.id]) >= 0) idx = V.walk[sc.id];
+      if (idx == null) idx = chooseIdx(St, RR, sc, V.policy, rng);
+      ST.resolve(St, idx);
+      items.push({ id: sc.id, day: St.day, idx: idx, label: (sc.choices[idx] || {}).label || '' });
+    };
+    const r = playState(S, yrs, onDay);
+    const SS = r.S;
+    const lineIds = items.filter((x) => /^k[dbfgeo]/.test(x.id) || x.id === 'sf1b').map((x) => x.id);
+    runs[V.kind] = { V, S: SS, r, R, items, carried, att0, openDays, lineIds };
+    console.log(`## ${V.label}`);
+    console.log(`   пролог дал: ${carried.length ? carried.map((t) => `${t.who} (${t.kind}${t.effect && t.effect.openK ? ', ×' + t.effect.openK : ''})`).join('; ') : 'нитей нет'}`);
+    console.log(`   флаги линий: ${['lineDamir', 'lineInsp', 'lineDebt', 'lineKin', 'linePaper', 'lineOleg', 'lineLand'].map((k) => `${k}=${R.f[k] || '—'}`).join(' ')}`);
+    console.log(`   счёт линий: за людей ${R.f.lineWarm | 0}, по бумагам ${R.f.lineCold | 0}; книга=${R.f.book || '—'}; рядом=${R.f.mateKind || '—'}`);
+    if (openDays != null) console.log(`   срок открытия точки после самой ранней нити: ${openDays} дн. (база ${T.base()})`);
+    console.log(`   видно заранее: ${att0.length ? att0.join(' \u00b7 ') : '—'}`);
+    console.log(`   сцены линий (${lineIds.length}): ${lineIds.join(', ') || '—'}`);
+    console.log(`   итог: ${SS.storyEnding ? 'концовка ' + SS.storyEnding : r.lost ? 'банкрот' : r.won ? 'победа ' + r.won.year : 'без финала'} (всего сцен ${items.length}, точек ${SS.stores.filter((x) => x.status !== 'opening').length})`);
+    console.log('');
+  }
+  console.log('# Итог проверки');
+  const w = runs.warm, c = runs.cold;
+  ok(!!w && !!c, 'обе партии прошли пролог и основную игру');
+  if (!w || !c) return bad;
+  const dam = (r) => (r.carried.find((t) => /Дамир/.test(t.who)) || {});
+  ok(dam(w).kind === 'favor', 'пролог «заменил» → нить Дамира добрая', dam(w).text || '—');
+  ok(dam(c).kind === 'grudge', 'пролог «не заменил» → нить Дамира злая', dam(c).text || '—');
+  ok(/Дамир/.test(w.att0.join(' ')), 'строку про Дамира видно заранее в «Требует внимания»', w.att0.join(' · '));
+  const gri = (r) => (r.carried.find((t) => /Гриша/.test(t.who)) || {});
+  ok(gri(w).kind === 'favor' && w.openDays != null && w.openDays < T.base(), 'накормили завсегдатая → точки открываются быстрее', `${w.openDays} вместо ${T.base()}`);
+  ok(gri(c).kind === 'grudge' && (c.openDays === 50 || (gri(c).effect && gri(c).effect.openK === 2.4)), 'обидели завсегдатая → точка открывается 50 дней вместо 21', `${c.openDays} дней`);
+  ok(w.R.f.lineDamir === 'boss', 'несколько встреч доводят Дамира до управляющего («важный человек»)', String(w.R.f.lineDamir));
+  ok(c.R.f.lineDamir === 'thief', 'или до воришки, который подставлял перед Рашидом', String(c.R.f.lineDamir));
+  ok(w.lineIds.length >= 12 && c.lineIds.length >= 12, 'сцены линий доходят до главы 4 в обеих партиях', `${w.lineIds.length} и ${c.lineIds.length}`);
+  ok(w.R.f.mateKind === 'helper' && w.R.f.mateWork === 'yes', 'честная партия: рядом помощница-экономист (и команда может её не принять)', `${w.R.f.mateKind}/${w.R.f.mateWork}`);
+  ok(c.R.f.mateKind === 'tyrant' && c.R.f.mateWork === 'tyrant', 'партия по головам: рядом самодур с деньгами', `${c.R.f.mateKind}/${c.R.f.mateWork}`);
+  const pole = w.lineIds.indexOf('kd3') >= 0 && c.lineIds.indexOf('kd3') >= 0;
+  ok(pole, 'третья встреча линии Дамира (kd3) приходит в обеих партиях');
+  ok(w.S.storyEnding !== c.S.storyEnding, 'сквозные линии меняют финал', `${w.S.storyEnding || '—'} против ${c.S.storyEnding || '—'}`);
+  const sf2 = ST.scenes().find((x) => x.id === 'sf2');
+  const hasEnd = (book, id) => !!(sf2 && sf2.choices.some((ch) => ch.need && ch.need.flag && ch.need.flag.book === book && (ch.effects || []).some((f) => f.t === 'ending' && f.id === id)));
+  ok(!!(BK.STORY.endings.remembered && BK.STORY.endings.ledger), 'новые концовки линий есть в данных');
+  ok(hasEnd('warm', 'remembered'), 'счёт линий открывает концовку «Вас помнят»', `книга тёплой партии: ${w.R.f.book}`);
+  ok(hasEnd('cold', 'ledger'), 'и концовку «Всё по бумагам»', `книга холодной партии: ${c.R.f.book}`);
+  ok((w.R.f.lineWarm | 0) > (c.R.f.lineWarm | 0) && (c.R.f.lineCold | 0) > (w.R.f.lineCold | 0), 'счёт линий различает характеры партий',
+    `за людей ${w.R.f.lineWarm | 0}/${c.R.f.lineWarm | 0}, по бумагам ${w.R.f.lineCold | 0}/${c.R.f.lineCold | 0}`);
+  console.log(bad ? `  ПРОБЛЕМ: ${bad}` : '  Всё в порядке.');
+  return bad;
+}
+
 /* ======================= --check ======================= */
 function check() {
   let bad = 0;
@@ -687,6 +821,9 @@ if (flags.check) {
   const sd = isNum(pos[0]) ? +pos[0] : numOr(pos[1], 3);
   const yrs = isNum(pos[0]) ? numOr(pos[1], 22) : numOr(pos[2], 22);
   process.exitCode = lines(yrs, sd) ? 1 : 0;
+} else if (flags.through) {
+  const yrs = isNum(pos[0]) ? +pos[0] : numOr(pos[1], 20);
+  process.exitCode = through(yrs) ? 1 : 0;
 } else if (flags.balance) {
   const sd = isNum(pos[0]) ? +pos[0] : numOr(pos[1], 6);
   const yrs = isNum(pos[0]) ? numOr(pos[1], 22) : numOr(pos[2], 22);
