@@ -46,8 +46,82 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!K().ON) return null;                       // выключено — ничего не создаём
     if (S.story && S.story.v) return fill(S.story);
     S.story = fill(defaults(S.seed || 0));
+    applyHero(S);                                   // имя и пол со стартового экрана — в новое состояние
     return S.story;
   }
+
+  /* ---------------- герой игрока: имя и пол (PLAN.md §8.1) ----------------
+     Игрок выбирает имя и пол на стартовом экране (src/ui/app.js), выбор живёт в S.story.hero —
+     это поле уже было в схеме (src/prologue.js, storyDefaults), но никто его не заполнял.
+     Пока состояния сюжета нет (до первого дня игры или при выключенном сюжете), выбор лежит
+     в служебном S.__hero — тем и хорош: новая игра с прологом не создаёт S.story раньше времени
+     и не портит главу партии («Пролог» вместо «Своя точка»).
+     Пол: 'm' — мужчина, 'f' — женщина, null — не выбирали (старые сохранения, боты): тексты
+     остаются нейтральными, облик — прежний, по названию сети (src/ui/stage1.js). */
+  function heroOf(S) {
+    const R = state(S), h = (R && R.hero) || (S && S.__hero) || null;
+    return { name: (h && h.name) ? String(h.name) : '', g: h && h.g === 'f' ? 'f' : h && h.g === 'm' ? 'm' : null };
+  }
+  function applyHero(S) {
+    // выбор со стартового экрана переезжает в состояние сюжета, как только оно появилось
+    if (!S || !S.story || !S.__hero) return;
+    S.story.hero = { name: S.__hero.name || '', g: S.__hero.g || null };
+  }
+  function heroSet(S, o) {
+    if (!S) return null;
+    const h = { name: String((o && o.name) || '').trim().slice(0, 24), g: o && o.g === 'f' ? 'f' : o && o.g === 'm' ? 'm' : null };
+    const R = state(S);
+    if (R) R.hero = h; else S.__hero = h;
+    return h;
+  }
+  // Имя героя для текстов. Пустое имя — не «дырка»: в игре его зовут «шеф» (как в src/data/story-lines.js).
+  function heroName(S) { const h = heroOf(S); return h.name || 'шеф'; }
+  const heroG = (S) => heroOf(S).g;
+  const isFemale = (S) => heroOf(S).g === 'f';
+  // Родовые формы: g(S, 'сказал', 'сказала'). Без выбора пола — мужская форма (как было до §8.1).
+  function g(S, m, f) { return isFemale(S) ? f : m; }
+  // Склонение имени: «Аня» → «Ане», нужно для писем и летописи (имя приходит от игрока, падеж угадываем).
+  function heroNameDat(S) { const n = heroName(S); return /[ая]$/i.test(n) ? n.slice(0, -1) + 'е' : n; }
+
+  /* Подстановки родовых форм в тексты: {имя формы} вместо двух вариантов.
+     Данные сцен не переписываем — только те места, где форма важна (PLAN.md §8.1).
+     Формы для мужчины (по умолчанию и без выбора) — как в текстах было. */
+  const SEX = {
+    say: ['сказал', 'сказала'], self: ['сам', 'сама'], ready: ['готов', 'готова'], must: ['должен', 'должна'],
+    came: ['пришёл', 'пришла'], went: ['пошёл', 'пошла'], tired: ['устал', 'устала'], glad: ['рад', 'рада'],
+    sure: ['уверен', 'уверена'], alone: ['один', 'одна'], made: ['сделал', 'сделала'], opened: ['открыл', 'открыла'],
+    agreed: ['согласился', 'согласилась'], left: ['ушёл', 'ушла'], stayed: ['остался', 'осталась'],
+    took: ['взял', 'взяла'], could: ['смог', 'смогла'], did: ['успел', 'успела'], grew: ['вырос', 'выросла'],
+    young: ['молодой человек', 'девушка'], youngGen: ['молодого человека', 'девушки'],
+    boss: ['начальник', 'начальница'], mate: ['партнёр', 'партнёрша'],
+  };
+  const SEX_RE = /\{(say|self|ready|must|came|went|tired|glad|sure|alone|made|opened|agreed|left|stayed|took|could|did|grew|young|youngGen|boss|mate)\}/g;
+  /* Отдельные фразы, написанные заранее (src/data/story-lines.js — строки отчёта месяца; файл вне
+     правки §8.1). Заменяем целиком фразу, а не слово «сам»: в тех же репликах «сам» бывает про
+     другого человека («Вот этот батон я бы купил сам» — это Семён), и слепая замена ломала бы смысл. */
+  // (?!…) вместо \b: в JavaScript \b работает только по латинице, для кириллицы границы слова не видит
+  const SEX_PHRASES = [
+    [/решай сам(?![а-яё])/g, 'решай сама'], [/Дальше сам(?![а-яё])/g, 'Дальше сама'], [/Реши сам(?![а-яё])/g, 'Реши сама'],
+    [/поймёшь сам(?![а-яё])/g, 'поймёшь сама'], [/Скажи сумму сам(?![а-яё])/g, 'Скажи сумму сама'],
+    // книга Семёна (src/ui/story-history.js): о хозяине первой точки — в женском роде о хозяйке
+    [/очень нервного хозяина/g, 'очень нервной хозяйки'],
+  ];
+  function heroText(S, txt) {
+    if (txt == null) return txt;
+    let s = String(txt);
+    if (s.indexOf('{') < 0 && !isFemale(S)) return s;
+    if (s.indexOf('{') >= 0) s = s.replace(SEX_RE, (m, k) => (SEX[k] ? SEX[k][isFemale(S) ? 1 : 0] : m));
+    s = s.split('{name}').join(heroName(S));
+    if (isFemale(S)) for (const [re, to] of SEX_PHRASES) s = s.replace(re, to);
+    return s;
+  }
+  // То же, но для готовой разметки: подстановки идут только вне тегов (в атрибутах «сам» не встречается,
+  // но правило честнее — разметку не трогаем).
+  function heroHtml(S, html) {
+    if (html == null) return html;
+    return String(html).split(/(<[^>]*>)/).map((p) => (p.charAt(0) === '<' ? p : heroText(S, p))).join('');
+  }
+
   // дозаполнение старых сохранений и того, что писал пролог
   function fill(R) {
     const d = defaults(0);
@@ -253,9 +327,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     R.lastScene = S.day;
     R.pending = null;
     R.ch = chapter(S, R);
-    R.log.push({ day: S.day, id: sc.id, title: sc.title, choice: ch.label, chapter: R.ch, fx: list });
+    // В летопись (и в PNG-картинку итогов, и в тост) запись попадает уже с именем и родовой формой героя:
+    // подстановка на отрисовке есть только у окна сцены, а итоги и картинка рисуют текст как он записан.
+    const label = heroText(S, ch.label), title = heroText(S, sc.title);
+    R.log.push({ day: S.day, id: sc.id, title: title, choice: label, chapter: R.ch, fx: list });
     while (R.log.length > 120) R.log.shift();
-    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: sc.title, choice: ch.label, out: out.join('; ') });
+    if (S.notify) S.notify.push({ type: 'story', phase: 'done', id: sc.id, title: title, choice: label, out: out.join('; ') });
     return { ok: true, scene: sc, choice: ch, out };
   }
 
@@ -514,23 +591,56 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (BK.Engine) wrap();
 
-  /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии:
-     имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть). Обёртка безопасна:
-     если модуля реплик рядом нет (прогоны ботов) или слой не подключён — ничего не делаем. */
+  /* Строка героя в отчёте месяца (BK.STORY.lineHtml, src/data/story-lines.js) — по городу партии
+     и по полу героя: имя говорящего и реплику прогоняем через местный слой (для Уфы — как есть)
+     и через родовые формы (src/story.js → heroHtml). Обёртка безопасна: если модуля реплик рядом
+     нет (прогоны ботов) или слой не подключён — ничего не делаем.
+
+     Важно: подстановки идут ТОЛЬКО вне тегов и по точным фразам — иначе «сам» в реплике Семёна
+     («Вот этот батон я бы купил сам») превратился бы в женскую форму. */
   function wrapLineHtml() {
     const D2 = BK.STORY;
-    if (!D2 || !D2.lineHtml || D2.__castLine || !BK.STORY_CAST) return false;
+    if (!D2 || !D2.lineHtml || D2.__castLine) return false;
     D2.__castLine = true;
     const orig = D2.lineHtml;
-    D2.lineHtml = function (S) { const html = orig.apply(this, arguments); try { return BK.STORY_CAST.swap(S, html); } catch (e) { return html; } };
+    D2.lineHtml = function (S) {
+      const html = orig.apply(this, arguments);
+      try { return heroHtml(S, BK.STORY_CAST ? BK.STORY_CAST.swap(S, html) : html); } catch (e) { return html; }
+    };
     return true;
   }
   wrapLineHtml();
   if (BK.STORY) BK.STORY.wrapLineHtml = wrapLineHtml;   // для проверок и нестандартного порядка сборки
 
+  /* Итоги игры и книга Семёна (BK.StoryHistory, src/ui/story-history.js) собирают текст без подстановок:
+     там нет ни {name}, ни {street}, ни городского слоя, ни родовых форм. Файл интерфейса в этой задаче
+     не правим — доводим его снаружи, обёрткой готовой разметки: подстановки идут только вне тегов.
+     Заодно в книгу Семёна добавляется посвящение с именем героя (если игрок имя задал) — книга
+     подписана, как и положено книге о человеке. Вызывается один раз из src/ui/app.js (boot):
+     к этому времени BK.StoryHistory уже создан. Нет модуля — нет и правки. */
+  function patchHistory() {
+    const SH = BK.StoryHistory;
+    if (!SH || SH.__hero || typeof SH.summarySection !== 'function') return false;
+    SH.__hero = true;
+    const orig = SH.summarySection;
+    SH.summarySection = function (S) {
+      let html; try { html = orig.apply(this, arguments); } catch (e) { return ''; }
+      if (!html) return html;
+      try { if (BK.STORY_CAST && BK.STORY_CAST.render) html = BK.STORY_CAST.render(S, html); } catch (e) { /* без местных имён */ }
+      html = heroHtml(S, html);
+      const name = heroOf(S).name;
+      if (name) html = html.replace(/(<div class="sh-bl">[\s\S]*?)(<\/div>)/,
+        (m, a, b) => a + `<p>Посвящение одно: «${htmlEsc(name)}».</p>` + b);
+      return html;
+    };
+    return true;
+  }
+  const htmlEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond, cityHero,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
+    heroOf, heroSet, heroName, heroNameDat, heroG, isFemale, applyHero, g, heroText, heroHtml, patchHistory,
   };
 })();

@@ -15,9 +15,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   // платок бабушки: светлый хлопок, красные цветы, бордовая кайма (раньше читался как рыжие волосы)
   const SCARF = ['#efe3c8', '#d2c09c', '#e3b341', '#c0412d', '#8a2f3a'];
+  /* Герой: четыре облика — мужчина/женщина, молодой/постаревший (PLAN.md §8.1, выбор игрока).
+     Облик подменяет сам Px.CAST.hero / heroOld (Px.heroSet), поэтому все готовые сцены — «Калач»
+     (scenes.js), кофейня (coffee.js), финал «Своя точка», портреты — рисуют выбранного героя без правок:
+     они спрашивают Px.fig('hero') / Px.face('hero'). Рост, позы и одежда у вариантов одинаковые —
+     отличаются причёска, цвет волос, фартук и лицо (плюс очки в возрасте, как было). */
+  const HERO_M = { name: 'Герой-бариста', skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
+    p: { skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], bg: ['#f4dfc2', '#ecd0aa'] } };
+  const HERO_F = { name: 'Героиня-бариста', skin: 0, hair: HAIR.auburn, hairStyle: 'bob', top: ['#f5efe3', '#d6ccb9'], apron: ['#3b8796', '#235f6b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
+    p: { skin: 0, hair: HAIR.auburn, hairStyle: 'bob', top: ['#f5efe3', '#d6ccb9'], apron: ['#3b8796', '#235f6b'], lashes: 1, lips: '#b0503f', bg: ['#f4dfc2', '#ecd0aa'] } };
+  const HERO_OLD_M = Object.assign({}, HERO_M, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, HERO_M.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
+  const HERO_OLD_F = Object.assign({}, HERO_F, { hair: HAIR.grey, hairStyle: 'bun', p: Object.assign({}, HERO_F.p, { hair: HAIR.grey, hairStyle: 'bun', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
   const CAST = {
-    hero: { name: 'Герой-бариста', skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#2e4570', '#1f3052'], shoes: ['#3a2a2a', '#241a1a'],
-      p: { skin: 0, hair: HAIR.hero, hairStyle: 'messy', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], bg: ['#f4dfc2', '#ecd0aa'] } },
+    hero: HERO_M, heroOld: HERO_OLD_M, heroF: HERO_F, heroOldF: HERO_OLD_F,
     rashid: { name: 'Рашид Хайруллин', skin: 1, hair: HAIR.grey, hairStyle: 'baker', hat: ['#fbf6ec', '#d9d0c0', '#ffffff'], top: ['#f5efe3', '#d6ccb9'], apron: ['#6b4a2e', '#4a3220'], pants: ['#4a4a55', '#35353e'], shoes: ['#3a2a2a', '#241a1a'], mustache: '#b8b2aa', brows: true,
       p: { skin: 1, hair: HAIR.grey, hairStyle: 'baker', hat: ['#fbf6ec', '#d9d0c0', '#ffffff'], top: ['#f5efe3', '#d6ccb9'], apron: ['#6b4a2e', '#4a3220'], mustache: '#bdb6ad', brows: true, browc: '#8f8980', age: 1, bg: ['#efe3cf', '#e2d2b8'] } },
     gulya: { name: 'Гуля Сафина', skin: 0, hair: HAIR.dark, hairStyle: 'bandana', hat: ['#c0412d', '#8f2c20', '#e2705a', '#f5efe3'], top: ['#f5efe3', '#d6ccb9'], apron: ['#3f7d5a', '#2d5e44'], pants: ['#3a3a48', '#282833'], shoes: ['#6b4a2e', '#4a3220'],
@@ -36,8 +46,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
       p: { skin: 1, hair: HAIR.black, hairStyle: 'short', top: ['#e3b341', '#b88a24'], collar: 'hood', eyec: '#2a1a14', bg: ['#e9f0dc', '#d6e4c2'] } },
     courier: { skin: 2, hair: HAIR.black, hairStyle: 'cap', hat: ['#2f8a57', '#1f6a40', '#5ab884', '#1c1418'], top: ['#2f8a57', '#1f6a40'], pants: ['#2a2a33', '#1c1c24'], shoes: ['#1c1418', '#100c10'] },
   };
-  // герой через 15 лет — седина, морщины (финал «Жизнь в найме»)
-  CAST.heroOld = Object.assign({}, CAST.hero, { hair: HAIR.heroOld, hairStyle: 'neat', p: Object.assign({}, CAST.hero.p, { hair: HAIR.heroOld, hairStyle: 'neat', age: 2, bg: ['#e6dccb', '#d6c8b0'] }) });
+  // герой через 15 лет — седина, морщины (финал «Жизнь в найме»); у женщины — пучок
+  CAST.heroOld = HERO_OLD_M;
+  CAST.heroOldF = HERO_OLD_F;
+  /* Облик героя выбирает игрок (PLAN.md §8.1): 'm' — мужчина, 'f' — женщина, null — как раньше
+     (старые сохранения и боты: облик выбирался по названию сети, игра об этом не спрашивала).
+     heroSet идемпотентен; при смене облика «поколение» кэша растёт, иначе Px.memo вернул бы
+     готовый спрайт прежнего героя. */
+  let heroGen = 0;
+  function heroSet(g) {
+    const want = g === 'f' ? 'f' : g === 'm' ? 'm' : null;
+    if (CAST.__heroG === want) return want;
+    CAST.__heroG = want; heroGen++;
+    CAST.hero = want === 'f' ? HERO_F : HERO_M;
+    CAST.heroOld = want === 'f' ? HERO_OLD_F : HERO_OLD_M;
+    return want;
+  }
+  const heroG = () => CAST.__heroG || null;
   // гости очереди: по индексу эмодзи-лица «Смены» ['🧔','👩','👨‍🦳','👧','🧑‍💼','👵','🧑‍🎓','👩‍🦰','👨','👱‍♀️']
   const GUESTS = [
     { skin: 0, hair: HAIR.chest, hairStyle: 'short', top: ['#3f7d5a', '#2d5e44'], pants: ['#4a4a55', '#35353e'], shoes: ['#3a2a2a', '#241a1a'], beard: '#6a4028' },
@@ -58,23 +83,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
     { skin: 0, hair: HAIR.auburn, hairStyle: 'bun', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
     { skin: 2, hair: HAIR.chest, hairStyle: 'neat', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
   ];
-  // кэшированные спрайты
+  // кэшированные спрайты: в ключе — «поколение» облика героя (heroSet), иначе после смены пола
+  // Px.memo отдал бы готовый спрайт прежнего героя
   function fig(who, opt = {}) {
     const sp = typeof who === 'string' ? CAST[who] : who;
-    const key = 'f|' + (typeof who === 'string' ? who : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
+    const key = 'f|' + (typeof who === 'string' ? who : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + heroGen + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
     return Px.memo(key, () => Px.figure(sp, opt));
   }
-  function face(who, emo) { return Px.memo('p|' + who + '|' + (emo || 'neutral'), () => Px.portrait(CAST[who].p, emo || 'neutral')); }
+  function face(who, emo) { return Px.memo('p|' + who + '|' + heroGen + '|' + (emo || 'neutral'), () => Px.portrait(CAST[who].p, emo || 'neutral')); }
   GUESTS.forEach((g, i) => { g.__k = 'g' + i; });
   STAFF.forEach((g, i) => { g.__k = 's' + i; });
   CAST.courier.__k = 'courier';
   // canvas-портреты в готовой разметке: <canvas data-pxp="rashid:angry" width="48" height="48">
   function hydrate(root) {
     if (!root) return;
+    const done = (cv, tag) => { cv.dataset.pxDone = heroGen + ':' + tag; };
     root.querySelectorAll('canvas[data-pxp]').forEach((cv) => {
-      if (cv.dataset.pxDone === cv.dataset.pxp) return;
+      const tag = heroGen + ':' + cv.dataset.pxp;
+      if (cv.dataset.pxDone === tag) return;
       const [who, emo] = cv.dataset.pxp.split(':'); if (!CAST[who]) return;
-      face(who, emo).toCanvas(cv); cv.dataset.pxDone = cv.dataset.pxp;
+      face(who, emo).toCanvas(cv); done(cv, cv.dataset.pxp);
     });
     root.querySelectorAll('canvas[data-pxi]').forEach((cv) => {
       if (cv.dataset.pxDone === cv.dataset.pxi) return;
@@ -83,5 +111,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const portraitTag = (who, emo, cls) => `<canvas class="pxp ${cls || ''}" data-pxp="${who}:${emo || 'neutral'}" width="48" height="48" aria-hidden="true"></canvas>`;
   const iconTag = (name, cls) => `<canvas class="pxi ${cls || ''}" data-pxi="${name}" width="9" height="9" aria-hidden="true"></canvas>`;
-  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag });
+  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag, heroSet, heroG });
 })();

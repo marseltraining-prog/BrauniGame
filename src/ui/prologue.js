@@ -17,6 +17,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
   const S = () => (APP() ? APP().state : null);
   const Pp = () => { const s = S(); return s && s.prologue; };
+  /* Герой: имя и пол (PLAN.md §8.1). Игрок выбирает их на стартовом экране (src/ui/app.js);
+     здесь только читаем — для подписи в шапке пролога, родовых форм в текстах и облика в сцене. */
+  const HG = () => (BK.Story && BK.Story.heroG ? BK.Story.heroG(S()) : null);
+  const HT = (t) => (BK.Story && BK.Story.heroText ? BK.Story.heroText(S(), t) : t);
+  const hName = () => (BK.Story && BK.Story.heroName ? BK.Story.heroName(S()) : 'шеф');
   const PREF = 'bk-ufa-start';
   const ui = { open: false, speed: 1, prev: 1, lastT: 0, mode: null, parts: {}, menu: false, ask: null, dirty: true, lastRender: 0, pressing: false, sh: null, loop: false, slipT: 0 };
 
@@ -293,7 +298,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function top(p) {
     const age = PR().age(p), job = C().JOBS[p.job].name;
     return `<div class="pro-brand"><span class="pro-logo" aria-hidden="true">☕</span><span class="pro-bt"><b>Бариста</b><small>пролог · «Калач» на Пушкина</small></span></div>
-      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
+      <div class="pro-when"><span class="chip crust">${PR().year(p)}-й год</span><span class="pro-age">${esc(hName(p))} · ${age} ${plural(age, 'год', 'года', 'лет')} · ${esc(job.toLowerCase())}</span></div>
       <div class="pro-ctl"><div class="speed pro-speed" role="group" aria-label="Скорость времени">
         <button type="button" data-pa="speed" data-v="0" aria-label="Пауза" title="Пауза (пробел)" aria-pressed="${ui.speed === 0}">${ICON.pause}</button>
         <button type="button" data-pa="speed" data-v="1" aria-label="Скорость 1" title="Обычная скорость" aria-pressed="${ui.speed === 1}">${ICON.p1}</button>
@@ -370,8 +375,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<section class="pc pro-hero">${scene()}${jobLadder(p)}
       ${shiftBlock(p)}
       <div class="pro-ms">${meter('proHp', '❤️', 'Силы', p.hp, hpHint(p))}${meter('proMood', '🙂', 'Настроение', p.mood, moodHint(p))}${meter('proRep', '👔', 'Начальник', p.rep, repHint(p))}</div>
-      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div></section>`;
+      <div class="pro-sk" id="proSk">${['sales', 'coffee', 'people'].map((k) => `<div class="psk" title="${PR().SK_NAME[k]}: ${Math.floor(p.sk[k])} из 100"><span>${PR().SK_NAME[k]}</span>${beans(p.sk[k])}</div>`).join('')}</div>${addrNote(p)}</section>`;
     return s;
+  }
+  // как к вам обращаются (таблица ADDRESS в src/data/prolog-v2.js): живая деталь выбора пола, а не строка состояния
+  function addrNote(p) {
+    const A = BK.PrologV2 && BK.PrologV2.address;
+    if (!A || !(PR().heroOf(p) || {}).g) return '';
+    const list = [['rashid', 'Рашид'], ['sania', 'бабушка'], ['semyon', 'Семён'], ['gulya', 'Гуля']]
+      .map(([k, n]) => { const w = A(p, k); return w ? `${n} — «${w}»` : ''; }).filter(Boolean);
+    return list.length ? `<p class="pro-note">Как к вам обращаются: ${esc(list.join(' · '))}.</p>` : '';
   }
   // расписание смен: смены приходят сами (5–10 за пролог), игрок их не выбирает и не может пропустить,
   // но может оказаться не готовым. Кнопка только одна — «встать за стойку», и лишь когда смена уже ждёт.
@@ -435,13 +448,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }).join('')}</div></section>`;
     // лента
     const F2 = p.feed.slice(-7).reverse();
-    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(f.t)}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
+    s += `<section class="pc pro-feed"><h3>Что происходит</h3><ul>${F2.map((f) => `<li class="${f.k}"><span class="fd" aria-hidden="true"></span><span class="ft">${esc(HT(f.t))}</span><span class="fm">${esc(cap(PR().monName(p, f.m)))}</span></li>`).join('')}</ul></section>`;
     return s;
   }
   function setPart(id, html) { if (ui.parts[id] === html) return; ui.parts[id] = html; const el = document.getElementById(id); if (el) el.innerHTML = html; }
   function render(force) {
     const p = Pp(); if (!p || !ui.open) return;
     if (!force && ui.pressing) return;
+    if (BK.Px && BK.Px.heroSet) BK.Px.heroSet(HG());   // облик героя в сценах «Калача» — по выбору игрока (§8.1)
     ui.dirty = false; ui.lastRender = performance.now();
     setPart('proTop', top(p)); setPart('proColA', colA(p)); setPart('proColB', colB(p));
     monthScene();
@@ -476,12 +490,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ey = kind === 'hero' ? esc(cv.hero.name) : kind === 'pos' ? 'Хорошие новости' : 'Жизнь подкинула';
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
       <div class="pcd-h">${portrait(cv)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
-      <h2 id="proCardT">${esc(cv.title)}</h2><p class="pcd-t">${esc(cv.text)}</p><div class="pcd-c">`;
+      <h2 id="proCardT">${esc(HT(cv.title))}</h2><p class="pcd-t">${esc(HT(cv.text))}</p><div class="pcd-c">`;
     if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
     cv.choices.forEach((c, i) => {
       const fx = fxChips(c.fx, c.risk);
-      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(c.label)}</button>${c.desc ? `<p class="pcd-d">${esc(c.desc)}</p>` : ''}`; return; }
-      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(c.label)}</b><span class="cd">${esc(c.desc || '')}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="pcd-d">${esc(HT(c.desc))}</p>` : ''}`; return; }
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += `</div></div></div>`;
     $('#proOv').innerHTML = h;
