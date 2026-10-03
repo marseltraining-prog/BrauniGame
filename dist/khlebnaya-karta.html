@@ -1533,8 +1533,132 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .st-kind { grid-column: 2; justify-self: start; }
 }
 
-/* Стратегии: карточки выбора на старте и блок в «Сводке» (наполняет помощник). */
-.stratpick .spaths { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 6px; }
+/* =====================================================================
+   Стратегии: карточки «Как играем?» на старте, блок в «Сводке», окно «Как вы играете»,
+   строка в «Меню игры», тост (разметка — src/ui/strategy-ui.js).
+   Только токены темы из styles.css; светлая и тёмная тема — один набор.
+   Плюс и плата у всех путей — одной строкой (.st-pl), карточки на телефоне — в одну колонку.
+   Проверять глазами: 1440 / 390 / 360, светлая и тёмная тема.
+   ===================================================================== */
+
+/* ---------- плюс / плата одной строкой ---------- */
+.st-pl { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
+.st-pl .st-p, .st-pl .st-mm { display: inline-flex; align-items: baseline; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.st-pl svg { width: 12px; height: 12px; flex: none; transform: translateY(1px); }
+.st-pl .st-p { color: var(--good-t); }
+.st-pl .st-mm { color: var(--warn-t); }
+
+/* ---------- стартовый экран: карточки путей ---------- */
+.stratpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.stratpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.spaths { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.spath { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) 16px; gap: 2px 9px; align-items: center;
+  padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); cursor: pointer; min-width: 0; text-align: left; }
+.spath input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; } /* невидимая радиокнопка на всю карточку */
+/* колонки расставлены явно: у значков и галочки свой ряд на две строки, иначе авто-раскладка уводит текст в узкую колонку галочки */
+.spath .sp-i { grid-column: 1; grid-row: 1 / span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  font-size: 17px; line-height: 1; background: var(--surface-2); color: var(--ink-2); }
+.spath .sp-b { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.spath .sp-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.spath .sp-m { font-size: 11.5px; line-height: 1.35; color: var(--ink-3); overflow-wrap: anywhere; }
+.spath .sp-c { grid-column: 3; grid-row: 1 / span 2; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+.spath:hover { border-color: var(--ink-3); }
+.spath:has(input:focus-visible) { outline: 2px solid var(--crust); outline-offset: 2px; }
+.spath:has(input:checked) { border: 2px solid var(--crust); padding: 8px 9px; background: var(--crust-soft); }
+.spath:has(input:checked) .sp-i { background: var(--surface); color: var(--crust-t); box-shadow: inset 0 0 0 2px var(--crust); }
+.spath:has(input:checked) .sp-c { border-color: var(--crust); background: var(--crust); box-shadow: inset 0 0 0 3px var(--crust-soft); }
+.spath:has(input:checked) .sp-m { color: var(--ink-2); }
+.spath[disabled] { opacity: .6; cursor: not-allowed; }
+.spath[disabled] input { cursor: not-allowed; }
+
+/* пояснение выбранного пути под карточками: «плюс / плата» остаются на виду */
+.spdesc { margin: 8px 0 4px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.spdesc.on { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; background: var(--surface); }
+.spdesc .spd-n { font-weight: 600; font-size: 13.5px; color: var(--ink); }
+.spdesc .spd-t { font-size: 12.5px; }
+
+/* ---------- блок «Стратегия» в «Сводке» (как «История» и «Инвесторы») ---------- */
+.st-h { display: inline-flex; align-items: center; gap: 6px; }
+.st-h svg { width: 14px; height: 14px; color: var(--crust); }
+.stratb .st-card, .stratb .st-hint { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
+  padding: 9px 10px; border: 1px solid var(--line); border-left: 3px solid var(--crust); border-radius: 8px; background: var(--surface); }
+.stratb .st-card.auto { border-left-color: var(--river); }
+.stratb .st-hint { border-left-color: var(--line-2); border-style: dashed; align-items: start; }
+.st-ic, .st-qi { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; line-height: 1;
+  background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.st-card.auto .st-ic { background: var(--river-soft); color: var(--river-t); }
+.st-qi { background: var(--surface-2); color: var(--ink-3); font-family: var(--f-display); font-weight: 600; }
+.st-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.st-n { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.st-m { font-size: 12px; color: var(--ink-3); }
+.st-tag { font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.st-card:not(.auto) .st-tag { background: var(--crust-soft); color: var(--crust-t); }
+.st-card.auto .st-tag { background: var(--river-soft); color: var(--river-t); }
+.stratb .st-pl { margin-top: 2px; }
+.st-note { margin: 0; font-size: 12px; color: var(--ink-2); background: var(--surface-2); border-radius: 6px; padding: 6px 8px; }
+.st-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-acts .btn { flex: 1 1 auto; min-height: 34px; }        /* палец должен попадать: не меньше 34 px */
+
+/* ---------- окно «Как вы играете» ---------- */
+.strat-modal { max-width: 620px; }
+.stratm-h { padding-bottom: 8px; }
+.spaths.big { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin-top: 2px; }
+.spaths.big .spath { grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 10px 11px; }
+.spaths.big .spath .sp-i { grid-column: 1; grid-row: 1 / span 4; width: 32px; height: 32px; font-size: 18px; align-self: start; }
+.spaths.big .spath .sp-b { grid-column: 2; grid-row: 1; }
+.spaths.big .spath .sp-p, .spaths.big .spath .sp-mm { grid-column: 2; display: inline-flex; align-items: flex-start; gap: 6px;
+  font-size: 12.5px; line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
+.spaths.big .spath .sp-p { grid-row: 2; margin-top: 4px; color: var(--good-t); }
+.spaths.big .spath .sp-mm { grid-row: 3; color: var(--warn-t); }
+.spaths.big .spath .sp-p svg, .spaths.big .spath .sp-mm svg { width: 12px; height: 12px; flex: none; margin-top: 3px; }
+.spaths.big .spath .sp-go { grid-column: 2; grid-row: 4; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.spaths.big .spath.on { box-shadow: inset 0 0 0 1px var(--crust); }
+.spaths.big .spath.on .sp-go { color: var(--crust-t); }
+.spaths.big .spath[disabled] { cursor: not-allowed; }
+.sp-tag.yours { background: var(--surface); color: var(--crust-t); box-shadow: inset 0 0 0 1px var(--crust); font-weight: 700; }
+
+.strat-m .st-foot { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.st-now, .st-mets { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 7px 12px; }
+.st-now span, .st-mets span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-now small, .st-mets small { font-size: 11px; color: var(--ink-3); }
+.st-now b, .st-mets b { font-size: 13.5px; overflow-wrap: anywhere; }
+.st-mets { margin: 0; }
+.st-mets b { font-family: var(--f-mono); }
+.st-reset { margin-top: 2px; }
+
+/* ---------- строка в «Меню игры» ---------- */
+.strat-set { flex-wrap: wrap; gap: 8px; }
+.strat-set .btn { white-space: normal; text-align: left; }
+.strat-set small { display: block; margin-top: 2px; }
+
+/* ---------- тост «Сложилась стратегия» (как sttoast / invtoast) ---------- */
+.toast.strtoast { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.strtoast .mi { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--crust-soft); color: var(--crust-t); flex: none; }
+.strtoast .mi svg { width: 18px; height: 18px; }
+.strtoast .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.strtoast .ey { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--crust-t); }
+.strtoast b { margin: 0; }
+.strtoast .md { color: var(--ink-2); font-size: 12px; }
+
+/* ---------- телефон 390 / 360: одна колонка, кнопки не меньше 34 px, текст не обрезается ---------- */
+@media (max-width: 560px) {
+  .spaths { grid-template-columns: minmax(0, 1fr); }        /* карточки в одну колонку и не разъезжаются */
+  .spaths.big { grid-template-columns: minmax(0, 1fr); }
+  .spath { padding: 10px; }
+  .spath:has(input:checked) { padding: 9px; }
+  .stratb .st-acts .btn, .strat-m .st-reset, .strat-set .btn { min-height: 34px; }
+  .st-now, .st-mets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stratb .st-card, .stratb .st-hint { gap: 8px; padding: 9px; }
+  .st-ic, .st-qi { width: 30px; height: 30px; font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .spath .sp-i { width: 26px; height: 26px; font-size: 15px; }
+  .spath .sp-n { font-size: 13.5px; }
+  .spath .sp-m { font-size: 11px; }
+  .stratb .st-n { font-size: 13.5px; }
+  .stratb .st-pl { font-size: 12px; gap: 3px 9px; }
+  .strat-m .st-now, .strat-m .st-mets { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
 /* сгенерированные города у воды: море / залив */
@@ -21283,6 +21407,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const got = A() ? A().count(S) : 0, n = A() ? A().LIST.length : 0;
     return `<div class="row setx"><button class="btn" type="button" data-act="achievements">🏆 Достижения · ${got} из ${n}</button><button class="btn" type="button" data-act="summary">📊 Итоги игры</button></div>
       ${BK.Sound ? BK.Sound.settingsHtml(S) : ''}
+      ${BK.StratUI ? BK.StratUI.settingsHtml(S) : ''}
       ${BK.Slots.available() ? `<p class="hint" style="margin:0">Игра сохраняется в слот ${BK.Slots.active} из ${N_SLOTS}. Другие игры — на стартовом экране.</p>` : ''}`;
   }
 
@@ -23717,88 +23842,161 @@ var BK = globalThis.BK || (globalThis.BK = {});
 /* ui/strategy-ui.js */
 /* Стратегии — интерфейс (логика — src/strategy.js, BK.Strat).
    Где видно: карточки «Как играем?» на стартовом экране, блок «Стратегия» в «Сводке»,
-   окно со всеми четырьмя путями (можно выбрать или сменить в первые месяцы), тост, когда путь
-   сложился сам. В app.js / panels.js — только хуки (BK.StratUI.*). */
+   строка в «Меню игры», окно «Как вы играете» (выбрать путь или сбросить выбор), тост,
+   когда путь сложился сам. В app.js / panels.js / extras.js — только хуки (BK.StratUI.*). */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   if (typeof document === 'undefined') return;
   const ST = BK.Strat, APP = () => BK.App;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>';
+  const PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const MINUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
+  const plural = (n, a, b, c) => { const x = Math.abs(Math.round(n)) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const nw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
+  const num = (v) => Math.round(v).toLocaleString('ru-RU');
+  const AUTO_ID = 'auto';                                  // «Пусть сложится сама» — значение радиокнопки, выбранное по умолчанию
+  const AUTO = { name: 'Пусть сложится сама', icon: '?', short: 'путь определится по вашим решениям',
+    text: 'Ничего не выбираем: игра смотрит, как вы ведёте дело, и сама называет ближайший путь — его можно принять или сменить в первые месяцы.' };
+  const AUTO_TEXT = 'Можно выбрать путь сразу — или не выбирать: он определится по вашим решениям. Сменить можно в первые месяцы.';
 
-  /* ---------------- стартовый экран ---------------- */
+  /* сколько времени идёт игра этим путём — «3 месяца», «1 год 2 месяца» */
+  function lasted(days) {
+    const m = Math.floor(Math.max(0, days || 0) / 30);
+    if (m < 1) return 'меньше месяца';
+    const y = Math.floor(m / 12);
+    if (!y) return nw(m, 'месяц', 'месяца', 'месяцев');
+    const r = m % 12;
+    return `${nw(y, 'год', 'года', 'лет')}${r ? ' ' + nw(r, 'месяц', 'месяца', 'месяцев') : ''}`;
+  }
+  // «плюс и плата одной строкой»: + плюс, − плата
+  const pline = (p, cls) => `<p class="st-pl${cls ? ' ' + cls : ''}"><span class="st-p">${PLUS}${esc(p.plus)}</span><span class="st-mm">${MINUS}${esc(p.minus)}</span></p>`;
+
+  /* ---------------- стартовый экран: карточки «Как играем?» ---------------- */
   function startOpt() {
+    const auto = `<label class="spath auto">
+      <input type="radio" name="strategy" value="${AUTO_ID}" checked>
+      <span class="sp-i" aria-hidden="true">${esc(AUTO.icon)}</span>
+      <span class="sp-b"><span class="sp-n">${esc(AUTO.name)}</span><span class="sp-m">${esc(AUTO.short)}</span></span>
+      <span class="sp-c" aria-hidden="true"></span></label>`;
     const cards = ST.list().map((id) => {
       const p = ST.path(id);
-      return `<label class="spath"><input type="radio" name="strategy" value="${id}">
-        <span class="sp-i">${esc(p.icon)}</span><span class="sp-n">${esc(p.name)}</span><span class="sp-m">${esc(p.short)}</span></label>`;
+      return `<label class="spath">
+        <input type="radio" name="strategy" value="${id}">
+        <span class="sp-i" aria-hidden="true">${esc(p.icon)}</span>
+        <span class="sp-b"><span class="sp-n">${esc(p.name)}</span><span class="sp-m">${esc(p.short)}</span></span>
+        <span class="sp-c" aria-hidden="true"></span></label>`;
     }).join('');
-    return `<fieldset class="stratpick"><legend>Как играем?</legend><div class="spaths">
-      <label class="spath auto"><input type="radio" name="strategy" value="" checked>
-        <span class="sp-i">?</span><span class="sp-n">Пусть сложится сама</span><span class="sp-m">игра сама увидит, во что вы играете</span></label>
-      ${cards}</div>
-      <p class="hint" id="stratDesc" style="margin:6px 0 0">Можно выбрать путь сразу — или не выбирать: он определится по вашим решениям. Сменить можно в первые месяцы.</p></fieldset>`;
+    return `<fieldset class="stratpick"><legend>Как играем?</legend><div class="spaths">${auto}${cards}</div>
+      <p class="spdesc" id="stratDesc" aria-live="polite">${esc(AUTO_TEXT)}</p></fieldset>`;
   }
   function bindStart(form) {
     if (!form || form.__stratBind) return;
     form.__stratBind = true;
-    const sel = () => { const r = form.querySelector('input[name=strategy]:checked'); return r ? r.value : ''; };
+    // strategyValue — всегда функция-геттер (её зовёт app.js при отправке формы); не затираем её строкой
+    const sel = () => { const r = form.querySelector('input[name=strategy]:checked'); return r ? (r.value === AUTO_ID ? '' : r.value) : ''; };
     form.strategyValue = sel;
+    const desc = () => document.getElementById('stratDesc');
     form.addEventListener('change', (e) => {
-      form.strategyValue = sel();
       if (!e.target || e.target.name !== 'strategy') return;
-      const d = document.getElementById('stratDesc'); if (!d) return;
-      const id = e.target.value, p = id ? ST.path(id) : null;
-      d.textContent = p ? `${p.name}: ${p.text} Плюс: ${p.plus}. Плата: ${p.minus}.` : 'Можно выбрать путь сразу — или не выбирать: он определится по вашим решениям.';
+      const d = desc(); if (!d) return;
+      const id = form.strategyValue(), p = id ? ST.path(id) : null;
+      d.className = 'spdesc' + (p ? ' on' : '');
+      d.innerHTML = p
+        ? `<span class="spd-n">${esc(p.icon)} ${esc(p.name)}</span><span class="spd-t">${esc(p.text)}</span>${pline(p)}`
+        : esc(AUTO_TEXT);
     });
+    // начальное состояние: «Пусть сложится сама» — тоже выбор, у него своё пояснение
+    const d = desc();
+    if (d) { d.className = 'spdesc'; d.textContent = AUTO_TEXT; }
   }
 
-  /* ---------------- сводка ---------------- */
+  /* ---------------- блок «Стратегия» в «Сводке» ---------------- */
   function block(S) {
     const info = ST.info(S); if (!info) return '';
     const n = info.id ? ST.path(info.id) : null;
     let s = `<div class="sec stratb"><h3><span class="st-h">${ICON}Стратегия</span><button class="linkbtn" data-act="strat">Подробнее →</button></h3>`;
     if (n) {
-      s += `<p class="strat-line"><b>${esc(n.icon)} ${esc(n.name)}</b> <span class="hint">${info.chosen ? 'выбрана вами' : 'сложилась сама'}${info.day > 60 ? `, ${Math.round(info.day / 30)} мес.` : ''}</span></p>`;
-      s += `<p class="hint" style="margin:0">${esc(n.plus)}. Плата: ${esc(n.minus)}.</p>`;
+      const auto = !info.chosen, de = info.detect;
+      const bot = !auto && info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
+      s += `<div class="st-card${auto ? ' auto' : ''}">
+        <span class="st-ic" aria-hidden="true">${esc(n.icon)}</span>
+        <span class="st-b">
+          <span class="st-n">${esc(n.name)}<span class="st-tag">${auto ? 'сложилась сама' : 'выбрана вами'}</span></span>
+          <span class="st-m">идёте этим путём ${esc(lasted(info.day))}${bot ? ' · можно сменить' : ''}</span>
+        </span></div>
+        ${pline(n)}
+        ${auto && de && de.id && de.id !== info.id ? `<p class="st-note">Последние месяцы похоже на «${esc(ST.path(de.id).name)}» — посмотрите, что это значит.</p>` : ''}
+        ${bot ? `<div class="st-acts">${auto ? '' : '<button class="btn sm" data-act="stratPick" data-arg="none">Пусть сложится сама</button>'}<button class="btn sm primary" data-act="strat">Выбрать путь</button></div>` : ''}`;
     } else {
       const d = info.detect || {};
-      s += `<p class="hint" style="margin:0">Путь ещё не определился.${d.id ? ` Похоже на «${esc(ST.path(d.id).name)}».` : ' Открывайте точки, и он сложится сам.'}</p>`;
+      s += `<div class="st-hint"><span class="st-qi" aria-hidden="true">?</span><span class="st-b">
+        <span class="st-n">Путь ещё не определился</span>
+        <span class="st-m">${d.id ? `Похоже на «${esc(ST.path(d.id).name)}» — решите, ваш ли это путь.` : `Игра смотрит на чек, размер точек и поток гостей. Обычно путь виден с ${BK.CFG.STRAT.DETECT_MIN_STORES} точек — открывайте точки, и он сложится сам.`}</span>
+      </span></div>`;
     }
     return s + '</div>';
   }
 
-  /* ---------------- окно ---------------- */
+  /* ---------------- окно «Как вы играете» ---------------- */
+  function metricsHtml(m) {
+    return `<div class="st-mets">
+      <span><small>Точек</small><b>${m.n}</b></span>
+      <span><small>Чек к рынку</small><b>${Math.round(m.checkK * 100)} %</b></span>
+      <span><small>Гостей на точку</small><b>${num(m.guestsPerStore)}</b></span>
+    </div>`;
+  }
   function infoHtml(S) {
-    const info = ST.info(S), m = ST.metrics(S), cur = info.id;
-    const can = !info.chosen || info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
-    return `<div class="modal-h"><span class="eyebrow">Этап 3 · стратегия</span><h2>Как вы играете</h2></div><div class="modal-b strat-m">
-      <p class="hint" style="margin:0">Четыре пути к победе. Ни один не лучше всегда: у каждого своя сильная сторона и своя плата. Можно вести игру любым — или не выбирать: путь сложится сам по вашим решениям.</p>
-      <div class="spaths big">${ST.list().map((id) => {
-        const p = ST.path(id), on = cur === id;
-        return `<button class="spath${on ? ' on' : ''}" data-act="stratPick" data-arg="${id}"${can ? '' : ' disabled'}>
-          <span class="sp-i">${esc(p.icon)}</span><span class="sp-n">${esc(p.name)}${on ? ' · ваш путь' : ''}</span>
-          <span class="sp-m">${esc(p.text)}</span>
-          <span class="sp-p">+ ${esc(p.plus)}</span><span class="sp-mm">− ${esc(p.minus)}</span></button>`;
-      }).join('')}</div>
-      <div class="strat-now">
-        <span><small>Ваш путь</small><b>${cur ? esc(ST.path(cur).name) : 'ещё не определился'}</b></span>
-        <span><small>Точек</small><b>${m.n}</b></span>
-        <span><small>Чек к рынку</small><b>${Math.round(m.checkK * 100)} %</b></span>
-        <span><small>Гостей на точку</small><b>${Math.round(m.guestsPerStore).toLocaleString('ru-RU')}</b></span>
+    const info = ST.info(S); if (!info) return '';
+    const m = ST.metrics(S), cur = info.id, can = !info.chosen || info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
+    const cards = ST.list().map((id) => {
+      const p = ST.path(id), on = cur === id;
+      return `<button type="button" class="spath${on ? ' on' : ''}" data-act="stratPick" data-arg="${id}"${can ? '' : ' disabled'} aria-pressed="${on}">
+        <span class="sp-i" aria-hidden="true">${esc(p.icon)}</span>
+        <span class="sp-b"><span class="sp-n">${esc(p.name)}${on ? '<span class="sp-tag yours">ваш путь</span>' : ''}</span><span class="sp-m">${esc(p.text)}</span></span>
+        <span class="sp-p">${PLUS}${esc(p.plus)}</span>
+        <span class="sp-mm">${MINUS}${esc(p.minus)}</span>
+        ${can ? `<span class="sp-go">${on ? 'Это уже ваш путь' : 'Играть так'}</span>` : ''}</button>`;
+    }).join('');
+    return `<div class="modal-h stratm-h"><span class="eyebrow">Четыре пути к победе</span><h2>Как вы играете</h2></div><div class="modal-b strat-m">
+      <p class="hint" style="margin:0">Ни один путь не лучше всегда: у каждого своя сильная сторона и своя плата. Можно выбрать сразу — или не выбирать: путь сложится сам по вашим решениям.</p>
+      <div class="spaths big">${cards}</div>
+      <div class="st-foot">
+        <div class="st-now">
+          <span><small>Ваш путь</small><b>${cur ? esc(ST.path(cur).icon) + ' ' + esc(ST.path(cur).name) : 'ещё не определился'}</b></span>
+          <span><small>Так решено</small><b>${cur ? (info.chosen ? 'вами' : 'сложилось само') : '—'}</b></span>
+          <span><small>Идёте этим путём</small><b>${cur ? esc(lasted(info.day)) : '—'}</b></span>
+        </div>
+        ${metricsHtml(m)}
       </div>
-      <p class="hint" style="margin:0">${can ? 'Сменить путь можно в первые полгода игры.' : 'Полгода прошло — стратегия стала вашей историей.'}</p>
+      <p class="hint" style="margin:0">${can
+        ? 'Сменить путь или снять выбор («Пусть сложится сама») можно в первые полгода игры.'
+        : 'Полгода прошло — стратегия стала вашей историей. Сменить её больше нельзя.'}</p>
+      ${can && cur ? `<button type="button" class="btn block st-reset" data-act="stratPick" data-arg="none">Пусть сложится сама — снять выбор</button>` : ''}
     </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
   }
-  function openInfo() { const S = APP().state; if (!S) return; APP().openModal(infoHtml(S), { closable: true }); }
+  function openInfo(keep) {
+    const S = APP().state; if (!S) return;
+    APP().openModal(infoHtml(S), { closable: true, keepScroll: keep === 'keep' });
+    const el = document.querySelector('#modal .modal'); if (el) el.classList.add('strat-modal');
+  }
+  const inModal = () => !!(APP().ui.modal && document.querySelector('#modal .strat-modal'));
 
-  /* ---------------- тост ---------------- */
+  /* ---------------- строка в «Меню игры» (рисует extras.js — 3 строки) ---------------- */
+  function settingsHtml(S) {
+    const i = S ? ST.info(S) : null;
+    return `<div class="row sp strat-set"><span>Стратегия<small class="hint">${
+      i && i.id ? (i.chosen ? 'выбрана вами' : 'сложилась сама') : 'путь определится по вашим решениям'
+    }</small></span><button type="button" class="btn" data-act="strat">${i && i.id ? `${esc(ST.path(i.id).icon)} ${esc(ST.path(i.id).name)}` : 'Стратегия не выбрана'}</button></div>`;
+  }
+
+  /* ---------------- тост «Сложилась стратегия» (как у сюжета и инвесторов) ---------------- */
   function notify(n) {
-    if (n.phase !== 'detected') return;
+    if (!n || n.phase !== 'detected') return;
     const p = ST.path(n.id); if (!p) return;
     const box = document.getElementById('toasts'); if (!box) return;
     const el = document.createElement('div');
-    el.className = 'toast strattoast';
+    el.className = 'toast strtoast good';
     el.setAttribute('role', 'status');
     el.innerHTML = `<span class="mi" aria-hidden="true">${ICON}</span><span class="mt"><span class="ey">Сложилась стратегия</span><b>${esc(p.icon)} ${esc(p.name)}</b><span class="md">${esc(p.plus)}. Плата: ${esc(p.minus)}.</span></span>`;
     el.addEventListener('click', () => { el.remove(); openInfo(); });
@@ -23806,27 +24004,30 @@ var BK = globalThis.BK || (globalThis.BK = {});
     setTimeout(() => el.remove(), 9000);
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
-    if (BK.Sound) BK.Sound.play('ribbon');
+    if (BK.Sound) BK.Sound.play('fanfare');
   }
 
+  /* ---------------- действия ---------------- */
   function boot() {
     const A = APP() && APP().ACT; if (!A) return;
     if (A.__stratUI) return; A.__stratUI = true;
     Object.assign(A, {
       strat: () => openInfo(),
       stratPick: (d) => {
-        const S = APP().state;
+        const S = APP().state; if (!S) return;
+        const was = ST.info(S);                                   // что было до нажатия — для понятного тоста
         const id = d.arg === 'none' ? null : d.arg;
         const r = ST.set(S, id);
         APP().save(); APP().refresh();
-        APP().toast('Стратегия', r ? `Ваш путь: ${ST.path(r).name}` : 'Стратегия сброшена', 'good');
-        openInfo();
+        if (r) APP().toast('Стратегия', `Ваш путь: ${ST.path(r).icon} ${ST.path(r).name}`, 'good');
+        else APP().toast('Стратегия', was && was.id ? 'Сняли выбор — путь сложится сам по вашим решениям.' : 'Выбор не сделан — путь сложится сам.', 'good');
+        if (inModal()) openInfo('keep');
       },
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.StratUI = { block, startOpt, bindStart, openInfo, infoHtml, notify, ICON };
+  BK.StratUI = { block, startOpt, bindStart, openInfo, infoHtml, settingsHtml, notify, ICON };
 })();
 
 /* ui/russia.js */
