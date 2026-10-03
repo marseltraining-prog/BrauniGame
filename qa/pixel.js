@@ -1,6 +1,8 @@
 /* Пиксельный слой в браузере: node qa/pixel.js [папка скриншотов]
    1) Пролог «Бариста»: экран месяца (сцена «Калача»), карточка П1 с пиксельным портретом, «Смена» (гости-пиксели в очереди,
-      заказ, огонь и пар анимируются), финалы «Своя точка» и «Жизнь в найме».
+      заказ, огонь и пар анимируются), финалы «Своя точка» и «Жизнь в найме». До финала «Жизнь в найме» пролог проходит через
+      смены, которые приходят сами по расписанию (BK.Prologue.dueShift, пропустить нельзя), дилеммы живого сюжета и гостей —
+      тест играет смены и закрывает карточки по очереди (prologueTo), поэтому доходит до финала, а не встаёт на «Смене».
    2) «Живая точка» в карточке точки: утро и вечер (очередь, продавцы, витрина, мысли гостей), закрытая точка ночью.
    Экраны 1440 / 390 / 360 в светлой и тёмной теме: вёрстка (layoutCheck), целый множитель canvas, сцена не пустая.
    3) Производительность: живая точка открыта, игра на ×10, 40+ точек — нет задач > 50 мс (CPU×1); сцена не рисуется,
@@ -39,6 +41,63 @@ async function canvases(p, label, sel) {
 }
 const st = (p) => p.evaluate(() => { const P = BK.App.state && BK.App.state.prologue; return P ? { status: P.status, m: P.m, cards: P.cards.length, card: P.cards[0] && P.cards[0].id, mode: BK.PrologueUI.ui.mode } : null; });
 
+/* ---------------- пролог: путь до финала через смены, которые приходят сами ----------------
+   Новые механики пролога, о которых тест должен знать: «Смена» открывается САМА по расписанию
+   (BK.Prologue.dueShift / CFG.PROLOGUE.SHIFT_AT) — её нельзя пропустить, и пока она идёт, время стоит;
+   сцены, события, дилеммы живого сюжета (src/data/prolog-v2.js) и завсегдатаи-гости (src/data/guests.js)
+   приходят обычными карточками. Один шаг: сделать то, что сделал бы игрок, кнопками интерфейса
+   (никаких прямых PR.advance/shiftResult — тест проходит игру, как она есть). */
+const proStep = (p) => p.evaluate(() => {
+  const U = BK.PrologueUI, ui = U && U.ui, P = BK.App.state && BK.App.state.prologue;
+  const click = (sel) => { const b = document.querySelector(sel); if (b && !b.disabled) { b.click(); return true; } return false; };
+  if (!P || P.status !== 'run') return { a: 'done' };
+  // смена пришла сама: вступление → «за стойку» → обслужить пару гостей по заказу → «Закончить» → «Готово»
+  if (ui.mode === 'shift' && ui.sh) {
+    const sh = ui.sh;
+    if (sh.state === 'intro') return { a: click('#proSh [data-pa=shiftGo]') ? 'shiftGo' : 'wait' };
+    if (sh.state === 'res') return { a: click('#proSh [data-pa=shiftDone]') ? 'shiftDone' : 'wait' };
+    if (sh.state === 'play') {
+      const g = sh.guests[0];
+      if (!g || sh.served >= 3) return { a: click('#proSh [data-pa=shiftEnd]') ? 'shiftEnd' : 'wait' }; // смена сыграна — закрываем, как игрок
+      if (g.order.slice().sort().join() !== sh.tray.slice().sort().join()) {   // собрать заказ гостя на поднос
+        if (sh.tray.length && click('#proSh [data-pa=shiftTray]')) return { a: 'shiftTray' };
+        const need = g.order.filter((id) => sh.tray.indexOf(id) < 0)[0];
+        if (need && click(`#proSh [data-pa=shiftItem][data-v="${need}"]`)) return { a: 'shiftItem' };
+      }
+      return { a: click('#proSh [data-pa=shiftServe]') ? 'shiftServe' : 'wait' };
+    }
+    return { a: 'wait' };
+  }
+  // карточка-решение: сцена, событие, дилемма живого сюжета или гость — окно одно и то же
+  if (ui.mode === 'card' || P.cards.length) {
+    const cv = P.cards[0] || {};
+    return { a: click('#proOv .pro-card [data-pa=choose]:not([disabled])') ? 'card' : 'wait', id: cv.id || '', v2: !!cv.v2 };
+  }
+  // смена уже ждёт, а цикл игры её ещё не открыл — открываем тем же путём, что и цикл (ui.speed > 0)
+  if (BK.Prologue.dueShift(P)) { U.shiftOpen(true); return { a: 'shiftOpen' }; }
+  P.t = 0.99;   // месяц к концу: время двигает цикл игры на ui.speed
+  return { a: 'time' };
+});
+// довести пролог до финала (status ≠ 'run'), играя пришедшие смены и закрывая карточки
+async function prologueTo(p, tag, label) {
+  const seen = { shifts: 0, cards: 0, dils: 0, guests: 0, months: 0 };
+  for (let i = 0; i < 400; i++) {
+    const s = await st(p);
+    if (!s || s.status !== 'run') {
+      notes.push(`${tag} пролог → «${label}»: смен сыграно ${seen.shifts}, окон ${seen.cards} (дилемм живого сюжета ${seen.dils}, гостей-завсегдатаев ${seen.guests}), месяцев ${s ? s.m : '?'}`);
+      return s;
+    }
+    const r = await proStep(p);
+    if (r.a === 'shiftGo') { seen.shifts++; await p.waitForFunction(() => BK.PrologueUI.ui.sh && BK.PrologueUI.ui.sh.state !== 'intro', null, { timeout: 3000 }).catch(() => {}); }
+    else if (r.a === 'shiftEnd') await p.waitForSelector('#proSh .sh-res', { timeout: 3000 }).catch(() => {});
+    else if (r.a === 'shiftItem' || r.a === 'shiftServe' || r.a === 'shiftTray') await p.waitForTimeout(80);
+    else if (r.a === 'card') { seen.cards++; if (r.v2) seen.dils++; else if (/^g_/.test(r.id)) seen.guests++; await p.waitForTimeout(70); }
+    else if (r.a === 'time') { seen.months++; await p.waitForTimeout(110); }
+    else await p.waitForTimeout(60);
+  }
+  issues.push(`[${tag}] пролог не дошёл до «${label}» за отведённые шаги: ${JSON.stringify(await st(p))}`);
+}
+
 async function prologue(b, vp, dark) {
   const tag = `${vp}${dark ? '-dark' : ''}`, mobile = vp[0] === 'm';
   const p = await openPage(b, vp, { dark });
@@ -69,14 +128,25 @@ async function prologue(b, vp, dark) {
     await canvases(p, tag + ' месяц', '#proPxSlot canvas.pxs');
     await check(p, tag + ' месяц', '#proColA .pro-hero', mobile);
     await p.screenshot({ path: path.join(OUT, `${tag}-month.png`) });
-    // финал «Жизнь в найме»
+    // дилемма живого сюжета (src/data/prolog-v2.js): окно то же, что у сцен, но сцену ведёт v2.
+    // Прыжок к финалу её расписание пропускает — показываем дилемму сами и проверяем пиксельный портрет.
+    const dil = await p.evaluate(() => {
+      const P = BK.App.state.prologue;
+      if (!BK.PrologV2 || !P.v2 || !BK.PrologV2.DIL_IDS.length) return null;
+      BK.PrologV2.push(P, BK.PrologV2.DIL_IDS[0]);   // тот же путь, которым игру показывает дилемму (overlay → P.cards)
+      const cv = P.cards[P.cards.length - 1];
+      return cv && cv.v2 ? cv.id : null;
+    });
+    if (dil) {
+      await p.waitForSelector('#proOv .pro-card canvas.pxp', { timeout: 4000 }).catch(() => issues.push(`[${tag}] дилемма «${dil}»: карточка без портрета`));
+      await p.waitForTimeout(300);
+      await canvases(p, `${tag} дилемма живого сюжета`, '#proOv .pro-card canvas.pxp');
+      await check(p, `${tag} дилемма живого сюжета`, '#proOv .pro-card', mobile);
+      await p.screenshot({ path: path.join(OUT, `${tag}-dilemma.png`) });
+    } else issues.push(`[${tag}] дилемма живого сюжета не открылась (BK.PrologV2)`);
+    // финал «Жизнь в найме»: до него пролог проходит через смены, которые приходят сами по расписанию
     await p.evaluate(() => { const P = BK.App.state.prologue, c = BK.CFG.PROLOGUE; P.m = c.LIFE_MONTHS - 1; P.job = 1; P.cash = 12000; P.box = 0; P.spent = { home: 2600000, food: 3100000, fun: 1500000, sneakers: 180000, trip: 560000 }; P.earned = { salary: 9800000, tips: 900000 }; BK.PrologueUI.ui.speed = 3; P.t = 0.99; });
-    for (let i = 0; i < 40; i++) {
-      const s = await st(p); if (s.status === 'life') break;
-      if (s.mode === 'card') { await p.evaluate(() => { const bt = document.querySelector('#proOv .pro-card [data-pa=choose]:not([disabled])'); if (bt) bt.click(); }); }
-      await p.evaluate(() => { const P = BK.App.state.prologue; if (P.status === 'run' && !P.cards.length) P.t = 0.99; });
-      await p.waitForTimeout(150);
-    }
+    await prologueTo(p, tag, 'жизнь в найме');
     await p.waitForSelector('#proOv .pro-final.life canvas.pxs', { timeout: 5000 }).catch(() => issues.push(`[${tag}] финал «Жизнь в найме» без сцены`));
     await p.waitForTimeout(600);
     await canvases(p, tag + ' финал «в найме»', '#proOv .pro-final canvas.pxs');
