@@ -1,0 +1,10 @@
+/* Истории (сценарии): список на старте и блок «пройдено N из 4» в итогах. */
+.scenpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.scenpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.scen-list { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.scen-it { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); background: var(--surface-2); border-radius: 7px; padding: 4px 8px; }
+.scen-it.done { color: var(--good-t); background: var(--good-soft); }
+.scen-end { border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 10px; }
+.scen-end-h { margin: 2px 0 0; font-size: 15px; }
+.scen-end-h b { font-family: var(--f-mono); }
+@media (max-width: 560px) { .scen-list { flex-direction: column; } }

@@ -1672,6 +1672,17 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .stratpick legend, .spdesc { font-size: 13.5px; }
 }
 
+/* Истории (сценарии): список на старте и блок «пройдено N из 4» в итогах. */
+.scenpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
+.scenpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.scen-list { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.scen-it { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); background: var(--surface-2); border-radius: 7px; padding: 4px 8px; }
+.scen-it.done { color: var(--good-t); background: var(--good-soft); }
+.scen-end { border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 10px; }
+.scen-end-h { margin: 2px 0 0; font-size: 15px; }
+.scen-end-h b { font-family: var(--f-mono); }
+@media (max-width: 560px) { .scen-list { flex-direction: column; } }
+
 /* ================= Второй акт: Россия (карта-лист 2, переходы, панель, крошки) ================= */
 /* сгенерированные города у воды: море / залив */
 .m-sea { fill: color-mix(in srgb, var(--map-river) 15%, var(--map-land)); }
@@ -3835,6 +3846,68 @@ BK.STORY = {
     { id: 'final', name: 'Финал', text: 'Лодочная станция' },
   ],
 };
+
+/* data/scenarios.js */
+/* =====================================================================
+   СЦЕНАРИИ: данные (BK.SCEN). Четыре истории с разными правилами с начала.
+   Логика — src/scenario.js (BK.Scenario), интерфейс — src/ui/scenario-ui.js.
+   Замысел — docs/vision-plan.md §5 п. 5 и plan (этап 4).
+
+   Поля сценария:
+     name, text      — название и короткое описание (видно на старте и в итогах);
+     goal            — что нужно сделать (строка для игрока);
+     start           — стартовые правила: cash (деньги), loan (долг), crisis/crisisIn,
+                       trafficK/foodcostK/rentK (множители на days дней), city (город);
+     days            — срок сценария (если есть), после — «срок вышел»;
+     fail(S)         — провал сценария (иначе партия кончается как обычно);
+     done(S)         — сценарий пройден (по этому отмечается прогресс между партиями);
+     scenes          — свои сюжетные сцены (в формате BK.STORY.scenes) — их пишут отдельно.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const open = (S) => (S.stores || []).filter((s) => s.status !== 'opening');
+  BK.SCEN = {
+    v: 1,
+    list: {
+      legacy: {
+        name: 'Наследство', icon: '🕯', text: 'Бабушкина пекарня в долгах. Полгода, чтобы её спасти.',
+        goal: 'Выжить полгода и выйти в плюс',
+        start: { cash: 1200000, loan: 2600000, trafficK: 0.94, days: 60, foodcostK: 1.04 },
+        days: 180,
+        done: (S) => (S.cash || 0) > 1500000 && !S.lost,
+        fail: (S) => !!S.lost,
+        scenes: [],
+      },
+      rescue: {
+        name: 'Спаси сеть', icon: '🚒', text: 'Продаётся сеть в кризисе: точки есть, денег нет, люди устали.',
+        goal: 'Вытащить сеть и вернуть её в плюс',
+        start: { cash: 3000000, loan: 18000000, trafficK: 0.9, days: 120, foodcostK: 1.03 },
+        days: 365,
+        done: (S) => !S.lost && (S.history || []).slice(-3).every((m) => m.profit > 0),
+        fail: (S) => !!S.lost,
+        scenes: [],
+      },
+      crisis: {
+        name: 'Кризис', icon: '📉', text: 'Старт перед кризисом: спрос падает, мука дорожает.',
+        goal: 'Пережить кризис и вырасти',
+        start: { cash: 9000000, crisis: 14, crisisIn: 45, trafficK: 0.92, days: 300, foodcostK: 1.12 },
+        days: 300,
+        done: (S) => !S.lost && (S.day || 0) > 300,
+        fail: (S) => !!S.lost,
+        scenes: [],
+      },
+      moscow: {
+        name: 'Старт в Москве', icon: '🏙', text: 'Дорогая аренда, высокий чек, сильные конкуренты.',
+        goal: 'Закрепиться в Москве',
+        start: { cash: 10000000, rentK: 1.35, days: 3650, trafficK: 1.06 },
+        days: null,
+        done: (S) => !S.lost && open(S).length >= 8,
+        fail: (S) => !!S.lost,
+        scenes: [],
+      },
+    },
+  };
+})();
 
 /* data/story-war.js */
 /* =====================================================================
@@ -16433,6 +16506,130 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Strat = { ensure, state, set, setRandom, list, path, info, metrics, detect, maybeDetect, syncMods, openMult, attItems, day };
 })();
 
+/* scenario.js */
+/* =====================================================================
+   СЦЕНАРИИ (этап 4 плана, vision-plan §5 п. 5). Чистая логика без DOM.
+   Четыре истории с разными правилами с самого начала:
+     ufa      — обычная игра (Уфа, как раньше);
+     legacy   — «Наследство»: бабушкина пекарня в долгах, спасти за полгода;
+     rescue   — «Спаси сеть»: сеть в кризисе (точки, долги, недовольные люди) — вытащить;
+     crisis   — «Кризис»: старт перед кризисом — спрос падает, мука дорожает;
+     moscow   — «Старт в Москве»: дорогая аренда, высокий чек, сильные конкуренты.
+   Сценарий пишется в S.story.scenario (поле уже было в схеме docs/story.md §4.5).
+
+   Правило владельца: сценарий **выпадает случайно, но только из непройденных**;
+   пройденные запоминаются в браузере (localStorage['bk-ufa-scen-done']) и больше не выпадают;
+   в конце партии игрок видит «Пройдено N из 4» и может начать заново за другой историей.
+
+   Состояние сценария внутри партии: S.scen = { v, id, at (день старта), flags }.
+   Пока сценарий не выбран — состояния нет (обычная игра и боты не меняются).
+   Числа и тексты — src/data/scenarios.js (BK.SCEN). Интерфейс — src/ui/scenario-ui.js.
+   ===================================================================== */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const D = () => BK.SCEN || { list: {} };
+  const KEY = 'bk-ufa-scen-done';
+  const ls = (typeof localStorage === 'undefined') ? null : localStorage;
+
+  /* ---------------- пройденные сценарии (между партиями) ---------------- */
+  function done() {
+    try { const raw = ls && ls.getItem(KEY); const a = raw ? JSON.parse(raw) : []; return Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []; }
+    catch (e) { return []; }
+  }
+  function markDone(id) {
+    if (!id || id === 'ufa') return done();
+    const a = done(); if (a.indexOf(id) < 0) a.push(id);
+    try { if (ls) ls.setItem(KEY, JSON.stringify(a)); } catch (e) {}
+    return a;
+  }
+  function resetDone() { try { if (ls) ls.removeItem(KEY); } catch (e) {} }
+
+  /* ---------------- список и выбор ---------------- */
+  const all = () => Object.keys(D().list || {});
+  const info = (id) => (D().list || {})[id] || null;
+  const played = () => all().filter((id) => done().indexOf(id) >= 0);
+  const left = () => all().filter((id) => done().indexOf(id) < 0);
+  // Случайный из непройденных (детерминированно от зерна партии): пройденное не выпадает снова.
+  function pick(seed) {
+    const pool = left();
+    if (!pool.length) return null;
+    let t = ((seed | 0) ^ 0x7ac31) | 0;
+    t = (Math.imul(t ^ (t >>> 15), 1 | t) + 0x6D2B79F5) | 0;
+    return pool[((t ^ (t >>> 14)) >>> 0) % pool.length];
+  }
+  function progress() { return { done: done(), played: played(), left: left(), total: all().length }; }
+
+  /* ---------------- состояние партии ---------------- */
+  function state(S) { return S && S.scen && S.scen.v ? S.scen : null; }
+  function ensure(S) {
+    if (!S) return null;
+    if (S.scen && S.scen.v) return S.scen;
+    S.scen = { v: 1, id: null, at: S.day || 0, flags: {} };
+    return S.scen;
+  }
+  // Выбрать сценарий партии. id === 'random' — случайный из непройденных (по зерну игры).
+  function set(S, id) {
+    const st = ensure(S); if (!st) return null;
+    let real = id;
+    if (id === 'random') real = pick(S.seed);
+    if (real && !info(real)) real = null;
+    st.id = real === 'ufa' ? null : real;      // «обычная Уфа» — это отсутствие сценария
+    st.at = S.day;
+    if (S.story) S.story.scenario = st.id || 'ufa';
+    if (real && S.notify) S.notify.push({ type: 'scen', phase: 'start', id: real });
+    return st.id;
+  }
+  const current = (S) => { const st = state(S); return st && st.id ? st.id : null; };
+
+  /* ---------------- стартовые правила сценария ---------------- */
+  // Каждый сценарий правит начало партии своими числами: деньги, точки, долги, рынок.
+  // Полный набор — в src/data/scenarios.js (BK.SCEN.list[id].start).
+  function applyStart(S) {
+    const st = state(S); if (!st || !st.id) return null;
+    const d = info(st.id); if (!d || !d.start) return null;
+    const s = d.start, out = [];
+    if (s.cash != null) { const k = (s.cashK || 1) * (S.macro ? S.macro.priceLevel : 1); S.cash = Math.max(0, Math.round(s.cash * (s.cashK ? 1 : k))); out.push('деньги'); }
+    if (s.loan) { S.loan = Math.round((S.loan || 0) + s.loan); out.push('долг'); }
+    if (s.crisis) { S.ev = S.ev || {}; S.ev.nextCrisis = (S.day || 0) + (s.crisisIn || 60); S.ev.forcedCrisis = s.crisis; out.push('кризис'); }
+    if (s.trafficK) { S.mods.push({ t: 'traffic', m: s.trafficK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('спрос'); }
+    if (s.foodcostK) { S.mods.push({ t: 'foodcost', m: s.foodcostK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('мука'); }
+    if (s.rentK) { S.mods.push({ t: 'rent', m: s.rentK, until: (S.day || 0) + (s.days || 3650), scope: 'global', src: 'scen' }); out.push('аренда'); }
+    if (S.notify) S.notify.push({ type: 'scen', phase: 'applied', id: st.id, what: out.join(', ') });
+    return out;
+  }
+
+  /* ---------------- день ---------------- */
+  function day(S) {
+    if (!S || S.lost) return;
+    const st = state(S);
+    if (!st || !st.id) return;
+    const d = info(st.id); if (!d) return;
+    // срок сценария (например, «Наследство» — спасти за 6 месяцев)
+    if (d.days && !st.expired && S.day - st.at > d.days) {
+      st.expired = true;
+      if (S.notify) S.notify.push({ type: 'scen', phase: 'expired', id: st.id, days: d.days });
+    }
+  }
+  function failed(S) { const st = state(S); if (!st || !st.expired) return false; const d = info(st.id); return !!(d && d.fail && d.fail(S, st)); }
+
+  /* ---------------- итог: отметить пройденное ---------------- */
+  // Вызывается, когда партия закончилась (победа, банкротство, финал истории):
+  // сценарий считается пройденным, если цель сценария выполнена.
+  function finish(S) {
+    const id = current(S); if (!id) return null;
+    const d = info(id);
+    const ok = !d || !d.done || d.done(S, state(S));
+    if (ok) markDone(id);
+    return { id, ok, progress: progress() };
+  }
+  function progressHtml() { const p = progress(); return `${p.played.length} из ${p.total}`; }
+
+  BK.Scenario = {
+    all, info, left, played, done, markDone, resetDone, pick, progress, progressHtml,
+    state, ensure, set, current, applyStart, day, failed, finish,
+  };
+})();
+
 /* sound.js */
 /* =====================================================================
    ЗВУК «Хлебной карты» (vision-plan §4 п. 3, этап В2 «Живость»).
@@ -22983,6 +23180,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const on = L.filter((a) => A().isOn(S, a.id)).sort((a, b) => S.achievements[a.id] - S.achievements[b.id]);
     s += `<div class="sec"><h3>Достижения <small>${got} из ${L.length}</small></h3>${on.length ? `<div class="achchips">${on.map((a) => `<span class="achchip rar-${a.rar}" title="${esc(a.desc)}"><span aria-hidden="true">${a.icon}</span>${esc(a.name)}</span>`).join('')}</div>` : '<div class="empty">Пока ни одного.</div>'}<button class="btn" type="button" data-act="achievements">Все достижения</button></div>`;
     const rw = S.lost && BK.Rewind && BK.Rewind.can(S); // банкротство: можно вернуться к окну «Переиграть»
+    if (BK.Scenario) { try { BK.Scenario.finish(S); } catch (e) {} }   // партия закончилась — отметить историю пройденной
+    s += (BK.ScenarioUI ? BK.ScenarioUI.forSummary(S) : '');
     s += (BK.StoryHistory ? BK.StoryHistory.summarySection(S) : '');
     s += `</div><div class="modal-f">${S.lost ? (rw ? '<button class="btn primary block" type="button" data-act="rewindLost">Переиграть…</button>' : '') : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost && !rw ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
     return s;
@@ -25662,6 +25861,64 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.StratUI = { block, startOpt, bindStart, openInfo, infoHtml, settingsHtml, notify, ICON };
 })();
 
+/* ui/scenario-ui.js */
+/* Сценарии — интерфейс (логика — src/scenario.js, BK.Scenario).
+   Где видно: блок «Истории» на стартовом экране (пройдено N из 4, что осталось),
+   экран в конце партии («Пройдено N из 4» и кнопка «Начать заново — пройти другую историю»),
+   строка о сценарии в итогах игры. В app.js / extras.js — только хуки. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  if (typeof document === 'undefined') return;
+  const SC = () => BK.Scenario, APP = () => BK.App;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M8 7h8M8 11h5"/></svg>';
+
+  /* стартовый экран: сколько историй пройдено и что осталось */
+  function startOpt() {
+    const p = SC().progress();
+    if (!p.total) return '';
+    const items = SC().all().map((id) => {
+      const d = SC().info(id), was = p.played.indexOf(id) >= 0;
+      return `<span class="scen-it${was ? ' done' : ''}" title="${esc(was ? 'пройдено' : 'ещё не пройдено')}">${esc(d.icon)} ${esc(d.name)}${was ? ' ✓' : ''}</span>`;
+    }).join('');
+    return `<fieldset class="scenpick"><legend>Истории</legend>
+      <p class="hint" style="margin:0 0 6px">Сценарий выпадает случайно — но только из тех, что вы ещё не проходили: <b>${p.played.length} из ${p.total}</b> пройдено.</p>
+      <div class="scen-list">${items}</div>
+      ${p.played.length ? '<button type="button" class="linkbtn" id="scenReset">Сбросить пройденные</button>' : ''}
+    </fieldset>`;
+  }
+  function bindStart(form) {
+    const b = form && form.querySelector('#scenReset');
+    if (b && !b.__b) { b.__b = 1; b.addEventListener('click', () => { SC().resetDone(); APP().toast('Истории', 'Прогресс историй сброшен — снова выпадают все четыре.', 'warn'); form.querySelector('.scenpick').outerHTML = startOpt(); bindStart(form); }); }
+  }
+
+  /* конец партии: пройдено N из 4 и предложение пройти другую */
+  function endingHtml(S) {
+    const cur = SC().current(S);
+    const p = SC().progress();
+    if (!p.total) return '';
+    const d = cur ? SC().info(cur) : null;
+    const rest = p.left.map((id) => SC().info(id).name);
+    let s = `<div class="scen-end"><span class="eyebrow">Истории</span>`;
+    s += `<p class="scen-end-h">Пройдено <b>${p.played.length} из ${p.total}</b></p>`;
+    if (d) s += `<p class="hint" style="margin:2px 0 0">Эта партия — история «${esc(d.icon)} ${esc(d.name)}»${p.played.indexOf(cur) >= 0 ? ' — засчитана' : ''}.</p>`;
+    if (rest.length) s += `<p class="hint" style="margin:4px 0 0">Осталось пройти: ${esc(rest.join(', '))}.</p>`;
+    else s += `<p class="hint" style="margin:4px 0 0">Вы прошли все четыре истории. Спасибо!</p>`;
+    s += `<div class="row" style="margin-top:8px"><button class="btn primary" data-act="scenAgain">Начать заново — пройти другую историю</button></div></div>`;
+    return s;
+  }
+  function forSummary(S) { return SC().current(S) ? endingHtml(S) : ''; }
+
+  function boot() {
+    const A = APP() && APP().ACT; if (!A || A.__scenUI) return; A.__scenUI = true;
+    Object.assign(A, { scenAgain: () => { APP().closeModal(); if (APP().toStart) APP().toStart(); else location.reload(); } });
+    const f = document.querySelector('#startForm'); if (f) bindStart(f);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
+
+  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, ICON };
+})();
+
 /* ui/russia.js */
 /* Карта России (второй акт, этап Р1): статичный лист-чертёж 1600×900 в стиле карты Уфы, города кружками,
    переходы город ↔ Россия с анимацией «камера отъехала», панель «Россия» (сводка сети, карточка города, вход в город).
@@ -28332,7 +28589,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -28346,7 +28603,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -28368,6 +28625,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Stage1UI) BK.Stage1UI.close();
     S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
+    if (BK.Scenario && opts && opts.scen) { BK.Scenario.set(S, opts.scen); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
     else if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat);     // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
@@ -29016,6 +29274,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ui.view === 'russia') { BK.Russia.render(S, true); requestAnimationFrame(() => cityView(true)); }
     else { ui.tab = 'dash'; refresh(); }
   }
+  function scenFinish() { try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
   function openLostModal() {
     if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
       const e = BK.STORY.endings[S.storyEnding];

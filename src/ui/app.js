@@ -166,7 +166,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -180,7 +180,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '' }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
@@ -202,6 +202,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Stage1UI) BK.Stage1UI.close();
     S = E.newGame({ company: name, difficulty, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
+    if (BK.Scenario && opts && opts.scen) { BK.Scenario.set(S, opts.scen); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
     else if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat);     // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
@@ -850,6 +851,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ui.view === 'russia') { BK.Russia.render(S, true); requestAnimationFrame(() => cityView(true)); }
     else { ui.tab = 'dash'; refresh(); }
   }
+  function scenFinish() { try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
   function openLostModal() {
     if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
       const e = BK.STORY.endings[S.storyEnding];
