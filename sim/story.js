@@ -18,6 +18,7 @@
      node sim/story.js good 4 22 --force=s25:1 --brief
      node sim/story.js --all-branches 4 22      — перебор вариантов развилок
      node sim/story.js good 6 22 --balance      — сюжет против «без сюжета»
+     node sim/story.js --lines 3 22             — реплики в отчёте месяца: выбор, подстановки, лимит
      node sim/story.js --check                  — проверки каркаса и текстов реплик
 
    Сюжет включён этим файлом (sim/load.js по умолчанию его выключает, чтобы канонические
@@ -539,6 +540,67 @@ function balance(yrs, sd) {
   return ok ? 0 : 1;
 }
 
+/* ======================= --lines: реплики в отчёте месяца =======================
+   Проверка BK.STORY.lineOfMonth/lineHtml (docs/story.md §6): реплика выбирается по самой острой
+   проблеме месяца, подстановки настоящие, лимит «не чаще раза в месяц» соблюдён, героя из свежей
+   сцены реплика не повторяет, при выключенном сюжете и без S.story — молчит вовсе. */
+function lines(yrs, sd) {
+  if (!BK.STORY || !BK.STORY.lineOfMonth) { console.log('нет BK.STORY.lineOfMonth — реплики не подключены'); return 1; }
+  let bad = 0;
+  const ok = (c, w, x) => { if (!c) { bad++; console.log('  ✗ ' + w + (x ? ' — ' + x : '')); } else console.log('  ✓ ' + w + (x ? ' — ' + x : '')); };
+  console.log(`# Реплики в отчёте месяца (${sd} сид(ов) × ${yrs} лет)`);
+  let all = [], months = 0, dupScene = 0, midMonth = 0, gaps = 0, badText = 0, prevText = null;
+  for (let s = 0; s < sd; s++) {
+    const seed = 1000 + s * 7919;
+    let cur = null, prevDay = null;
+    prevText = null;
+    play({
+      level: 'good', seed, years: yrs,
+      onDay: (S) => {
+        const t = E.dateOf(S.day);
+        if (t.d !== 1 || !S.history.length) return;
+        months++;
+        const html = BK.STORY.lineHtml(S);                       // так же зовёт панель
+        const L = BK.STORY.lineOfMonth(S);
+        if (!L) return;
+        all.push(L);
+        if (L.cur === cur && prevText && L.text !== prevText) midMonth++;      // в одном месяце текст не меняется
+        cur = L.cur;
+        if (prevDay != null && S.day - prevDay < 25) gaps++;                  // не чаще раза в месяц
+        if (html.indexOf('st-line') < 0 || /[{}]/.test(L.text) || /undefined|NaN|№№|…/.test(L.text)) badText++;
+        const sc = (S.story.log || []).filter((x) => x.title).slice(-1)[0];
+        if (sc && S.day - sc.day <= 45) {
+          const s0 = (BK.STORY.scenes || []).find((x) => x.id === sc.id);
+          if (s0 && (s0.who || []).indexOf(L.hero) >= 0) dupScene++;
+        }
+        prevText = L.text; prevDay = S.day;
+      },
+    });
+  }
+  const uniq = new Set(all.map((x) => x.text));
+  const hero = {}, sit = {};
+  for (const x of all) { hero[x.hero] = (hero[x.hero] || 0) + 1; sit[x.sit] = (sit[x.sit] || 0) + 1; }
+  ok(all.length >= months * 0.9, 'реплика приходит почти каждый месяц', `${all.length} из ${months} отчётов`);
+  ok(badText === 0, 'в тексте нет неподставленных {n}/{sum} и служебных заглушек');
+  ok(gaps === 0, 'лимит «не чаще раза в месяц» соблюдён');
+  ok(midMonth === 0, 'внутри месяца текст не меняется (перерисовка панели не подменяет реплику)');
+  ok(dupScene === 0, 'реплика не повторяет героя из свежей сцены (блок «История»)', String(dupScene));
+  ok(new Set(Object.keys(hero)).size >= 4, 'говорят все четыре героя схемы §6', Object.keys(hero).join(', '));
+  ok(uniq.size >= all.length * 0.15, 'реплики не зациклились', `${uniq.size} разных из ${all.length} (${Math.round(uniq.size / Math.max(1, all.length) * 100)} %)`);
+  console.log('  герои: ' + JSON.stringify(hero));
+  console.log('  ситуации: ' + JSON.stringify(sit));
+  const sample = [], pref = ['gulya.quits', 'gulya.overwork', 'gulya.salelow', 'elvira.debt', 'elvira.crisis', 'rashid.waste', 'rashid.quality', 'semyon.rating', 'oleg.rival', 'oleg.respect'];
+  for (const k of pref) { const x = all.find((y) => y.hero + '.' + y.sit === k); if (x) sample.push(x); }
+  if (sample.length) { console.log('  примеры:'); for (const x of sample.slice(0, 8)) console.log(`    ${x.hero}.${x.sit}/${x.tone}: ${x.text}`); }
+  const keep = CFG.STORY.ON;
+  CFG.STORY.ON = false;
+  ok(BK.STORY.lineHtml({ day: 300, story: { v: 1, rel: {} }, history: [{ m: 1, y: 2028, rev: 1, profit: 1, pnl: {} }] }) === '', 'при CFG.STORY.ON === false — пусто');
+  CFG.STORY.ON = keep;
+  ok(BK.STORY.lineHtml(null) === '' && BK.STORY.lineHtml({ day: 1 }) === '', 'без S.story и без истории — пусто');
+  console.log(bad ? `  ПРОБЛЕМ: ${bad}` : '  Всё в порядке.');
+  return bad ? 1 : 0;
+}
+
 /* ======================= --check ======================= */
 function check() {
   let bad = 0;
@@ -617,6 +679,10 @@ if (flags.check) {
   const bs = fv != null ? +fv : (isNum(pos[0]) ? +pos[0] : numOr(pos[1], 4));
   const yrs = fv != null ? numOr(pos[0], 22) : (isNum(pos[0]) ? numOr(pos[1], 22) : numOr(pos[2], 22));
   process.exitCode = allBranches(bs, yrs) ? 1 : 0;
+} else if (flags.lines) {
+  const sd = isNum(pos[0]) ? +pos[0] : numOr(pos[1], 3);
+  const yrs = isNum(pos[0]) ? numOr(pos[1], 22) : numOr(pos[2], 22);
+  process.exitCode = lines(yrs, sd) ? 1 : 0;
 } else if (flags.balance) {
   const sd = isNum(pos[0]) ? +pos[0] : numOr(pos[1], 6);
   const yrs = isNum(pos[0]) ? numOr(pos[1], 22) : numOr(pos[2], 22);

@@ -484,6 +484,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
+    if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)
     if (BK.StratUI) s += BK.StratUI.block(S); // стратегии: каким путём вы идёте
     if (BK.ManagersUI) s += BK.ManagersUI.inboxBlock(S); // управляющие: предложения «Сделать / Не делать»
     const A = attention(S), items = A.items, MAX = 6;
@@ -936,7 +937,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lastM = S.history[S.history.length - 1];
     s += waterfall(S, ui);
     s += finStores(S, ui);
-    s += `<div class="fin2"><div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}</div>`;
+    s += `<div class="fin2"><div class="sec"><h3>Отчёт за прошлый месяц${lastM ? ` <small>${E_.MONTHS[lastM.m]} ${lastM.y}</small>` : ''}</h3>${pnlTable(lastM && lastM.pnl, true)}${BK.STORY && BK.STORY.lineHtml ? BK.STORY.lineHtml(S) : ''}</div>`;
     s += `<div class="sec"><h3>Распределение прибыли <small>каждый месяц</small></h3>
       ${sl('reserve', 'Резервный фонд', 'Подушка на карантин, кризис и конкурентов. Сам закрывает кассовый разрыв (когда на счёте не хватает денег на платежи) и приносит проценты.')}
       ${sl('bonus', 'Премии персоналу', 'Поднимают настроение и снижают текучесть.')}
