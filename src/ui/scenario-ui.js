@@ -1,56 +1,250 @@
 /* Сценарии — интерфейс (логика — src/scenario.js, BK.Scenario).
-   Где видно: блок «Истории» на стартовом экране (пройдено N из 4, что осталось),
-   экран в конце партии («Пройдено N из 4» и кнопка «Начать заново — пройти другую историю»),
-   строка о сценарии в итогах игры. В app.js / extras.js — только хуки. */
+   Где видно:
+     1) стартовый экран — блок «Истории»: карточки четырёх историй (значок, название, замысел,
+        цель), у пройденных заметная отметка «пройдено ✓» и приглушённый вид, у остальных —
+        «ещё не пройдена»; прогресс строкой «Пройдено N из 4 · следующая история выпадет из
+        оставшихся», мелкая ссылка «Сбросить пройденные» с подтверждением;
+     2) начало партии — карточка-объявление «Новая история» внизу экрана (значок, название,
+        одна строка замысла, «Что делать» и что с самого начала не как обычно). Не окно:
+        игровой цикл не останавливается, обучение новичка не перекрывается (BK.Tutorial);
+     3) экран конца партии — блок «Пройдено N из 4» крупно, сыгранная история, что осталось
+        и кнопка «Начать заново — пройти другую историю» (forSummary зовёт src/ui/extras.js).
+   В app.js / extras.js — только хуки: startOpt() в форме старта, ACT.scenAgain, forSummary(S).
+   Своя разметка — только через data-scen-act: ничего чужого не связываем. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   if (typeof document === 'undefined') return;
   const SC = () => BK.Scenario, APP = () => BK.App;
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const plural = (n, a, b, c) => { const x = Math.abs(n) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+  const NUMW = ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть'];   // «ещё три истории», а не «ещё 3 истории»
+  const moreTxt = (n) => `${NUMW[n] || n} ${plural(n, 'история', 'истории', 'историй')}`;
+  const allTxt = (n) => `все ${NUMW[n] ? NUMW[n].replace(/одна$/, 'одну') : n} ${plural(n, 'историю', 'истории', 'историй')}`;
   const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M8 7h8M8 11h5"/></svg>';
+  const X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  // «Выжить полгода и выйти в плюс» → «выжить полгода и выйти в плюс»: цель читается как продолжение строки
+  const low1 = (s) => { s = String(s == null ? '' : s); return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; };
+  const nm = (d, id) => esc((d && d.name) || id || 'история');
+  const goal = (d) => (d && d.goal ? low1(d.goal) : '');
+  const ic = (d) => esc((d && d.icon) || '📖');
 
-  /* стартовый экран: сколько историй пройдено и что осталось */
+  /* прогресс четырьмя точками: пройденные — с галочкой; на узком экране остаётся только счёт */
+  function pips(p, big) {
+    return `<span class="scen-pips${big ? ' big' : ''}" aria-hidden="true">${SC().all().map((id) => {
+      const d = SC().info(id) || {}, on = p.played.indexOf(id) >= 0;
+      return `<i class="scen-pip${on ? ' on' : ''}" title="${esc((on ? 'пройдено: ' : 'ещё не пройдена: ') + (d.name || id))}">${on ? '✓' : ''}</i>`;
+    }).join('')}</span>`;
+  }
+
+  /* ---------------- 1. стартовый экран: карточки историй ---------------- */
+  function card(id, p) {
+    const d = SC().info(id) || {}, was = p.played.indexOf(id) >= 0, gl = goal(d);
+    return `<li class="scen-card${was ? ' done' : ''}">
+      <span class="scen-ic" aria-hidden="true">${ic(d)}</span>
+      <span class="scen-b">
+        <span class="scen-n">${nm(d, id)}</span>
+        <span class="scen-d">${esc(d.text || '')}</span>
+        ${gl ? `<span class="scen-g">Цель: ${esc(gl)}</span>` : ''}
+        <span class="scen-s${was ? ' on' : ''}">${was ? 'пройдено ✓' : 'ещё не пройдена'}</span>
+      </span></li>`;
+  }
   function startOpt() {
     const p = SC().progress();
     if (!p.total) return '';
-    const items = SC().all().map((id) => {
-      const d = SC().info(id), was = p.played.indexOf(id) >= 0;
-      return `<span class="scen-it${was ? ' done' : ''}" title="${esc(was ? 'пройдено' : 'ещё не пройдено')}">${esc(d.icon)} ${esc(d.name)}${was ? ' ✓' : ''}</span>`;
-    }).join('');
+    const n = p.played.length, all = n >= p.total;
+    const num = `<b>Пройдено <span class="scen-num">${n}</span> из <span class="scen-num">${p.total}</span></b>`;
+    const sum = all
+      ? `${num} · все истории пройдены — сбросьте прогресс, чтобы сыграть заново`
+      : n === 0
+        ? `${num} · впереди все истории — выпадет любая`
+        : `${num} · следующая история выпадет из оставшихся`;
     return `<fieldset class="scenpick"><legend>Истории</legend>
-      <p class="hint" style="margin:0 0 6px">Сценарий выпадает случайно — но только из тех, что вы ещё не проходили: <b>${p.played.length} из ${p.total}</b> пройдено.</p>
-      <div class="scen-list">${items}</div>
-      ${p.played.length ? '<button type="button" class="linkbtn" id="scenReset">Сбросить пройденные</button>' : ''}
-    </fieldset>`;
+      <div class="scen-head">${pips(p)}<span class="scen-sum">${sum}</span></div>
+      <ul class="scen-cards">${SC().all().map((id) => card(id, p)).join('')}</ul>
+      <div class="scen-foot">
+        <span class="hint">История выпадает при новой игре — случайно, но только из непройденных.</span>
+        ${n ? `<span class="scen-reset"><button type="button" class="linkbtn" data-scen-act="ask">Сбросить пройденные</button></span>` : ''}
+      </div></fieldset>`;
   }
-  function bindStart(form) {
-    const b = form && form.querySelector('#scenReset');
-    if (b && !b.__b) { b.__b = 1; b.addEventListener('click', () => { SC().resetDone(); APP().toast('Истории', 'Прогресс историй сброшен — снова выпадают все четыре.', 'warn'); form.querySelector('.scenpick').outerHTML = startOpt(); bindStart(form); }); }
+  // подтверждение сброса — на месте ссылки, без системных окон браузера
+  const askHtml = () => '<span class="scen-conf"><span>Сбросить прогресс всех историй?</span>'
+    + '<button type="button" class="btn sm danger" data-scen-act="yes">Да, сбросить</button>'
+    + '<button type="button" class="btn sm" data-scen-act="no">Отмена</button></span>';
+  // перерисовать только блок «Истории» на стартовом экране
+  function redraw() {
+    const f = document.querySelector('#startForm .scenpick');
+    if (f) f.outerHTML = startOpt();
   }
 
-  /* конец партии: пройдено N из 4 и предложение пройти другую */
+  /* ---------------- 2. экран конца партии: «Пройдено N из 4» ---------------- */
+  function miniCard(id) {
+    const d = SC().info(id) || {}, gl = goal(d);
+    return `<li><span class="scen-ic sm" aria-hidden="true">${ic(d)}</span><span class="scen-b">
+      <span class="scen-n sm">${nm(d, id)}</span>
+      <span class="scen-d">${esc(d.text || '')}</span>
+      ${gl ? `<span class="scen-g">Цель: ${esc(gl)}</span>` : ''}</span></li>`;
+  }
   function endingHtml(S) {
-    const cur = SC().current(S);
     const p = SC().progress();
     if (!p.total) return '';
-    const d = cur ? SC().info(cur) : null;
-    const rest = p.left.map((id) => SC().info(id).name);
-    let s = `<div class="scen-end"><span class="eyebrow">Истории</span>`;
-    s += `<p class="scen-end-h">Пройдено <b>${p.played.length} из ${p.total}</b></p>`;
-    if (d) s += `<p class="hint" style="margin:2px 0 0">Эта партия — история «${esc(d.icon)} ${esc(d.name)}»${p.played.indexOf(cur) >= 0 ? ' — засчитана' : ''}.</p>`;
-    if (rest.length) s += `<p class="hint" style="margin:4px 0 0">Осталось пройти: ${esc(rest.join(', '))}.</p>`;
-    else s += `<p class="hint" style="margin:4px 0 0">Вы прошли все четыре истории. Спасибо!</p>`;
-    s += `<div class="row" style="margin-top:8px"><button class="btn primary" data-act="scenAgain">Начать заново — пройти другую историю</button></div></div>`;
-    return s;
+    const cur = SC().current(S), d = cur ? SC().info(cur) : null;
+    const n = p.played.length, left = p.left, counted = !!(cur && p.played.indexOf(cur) >= 0);
+    let s = `<div class="sec scen-end" id="scenEnd"><div class="scen-end-box">`;
+    s += `<div class="scen-end-top"><span class="scen-end-ey">Истории</span>
+      <b class="scen-end-h">Пройдено <span class="scen-end-num">${n}</span> из ${p.total}</b>
+      ${pips(p, true)}</div>`;
+    if (d) s += `<div class="scen-end-cur">
+      <span class="scen-ic" aria-hidden="true">${ic(d)}</span>
+      <span class="scen-b">
+        <span class="scen-end-lb">Эта партия — история</span>
+        <span class="scen-n">${nm(d, cur)}</span>
+        <span class="scen-s${counted ? ' on' : ''}">${counted ? 'пройдено ✓ — засчитана' : 'не засчитана: цель истории не выполнена'}</span>
+        ${!counted && goal(d) ? `<span class="scen-g">Что было нужно: ${esc(goal(d))}</span>` : ''}
+      </span></div>`;
+    s += `<p class="scen-end-lead">${left.length
+      ? `Это не конец, а начало новой партии: <b>впереди ещё ${moreTxt(left.length)}</b> — и каждая идёт по своим правилам с самого первого дня.`
+      : `Вы прошли ${allTxt(p.total)} — это уже легенда. Прогресс можно сбросить на стартовом экране и пройти любую из них заново.`}</p>`;
+    if (left.length) s += `<div class="scen-end-left"><span class="scen-end-lb">Осталось пройти</span>
+      <ul class="scen-mini">${left.map(miniCard).join('')}</ul></div>`;
+    s += `<button type="button" class="btn primary scen-again" data-act="scenAgain">${left.length
+      ? 'Начать заново — пройти другую историю'
+      : 'Начать заново — обычную Уфу'}</button>`;
+    s += `<p class="hint scen-end-hint">${left.length
+      ? 'Новая партия начнётся сразу, с другой непройденной историей. Название сети, сложность и соперник останутся как в этой игре.'
+      : 'Все истории пройдены: новая партия будет обычной Уфой. Прогресс историй можно сбросить на стартовом экране.'}</p>`;
+    return s + '</div></div>';
   }
-  function forSummary(S) { return SC().current(S) ? endingHtml(S) : ''; }
+  const forSummary = (S) => (SC().current(S) ? endingHtml(S) : '');
 
+  /* ---------------- 3. начало партии: «выпала история» ---------------- */
+  /* Уведомление { type:'scen', phase:'start' } движок кладёт в S.notify, но обработчика под него
+     в app.js нет — свою карточку рисуем сами: перехватываем BK.Scenario.set / applyStart, забираем
+     уведомления из очереди и показываем карточку, когда игрок уже увидел игру (не пролог и не кофейню). */
+  let pend = null, watchT = null, autoT = null, tries = 0;
+  function takeNotify(S) {
+    const q = S && S.notify; if (!q || !q.length) return { id: null, what: '' };
+    let id = null, what = '';
+    for (let i = q.length - 1; i >= 0; i--) {
+      const t = q[i];
+      if (!t || t.type !== 'scen' || (t.phase !== 'start' && t.phase !== 'applied')) continue;
+      if (t.phase === 'start') id = t.id || id;
+      else if (t.what) what = t.what;
+      q.splice(i, 1);
+    }
+    return { id, what };
+  }
+  function hook() {
+    const Sc = BK.Scenario; if (!Sc || Sc.__uiHook) return;
+    Sc.__uiHook = true;
+    const oSet = Sc.set, oApply = Sc.applyStart;
+    Sc.set = function (S, id) {
+      const r = oSet.apply(this, arguments);
+      takeNotify(S);                                  // свою карточку показываем сами, очередь чистим
+      if (r) { pend = { S: S, id: r, what: '' }; watch(); }
+      return r;
+    };
+    Sc.applyStart = function (S) {
+      const r = oApply.apply(this, arguments);
+      const got = takeNotify(S);
+      if (pend && pend.S === S) { if (got.what) pend.what = got.what; }
+      return r;
+    };
+  }
+  // ждём начала самой игры: пролог «Бариста» и стадия 1 «Своя кофейня» — свои слои поверх игры
+  function watch() {
+    if (watchT) return;
+    tries = 0;
+    watchT = setInterval(() => {
+      tries++;
+      if (!pend || tries > 3000) return stop();
+      const A = APP(), S = A && A.state;
+      if (!S || S !== pend.S) return stop();          // игра сменилась или вышли к списку игр
+      const startEl = document.getElementById('start');
+      if (startEl && !startEl.hidden) return;         // ещё стартовый экран
+      if ((BK.PrologueUI && BK.PrologueUI.active && BK.PrologueUI.active())
+        || (BK.Stage1UI && BK.Stage1UI.active && BK.Stage1UI.active())) return; // ждём свою сеть
+      const p = pend; stop(); show(p);
+    }, 700);
+  }
+  function stop() { if (watchT) { clearInterval(watchT); watchT = null; } }
+  const cardEl = () => document.getElementById('scenStart');
+  function measure() {
+    const b = cardEl(); if (!b || b.hidden) return;
+    const h = Math.round(b.getBoundingClientRect().height);
+    if (h) document.documentElement.style.setProperty('--scs-h', h + 'px');
+    document.documentElement.classList.add('scs-on');
+  }
+  function show(p) {
+    const Sc = SC(), d = Sc && Sc.info(p.id); if (!d) return;
+    const startEl = document.getElementById('start');
+    if (startEl && !startEl.hidden) return;
+    let b = cardEl();
+    if (!b) { b = document.createElement('div'); b.id = 'scenStart'; b.className = 'scen-start'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    const pr = Sc.progress(), gl = goal(d);
+    b.innerHTML = `<div class="scs-card" data-scen-act="closeStart">
+      <span class="scs-ic" aria-hidden="true">${ic(d)}</span>
+      <div class="scs-b">
+        <span class="scs-ey">Новая история · пройдено ${pr.played.length} из ${pr.total}</span>
+        <b class="scs-n">${nm(d, p.id)}</b>
+        <p class="scs-t">${esc(d.text || '')}</p>
+        ${gl ? `<p class="scs-g"><b>Что делать:</b> ${esc(gl)}</p>` : ''}
+        ${p.what ? `<p class="scs-w">С самого начала не как обычно: ${esc(p.what)}.</p>` : ''}
+      </div>
+      <button type="button" class="scs-x" data-scen-act="closeStart" aria-label="Понятно — закрыть">${X}</button>
+    </div>`;
+    b.hidden = false;
+    b.classList.toggle('tut-safe', !!(BK.Tutorial && BK.Tutorial.active && BK.Tutorial.active(APP().state))); // не спорим с обучением новичка
+    requestAnimationFrame(() => { b.classList.add('on'); measure(); });
+    setTimeout(measure, 80);
+    if (autoT) clearTimeout(autoT);
+    autoT = setTimeout(hideCard, 16000);
+    if (BK.Sound) BK.Sound.play('fanfare');
+  }
+  function hideCard() {
+    if (autoT) { clearTimeout(autoT); autoT = null; }
+    const b = cardEl();
+    if (b) { b.classList.remove('on'); b.hidden = true; b.innerHTML = ''; }
+    document.documentElement.classList.remove('scs-on');
+    document.documentElement.style.removeProperty('--scs-h');
+    pend = null;
+  }
+
+  /* ---------------- 4. действия ---------------- */
+  function again() {                                  // «Начать заново — пройти другую историю»
+    const A = APP(), S = A && A.state;
+    if (!S) { if (A && A.toStart) A.toStart(); return; }
+    const name = S.company || 'Пекарня «Каравай»', diff = S.difficulty || 'normal';
+    const rival = !!(S.rival && S.rival.enabled);
+    const st = BK.Strat && BK.Strat.info ? BK.Strat.info(S) : null;
+    const strat = (st && st.chosen && st.id) || '';   // выбранный путь сохраняем, «сложился сам» — оставляем как есть
+    if (BK.Slots && BK.Slots.beforeNew && !BK.Slots.beforeNew()) return; // все слоты заняты — тост уже показан, окно итогов не закрываем
+    A.closeModal();
+    A.newGame(name, diff, { scen: 'random', strat: strat, rival: rival });
+    if (BK.Scenario && !BK.Scenario.current(A.state)) A.toast('Истории', 'Все четыре истории пройдены — играем обычную Уфу. Сбросить прогресс можно на стартовом экране.', 'warn');
+  }
+  function onClick(e) {
+    const t = e.target && e.target.closest ? e.target.closest('[data-scen-act]') : null; if (!t) return;
+    const a = t.getAttribute('data-scen-act');
+    if (a === 'closeStart') { hideCard(); return; }
+    if (a === 'ask') { const box = t.closest('.scen-reset'); if (box) box.innerHTML = askHtml(); return; }
+    if (a === 'no') { redraw(); return; }
+    if (a === 'yes') {
+      SC().resetDone(); redraw();
+      APP().toast('Истории', 'Прогресс историй сброшен — снова выпадают все четыре.', 'warn');
+    }
+  }
+  function bindStart() {                              // одна привязка на документ: блок перерисовывается — обработчик остаётся
+    if (document.__scenUI) return; document.__scenUI = true;
+    document.addEventListener('click', onClick);
+    window.addEventListener('resize', measure);
+  }
   function boot() {
+    bindStart();
+    hook();
     const A = APP() && APP().ACT; if (!A || A.__scenUI) return; A.__scenUI = true;
-    Object.assign(A, { scenAgain: () => { APP().closeModal(); if (APP().toStart) APP().toStart(); else location.reload(); } });
-    const f = document.querySelector('#startForm'); if (f) bindStart(f);
+    A.scenAgain = again;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, ICON };
+  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, pips, ICON };
 })();
