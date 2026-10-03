@@ -22,6 +22,43 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const on = (S) => !!(S && S.corp && S.corp.unlockedDay != null && BK.Dir);
   const dateTxt = (day) => { const t = E().dateOf(day); return `${t.d} ${E().MONTHS_G[t.m]}`; };
 
+  /* ---------------- звук второго акта (этап «озвучка») ----------------
+     Одно событие — один звук. Приход важного отчёта или новой просьбы во входящих — тихий «колокольчик»
+     (ribbon), пойманный на воровстве директор — предупреждение (warn), вручение «Директора года» — искорка
+     (sparkle). Отслеживаем, что уже звучало, по ключу события: без этого панель «Отчёты» звенела бы при
+     каждой перерисовке. Просьбы, ответ на которые уже дан, не считаются. */
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let ibSeen = null, poachWas = null;
+  function inboxSound(S) {
+    const cr = S && S.corp, list = (cr && cr.inbox) || [];
+    const now = {};
+    for (const it of list) {
+      const open = (it.reqs || []).filter((r) => r.st === 'open').length;
+      let t = null;
+      if (it.kind === 'caught' && !it.done) t = 'warn';
+      else if (it.kind === 'award' && !it.done) t = 'sparkle';
+      else if (it.kind === 'report' && open) t = 'ribbon';
+      if (t) now[it.id] = t;
+    }
+    let fresh = null;
+    if (ibSeen) { // первый расчёт после загрузки панели — просто запоминаем: старое не звенит
+      for (const id in now) if (!ibSeen[id]) { fresh = now[id]; break; }
+      if (!fresh) for (const id in now) if (now[id] !== 'warn' && ibSeen[id] !== now[id]) { fresh = now[id]; break; } // была просьба, ответили и пришла новая
+    }
+    ibSeen = now;
+    return fresh;
+  }
+
+  function poachCheck(S) { // новый директор под угрозой переманивания — предупреждение
+    const HQ = BK.HQ, ds = (S && S.corp && S.corp.directors) || [];
+    if (!HQ || !HQ.riskList || !ds.length) { poachWas = null; return; }
+    const cur = new Set(HQ.riskList(S).map((d) => d.id));
+    let fresh = false;
+    if (poachWas) for (const id of cur) if (!poachWas.has(id)) { fresh = true; break; }
+    poachWas = cur;
+    if (fresh) snd('warn');
+  }
+
   const av = (name, cls, sub) => `<span class="dav ${cls || ''}" aria-hidden="true">${esc(initials(name))}${sub || ''}</span>`;
   function loyBar(d, big) {
     const L = Math.round(d.loyalty), t = d.loyD || 0, cls = L < 35 ? 'bad' : L < 55 ? 'warn' : 'good';
@@ -219,6 +256,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function dirsTab(S, ui) {
     if (!on(S)) return '';
     const cr = S.corp, h = H();
+    poachCheck(S); // «переманить директора»: новый директор в группе риска — предупреждение
     const pay = cr.directors.reduce((a, d) => a + d.salary * (d.city ? 1 : K().DIR_RESERVE_PAY), 0);
     const avgL = cr.directors.length ? cr.directors.reduce((a, d) => a + d.loyalty, 0) / cr.directors.length : 0;
     let s = `<div class="sec"><h3>Директора <small>${cr.directors.length ? `${h.nw(cr.directors.length, 'человек', 'человека', 'человек')} · лояльность в среднем ${Math.round(avgL)} · оклады ${fm(pay)}/мес` : 'пока никого'}</small></h3>`;
@@ -411,6 +449,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function inboxTab(S, ui) {
     if (!on(S)) return '';
     const cr = S.corp, n = D().inboxOpen(S);
+    snd(S.citiesSound ? S.citiesSound(S) : null); // звук: события городов — как на панели «Россия» (один звук на событие)
+    snd(inboxSound(S)); // звук: важный отчёт или просьба во входящих — тихий колокольчик
     const f = ui.repFilter || 'all';
     let list = cr.inbox;
     if (f === 'need') list = list.filter((it) => (it.reqs || []).some((r) => r.st === 'open') || ((it.kind === 'award' || it.kind === 'caught') && !it.done));
@@ -522,7 +562,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function fedModal(S, legend) {
     const f = D().fedStatus(S), d = E().dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
     const yrs = n1((S.day - S.corp.unlockedDay) / 365);
-    if (legend) return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ЛИДЕР</b><small>${dt}</small></div></div><span class="eyebrow pos">Дополнительная цель</span><h2>«Лидер рынка»: ${fm(f.rev)} за год</h2></div><div class="modal-b"><p style="margin:0">Оборот сети за 12 месяцев перевалил за ${Math.round(f.legend / 1e9)} млрд ₽. Вы построили одну из крупнейших пекарных сетей страны.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button></div>`;
+    if (legend) { snd('ribbon'); return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ЛИДЕР</b><small>${dt}</small></div></div><span class="eyebrow pos">Дополнительная цель</span><h2>«Лидер рынка»: ${fm(f.rev)} за год</h2></div><div class="modal-b"><p style="margin:0">Оборот сети за 12 месяцев перевалил за ${Math.round(f.legend / 1e9)} млрд ₽. Вы построили одну из крупнейших пекарных сетей страны.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button></div>`; }
+    snd('fanfare'); // «Федеральная сеть» взята — большая победа второго акта (в app.js это окно звучит молча)
     return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ФЕДЕРАЛЬНАЯ</b><small>${dt} · акт II</small></div></div><span class="eyebrow pos">Победа второго акта</span><h2>Федеральная сеть</h2></div><div class="modal-b">
       <p style="margin:0">${H().nw(f.cities, 'город', 'города', 'городов')} по ${f.per}+ точек и <b>${fm(f.rev)}</b> оборота за 12 месяцев — за ${yrs} ${/1$/.test(yrs) && !/11$/.test(yrs) ? 'год' : 'года'} после выхода в Россию.</p>
       <div class="kpis"><div class="kpi"><span class="k">Городов</span><span class="v">${Object.keys(S.corp.cities).length}</span></div><div class="kpi"><span class="k">Точек в сети</span><span class="v">${BK.Corp.summary(S).stores}</span></div><div class="kpi"><span class="k">Директоров</span><span class="v">${S.corp.directors.length}</span></div><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${fm(S.cumRevenue)}</span></div></div>
@@ -540,5 +581,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
-  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, hqLoadHtml, hqOverTitle, enterCostNote, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation };
+  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, hqLoadHtml, hqOverTitle, enterCostNote, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation, poachCheck };
 })();

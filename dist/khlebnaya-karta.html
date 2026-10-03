@@ -22481,6 +22481,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const qn = (n) => (/[«»"„“]/.test(n) ? esc(n) : `«${esc(n)}»`);
   const DIFF = { easy: 'Лёгкий', normal: 'Нормальный', hard: 'Хардкор', hardcore: 'Хардкор' };
 
+  /* ---- звук экранов достижений и итогов (этап «озвучка») ----
+     Искорка достижения уже звучит в момент получения (achToast); здесь — только открытие экранов.
+     Итоги — «ленточка» (на банкротстве «bad» уже сыграл из app.js — не дублируем).
+     В скрытой вкладке и при выключенном звуке play() сам молчит. */
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let achSeen = false; // «Достижения» первый раз за сессию — искорка, дальше тихий щелчок: не надоедать
+
   /* =================== СЛОТЫ СОХРАНЕНИЙ ===================
      Слот 1 — прежний ключ 'bk-ufa-save-v1' (старое сохранение игрока автоматически становится слотом 1),
      слоты 2–3 — 'bk-ufa-save-v1-slot2/3'. Активный слот (куда идёт автосохранение) — 'bk-ufa-slot'. */
@@ -22619,6 +22626,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openAchievements() {
     const S = APP().state; if (!S || !A()) return;
     A().ensure(S);
+    snd(achSeen ? 'click' : 'sparkle'); // экран достижений открылся: первый раз за сессию — искорка, дальше тихий щелчок
+    achSeen = true;
     const draw = (keep) => {
       APP().openModal(achHtml(S), { closable: !S.lost, keepScroll: keep });
       const m = $('#modal .modal'); m.classList.add('wide');
@@ -22754,6 +22763,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openSummary() {
     const S = APP().state; if (!S || !A()) return;
     A().ensure(S);
+    snd('ribbon'); // итоги игры: мягкая «ленточка» (при банкротстве «bad» уже звучал — не дублируем)
     APP().openModal(summaryHtml(S), { closable: !S.lost });
     $('#modal .modal').classList.add('wide');
     $('#sumNew').addEventListener('click', () => APP().toStart());
@@ -22969,6 +22979,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const secBy = (re) => { const h = byText('#pbody .sec > h3', re); return h ? h.parentElement : null; };
   const loan5 = () => { APP().ACT.loan({ arg: 5e6 }); };
 
+  /* ---------- звук обучения (этап «озвучка») ----------
+     Одно событие — один звук: появление карточки — тихий щелчок, выполнение шага — короткий «тап»,
+     финал обучения — «ленточка», выключили обучение — тихий щелчок. Идущие подряд события (шаг выполнен
+     и сразу появился следующий) звучат один раз: между своими звуками держим паузу 150 мс. */
+  let sndAt = 0;
+  function snd(name, hard) {
+    const Sd = BK.Sound; if (!Sd || !name) return false;
+    const now = globalThis.performance ? performance.now() : Date.now();
+    if (!hard && now - sndAt < 150) return false; // не строчить
+    if (!Sd.play(name)) return false;             // в скрытой вкладке и при выключенном звуке — тишина
+    sndAt = now; return true;
+  }
+
   /* ---------- шаги ----------
      seq — идут по порядку сразу после старта; остальные срабатывают по ситуации (trig).
      target(S, ui) → элемент для обводки; key — что обязательно должно остаться видно (по умолчанию target).
@@ -23120,7 +23143,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (id && T.done.indexOf(id) < 0) T.done.push(id);
     T.step = null; delete T.restart;
     cur = null; curHtml = ''; scrolledFor = null;
-    if (id === 'final') { finish(S, false); return; }
+    if (id === 'final') { finish(S, false); return; } // финал озвучивает finish: «ленточка»
+    snd('tap'); // шаг выполнен
     // снять паузу, которую ставило обучение, — если следующий шаг её не требует
     const next = pick(S);
     if (pausedBy && (!next || !STEP[next].pause)) { APP().setSpeed(pausedBy); pausedBy = null; }
@@ -23130,6 +23154,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const T = st(S); T.on = false; T.step = null; delete T.restart;
     if (pausedBy) { APP().setSpeed(pausedBy); pausedBy = null; }
     cur = null; curHtml = ''; hide();
+    snd(skipped ? 'click' : 'ribbon', !skipped); // финал обучения — «ленточка» (одно событие — один звук)
     if (skipped) APP().toast('Обучение выключено', 'Включить снова — «Меню игры» (шестерёнка) → «Пройти обучение заново».', 'good');
     else APP().toast('Обучение пройдено', 'Удачи! Цель — 5 млрд ₽ оборота за 12 месяцев.', 'good');
     APP().save();
@@ -23201,6 +23226,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         cur = id; curHtml = ''; scrolledFor = null;
         if (id && id !== 'event') st(S).step = id;
         if (id) {
+          snd('click'); // появилась карточка шага
           const s = STEP[id];
           if (s.start && !ui.modal) s.start(S, ui);
           if (s.pause && ui.speed > 0) { pausedBy = pausedBy || ui.speed; app.setSpeed(0); }
@@ -23246,8 +23272,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function restart() {
     const S = APP().state; if (!S) return;
     S.tutorial = { on: true, step: null, done: [], restart: true };
-    cur = null; curHtml = ''; pausedBy = null;
+    cur = null; curHtml = ''; pausedBy = null; sndAt = 0;
     APP().closeModal(); APP().toast('Обучение запущено', 'Подсказки появятся по шагам.', 'good');
+    snd('click'); // «пройти заново»: дальше карточку озвучит появление первого шага
   }
   const settingsHtml = () => '<div class="row sp tut-set"><span>Обучение для новичка</span><button type="button" class="btn" data-act="tutRestart">Пройти обучение заново</button></div>';
 
@@ -25487,6 +25514,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg>',
     lock: '<path d="M-3.2,-0.6 v-1.6 a3.2,3.2 0 0 1 6.4,0 v1.6" fill="none" stroke-width="1.4"/><rect x="-4.3" y="-0.8" width="8.6" height="6.2" rx="1.2"/>',
   };
+  /* ---------------- звук второго акта (этап «озвучка») ----------------
+     Одно событие — один звук. Выход в Россию и взятая «Федеральная сеть» — фанфары, вход в новый город —
+     «ленточка», переход на лист России и обратно — «таб», смена слоя карты — тихий щелчок.
+     Значок слоя, чей вид и так меняет заголовок панели (Потенциал — новая цена входа), молчит.
+     Гарантия одного звука на событие: помним набор «проблемных» городов и «городов, где вы» — новый
+     элемент набора и есть событие. Панель перерисовывается каждый игровой день, поэтому без этого
+     «утечка» и «убыток» звучали бы постоянно. */
+  const SND_LAYER = { profit: 'click', dirs: 'tab', potential: null, logistics: 'tab' };
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let sndReady = false, probWas = null, activeWas = null, catWas = null, corpSeen = false;
+  // что изменилось с прошлой перерисовки панели: 'ribbon' — приехал директор, 'bad'/'warn' — проблема города, null — ничего
+  function citiesSound(S) {
+    const cr = S && S.corp; if (!cr || !cr.cities) { sndReady = false; return null; }
+    const prob = {};
+    for (const id in cr.cities) if (id !== cr.active) { const p = problemOf(S, id); if (p) prob[id] = p; }
+    const cat = {};
+    for (const id in cr.cities) { const c = cr.cities[id]; cat[id] = c.directorId ? 'dir' : 'none'; }
+    if (!sndReady) { probWas = prob; activeWas = cr.active; catWas = cat; sndReady = true; return null; } // первый расчёт — просто запоминаем
+    let name = null;
+    if (cr.active !== activeWas) { name = 'ribbon'; activeWas = cr.active; } // вошли в новый город (или вернулись в свой)
+    if (!name) for (const id in prob) if (!probWas[id] || probWas[id] !== prob[id]) { name = (prob[id] === 'loss' || prob[id] === 'leak') ? 'bad' : 'warn'; break; }
+    if (!name) for (const id in cat) {
+      if (catWas[id] === 'none' && cat[id] === 'dir') { name = 'ribbon'; break; }   // приехал директор
+      if (catWas[id] === 'dir' && cat[id] === 'none') { name = 'bad'; break; }      // город остался без директора
+    }
+    probWas = prob; catWas = cat;
+    return name;
+  }
   const view = { el: null, svg: null, gC: null, vb: { x: 0, y: 0, w: W, h: HH }, px: { w: 800, h: 450 }, sel: null, lastKey: '', tip: null, layer: 'profit' };
   try { const l = localStorage.getItem('bk-ru-layer'); if (l && /^(profit|dirs|potential|logistics)$/.test(l)) view.layer = l; } catch (e) { /* без хранилища — «Прибыль» */ }
   /* ---------------- слои карты России (Р4 ч. 2, §3.1, §9.2): Прибыль · Директора · Потенциал · Логистика ---------------- */
@@ -25527,6 +25582,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   function setLayer(l) {
     if (!LAYERS.some((x) => x[0] === l)) return;
+    if (view.layer !== l) snd(SND_LAYER[l]); // звук: смена листа карты («Потенциал» — молча: вид меняет лишь цену входа)
     view.layer = l; view.lastKey = '';
     try { localStorage.setItem('bk-ru-layer', l); } catch (e) { /* без хранилища — только до перезагрузки */ }
     if (view.el) view.el.querySelectorAll('.ru-lay').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.arg === l)));
@@ -25764,9 +25820,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!view.inited) { view.inited = true; resetVB(); }
     render(S, true);
     if (was) return;
+    snd('tab'); // лист России открылся: карта переключилась, как вкладка (фанфары — за выход в Россию, он звучит в «Сводке»)
     const p = cityScreen(S.corp.active), w = wrap.getBoundingClientRect();
     clearTimeout(animT);
-    if (reduce() || !view.el.animate) { view.el.animate && view.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); mapEl.style.visibility = 'hidden'; return; }
+    if (reduce() || !view.el.animate) {
+      if (view.el.animate) view.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 });
+      mapEl.style.visibility = 'hidden'; return;
+    }
     mapEl.style.transformOrigin = '50% 50%'; mapEl.style.visibility = '';
     const a = mapEl.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${(p.x - w.width / 2).toFixed(0)}px, ${(p.y - w.height / 2).toFixed(0)}px) scale(.06)`, opacity: 0 }], { duration: 450, easing: 'cubic-bezier(.4,0,.2,1)' });
     view.el.style.transformOrigin = `${p.x.toFixed(0)}px ${p.y.toFixed(0)}px`;
@@ -25776,6 +25836,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Россия → город: обратная анимация от кружка города
   function close(S, wrap, mapEl, done) {
     if (!view.el || view.el.hidden) { if (done) done(); return; }
+    snd('tab'); // вернулись к карте города
     const p = cityScreen(S.corp.active), w = wrap.getBoundingClientRect();
     mapEl.style.visibility = '';
     const fin = () => { view.el.hidden = true; wrap.classList.remove('ru-on'); view.tip.hidden = true; if (done) done(); };
@@ -25875,6 +25936,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function modeTxt(S, id) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); return dr ? 'директор ' + (BK.CorpUI ? BK.CorpUI.initials(dr.name) : '') : 'нет директора'; }
   function panel(S, ui) {
     const h = H(), sm = BK.Corp.summary(S); if (!sm) return '<div class="empty">Россия откроется, когда оборот сети за всё время дойдёт до 10 млрд ₽.</div>';
+    snd(citiesSound(S)); // звук: приехал директор / у города проблема / город остался без директора
     const hs = S.history, last = hs[hs.length - 1];
     const roll = BK.Corp.rollingAll(S);
     let s = `<div class="sec ru-head"><div class="dkpis">
@@ -25910,6 +25972,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function citiesTab(S, ui) {
     if (!BK.Corp.on(S)) return '';
+    snd(citiesSound(S)); // звук: те же события городов, что и на панели «Россия»
     const sel = ui.ruSel || S.corp.active;
     let s = `<div class="sec"><h3>Выбранный город</h3>${cityCard(S, sel)}</div>`;
     s += `<div class="sec"><h3>Все города <small>${BK.CITIES.length}, по близости к сети</small></h3>`;
@@ -25917,16 +25980,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += nextCities(S).map((id) => freeRow(S, id, sel)).join('') + `</div>`;
     return s;
   }
-  // полоса в «Сводке» города: сеть в России одной строкой
+  // полоса в «Сводке» города: сеть в России одной строкой.
+  // Здесь же звучат события, которые видно и без карты России: выход в Россию (окно «Сеть переросла город») —
+  // фанфары, вход в новый город (переезд) — «ленточка». Полоса рисуется на «Сводке» каждого города, поэтому
+  // после переезда она и сообщает о новом городе.
   function dashStrip(S) {
     if (!BK.Corp.on(S)) return '';
+    if (!corpSeen) { corpSeen = true; snd('fanfare'); }
+    else snd(citiesSound(S)); // вход в новый город и прочие события городов
     const sm = BK.Corp.summary(S), others = sm.cities.filter((c) => !c.active);
     if (!others.length) return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}Открыт выход в Россию: можно открыть второй город.</span><button class="btn sm primary" data-act="russia">Карта России</button></div>`;
     const h = H(), rev = others.reduce((a, c) => a + (c.lastRev || 0), 0), n = others.reduce((a, c) => a + c.open, 0), has = others.some((c) => c.lastRev != null);
     return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
-  BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
+  BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, citiesSound, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
 })();
 
 /* ui/corp-ui.js */
@@ -25953,6 +26021,43 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const TR = (t) => (BK.DIRECTOR_TRAITS || {})[t] || { name: t, desc: '' };
   const on = (S) => !!(S && S.corp && S.corp.unlockedDay != null && BK.Dir);
   const dateTxt = (day) => { const t = E().dateOf(day); return `${t.d} ${E().MONTHS_G[t.m]}`; };
+
+  /* ---------------- звук второго акта (этап «озвучка») ----------------
+     Одно событие — один звук. Приход важного отчёта или новой просьбы во входящих — тихий «колокольчик»
+     (ribbon), пойманный на воровстве директор — предупреждение (warn), вручение «Директора года» — искорка
+     (sparkle). Отслеживаем, что уже звучало, по ключу события: без этого панель «Отчёты» звенела бы при
+     каждой перерисовке. Просьбы, ответ на которые уже дан, не считаются. */
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let ibSeen = null, poachWas = null;
+  function inboxSound(S) {
+    const cr = S && S.corp, list = (cr && cr.inbox) || [];
+    const now = {};
+    for (const it of list) {
+      const open = (it.reqs || []).filter((r) => r.st === 'open').length;
+      let t = null;
+      if (it.kind === 'caught' && !it.done) t = 'warn';
+      else if (it.kind === 'award' && !it.done) t = 'sparkle';
+      else if (it.kind === 'report' && open) t = 'ribbon';
+      if (t) now[it.id] = t;
+    }
+    let fresh = null;
+    if (ibSeen) { // первый расчёт после загрузки панели — просто запоминаем: старое не звенит
+      for (const id in now) if (!ibSeen[id]) { fresh = now[id]; break; }
+      if (!fresh) for (const id in now) if (now[id] !== 'warn' && ibSeen[id] !== now[id]) { fresh = now[id]; break; } // была просьба, ответили и пришла новая
+    }
+    ibSeen = now;
+    return fresh;
+  }
+
+  function poachCheck(S) { // новый директор под угрозой переманивания — предупреждение
+    const HQ = BK.HQ, ds = (S && S.corp && S.corp.directors) || [];
+    if (!HQ || !HQ.riskList || !ds.length) { poachWas = null; return; }
+    const cur = new Set(HQ.riskList(S).map((d) => d.id));
+    let fresh = false;
+    if (poachWas) for (const id of cur) if (!poachWas.has(id)) { fresh = true; break; }
+    poachWas = cur;
+    if (fresh) snd('warn');
+  }
 
   const av = (name, cls, sub) => `<span class="dav ${cls || ''}" aria-hidden="true">${esc(initials(name))}${sub || ''}</span>`;
   function loyBar(d, big) {
@@ -26151,6 +26256,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function dirsTab(S, ui) {
     if (!on(S)) return '';
     const cr = S.corp, h = H();
+    poachCheck(S); // «переманить директора»: новый директор в группе риска — предупреждение
     const pay = cr.directors.reduce((a, d) => a + d.salary * (d.city ? 1 : K().DIR_RESERVE_PAY), 0);
     const avgL = cr.directors.length ? cr.directors.reduce((a, d) => a + d.loyalty, 0) / cr.directors.length : 0;
     let s = `<div class="sec"><h3>Директора <small>${cr.directors.length ? `${h.nw(cr.directors.length, 'человек', 'человека', 'человек')} · лояльность в среднем ${Math.round(avgL)} · оклады ${fm(pay)}/мес` : 'пока никого'}</small></h3>`;
@@ -26343,6 +26449,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function inboxTab(S, ui) {
     if (!on(S)) return '';
     const cr = S.corp, n = D().inboxOpen(S);
+    snd(S.citiesSound ? S.citiesSound(S) : null); // звук: события городов — как на панели «Россия» (один звук на событие)
+    snd(inboxSound(S)); // звук: важный отчёт или просьба во входящих — тихий колокольчик
     const f = ui.repFilter || 'all';
     let list = cr.inbox;
     if (f === 'need') list = list.filter((it) => (it.reqs || []).some((r) => r.st === 'open') || ((it.kind === 'award' || it.kind === 'caught') && !it.done));
@@ -26454,7 +26562,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function fedModal(S, legend) {
     const f = D().fedStatus(S), d = E().dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
     const yrs = n1((S.day - S.corp.unlockedDay) / 365);
-    if (legend) return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ЛИДЕР</b><small>${dt}</small></div></div><span class="eyebrow pos">Дополнительная цель</span><h2>«Лидер рынка»: ${fm(f.rev)} за год</h2></div><div class="modal-b"><p style="margin:0">Оборот сети за 12 месяцев перевалил за ${Math.round(f.legend / 1e9)} млрд ₽. Вы построили одну из крупнейших пекарных сетей страны.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button></div>`;
+    if (legend) { snd('ribbon'); return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ЛИДЕР</b><small>${dt}</small></div></div><span class="eyebrow pos">Дополнительная цель</span><h2>«Лидер рынка»: ${fm(f.rev)} за год</h2></div><div class="modal-b"><p style="margin:0">Оборот сети за 12 месяцев перевалил за ${Math.round(f.legend / 1e9)} млрд ₽. Вы построили одну из крупнейших пекарных сетей страны.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button></div>`; }
+    snd('fanfare'); // «Федеральная сеть» взята — большая победа второго акта (в app.js это окно звучит молча)
     return `<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>ФЕДЕРАЛЬНАЯ</b><small>${dt} · акт II</small></div></div><span class="eyebrow pos">Победа второго акта</span><h2>Федеральная сеть</h2></div><div class="modal-b">
       <p style="margin:0">${H().nw(f.cities, 'город', 'города', 'городов')} по ${f.per}+ точек и <b>${fm(f.rev)}</b> оборота за 12 месяцев — за ${yrs} ${/1$/.test(yrs) && !/11$/.test(yrs) ? 'год' : 'года'} после выхода в Россию.</p>
       <div class="kpis"><div class="kpi"><span class="k">Городов</span><span class="v">${Object.keys(S.corp.cities).length}</span></div><div class="kpi"><span class="k">Точек в сети</span><span class="v">${BK.Corp.summary(S).stores}</span></div><div class="kpi"><span class="k">Директоров</span><span class="v">${S.corp.directors.length}</span></div><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${fm(S.cumRevenue)}</span></div></div>
@@ -26472,7 +26581,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return null;
   }
 
-  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, hqLoadHtml, hqOverTitle, enterCostNote, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation };
+  BK.CorpUI = { fedMode, fedCard, hudGoal, attentionHtml, attention, hqLoadHtml, hqOverTitle, enterCostNote, cityBlocks, dirsTab, inboxTab, cmpTab, hireModal, enterChoices, supplyChoices, fedModal, mapBadge, initials, hqTab, motivation, poachCheck };
 })();
 
 /* ui/prologue.js */

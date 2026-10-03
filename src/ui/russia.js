@@ -76,6 +76,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg>',
     lock: '<path d="M-3.2,-0.6 v-1.6 a3.2,3.2 0 0 1 6.4,0 v1.6" fill="none" stroke-width="1.4"/><rect x="-4.3" y="-0.8" width="8.6" height="6.2" rx="1.2"/>',
   };
+  /* ---------------- звук второго акта (этап «озвучка») ----------------
+     Одно событие — один звук. Выход в Россию и взятая «Федеральная сеть» — фанфары, вход в новый город —
+     «ленточка», переход на лист России и обратно — «таб», смена слоя карты — тихий щелчок.
+     Значок слоя, чей вид и так меняет заголовок панели (Потенциал — новая цена входа), молчит.
+     Гарантия одного звука на событие: помним набор «проблемных» городов и «городов, где вы» — новый
+     элемент набора и есть событие. Панель перерисовывается каждый игровой день, поэтому без этого
+     «утечка» и «убыток» звучали бы постоянно. */
+  const SND_LAYER = { profit: 'click', dirs: 'tab', potential: null, logistics: 'tab' };
+  function snd(name) { const Sd = BK.Sound; return !!(Sd && name && Sd.play(name)); }
+  let sndReady = false, probWas = null, activeWas = null, catWas = null, corpSeen = false;
+  // что изменилось с прошлой перерисовки панели: 'ribbon' — приехал директор, 'bad'/'warn' — проблема города, null — ничего
+  function citiesSound(S) {
+    const cr = S && S.corp; if (!cr || !cr.cities) { sndReady = false; return null; }
+    const prob = {};
+    for (const id in cr.cities) if (id !== cr.active) { const p = problemOf(S, id); if (p) prob[id] = p; }
+    const cat = {};
+    for (const id in cr.cities) { const c = cr.cities[id]; cat[id] = c.directorId ? 'dir' : 'none'; }
+    if (!sndReady) { probWas = prob; activeWas = cr.active; catWas = cat; sndReady = true; return null; } // первый расчёт — просто запоминаем
+    let name = null;
+    if (cr.active !== activeWas) { name = 'ribbon'; activeWas = cr.active; } // вошли в новый город (или вернулись в свой)
+    if (!name) for (const id in prob) if (!probWas[id] || probWas[id] !== prob[id]) { name = (prob[id] === 'loss' || prob[id] === 'leak') ? 'bad' : 'warn'; break; }
+    if (!name) for (const id in cat) {
+      if (catWas[id] === 'none' && cat[id] === 'dir') { name = 'ribbon'; break; }   // приехал директор
+      if (catWas[id] === 'dir' && cat[id] === 'none') { name = 'bad'; break; }      // город остался без директора
+    }
+    probWas = prob; catWas = cat;
+    return name;
+  }
   const view = { el: null, svg: null, gC: null, vb: { x: 0, y: 0, w: W, h: HH }, px: { w: 800, h: 450 }, sel: null, lastKey: '', tip: null, layer: 'profit' };
   try { const l = localStorage.getItem('bk-ru-layer'); if (l && /^(profit|dirs|potential|logistics)$/.test(l)) view.layer = l; } catch (e) { /* без хранилища — «Прибыль» */ }
   /* ---------------- слои карты России (Р4 ч. 2, §3.1, §9.2): Прибыль · Директора · Потенциал · Логистика ---------------- */
@@ -116,6 +144,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
   function setLayer(l) {
     if (!LAYERS.some((x) => x[0] === l)) return;
+    if (view.layer !== l) snd(SND_LAYER[l]); // звук: смена листа карты («Потенциал» — молча: вид меняет лишь цену входа)
     view.layer = l; view.lastKey = '';
     try { localStorage.setItem('bk-ru-layer', l); } catch (e) { /* без хранилища — только до перезагрузки */ }
     if (view.el) view.el.querySelectorAll('.ru-lay').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.arg === l)));
@@ -353,9 +382,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!view.inited) { view.inited = true; resetVB(); }
     render(S, true);
     if (was) return;
+    snd('tab'); // лист России открылся: карта переключилась, как вкладка (фанфары — за выход в Россию, он звучит в «Сводке»)
     const p = cityScreen(S.corp.active), w = wrap.getBoundingClientRect();
     clearTimeout(animT);
-    if (reduce() || !view.el.animate) { view.el.animate && view.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); mapEl.style.visibility = 'hidden'; return; }
+    if (reduce() || !view.el.animate) {
+      if (view.el.animate) view.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 });
+      mapEl.style.visibility = 'hidden'; return;
+    }
     mapEl.style.transformOrigin = '50% 50%'; mapEl.style.visibility = '';
     const a = mapEl.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${(p.x - w.width / 2).toFixed(0)}px, ${(p.y - w.height / 2).toFixed(0)}px) scale(.06)`, opacity: 0 }], { duration: 450, easing: 'cubic-bezier(.4,0,.2,1)' });
     view.el.style.transformOrigin = `${p.x.toFixed(0)}px ${p.y.toFixed(0)}px`;
@@ -365,6 +398,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Россия → город: обратная анимация от кружка города
   function close(S, wrap, mapEl, done) {
     if (!view.el || view.el.hidden) { if (done) done(); return; }
+    snd('tab'); // вернулись к карте города
     const p = cityScreen(S.corp.active), w = wrap.getBoundingClientRect();
     mapEl.style.visibility = '';
     const fin = () => { view.el.hidden = true; wrap.classList.remove('ru-on'); view.tip.hidden = true; if (done) done(); };
@@ -464,6 +498,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function modeTxt(S, id) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); return dr ? 'директор ' + (BK.CorpUI ? BK.CorpUI.initials(dr.name) : '') : 'нет директора'; }
   function panel(S, ui) {
     const h = H(), sm = BK.Corp.summary(S); if (!sm) return '<div class="empty">Россия откроется, когда оборот сети за всё время дойдёт до 10 млрд ₽.</div>';
+    snd(citiesSound(S)); // звук: приехал директор / у города проблема / город остался без директора
     const hs = S.history, last = hs[hs.length - 1];
     const roll = BK.Corp.rollingAll(S);
     let s = `<div class="sec ru-head"><div class="dkpis">
@@ -499,6 +534,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function citiesTab(S, ui) {
     if (!BK.Corp.on(S)) return '';
+    snd(citiesSound(S)); // звук: те же события городов, что и на панели «Россия»
     const sel = ui.ruSel || S.corp.active;
     let s = `<div class="sec"><h3>Выбранный город</h3>${cityCard(S, sel)}</div>`;
     s += `<div class="sec"><h3>Все города <small>${BK.CITIES.length}, по близости к сети</small></h3>`;
@@ -506,14 +542,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += nextCities(S).map((id) => freeRow(S, id, sel)).join('') + `</div>`;
     return s;
   }
-  // полоса в «Сводке» города: сеть в России одной строкой
+  // полоса в «Сводке» города: сеть в России одной строкой.
+  // Здесь же звучат события, которые видно и без карты России: выход в Россию (окно «Сеть переросла город») —
+  // фанфары, вход в новый город (переезд) — «ленточка». Полоса рисуется на «Сводке» каждого города, поэтому
+  // после переезда она и сообщает о новом городе.
   function dashStrip(S) {
     if (!BK.Corp.on(S)) return '';
+    if (!corpSeen) { corpSeen = true; snd('fanfare'); }
+    else snd(citiesSound(S)); // вход в новый город и прочие события городов
     const sm = BK.Corp.summary(S), others = sm.cities.filter((c) => !c.active);
     if (!others.length) return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}Открыт выход в Россию: можно открыть второй город.</span><button class="btn sm primary" data-act="russia">Карта России</button></div>`;
     const h = H(), rev = others.reduce((a, c) => a + (c.lastRev || 0), 0), n = others.reduce((a, c) => a + c.open, 0), has = others.some((c) => c.lastRev != null);
     return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
-  BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
+  BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, citiesSound, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
 })();
