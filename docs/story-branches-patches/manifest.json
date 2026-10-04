@@ -1,0 +1,7 @@
+{
+  "sim/story.js": {
+    "baseSha256": "053b358638e95d11dd4135c8370e689c45ec255152ee98aca5fd1ea6e588f52a",
+    "copySha256": "c0474ee306d440d30c29c085170b050df17604db5e4e5f5e9eaf1330d13c3731"
+  },
+  "tested": "syntax only; no bot/game/browser executed"
+}

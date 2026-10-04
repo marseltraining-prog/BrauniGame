@@ -94,7 +94,7 @@ async function toStage1(p, tag, mobile, full) {
   const browser = await chromium.launch();
   for (const [vp, dark] of RUNS) {
     const tag = `${vp}${dark ? '-dark' : ''}`, mobile = vp.startsWith('m'), full = (vp === 'd1440' && !dark) || (vp === 'm390' && dark);
-    const p = await openPage(browser, vp, { dark });
+    const p = await openPage(browser, vp, { dark, seed: 7919 });
     await noStories(p);   // партия — «обычная Уфа», без случайной истории (см. noStories)
     try {
       await toStage1(p, tag, mobile, full);

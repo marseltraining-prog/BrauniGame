@@ -10,3 +10,4 @@ dist/khlebnaya-karta-*.html
 .DS_Store
 tmp/release-checks/
 tmp/story-depth/
+tmp/story-branches/

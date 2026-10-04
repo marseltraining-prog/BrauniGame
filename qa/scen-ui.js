@@ -24,7 +24,7 @@ async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + 
 
 // стартовый экран с нужным прогрессом историй: прогресс живёт в localStorage — ставим до перезагрузки
 async function open(browser, vp, { dark, done, tutorial } = {}) {
-  const p = await openPage(browser, vp, { dark: !!dark });
+  const p = await openPage(browser, vp, { dark: !!dark, seed: 7919 });
   await p.evaluate((o) => {
     try {
       localStorage.clear();
@@ -178,7 +178,18 @@ async function touchTargets(p, label) {
       }
       if (mix !== 0) issues.push(`[${tag}] карточка истории пересекается с обучением (${mix} из 3 моментов)`);
       if (!(+za < +zb)) issues.push(`[${tag}] слой истории ${za} не ниже обучения ${zb}`);
-      await check(p, tag);
+      // Tutorial deliberately shades inactive map controls. Check both live cards
+      // and the real highlighted action, rather than treating shaded zoom as clickable.
+      await check(p, tag + '/обучение', { root: '.tut-card' });
+      await check(p, tag + '/история', { root: '#scenStart .scs-card' });
+      const key = await p.evaluate(() => {
+        const step = BK.Tutorial.STEPS.find(s => s.id === BK.Tutorial.current);
+        const el = step && step.key && step.key(BK.App.state, BK.App.ui);
+        return el ? { act: el.dataset.act, arg: el.dataset.arg } : null;
+      });
+      if (!key) issues.push(`[${tag}] нет подсвеченного действия обучения`);
+      else await p.locator(`[data-act="${key.act}"][data-arg="${key.arg}"]`).click({ trial: true, timeout: 3000 })
+        .catch(e => issues.push(`[${tag}] подсвеченное действие недоступно: ${e.message}`));
       await shot(p, 'tut-1440');
       const was = await p.evaluate(() => BK.App.state.scen.id);
       await p.evaluate(() => { BK.Scenario.markDone(BK.App.state.scen.id); BK.App.state.lost = true; BK.Extras.openSummary(); });

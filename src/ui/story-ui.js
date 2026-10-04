@@ -140,7 +140,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!f || !f.t) continue;
       if (f.t === 'rel' && f.add) out.push(BK.choiceImpact('', 'Отношения: ' + whoName(f.who), Math.abs(f.add) < 5 ? 1 : Math.abs(f.add) < 10 ? 2 : 3));
       else if (f.t === 'cash' || f.t === 'loan') {
-        const R = Math.max(S.lastMonthRev || 0, 1e6), v = Math.abs(f.v || f.perStore || (f.revPct || 0) * R);
+        const R = Math.max(S.lastMonthRev || 0, 1e6), pl = f.t === 'loan' || f.unindexed ? 1 : S.macro.priceLevel;
+        const v = Math.abs(f.v != null ? f.v * pl : f.perStore != null ? f.perStore * pl : (f.revPct || 0) * R);
         const total = v * (f.perStore ? Math.max(1, S.stores.length) : 1);
         out.push(BK.choiceImpact('', f.t === 'loan' ? 'Кредит' : 'Деньги', total / R < .05 ? 1 : total / R < .2 ? 2 : 3, BK.fmtMoney(v) + (f.perStore ? ' / точку' : '')));
       }
@@ -340,6 +341,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
      (BK.Threads.attItems, src/threads.js), блок в «Сводке» — BK.Story.famDash, сам выбор и его
      последствия — BK.Story.famPick (src/story.js). Здесь только окно: цена названа на кнопке,
      а цена «ничего не делать» написана прямо в нём — срок вышел, значит решится само, и вот так. */
+  // Семейные решения применяют собственные поля, не общие story.effects.
+  // Отображаем только публичные оси; care остаётся скрытым стилем героя.
+  function famFxChips(S, def, o) {
+    const fx = [];
+    if (o.cost) fx.push({ t: 'cash', v: o.cost, unindexed: true });
+    // famClose использует def.rel или family, независимо от того, кто просит.
+    if (o.rel) fx.push({ t: 'rel', who: def.rel || 'family', add: o.rel });
+    if (o.traffic) fx.push({ t: 'traffic', m: o.traffic, d: o.days || 7 });
+    return fxChips(S, fx);
+  }
   function famHtml(S, id) {
     const T = BK.Threads, t = (T && T.byId) ? T.byId(S, id) : null;
     const opts = (ST.famOpts && ST.famOpts(S, id)) || [];
@@ -349,8 +360,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rows = opts.map((o, i) => `<button type="button" class="choice st-choice" data-act="famPick" data-id="${esc(id)}" data-arg="${i}">
         <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
         <b>${esc(sub(S, o.label))}</b>
-        ${o.desc ? `<span class="cd">${esc(sub(S, o.desc))}</span>` : ''}
-        ${o.cost ? `<span class="cc">${esc(BK.fmtMoney ? BK.fmtMoney(o.cost) : Math.round(o.cost))}</span>` : ''}
+        <span class="fx">${famFxChips(S, def, o)}</span>
       </button>`).join('');
     const word = left % 10 === 1 && left % 100 !== 11 ? 'день' : (left % 10 >= 2 && left % 10 <= 4 && (left % 100 < 10 || left % 100 >= 20) ? 'дня' : 'дней');
     const leftTxt = left > 0

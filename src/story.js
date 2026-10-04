@@ -235,6 +235,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.stores != null) return openStores(S).length >= c.stores;
     if (c.months != null) return months(S) >= c.months;
     if (c.year != null) return year(S) >= c.year;
+    if (c.since) {
+      const at = R.seen[c.since.id];
+      return at != null && S.day - at >= c.since.days;
+    }
     if (c.rivalStores != null) { const rv = S.rival || {}; return (rv.stores ? rv.stores.length : (rv.n || 0)) >= c.rivalStores; }
     if (c.prod != null) return !!(S.productions && S.productions.length);
     if (c.cash != null) return S.cash >= c.cash;
@@ -483,12 +487,24 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function pendingScene(S) {
     const R = state(S); if (!R || !R.pending) return null;
-    return scene(R.pending.id);
+    return sceneView(S, scene(R.pending.id));
+  }
+  // Only presentation changes: ids, choice order and effects stay on the original scene.
+  function sceneView(S, sc) {
+    if (!sc) return sc;
+    const R = state(S); if (!R) return sc;
+    const select = (xs) => (xs || []).find((x) => (x.when || []).every((c) => cond(S, R, c)));
+    const v = select(sc.views);
+    const lines = ((v && v.lines) || sc.lines || []).map((l) => {
+      const alternate = select(l.views);
+      return alternate ? Object.assign({}, l, alternate) : l;
+    });
+    return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
   }
   // Выбор варианта: применяет последствия и закрывает сцену.
   function resolve(S, idx) {
     const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
-    const sc = scene(R.pending.id); if (!sc) { R.pending = null; return { ok: false }; }
+    const sc = pendingScene(S); if (!sc) { R.pending = null; return { ok: false }; }
     const ch = (sc.choices || [])[idx];
     if (!ch) return { ok: false, msg: 'Нет такого варианта' };
     const out = [];
@@ -571,8 +587,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function givePerk(S, R, id) {
     const p = (D().perks || {})[id]; if (!p) return null;
+    // Merger is granted at the agreement and mentioned again at the first council.
+    if (id === 'twocrusts' && R.perks.indexOf(id) >= 0) return null;
     R.perks.push(id);
-    for (const m of p.mods || []) S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 90), scope: m.scope || 'global', src: 'story' });
+    for (const m of p.mods || []) {
+      if (m.t === 'loyalty' && m.add != null) {
+        E().applyEffects(S, [{ t: 'loyalty', add: m.add }], { scope: 'global', target: null });
+        continue;
+      }
+      S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 90), scope: m.scope || 'global', src: 'story' });
+    }
     if (p.flag) R.f[p.flag.k] = p.flag.v;
     return `бонус «${p.name}»: ${p.text}`;
   }
@@ -587,7 +611,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Кто идёт рядом (см. mateKind): считаем с 6-го года или после трёх закрытых линий — этого
     // хватает, чтобы характер партии был уже виден, а игрок успевал прочитать строку заранее.
     // Первое «есть кто-то» фиксируется и больше не пересчитывается: человек не меняется задним числом.
-    if (!R.seen.kf3 && (year(S) >= 6 || ((R.f.lineWarm | 0) + (R.f.lineCold | 0)) >= 3)) {
+    if (!R.seen.kf3 && R.f.mateKind !== 'helper' && R.f.mateKind !== 'tyrant' && (year(S) >= 6 || ((R.f.lineWarm | 0) + (R.f.lineCold | 0)) >= 3)) {
       const k = mateKind(R);
       if (k !== 'none') { if (R.f.mateKind !== k) R.f.mateKind = k; }
       else if (R.f.mateKind == null) R.f.mateKind = 'none';
@@ -844,9 +868,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Story = {
     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
-    chapter, hero, chapterName, defaults, fits, cond, cityHero,
+    chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
-    chapter, hero, chapterName, defaults, fits, cond,
     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
     famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft, heroOf, heroSet, heroName, heroNameDat, heroG, isFemale, applyHero, g, heroText, heroHtml, patchHistory,
   };
