@@ -1,0 +1,146 @@
+{
+  "baseCommit": "d3ad0645fa448eac026731c8ea99724b12ef4054",
+  "baseVersion": "0.9.9",
+  "currentVersion": "0.9.10",
+  "maps": [
+    {
+      "city": "ufa",
+      "base": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d"
+      },
+      "current": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d"
+      },
+      "identical": true
+    },
+    {
+      "city": "moscow",
+      "base": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9"
+      },
+      "current": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9"
+      },
+      "identical": true
+    },
+    {
+      "city": "spb",
+      "base": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c"
+      },
+      "current": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c"
+      },
+      "identical": true
+    },
+    {
+      "city": "kazan",
+      "base": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "61b42e975cf852de29bd7eff12ee944ab4a75560a9093447cf951e07670677ca"
+      },
+      "current": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "61b42e975cf852de29bd7eff12ee944ab4a75560a9093447cf951e07670677ca"
+      },
+      "identical": true
+    }
+  ],
+  "ufaEconomy": {
+    "profile": "good",
+    "years": 22,
+    "cacheExcluded": true,
+    "runs": [
+      {
+        "seed": 7919,
+        "won": 17.1,
+        "lost": null,
+        "sha256": "84afa133c5a2bb20db38b10be8cc33b8a73a41d2675941e7d80df29efe8899f0",
+        "stores": 45,
+        "currentSha256": "84afa133c5a2bb20db38b10be8cc33b8a73a41d2675941e7d80df29efe8899f0",
+        "identical": true
+      },
+      {
+        "seed": 15838,
+        "won": 14,
+        "lost": null,
+        "sha256": "09152a5988f717784c131c109f30f1192d55d10461516c51d5c9757c4a7710fe",
+        "stores": 53,
+        "currentSha256": "09152a5988f717784c131c109f30f1192d55d10461516c51d5c9757c4a7710fe",
+        "identical": true
+      },
+      {
+        "seed": 23757,
+        "won": 12.4,
+        "lost": null,
+        "sha256": "f2c2630735b3ed452a89c3788afbb081dc0440cbf72ea956b9cf64c80710c522",
+        "stores": 57,
+        "currentSha256": "f2c2630735b3ed452a89c3788afbb081dc0440cbf72ea956b9cf64c80710c522",
+        "identical": true
+      }
+    ]
+  },
+  "ekbBalance": {
+    "profile": "good",
+    "years": 22,
+    "base": [
+      {
+        "seed": 7919,
+        "won": 10.5,
+        "lost": null,
+        "sha256": "bd36de720fbcb9046f5608a93f91fae298bccda3356423ec3bc2d614faf21552",
+        "stores": 52
+      },
+      {
+        "seed": 15838,
+        "won": 11,
+        "lost": null,
+        "sha256": "4ef4a9b43ed69eca9d11747ab06d291d7aa87ccedac49a0d699f7cee0d3235e3",
+        "stores": 54
+      },
+      {
+        "seed": 23757,
+        "won": 11.1,
+        "lost": null,
+        "sha256": "4c95b9b03d79afdd71fab9afcad82086fbee47205190218575e45d492b087ef0",
+        "stores": 49
+      }
+    ],
+    "current": [
+      {
+        "seed": 7919,
+        "won": 10.3,
+        "lost": null,
+        "sha256": "3950e13d407c54c3b258397bb4dc379e8543ebbd16b4dd95317f503891313a69",
+        "stores": 50
+      },
+      {
+        "seed": 15838,
+        "won": 11.6,
+        "lost": null,
+        "sha256": "1c4d8cd60f9792fdd595a816952fcee4505e5582d49f8b5db9501ab87f7cb4fb",
+        "stores": 55
+      },
+      {
+        "seed": 23757,
+        "won": 9.9,
+        "lost": null,
+        "sha256": "6c26a58e311dabd9cc96562e960d22bf46207112233fdd7b3309fb02b5ec3ddc",
+        "stores": 51
+      }
+    ],
+    "note": "Город был быстрее Уфы и до новой карты; коэффициенты/стартовые деньги прежние. Сохранены числовые диапазоны и частота деловых районов archK.biz.w=1.4."
+  },
+  "storyReport": {
+    "baseSha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a",
+    "currentSha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a",
+    "identical": true,
+    "note": "Прежнее диагностическое предупреждение; не считать зелёным тестом покрытия всех альтернативных ветвей."
+  }
+}

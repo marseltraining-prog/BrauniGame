@@ -6,6 +6,7 @@ const fs = require('fs'), path = require('path'), { spawnSync } = require('child
 const root = path.join(__dirname, '..');
 const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
+  ['sim/ekb.js'], ['qa/ekb.js'], ['qa/ekb.js', '@webkit'],
   ['sim/kazan.js'], ['qa/kazan.js'], ['qa/kazan.js', '@webkit'], ['sim/city-coefficients.js'],
   ['qa/start-city.js'], ['qa/start-city.js', '@webkit'],
   ['sim/start-city.js'], ['sim/start-city-corp.js'], ['sim/pro2-hooks.js'],

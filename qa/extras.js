@@ -141,8 +141,13 @@ async function slots(b, sv) {
   if (!k[0] || k[1] != null) issues.push(`[${tag}] сохранение ушло не в тот слот: ${JSON.stringify(k.map((x) => (typeof x === 'string' ? x.slice(0, 10) : x)))}`);
   // к списку игр → новая игра формой идёт в первый свободный слот (2)
   await p.evaluate(() => BK.App.toStart()); await p.waitForTimeout(150);
+  // Слоты проверяем на известном обычном старте: визуальные Math.random до формы
+  // иначе меняют зерно, а первый попавшийся цех может съесть деньги на первую точку.
+  await p.evaluate(() => { const create = BK.Engine.newGame; BK.Engine.newGame = opts => create({ ...opts, seed: 7919 }); BK.Scenario.pick = () => null; });
+  await p.check('[name=startCity][value=ufa]'); await p.check('[name=startmode][value=net]');
   await p.fill('#companyName', 'Вторая сеть'); await p.click('#startForm button[type=submit]'); await p.waitForTimeout(150);
-  await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])'); await p.evaluate(() => BK.App.ACT.closeModal());
+  const prodId = await p.evaluate(() => { const S = BK.App.state; return S.prodOffers.slice().sort((a, b) => BK.Engine.prodOpenCost(S, a).total - BK.Engine.prodOpenCost(S, b).total)[0].id; });
+  await p.click('[data-act="rentProd"][data-arg="' + prodId + '"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])'); await p.evaluate(() => BK.App.ACT.closeModal());
   await realTicks(p, 3);
   const slot2 = await p.evaluate(() => { BK.App.save(); return [BK.Slots.active, JSON.parse(localStorage.getItem('bk-ufa-save-v1-slot2')).company, JSON.parse(localStorage.getItem('bk-ufa-save-v1')).company]; });
   if (slot2[0] !== 2 || slot2[1] !== 'Вторая сеть' || slot2[2] !== old.company) issues.push(`[${tag}] новая игра не в слоте 2: ${JSON.stringify(slot2)}`);

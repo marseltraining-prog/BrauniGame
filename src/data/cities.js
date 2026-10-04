@@ -318,13 +318,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const big = BK.CITY_BIG[def.id];
     const dens = clamp(1 + 0.08 * Math.log(def.pop / 1.16), 0.85, 1.25);
     const DISTRICTS = big.districts.map((d) => {
-      const a = ARCH[d.arch];
-      return { id: d.id, name: d.name, x: d.x, y: d.y, arch: d.arch, ring: a.ring, w: a.w,
+      const a = ARCH[d.arch], ak = Object.assign({ traffic: 1, solv: 1, w: 1 }, (def.archK || {})[d.arch]);
+      return { id: d.id, name: d.name, x: d.x, y: d.y, arch: d.arch, ring: a.ring, w: +(a.w * ak.w).toFixed(3),
         kind: d.kind, lm: (d.lm || []).slice(),
         sizeW: d.sizeW || null, lx: d.lx || 0, ly: d.ly || 0,
         rent: d.rent.map((v) => rnd10(v * def.rent, 10)),
-        solv: d.solv.map((v) => rnd10(v * def.inc, 5)),
-        traffic: d.traffic.map((v) => rnd10(v * dens, 50)),
+        solv: d.solv.map((v) => rnd10(v * def.inc * ak.solv, 5)),
+        traffic: d.traffic.map((v) => rnd10(v * dens * ak.traffic, 50)),
         prodRent: d.prodRent.map((v) => rnd10(v * def.rent, 10)),
         streets: (d.streets && d.streets.length ? d.streets : COMMON_STREETS).slice() };
     });

@@ -1,0 +1,2433 @@
+{
+  "baseCommit": "d3ad0645fa448eac026731c8ea99724b12ef4054",
+  "start": {
+    "v": 1,
+    "seed": 7919,
+    "rng": 112737713,
+    "ids": 19,
+    "day": 0,
+    "difficulty": "normal",
+    "company": "Пекарня «Каравай»",
+    "startCity": "ekb",
+    "phase": "play",
+    "won": false,
+    "wonDay": null,
+    "lost": false,
+    "cash": 999990223384,
+    "reserve": 0,
+    "loan": 0,
+    "cumRevenue": 0,
+    "macro": {
+      "keyRate": 0.14,
+      "inflation": 0.025,
+      "inflAdd": 0,
+      "priceLevel": 1,
+      "taxAdd": 0,
+      "regime": "usn"
+    },
+    "market": {
+      "seller": 60500,
+      "baker": 74800
+    },
+    "pay": {
+      "seller": 60500,
+      "baker": 74800
+    },
+    "alloc": {
+      "reserve": 0.15,
+      "bonus": 0.03,
+      "marketing": 0.05
+    },
+    "culture": 0,
+    "office": {
+      "hr": false,
+      "academy": false,
+      "autohireOn": true,
+      "ownerHires": 0,
+      "ownerWeek": 0,
+      "autotrainOn": true,
+      "trainTarget": 3,
+      "ownerTrains": 0,
+      "ownerTrainWeek": 0
+    },
+    "loyaltyMod": 0,
+    "lastBonusPerEmp": 0,
+    "lastMarketingPerStore": 0,
+    "productions": [
+      {
+        "id": "f14",
+        "district": "ekb2",
+        "x": 631.5321211440884,
+        "y": 463.2602317651096,
+        "address": "ул. Вайнера, 62",
+        "area": 250,
+        "rentM2": 1100,
+        "status": "opening",
+        "openDay": 14,
+        "equip": {},
+        "staff": 2,
+        "need": 2,
+        "morale": 65,
+        "load": 0,
+        "capex": 3200000,
+        "name": "Цех №1"
+      }
+    ],
+    "stores": [
+      {
+        "id": "s15",
+        "address": "ул. Ленина, 113",
+        "district": "ekb5",
+        "x": 641.5721438179957,
+        "y": 285.076381637478,
+        "area": 51,
+        "size": "standard",
+        "rentM2": 2350,
+        "payMode": "year",
+        "rentPaidUntil": 386,
+        "traffic": 5950,
+        "solv": 470,
+        "landmarks": [
+          "sleep"
+        ],
+        "comp": 0.96,
+        "status": "opening",
+        "openDay": 21,
+        "repair": 0,
+        "repairUntil": 0,
+        "closedUntil": 0,
+        "staff": [],
+        "incoming": [
+          {
+            "p": {
+              "id": "p16",
+              "name": "Юлия Хабибуллина",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -7,
+              "patience": 8,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p17",
+              "name": "Зарина Юсупова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -2,
+              "patience": 0,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p18",
+              "name": "Диляра Каримова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 7,
+              "patience": 3,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p19",
+              "name": "Дарья Галиева",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 7,
+              "patience": 8,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          }
+        ],
+        "staffTarget": 4,
+        "capex": 6576616,
+        "m": {
+          "rev": 0,
+          "checks": 0,
+          "fc": 0,
+          "rent": 0,
+          "lost": 0
+        },
+        "last": null,
+        "hist": [],
+        "num": 1
+      }
+    ],
+    "offers": [
+      {
+        "id": "o5",
+        "district": "ekb2",
+        "x": 650.0579313047616,
+        "y": 415.07356326196964,
+        "address": "ул. 8 Марта, 109",
+        "size": "standard",
+        "area": 89,
+        "rentM2": 3700,
+        "payMode": "month",
+        "traffic": 13900,
+        "solv": 535,
+        "landmarks": [
+          "mall"
+        ],
+        "comp": 0.8,
+        "expires": 87
+      },
+      {
+        "id": "o6",
+        "district": "ekb4",
+        "x": 283.95789342330534,
+        "y": 419.24054377807397,
+        "address": "ул. Молодёжная, 108",
+        "size": "standard",
+        "area": 80,
+        "rentM2": 1470,
+        "payMode": "month",
+        "traffic": 4450,
+        "solv": 540,
+        "landmarks": [
+          "lux",
+          "fitness"
+        ],
+        "comp": 0.8,
+        "expires": 63
+      }
+    ],
+    "prodOffers": [],
+    "menu": [
+      {
+        "id": "bread_wheat",
+        "pm": 1
+      },
+      {
+        "id": "borodinsky",
+        "pm": 1
+      },
+      {
+        "id": "cinnamon",
+        "pm": 1
+      },
+      {
+        "id": "pie_potato",
+        "pm": 1
+      },
+      {
+        "id": "echpochmak",
+        "pm": 1
+      },
+      {
+        "id": "americano",
+        "pm": 1
+      },
+      {
+        "id": "tea_thyme",
+        "pm": 1
+      }
+    ],
+    "trends": {
+      "bread": 55,
+      "laminated": 70,
+      "sweet": 60,
+      "pies": 50,
+      "national": 62,
+      "desserts": 60,
+      "drinks": 66,
+      "breakfast": 55,
+      "healthy": 45
+    },
+    "chef": {
+      "pending": null,
+      "lastYear": 2027
+    },
+    "candidates": [
+      {
+        "id": "p7",
+        "name": "Софья Нуриева",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -9,
+        "patience": 6,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p8",
+        "name": "Роберт Хабибуллин",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 5,
+        "patience": 1,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p9",
+        "name": "Дарья Николаева",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 7,
+        "patience": 3,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p10",
+        "name": "Регина Исмагилова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -8,
+        "patience": 6,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p11",
+        "name": "Алина Кузнецова",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 2,
+        "patience": 5,
+        "since": 0,
+        "lvlDay": 0
+      }
+    ],
+    "candDay": 0,
+    "mods": [],
+    "ev": {
+      "next": 45,
+      "nextCrisis": 1200,
+      "last": {},
+      "once": {},
+      "pending": null,
+      "lastCrisis": null,
+      "recent": [],
+      "queue": []
+    },
+    "month": {
+      "rev": 0,
+      "checks": 0,
+      "fc": 0,
+      "rent": 1265616,
+      "payroll": 0,
+      "util": 0,
+      "delivery": 0,
+      "tax": 0,
+      "interest": 0,
+      "upkeep": 0,
+      "hire": 363000,
+      "train": 0,
+      "other": 0,
+      "income": 0,
+      "capex": 8148000,
+      "lost": 0,
+      "bonus": 0,
+      "marketing": 0,
+      "coll": 0,
+      "inv": 0
+    },
+    "history": [],
+    "log": [
+      {
+        "day": 0,
+        "text": "Достижение «Первая точка»: арендовать помещение под первую пекарню.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендована точка: ул. Ленина, 113 (Эльмаш), 51 м². Открытие через 21 дн.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Своя пекарня»: арендовать помещение под первый цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендовано помещение под производство: ул. Вайнера, 62 (ВИЗ), 250 м².",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Компания Пекарня «Каравай» зарегистрирована. На счёте 10,0 млн ₽.",
+        "kind": "good"
+      }
+    ],
+    "notify": [
+      {
+        "type": "ach",
+        "id": "prod1"
+      },
+      {
+        "type": "ach",
+        "id": "store1"
+      }
+    ],
+    "flags": {
+      "storeNum": 1
+    },
+    "negMonths": 0,
+    "yearRev": 0,
+    "lastMonthRev": 0,
+    "speed": 1,
+    "stats": {
+      "hires": 4,
+      "quits": 0,
+      "eventsSeen": 0,
+      "peakStores": 0
+    },
+    "offerRefreshDay": 30,
+    "nextOfferDay": 3,
+    "rival": {
+      "enabled": true,
+      "name": "Хлебный Урал",
+      "rng": -124772008,
+      "agg": 1.1047381830052472,
+      "stores": [
+        {
+          "id": "r12",
+          "x": 398.9849057189644,
+          "y": 438.08643558451575,
+          "district": "ekb1",
+          "address": "ул. Куйбышева, 91",
+          "q": 0.95,
+          "day": 0,
+          "how": "random"
+        },
+        {
+          "id": "r13",
+          "x": 587.4253438955476,
+          "y": 589.7399819263114,
+          "district": "ekb3",
+          "address": "ул. Вайнера, 108",
+          "q": 0.99,
+          "day": 0,
+          "how": "random"
+        }
+      ],
+      "hist": [],
+      "nextDay": 90,
+      "ban": {},
+      "opened": 2,
+      "closed": 0,
+      "grabbed": 0,
+      "agg0": 1.1047381830052472
+    },
+    "achievements": {
+      "prod1": 0,
+      "store1": 0
+    },
+    "achx": {
+      "v": 1,
+      "maxRev": 0,
+      "profitMonths": 0,
+      "trains": 0,
+      "risky": 0,
+      "crises": [],
+      "crisisOk": 0,
+      "repaid": 0,
+      "loans": 0,
+      "closed": 0,
+      "lowWaste": false,
+      "q": 0,
+      "lastQuit": 0,
+      "staffSince": null,
+      "hol": {},
+      "hNY": false,
+      "hBay": false,
+      "hSab": false,
+      "gapMonths": 0,
+      "gapMax": 0,
+      "survived": false,
+      "loner": 0,
+      "mKey": null,
+      "lastHeavy": 0
+    },
+    "chron": [
+      {
+        "t": "prod",
+        "n": 1,
+        "addr": "ул. Вайнера, 62",
+        "day": 0
+      },
+      {
+        "t": "open",
+        "num": 1,
+        "addr": "ул. Ленина, 113",
+        "d": "ekb5",
+        "n": 1,
+        "day": 0
+      }
+    ],
+    "player": {
+      "skills": {},
+      "study": [],
+      "log": [],
+      "spent": 0
+    },
+    "waste": {
+      "bake": 0,
+      "disc": 0,
+      "discDay": -9999,
+      "penUntil": 0
+    }
+  },
+  "startWorld": {
+    "map": {
+      "rivers": [
+        {
+          "pts": [
+            [
+              935,
+              -272
+            ],
+            [
+              875,
+              -134
+            ],
+            [
+              815,
+              3
+            ],
+            [
+              752,
+              139
+            ],
+            [
+              686,
+              274
+            ],
+            [
+              616,
+              407
+            ],
+            [
+              543,
+              539
+            ],
+            [
+              470,
+              670
+            ],
+            [
+              401,
+              803
+            ],
+            [
+              339,
+              940
+            ],
+            [
+              284,
+              1080
+            ],
+            [
+              228,
+              1219
+            ],
+            [
+              164,
+              1355
+            ]
+          ],
+          "w": 9,
+          "name": "р. Исеть"
+        }
+      ],
+      "sea": [],
+      "rail": [
+        [
+          895,
+          -719
+        ],
+        [
+          657,
+          151
+        ],
+        [
+          552,
+          358
+        ],
+        [
+          515,
+          477
+        ],
+        [
+          252,
+          1312
+        ]
+      ],
+      "station": {
+        "x": 552,
+        "y": 358,
+        "name": "Ж/д вокзал"
+      },
+      "city": [
+        [
+          173,
+          408
+        ],
+        [
+          398,
+          221
+        ],
+        [
+          653,
+          66
+        ],
+        [
+          759,
+          148
+        ],
+        [
+          861,
+          240
+        ],
+        [
+          834,
+          498
+        ],
+        [
+          776,
+          748
+        ],
+        [
+          556,
+          718
+        ],
+        [
+          334,
+          664
+        ],
+        [
+          256,
+          532
+        ]
+      ],
+      "labels": [
+        {
+          "x": 638,
+          "y": 334,
+          "text": "р. Исеть",
+          "rot": -62
+        }
+      ],
+      "parks": [
+        {
+          "x": 521,
+          "y": 528,
+          "r": 18,
+          "name": "Набережная"
+        },
+        {
+          "x": 602,
+          "y": 309,
+          "r": 22,
+          "name": "Парк Победы"
+        }
+      ],
+      "prodGroups": [
+        [
+          "ekb0",
+          "ekb1",
+          "ekb2",
+          "ekb3"
+        ],
+        [
+          "ekb4",
+          "ekb5",
+          "ekb6",
+          "ekb7"
+        ],
+        [
+          "ekb8",
+          "ekb9"
+        ]
+      ],
+      "hq": {
+        "x": 533,
+        "y": 487
+      }
+    },
+    "districts": [
+      {
+        "id": "ekb0",
+        "name": "Центр",
+        "x": 493,
+        "y": 515,
+        "arch": "center",
+        "ring": 0,
+        "w": 1.4,
+        "rent": [
+          3120,
+          5520
+        ],
+        "solv": [
+          495,
+          735
+        ],
+        "traffic": [
+          6650,
+          12800
+        ],
+        "prodRent": [
+          1500,
+          1980
+        ],
+        "streets": [
+          "ул. Вайнера",
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Куйбышева",
+          "пр. Ленина",
+          "ул. Лесная",
+          "ул. Строителей",
+          "ул. Кирова"
+        ]
+      },
+      {
+        "id": "ekb1",
+        "name": "Юго-Запад",
+        "x": 406,
+        "y": 406,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.82,
+        "rent": [
+          2400,
+          4200
+        ],
+        "solv": [
+          425,
+          600
+        ],
+        "traffic": [
+          6150,
+          11750
+        ],
+        "prodRent": [
+          1080,
+          1500
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "ул. Вайнера",
+          "ул. 8 Марта",
+          "ул. Победы",
+          "ул. Гагарина",
+          "ул. Советская"
+        ]
+      },
+      {
+        "id": "ekb2",
+        "name": "ВИЗ",
+        "x": 656,
+        "y": 443,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.82,
+        "rent": [
+          2400,
+          4200
+        ],
+        "solv": [
+          425,
+          600
+        ],
+        "traffic": [
+          6150,
+          11750
+        ],
+        "prodRent": [
+          1080,
+          1500
+        ],
+        "streets": [
+          "ул. 8 Марта",
+          "ул. Вайнера",
+          "пр. Ленина",
+          "ул. Мира",
+          "ул. Советская",
+          "ул. Садовая"
+        ]
+      },
+      {
+        "id": "ekb3",
+        "name": "Академический",
+        "x": 598,
+        "y": 618,
+        "arch": "prestige",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          2280,
+          3720
+        ],
+        "solv": [
+          450,
+          620
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          1140,
+          1560
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "пр. Ленина",
+          "ул. Вайнера",
+          "ул. Победы",
+          "ул. Строителей",
+          "ул. Школьная"
+        ]
+      },
+      {
+        "id": "ekb4",
+        "name": "Уралмаш",
+        "x": 253,
+        "y": 411,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Молодёжная",
+          "ул. Садовая",
+          "ул. Гагарина"
+        ]
+      },
+      {
+        "id": "ekb5",
+        "name": "Эльмаш",
+        "x": 625,
+        "y": 278,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "пр. Ленина",
+          "ул. Вайнера",
+          "ул. Куйбышева",
+          "ул. Молодёжная",
+          "ул. Ленина",
+          "ул. Мира"
+        ]
+      },
+      {
+        "id": "ekb6",
+        "name": "Ботаника",
+        "x": 727,
+        "y": 674,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. Школьная",
+          "ул. Советская",
+          "ул. Молодёжная"
+        ]
+      },
+      {
+        "id": "ekb7",
+        "name": "Пионерский",
+        "x": 387,
+        "y": 606,
+        "arch": "student",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1440,
+          2520
+        ],
+        "solv": [
+          335,
+          450
+        ],
+        "traffic": [
+          4600,
+          9200
+        ],
+        "prodRent": [
+          720,
+          1020
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "ул. 8 Марта",
+          "ул. Малышева",
+          "ул. Садовая",
+          "ул. Советская",
+          "пр. Мира"
+        ]
+      },
+      {
+        "id": "ekb8",
+        "name": "Химмаш",
+        "x": 633,
+        "y": 142,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          960,
+          1500
+        ],
+        "solv": [
+          290,
+          370
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          400,
+          580
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "ул. 8 Марта",
+          "пр. Ленина",
+          "ул. Победы",
+          "ул. Ленина",
+          "ул. Школьная"
+        ]
+      },
+      {
+        "id": "ekb9",
+        "name": "Вторчермет",
+        "x": 793,
+        "y": 281,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          960,
+          1500
+        ],
+        "solv": [
+          290,
+          370
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          400,
+          580
+        ],
+        "streets": [
+          "ул. Вайнера",
+          "ул. 8 Марта",
+          "ул. Малышева",
+          "ул. Молодёжная",
+          "ул. Садовая",
+          "ул. Строителей"
+        ]
+      }
+    ],
+    "center": {
+      "x": 493,
+      "y": 515
+    }
+  },
+  "corp": {
+    "v": 2,
+    "seed": 15838,
+    "rng": -1406690496,
+    "ids": 34,
+    "day": 0,
+    "difficulty": "normal",
+    "company": "Пекарня «Каравай»",
+    "startCity": null,
+    "phase": "play",
+    "won": false,
+    "wonDay": null,
+    "lost": false,
+    "cash": 999960133850,
+    "reserve": 0,
+    "loan": 0,
+    "cumRevenue": 10000000000,
+    "macro": {
+      "keyRate": 0.14,
+      "inflation": 0.025,
+      "inflAdd": 0,
+      "priceLevel": 1,
+      "taxAdd": 0,
+      "regime": "usn"
+    },
+    "market": {
+      "seller": 60500.00000000001,
+      "baker": 74800
+    },
+    "pay": {
+      "seller": 60500,
+      "baker": 74800
+    },
+    "alloc": {
+      "reserve": 0.15,
+      "bonus": 0.03,
+      "marketing": 0.05
+    },
+    "culture": 0,
+    "office": {
+      "hr": false,
+      "academy": false,
+      "autohireOn": true,
+      "ownerHires": 0,
+      "ownerWeek": 0,
+      "autotrainOn": true,
+      "trainTarget": 3,
+      "ownerTrains": 0,
+      "ownerTrainWeek": 0
+    },
+    "loyaltyMod": 0,
+    "lastBonusPerEmp": 0,
+    "lastMarketingPerStore": 0,
+    "productions": [
+      {
+        "id": "f24",
+        "district": "ekb3",
+        "x": 361.5092501965624,
+        "y": 510.0727190410268,
+        "address": "ул. 8 Марта, 17",
+        "area": 240,
+        "rentM2": 1520,
+        "status": "opening",
+        "openDay": 14,
+        "equip": {},
+        "staff": 2,
+        "need": 2,
+        "morale": 65,
+        "load": 0,
+        "capex": 3244800,
+        "name": "Цех №1"
+      }
+    ],
+    "stores": [
+      {
+        "id": "s25",
+        "address": "ул. Садовая, 43",
+        "district": "ekb5",
+        "x": 247.4595511739663,
+        "y": 591.8506816994786,
+        "area": 92,
+        "size": "large",
+        "rentM2": 2050,
+        "payMode": "month",
+        "rentPaidUntil": 0,
+        "traffic": 10550,
+        "solv": 350,
+        "landmarks": [
+          "uni",
+          "clinic"
+        ],
+        "comp": 0.81,
+        "status": "opening",
+        "openDay": 21,
+        "repair": 0,
+        "repairUntil": 0,
+        "closedUntil": 0,
+        "staff": [],
+        "incoming": [
+          {
+            "p": {
+              "id": "p26",
+              "name": "Виктория Садыкова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 2,
+              "patience": 2,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p27",
+              "name": "Артём Фёдоров",
+              "lvl": 2,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -8,
+              "patience": 0,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p28",
+              "name": "Азат Галиев",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 4,
+              "patience": 1,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p29",
+              "name": "Эльвира Зиннатуллина",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -6,
+              "patience": 10,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p30",
+              "name": "Ильдар Мухаметов",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 4,
+              "patience": 5,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p31",
+              "name": "Алина Фёдорова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -4,
+              "patience": 3,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p32",
+              "name": "Марат Хабибуллин",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 9,
+              "patience": 7,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p33",
+              "name": "Анна Хабибуллина",
+              "lvl": 2,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 7,
+              "patience": 9,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p34",
+              "name": "Алина Фёдорова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -1,
+              "patience": 2,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          }
+        ],
+        "staffTarget": 9,
+        "capex": 9621350,
+        "m": {
+          "rev": 0,
+          "checks": 0,
+          "fc": 0,
+          "rent": 0,
+          "lost": 0
+        },
+        "last": null,
+        "hist": [],
+        "num": 1
+      }
+    ],
+    "offers": [
+      {
+        "id": "o17",
+        "district": "ekb1",
+        "x": 652.2640916943423,
+        "y": 560.0615481608543,
+        "address": "ул. Лесная, 117",
+        "size": "large",
+        "area": 119,
+        "rentM2": 2620,
+        "payMode": "month",
+        "traffic": 8150,
+        "solv": 515,
+        "landmarks": [
+          "park"
+        ],
+        "comp": 0.94,
+        "expires": 92
+      },
+      {
+        "id": "o18",
+        "district": "ekb4",
+        "x": 779.1528122492456,
+        "y": 524.1563867839519,
+        "address": "ул. 8 Марта, 48",
+        "size": "small",
+        "area": 38,
+        "rentM2": 2920,
+        "payMode": "year",
+        "traffic": 9150,
+        "solv": 505,
+        "landmarks": [
+          "theatre"
+        ],
+        "comp": 0.87,
+        "expires": 25
+      }
+    ],
+    "prodOffers": [],
+    "menu": [
+      {
+        "id": "bread_wheat",
+        "pm": 1
+      },
+      {
+        "id": "borodinsky",
+        "pm": 1
+      },
+      {
+        "id": "cinnamon",
+        "pm": 1
+      },
+      {
+        "id": "pie_potato",
+        "pm": 1
+      },
+      {
+        "id": "echpochmak",
+        "pm": 1
+      },
+      {
+        "id": "americano",
+        "pm": 1
+      },
+      {
+        "id": "tea_thyme",
+        "pm": 1
+      }
+    ],
+    "trends": {
+      "bread": 55,
+      "laminated": 70,
+      "sweet": 60,
+      "pies": 50,
+      "national": 62,
+      "desserts": 60,
+      "drinks": 66,
+      "breakfast": 55,
+      "healthy": 45
+    },
+    "chef": {
+      "pending": null,
+      "lastYear": 2027
+    },
+    "candidates": [
+      {
+        "id": "p19",
+        "name": "Айгуль Мухаметова",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 7,
+        "patience": 3,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p20",
+        "name": "Наталья Попова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -6,
+        "patience": 0,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p21",
+        "name": "Алина Юсупова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -6,
+        "patience": 7,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p22",
+        "name": "Олег Юсупов",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 7,
+        "patience": 4,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p23",
+        "name": "Анна Юсупова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 3,
+        "patience": 7,
+        "since": 0,
+        "lvlDay": 0
+      }
+    ],
+    "candDay": 0,
+    "mods": [],
+    "ev": {
+      "next": 30,
+      "nextCrisis": 1260,
+      "last": {},
+      "once": {},
+      "pending": null,
+      "lastCrisis": null,
+      "recent": [],
+      "queue": []
+    },
+    "month": {
+      "rev": 0,
+      "checks": 0,
+      "fc": 0,
+      "rent": 0,
+      "payroll": 0,
+      "util": 0,
+      "delivery": 0,
+      "tax": 0,
+      "interest": 0,
+      "upkeep": 0,
+      "hire": 816750,
+      "train": 0,
+      "other": 27000000,
+      "income": 0,
+      "capex": 12049400,
+      "lost": 0,
+      "bonus": 0,
+      "marketing": 0,
+      "coll": 0,
+      "inv": 0
+    },
+    "history": [],
+    "log": [
+      {
+        "day": 0,
+        "text": "Достижение «Первая точка»: арендовать помещение под первую пекарню.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендована точка: ул. Садовая, 43 (Эльмаш), 92 м². Открытие через 21 дн.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Второй город»: открыть первый город за пределами Уфы.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Десять миллиардов»: выручка за всю игру — 10 млрд ₽.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Своя пекарня»: арендовать помещение под первый цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендовано помещение под производство: ул. 8 Марта, 17 (Академический), 240 м².",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Вы взяли управление в Екатеринбурге. Уфа — на автопилоте: точки работают, новых не открывается.",
+        "kind": "info"
+      },
+      {
+        "day": 0,
+        "text": "Вход в Екатеринбурге: регистрация, разрешения и стартовый маркетинг — 27,0 млн ₽. Выберите помещение под цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Сеть переросла город: оборот за всё время — 10,0 млрд ₽. Открыт выход в Россию.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Компания Пекарня «Каравай» зарегистрирована. На счёте 10,0 млн ₽.",
+        "kind": "good"
+      }
+    ],
+    "notify": [
+      {
+        "type": "corp"
+      },
+      {
+        "type": "ach",
+        "id": "prod1"
+      },
+      {
+        "type": "ach",
+        "id": "cum10b"
+      },
+      {
+        "type": "ach",
+        "id": "ru2"
+      },
+      {
+        "type": "ach",
+        "id": "store1"
+      }
+    ],
+    "flags": {
+      "storeNum": 1
+    },
+    "negMonths": 0,
+    "yearRev": 0,
+    "lastMonthRev": 0,
+    "speed": 1,
+    "stats": {
+      "hires": 9,
+      "quits": 0,
+      "eventsSeen": 0,
+      "peakStores": 0
+    },
+    "offerRefreshDay": 30,
+    "nextOfferDay": 3,
+    "rival": {
+      "enabled": false,
+      "stores": [],
+      "hist": [],
+      "ban": {},
+      "opened": 0,
+      "closed": 0,
+      "grabbed": 0
+    },
+    "achievements": {
+      "prod1": 0,
+      "cum10b": 0,
+      "ru2": 0,
+      "store1": 0
+    },
+    "achx": {
+      "v": 1,
+      "maxRev": 0,
+      "profitMonths": 0,
+      "trains": 0,
+      "risky": 0,
+      "crises": [],
+      "crisisOk": 0,
+      "repaid": 0,
+      "loans": 0,
+      "closed": 0,
+      "lowWaste": false,
+      "q": 0,
+      "lastQuit": 0,
+      "staffSince": null,
+      "hol": {},
+      "hNY": false,
+      "hBay": false,
+      "hSab": false,
+      "gapMonths": 0,
+      "gapMax": 0,
+      "survived": false,
+      "loner": 0,
+      "mKey": null,
+      "lastHeavy": 0
+    },
+    "chron": [
+      {
+        "day": 0,
+        "t": "city",
+        "id": "ekb",
+        "cost": 27000000,
+        "over": 1
+      },
+      {
+        "t": "prod",
+        "n": 1,
+        "addr": "ул. 8 Марта, 17",
+        "day": 0
+      },
+      {
+        "t": "open",
+        "num": 1,
+        "addr": "ул. Садовая, 43",
+        "d": "ekb5",
+        "n": 1,
+        "day": 0
+      }
+    ],
+    "player": {
+      "skills": {},
+      "study": [],
+      "log": [],
+      "spent": 0
+    },
+    "corp": {
+      "unlockedDay": 0,
+      "active": "ekb",
+      "market0": {
+        "seller": 55000,
+        "baker": 68000
+      },
+      "cities": {
+        "ufa": {
+          "id": "ufa",
+          "name": "Уфа",
+          "enteredDay": 0,
+          "status": "run",
+          "seed": 15838,
+          "mapGen": 0,
+          "rng": 236587,
+          "aw": 1,
+          "payK": 1,
+          "payKb": 1,
+          "numSeq": 0,
+          "packed": {
+            "stores": [],
+            "productions": [],
+            "offersSpecial": [],
+            "rival": {
+              "enabled": true,
+              "name": "Хлебный двор",
+              "rng": 1770727019,
+              "agg": 1.0450045255711302,
+              "stores": [
+                {
+                  "id": "r12",
+                  "x": 720.4414287873792,
+                  "y": 612.5237427639029,
+                  "district": "sipaylovo",
+                  "address": "ул. Юрия Гагарина, 45",
+                  "q": 1.08,
+                  "day": 0,
+                  "how": "random"
+                }
+              ],
+              "hist": [],
+              "nextDay": 90,
+              "ban": {},
+              "opened": 1,
+              "closed": 0,
+              "grabbed": 0,
+              "agg0": 1.0450045255711302
+            },
+            "office": {
+              "hr": false,
+              "academy": false,
+              "autohireOn": true,
+              "ownerHires": 0,
+              "ownerWeek": 0,
+              "autotrainOn": true,
+              "trainTarget": 3,
+              "ownerTrains": 0,
+              "ownerTrainWeek": 0
+            },
+            "fcMs0": 0.22805977476223377,
+            "fill": 1,
+            "sales": 1,
+            "fcK0": 1,
+            "fcPct": 0.25542694773370184,
+            "fcB": 0.23623,
+            "pf0": 1,
+            "erp0": 0,
+            "wz0": {
+              "left": 0.091,
+              "i": 0,
+              "disc": 0
+            }
+          },
+          "aggFrom": 0,
+          "hist": [],
+          "mAcc": {
+            "rev": 0,
+            "profit": 0,
+            "agg": 0
+          },
+          "directorId": null,
+          "priority": "profit",
+          "budget": {
+            "capex": 0,
+            "left": 0,
+            "train": 3,
+            "close": true,
+            "open": true
+          },
+          "dev": {
+            "y": 2027,
+            "opened": 0,
+            "closed": 0
+          },
+          "rp": 0,
+          "pressure": 0
+        },
+        "ekb": {
+          "id": "ekb",
+          "name": "Екатеринбург",
+          "enteredDay": 0,
+          "status": "launch",
+          "seed": 1984331684,
+          "mapGen": 1,
+          "rng": 1086079565,
+          "aw": 0.2,
+          "payK": 1,
+          "payKb": 1,
+          "numSeq": 0,
+          "packed": null,
+          "aggFrom": null,
+          "hist": [],
+          "mAcc": {
+            "rev": 0,
+            "profit": 0,
+            "agg": 0
+          },
+          "rp": 0,
+          "pressure": 0.25
+        }
+      },
+      "rng": 1894144552,
+      "lastMonthly": 0,
+      "aggRevP": 0,
+      "directors": [],
+      "inbox": [],
+      "fed": {
+        "goalDay": null,
+        "legendDay": null
+      },
+      "dirYear": {},
+      "dirSeq": 3,
+      "repSeq": 0,
+      "dirCand": [
+        {
+          "id": "d1",
+          "name": "Кирилл Беляев",
+          "f": false,
+          "grade": 2,
+          "skills": {
+            "ops": 39,
+            "econ": 54,
+            "growth": 55,
+            "people": 49
+          },
+          "seen": {
+            "ops": 27,
+            "econ": 62,
+            "growth": 44,
+            "people": 60
+          },
+          "style": "growth",
+          "traits": [
+            "mediaStar"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 67,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "Держал{g:|а} три пекарни в Оренбурге, пока их не выкупила федеральная сеть.",
+          "pot": 3,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 359000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        },
+        {
+          "id": "d2",
+          "name": "Ильдар Попов",
+          "f": false,
+          "grade": 2,
+          "skills": {
+            "ops": 49,
+            "econ": 63,
+            "growth": 35,
+            "people": 46
+          },
+          "seen": {
+            "ops": 59,
+            "econ": 54,
+            "growth": 21,
+            "people": 47
+          },
+          "style": "economy",
+          "traits": [
+            "cityHall",
+            "cautious"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 58,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "{g:Бывший управляющий|Бывшая управляющая} торгового центра — изнутри знает, как выбивают скидки на аренду.",
+          "pot": 2,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 376000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        },
+        {
+          "id": "d3",
+          "name": "Татьяна Громова",
+          "f": true,
+          "grade": 1,
+          "skills": {
+            "ops": 33,
+            "econ": 40,
+            "growth": 43,
+            "people": 39
+          },
+          "seen": {
+            "ops": 25,
+            "econ": 49,
+            "growth": 39,
+            "people": 49
+          },
+          "style": "economy",
+          "traits": [
+            "ambitious"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 60,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "В прошлом — военный интендант: логистика, склад, порядок и никакой самодеятельности.",
+          "pot": 2,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 255000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        }
+      ],
+      "dirCandDay": 0,
+      "hq": {
+        "finance": 0,
+        "hr": 0,
+        "uni": 0,
+        "purchasing": 0,
+        "logistics": 0,
+        "brand": 0,
+        "security": 0,
+        "legal": 0
+      },
+      "hqSince": {},
+      "stat": {
+        "stolen": 0,
+        "caught": 0,
+        "poached": 0,
+        "left": 0,
+        "kpiPaid": 0,
+        "optPaid": 0,
+        "hqPaid": 0,
+        "audits": 0,
+        "fund": 0
+      },
+      "perks": {},
+      "prePressure": {},
+      "equitySold": 0,
+      "rivalOn": true,
+      "hqFcK": 1,
+      "hqDelK": 1
+    },
+    "waste": {
+      "bake": 0,
+      "disc": 0,
+      "discDay": -9999,
+      "penUntil": 0
+    }
+  },
+  "corpWorld": {
+    "map": {
+      "rivers": [
+        {
+          "pts": [
+            [
+              -368,
+              307
+            ],
+            [
+              -221,
+              338
+            ],
+            [
+              -75,
+              371
+            ],
+            [
+              73,
+              399
+            ],
+            [
+              221,
+              418
+            ],
+            [
+              372,
+              427
+            ],
+            [
+              523,
+              432
+            ],
+            [
+              673,
+              443
+            ],
+            [
+              822,
+              466
+            ],
+            [
+              968,
+              499
+            ],
+            [
+              1114,
+              536
+            ],
+            [
+              1261,
+              569
+            ],
+            [
+              1408,
+              598
+            ]
+          ],
+          "w": 9,
+          "name": "р. Исеть"
+        }
+      ],
+      "sea": [],
+      "rail": [
+        [
+          -265,
+          1551
+        ],
+        [
+          207,
+          778
+        ],
+        [
+          390,
+          632
+        ],
+        [
+          512,
+          606
+        ],
+        [
+          1367,
+          421
+        ]
+      ],
+      "station": {
+        "x": 390,
+        "y": 632,
+        "name": "Ж/д вокзал"
+      },
+      "city": [
+        [
+          24,
+          626
+        ],
+        [
+          214,
+          383
+        ],
+        [
+          433,
+          167
+        ],
+        [
+          656,
+          332
+        ],
+        [
+          857,
+          502
+        ],
+        [
+          722,
+          584
+        ],
+        [
+          615,
+          689
+        ],
+        [
+          373,
+          794
+        ],
+        [
+          172,
+          860
+        ],
+        [
+          108,
+          737
+        ]
+      ],
+      "labels": [
+        {
+          "x": 447,
+          "y": 444,
+          "text": "р. Исеть",
+          "rot": 2
+        }
+      ],
+      "parks": [
+        {
+          "x": 434,
+          "y": 466,
+          "r": 18,
+          "name": "Набережная"
+        },
+        {
+          "x": 673,
+          "y": 560,
+          "r": 22,
+          "name": "Парк Победы"
+        }
+      ],
+      "prodGroups": [
+        [
+          "ekb0",
+          "ekb1",
+          "ekb2",
+          "ekb3"
+        ],
+        [
+          "ekb4",
+          "ekb5",
+          "ekb6",
+          "ekb7"
+        ],
+        [
+          "ekb8",
+          "ekb9"
+        ]
+      ],
+      "hq": {
+        "x": 550,
+        "y": 485
+      }
+    },
+    "districts": [
+      {
+        "id": "ekb0",
+        "name": "Центр",
+        "x": 510,
+        "y": 513,
+        "arch": "center",
+        "ring": 0,
+        "w": 1.4,
+        "rent": [
+          3120,
+          5520
+        ],
+        "solv": [
+          495,
+          735
+        ],
+        "traffic": [
+          6650,
+          12800
+        ],
+        "prodRent": [
+          1500,
+          1980
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Вайнера",
+          "ул. Ленина",
+          "пр. Мира",
+          "ул. Лесная"
+        ]
+      },
+      {
+        "id": "ekb1",
+        "name": "Юго-Запад",
+        "x": 648,
+        "y": 536,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.82,
+        "rent": [
+          2400,
+          4200
+        ],
+        "solv": [
+          425,
+          600
+        ],
+        "traffic": [
+          6150,
+          11750
+        ],
+        "prodRent": [
+          1080,
+          1500
+        ],
+        "streets": [
+          "ул. 8 Марта",
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. Садовая",
+          "ул. Школьная",
+          "ул. Лесная"
+        ]
+      },
+      {
+        "id": "ekb2",
+        "name": "ВИЗ",
+        "x": 550,
+        "y": 648,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.82,
+        "rent": [
+          2400,
+          4200
+        ],
+        "solv": [
+          425,
+          600
+        ],
+        "traffic": [
+          6150,
+          11750
+        ],
+        "prodRent": [
+          1080,
+          1500
+        ],
+        "streets": [
+          "ул. 8 Марта",
+          "ул. Малышева",
+          "пр. Ленина",
+          "ул. Садовая",
+          "ул. Школьная",
+          "ул. Молодёжная"
+        ]
+      },
+      {
+        "id": "ekb3",
+        "name": "Академический",
+        "x": 352,
+        "y": 483,
+        "arch": "prestige",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          2280,
+          3720
+        ],
+        "solv": [
+          450,
+          620
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          1140,
+          1560
+        ],
+        "streets": [
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Кирова",
+          "ул. Школьная",
+          "ул. Садовая"
+        ]
+      },
+      {
+        "id": "ekb4",
+        "name": "Уралмаш",
+        "x": 781,
+        "y": 513,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Куйбышева",
+          "ул. Садовая",
+          "ул. Победы",
+          "ул. Лесная"
+        ]
+      },
+      {
+        "id": "ekb5",
+        "name": "Эльмаш",
+        "x": 267,
+        "y": 612,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "ул. 8 Марта",
+          "ул. Вайнера",
+          "ул. Малышева",
+          "ул. Лесная",
+          "ул. Ленина",
+          "ул. Садовая"
+        ]
+      },
+      {
+        "id": "ekb6",
+        "name": "Ботаника",
+        "x": 430,
+        "y": 251,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1620,
+          2640
+        ],
+        "solv": [
+          355,
+          485
+        ],
+        "traffic": [
+          4300,
+          8700
+        ],
+        "prodRent": [
+          780,
+          1100
+        ],
+        "streets": [
+          "ул. Куйбышева",
+          "ул. Малышева",
+          "ул. Вайнера",
+          "ул. Строителей",
+          "ул. Лесная",
+          "ул. Кирова"
+        ]
+      },
+      {
+        "id": "ekb7",
+        "name": "Пионерский",
+        "x": 520,
+        "y": 361,
+        "arch": "student",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1440,
+          2520
+        ],
+        "solv": [
+          335,
+          450
+        ],
+        "traffic": [
+          4600,
+          9200
+        ],
+        "prodRent": [
+          720,
+          1020
+        ],
+        "streets": [
+          "ул. Вайнера",
+          "пр. Ленина",
+          "ул. Куйбышева",
+          "ул. Ленина",
+          "ул. Садовая",
+          "ул. Победы"
+        ]
+      },
+      {
+        "id": "ekb8",
+        "name": "Химмаш",
+        "x": 225,
+        "y": 797,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          960,
+          1500
+        ],
+        "solv": [
+          290,
+          370
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          400,
+          580
+        ],
+        "streets": [
+          "пр. Ленина",
+          "ул. Малышева",
+          "ул. 8 Марта",
+          "ул. Советская",
+          "ул. Мира",
+          "пр. Мира"
+        ]
+      },
+      {
+        "id": "ekb9",
+        "name": "Вторчермет",
+        "x": 109,
+        "y": 612,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          960,
+          1500
+        ],
+        "solv": [
+          290,
+          370
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          400,
+          580
+        ],
+        "streets": [
+          "ул. Вайнера",
+          "ул. Куйбышева",
+          "ул. 8 Марта",
+          "ул. Лесная",
+          "ул. Молодёжная",
+          "ул. Гагарина"
+        ]
+      }
+    ],
+    "center": {
+      "x": 510,
+      "y": 513
+    }
+  }
+}
