@@ -439,6 +439,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   Map.prototype.render = function (S, sel) {
     const E = BK.Engine;
     this.setCity();
+    const forms = BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS;
+    const city = BK.CITY && BK.CITY.id;
+    this.el.setAttribute('aria-label', `Карта ${forms && forms[city] ? forms[city].g : 'города'} с точками сети`);
     this.lastS = S; this.lastSel = sel;
     const layer = this.layer, upp = this.upp(), kk = this.markerScale(), k = kk.toFixed(3);
     const isSel = (kind, id) => sel && sel.kind === kind && sel.id === id;

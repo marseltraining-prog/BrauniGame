@@ -361,7 +361,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!pk.productions.length) {
         if (!rem) { buildProd(S, c, true); return; }
         const own = K_.SUPPLY_OWN_STORES[rem.supplyMode === 'frozen' ? 'frozen' : 'fresh'];
-        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().def(c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
+        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().cityDef(S, c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
       }
       // закрытие: полгода подряд в убытке и старше года (§5.3 п. 6)
       for (const s of pk.stores.slice()) {
@@ -468,7 +468,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.cash += refund; S.month.income += refund;
     const i = c.packed.stores.indexOf(s); if (i >= 0) c.packed.stores.splice(i, 1); // на месте: внутри withCity S.stores — та же ссылка
     c.dev.closed++; c.dev.mClosed = (c.dev.mClosed || 0) + 1;
-    I.log(S, `${CI().def(c.id).name}: ${d ? d.name + ' закрыл' + (d.f ? 'а' : '') : 'закрыта'} убыточную точку №${s.num} (${s.address}). Продано оборудование на ${fm(refund)}.`, 'warn');
+    I.log(S, `${CI().cityDef(S, c.id).name}: ${d ? d.name + ' закрыл' + (d.f ? 'а' : '') : 'закрыта'} убыточную точку №${s.num} (${s.address}). Продано оборудование на ${fm(refund)}.`, 'warn');
     return refund;
   }
   // покупка местной сети (e208): цех и n работающих точек без затрат (цена сделки — в событии); город без директора
@@ -504,7 +504,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let n = 0;
     const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
     BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${BK.Corp && BK.Corp.openDays ? BK.Corp.openDays(S, id) : 21} дн.`, 'good');
+    I.log(S, `${d.name} запускает ${CI().cityDef(S, id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${BK.Corp && BK.Corp.openDays ? BK.Corp.openDays(S, id) : 21} дн.`, 'good');
     return { ok: true, opened: n };
   }
 
@@ -549,9 +549,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function quit(S, d) {
     const cr = S.corp, c = d.city ? cr.cities[d.city] : null;
     removeDir(S, d); if (BK.HQ) cr.stat.left++;
-    I.log(S, `${d.name} ${d.f ? 'ушла' : 'ушёл'} из сети: лояльность упала до ${Math.round(d.loyalty)}.${c ? ' ' + CI().def(c.id).name + ' без директора.' : ''}`, 'bad');
-    pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: `Лояльность упала до ${Math.round(d.loyalty)}: оклад ниже рынка, отказы и личное управление копились месяцами.${c ? ` ${CI().def(c.id).name} теперь без директора — назначьте нового.` : ''}` });
-    S.notify.push({ type: 'toast', title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: c ? `${CI().def(c.id).name} без директора.` : 'Директор из резерва ушёл.', kind: 'bad' });
+    I.log(S, `${d.name} ${d.f ? 'ушла' : 'ушёл'} из сети: лояльность упала до ${Math.round(d.loyalty)}.${c ? ' ' + CI().cityDef(S, c.id).name + ' без директора.' : ''}`, 'bad');
+    pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: `Лояльность упала до ${Math.round(d.loyalty)}: оклад ниже рынка, отказы и личное управление копились месяцами.${c ? ` ${CI().cityDef(S, c.id).name} теперь без директора — назначьте нового.` : ''}` });
+    S.notify.push({ type: 'toast', title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: c ? `${CI().cityDef(S, c.id).name} без директора.` : 'Директор из резерва ушёл.', kind: 'bad' });
   }
 
   /* ---------------- план года ---------------- */
@@ -606,7 +606,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const list = packedList(c), open = list.filter((s) => s.status !== 'opening');
     let mood = 0, n = 0, missing = 0; for (const s of open) { mood += s.staff.mood * s.staff.n; n += s.staff.n; missing += Math.max(0, s.staffTarget - s.staff.n); }
     mood = n ? mood / n : 60;
-    const reqs = [], ctx = { city: CI().def(c.id).name, director: d.name };
+    const reqs = [], ctx = { city: CI().cityDef(S, c.id).name, director: d.name };
     // просьбы (не больше двух, без повторов открытых)
     if (c.wantBudget && !hasOpen(S, c.id, 'budget')) {
       const w = c.wantBudget, amount = Math.max(1e6, Math.round(w.n * w.cost / 1e6) * 1e6);
@@ -646,6 +646,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function districtName(S, c, did) {
     const dc = CI().cityDef(S, c.id);
     if (dc.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
+    const big = BK.CITY_BIG && BK.CITY_BIG[dc.id];
+    if (big) { const d = big.districts.find((x) => x.id === did); return d ? d.name : 'Центр'; }
     const g = BK.genCityGeo ? BK.genCityGeo(dc, c.seed | 0, c.mapGen) : null;
     const d = g && g.DISTRICTS.find((x) => x.id === did); return d ? d.name : 'Центр';
   }
@@ -720,7 +722,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const n of it.noms) { const d = dirById(S, n.dir); if (!d) continue; if (n.dir === dirId) d.loyalty = clamp(d.loyalty + K_.LOY_AWARD, 0, 100); else if (d.loyalty < 50) d.loyalty = clamp(d.loyalty - 3, 0, 100); }
     it.done = dirId; cr.dirYear[it.y] = dirId;
     const w = it.noms.find((n) => n.dir === dirId);
-    I.log(S, `«Директор года ${it.y}» — ${w ? w.name + ' (' + CI().def(w.city).name + ')' : ''}.`, 'good');
+    I.log(S, `«Директор года ${it.y}» — ${w ? w.name + ' (' + CI().cityDef(S, w.city).name + ')' : ''}.`, 'good');
     return { ok: true };
   }
 

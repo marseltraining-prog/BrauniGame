@@ -17,6 +17,9 @@ if (!BK.Miles) {
   require('../src/milestones.js'); require('../src/thoughts.js');
 }
 const { play } = require('./bot');
+// Срок должен читаться и после загрузки: сохранение хранит at/until, а не d.
+{ const assert = require('assert'); const S = BK.Engine.newGame({seed: 7}); BK.Miles.ensure(S).cur = { k: 'guests', at: 3, until: 17, need: 100, base: 0, got: 1 }; const restored = JSON.parse(JSON.stringify(S)); assert.match(BK.Miles.info(restored).d, /за 14 дней/); }
+
 
 const SPEEDS = { '×1': 1000, '×3': 333, '×10': 100 };
 const pos = [], flags = {};

@@ -42,6 +42,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- 1. стартовый экран: карточки историй ---------------- */
   function card(id, p) {
     const d = SC().info(id) || {}, was = p.played.indexOf(id) >= 0, gl = goal(d);
+    const radio = document.querySelector('#startForm input[name="startCity"]:checked');
+    const city = radio ? radio.value : 'ufa';
+    const localCity = d.start && d.start.city;
+    const cityHint = localCity && localCity !== city ? (BK.StartCity && !BK.StartCity.available(localCity)
+      ? 'Откроется после первой завершённой партии, при выборе Москвы.'
+      : 'Выпадает при выборе Москвы.') : '';
     return `<li class="scen-card${was ? ' done' : ''}">
       <span class="scen-ic" aria-hidden="true">${ic(d)}</span>
       <span class="scen-b">
@@ -49,6 +55,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <span class="scen-d">${esc(d.text || '')}</span>
         ${gl ? `<span class="scen-g">Цель: ${esc(gl)}</span>` : ''}
         <span class="scen-s${was ? ' on' : ''}">${was ? 'пройдено ✓' : 'ещё не пройдена'}</span>
+        ${!was && cityHint ? `<span class="scen-g">${cityHint}</span>` : ''}
       </span></li>`;
   }
   function startOpt() {
@@ -59,13 +66,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sum = all
       ? `${num} · все истории пройдены — сбросьте прогресс, чтобы сыграть заново`
       : n === 0
-        ? `${num} · впереди все истории — выпадет любая`
+        ? `${num} · история выпадет для выбранного города`
         : `${num} · следующая история выпадет из оставшихся`;
     return `<fieldset class="scenpick"><legend>Истории</legend>
       <div class="scen-head">${pips(p)}<span class="scen-sum">${sum}</span></div>
       <ul class="scen-cards">${SC().all().map((id) => card(id, p)).join('')}</ul>
       <div class="scen-foot">
-        <span class="hint">История выпадает при новой игре — случайно, но только из непройденных.</span>
+        <span class="hint">История выпадает из непройденных для выбранного города. «Старт в Москве» — только в Москве. Если подходящих историй нет, начнётся обычная партия.</span>
         ${n ? `<span class="scen-reset"><button type="button" class="linkbtn" data-scen-act="ask">Сбросить пройденные</button></span>` : ''}
       </div></fieldset>`;
   }
@@ -312,5 +319,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
+  BK.ScenarioUI = { startOpt, bindStart, redrawStart: redraw, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
 })();

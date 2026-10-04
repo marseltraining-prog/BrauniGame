@@ -100,11 +100,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function genSpots(S, T) {
     const c = C(), pl = S.macro.priceLevel;
     return c.SPOTS.map((k) => {
-      const d = E().byId(BK.DISTRICTS, k.districts[ri(T, 0, k.districts.length - 1)]);
+      // Уфа сохраняет прежний выбор и поток ГСЧ; в другом городе выбираем
+      // соответствующий тип района из его карты вместо отсутствующего уфимского id.
+      const local = S.startCity && S.startCity !== 'ufa';
+      const types = k.id === 'mall' ? ['biz', 'prestige', 'sleep'] : k.id === 'stop' ? ['sleep', 'far', 'outskirts'] : ['student', 'center'];
+      const candidates = local ? BK.DISTRICTS.filter((d) => types.includes(d.arch)) : null;
+      const pool = local ? (candidates.length ? candidates : BK.DISTRICTS) : k.districts;
+      const selected = pool[ri(T, 0, pool.length - 1)];
+      const d = local ? selected : E().byId(BK.DISTRICTS, selected);
       const area = ri(T, k.area[0], k.area[1]);
-      const rentM2 = Math.round(rr(T, k.rent[0], k.rent[1]) * pl / 10) * 10;
+      const city = local ? BK.CITY_BY_ID[S.startCity] : null;
+      const rentM2 = Math.round(rr(T, k.rent[0], k.rent[1]) * pl * (city ? city.rent : 1) / 10) * 10;
       const traffic = Math.round(rr(T, k.traffic[0], k.traffic[1]) / 50) * 50;
-      const solv = Math.round(rr(T, k.solv[0], k.solv[1]) / 5) * 5;
+      const solv = Math.round(rr(T, k.solv[0], k.solv[1]) * (city ? city.inc : 1) / 5) * 5;
       const a = rnd(T) * Math.PI * 2, r = 14 + rnd(T) * 20;
       return { kind: k.id, name: k.name, icon: k.icon, note: k.note, district: d.id, dname: d.name, x: d.x + Math.cos(a) * r, y: d.y + Math.sin(a) * r * 0.85,
         address: `${d.streets[ri(T, 0, d.streets.length - 1)]}, ${ri(T, 1, 90)}`, area, rentM2, traffic, solv, landmarks: k.lm.slice(), comp: +rr(T, 0.9, 1).toFixed(2),
@@ -686,8 +694,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S.productions.length) { In.genProdOffers(S, 3); S.phase = 'setup_prod'; }
     if (S.offers.length < 3) In.genStoreOffers(S, true);
     if (T.flags.kalachMine) { // сцена 1.7 «Продайте мне»: «Калач» — точка №2 (особое помещение)
-      const d = E().byId(BK.DISTRICTS, 'center');
-      const o = In.makeStoreOffer(S, { district: 'center', size: 'standard' });
+      const d = E().byId(BK.DISTRICTS, 'center') || BK.DISTRICTS.find((x) => x.arch === 'center') || BK.DISTRICTS[0];
+      const o = In.makeStoreOffer(S, { district: d.id, size: 'standard' });
       Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
       S.offers.push(o);
     }

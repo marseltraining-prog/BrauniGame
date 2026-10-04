@@ -141,7 +141,7 @@ async function slots(b, sv) {
   if (!k[0] || k[1] != null) issues.push(`[${tag}] сохранение ушло не в тот слот: ${JSON.stringify(k.map((x) => (typeof x === 'string' ? x.slice(0, 10) : x)))}`);
   // к списку игр → новая игра формой идёт в первый свободный слот (2)
   await p.evaluate(() => BK.App.toStart()); await p.waitForTimeout(150);
-  await p.fill('#companyName', 'Вторая сеть'); await p.click('#startForm button'); await p.waitForTimeout(150);
+  await p.fill('#companyName', 'Вторая сеть'); await p.click('#startForm button[type=submit]'); await p.waitForTimeout(150);
   await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])'); await p.evaluate(() => BK.App.ACT.closeModal());
   await realTicks(p, 3);
   const slot2 = await p.evaluate(() => { BK.App.save(); return [BK.Slots.active, JSON.parse(localStorage.getItem('bk-ufa-save-v1-slot2')).company, JSON.parse(localStorage.getItem('bk-ufa-save-v1')).company]; });
@@ -154,10 +154,10 @@ async function slots(b, sv) {
   if ((await p.evaluate(() => BK.App.state.company)) !== 'Вторая сеть') issues.push(`[${tag}] «Продолжить» слота 2 открыл не ту игру`);
   // третий слот, затем все заняты → форма не затирает игры
   await p.evaluate(() => BK.App.toStart()); await p.waitForTimeout(100);
-  await p.fill('#companyName', 'Третья'); await p.click('#startForm button'); await p.waitForTimeout(100);
+  await p.fill('#companyName', 'Третья'); await p.click('#startForm button[type=submit]'); await p.waitForTimeout(100);
   await p.evaluate(() => BK.App.toStart()); await p.waitForTimeout(100);
   await p.evaluate(() => { document.getElementById('toasts').innerHTML = ''; });
-  await p.fill('#companyName', 'Четвёртая'); await p.click('#startForm button'); await p.waitForTimeout(150);
+  await p.fill('#companyName', 'Четвёртая'); await p.click('#startForm button[type=submit]'); await p.waitForTimeout(150);
   const full = await p.evaluate(() => ({ start: !document.getElementById('start').hidden, toast: document.getElementById('toasts').innerText, names: [1, 2, 3].map((n) => { const r = localStorage.getItem(BK.Slots.keyOf(n)); return r && JSON.parse(r).company; }) }));
   if (!full.start || !/слоты заняты/.test(full.toast)) issues.push(`[${tag}] все слоты заняты: форма не предупредила (${full.toast.slice(0, 60)})`);
   if (full.names.join('|') !== [old.company, 'Вторая сеть', 'Третья'].join('|')) issues.push(`[${tag}] слоты после попытки 4-й игры: ${full.names.join(' | ')}`);
@@ -186,7 +186,8 @@ async function slots(b, sv) {
   await qp.goto(require('./lib').URL); await qp.waitForTimeout(200);
   const hint = await qp.evaluate(() => (document.querySelector('#slots') || {}).innerText || '');
   if (await qp.locator('#start [data-tutopt="0"]').count()) await qp.click('#start [data-tutopt="0"]'); // без хранилища обучение по умолчанию включено; здесь проверяем сохранения
-  await qp.click('#startForm button'); await qp.waitForTimeout(100);
+  await qp.evaluate(() => { BK.Scenario.pick = () => null; });
+  await qp.click('#startForm button[type=submit]'); await qp.waitForTimeout(100);
   await qp.click('[data-act="rentProd"]:not([disabled])'); await qp.click('[data-act="rent"]:not([disabled])');
   await qp.waitForTimeout(300); await qp.evaluate(() => { for (let i = 0; i < 5 && document.querySelector('.modal'); i++) BK.App.ACT.closeModal(); }); // окно «Время пошло» появляется после аренды
   await qp.evaluate(() => { BK.App.setSpeed(10); }); await qp.waitForTimeout(1500);

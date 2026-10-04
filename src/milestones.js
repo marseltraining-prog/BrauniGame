@@ -105,7 +105,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       mk: (S) => { const d = rint(S, 10, 16), day = Math.max(40, Math.round(ensure(S).gAvg || guestsDay(S))); return { need: step(day * d * 1.06, 100), base: 0, got: 0, d }; },
       val: (S, m) => m.got || 0,
       hit: (S, m) => (m.got || 0) >= m.need,
-      txt: (S, m) => ({ t: 'Полные залы', d: `Накормить ${n0(m.need)} гостей за ${m.d} дней`, u: 'гостей' }),
+      txt: (S, m) => ({ t: 'Полные залы', d: `Накормить ${n0(m.need)} гостей за ${m.until - m.at} дней`, u: 'гостей' }),
       rw: { t: 'traffic', v: 0.045, d: 12 },
     },
     check: { // Чек выше

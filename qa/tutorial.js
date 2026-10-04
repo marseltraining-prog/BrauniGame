@@ -85,6 +85,8 @@ async function run(b, vp, theme) {
   await shot('00-start', { card: false });
   issues.push(...await layoutCheck(p, `${tag} старт`, { mobile }));
   if (mobile) { const small = await p.evaluate(() => [...document.querySelectorAll('.tut-opt button')].filter((x) => x.getBoundingClientRect().height < 39.5).length); if (small) issues.push(`[${tag}] переключатель обучения меньше 40 px`); }
+  // Здесь проверяется обучение базовой сети; сюжетные окна имеют собственный QA.
+  await p.evaluate(() => { BK.Scenario.pick = () => null; BK.CFG.STORY.ON = false; });
   await p.click('#startForm button[type=submit]'); await p.waitForTimeout(200);
 
   // 1. цех
@@ -192,6 +194,8 @@ async function prefs(b) {
   const p = await openPage(b, 'd1440', { seed: 3, tutorial: true });
   await p.click('#start [data-tutopt="0"]'); await p.reload(); await p.waitForTimeout(150);
   if ((await p.evaluate(() => document.querySelector('#start [data-tutopt="0"]').getAttribute('aria-pressed'))) !== 'true') issues.push(`[${tag}] выбор «выкл» не запомнился`);
+  // Здесь проверяется обучение базовой сети; сюжетные окна имеют собственный QA.
+  await p.evaluate(() => { BK.Scenario.pick = () => null; BK.CFG.STORY.ON = false; });
   await p.click('#startForm button[type=submit]'); await p.waitForTimeout(200);
   await p.click('[data-act="rentProd"]:not([disabled])'); await p.click('[data-act="rent"]:not([disabled])'); await p.waitForTimeout(200);
   const s = await p.evaluate(() => ({ on: BK.App.state.tutorial.on, card: !document.getElementById('tut') || document.getElementById('tut').hidden, modal: !!BK.App.ui.modal }));

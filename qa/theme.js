@@ -14,7 +14,7 @@ const vps = (process.argv[4] || 'd1440,m390').split(',');
     const tag = `${mode}-${vp}`;
     const shot = async (n, full) => { await p.waitForTimeout(120); await p.screenshot({ path: `${out}/${tag}-${n}.png`, fullPage: !!full }); issues.push(...await layoutCheck(p, `${tag} ${n}`, { mobile })); };
     await shot('0-start');
-    await p.click('#startForm button'); await p.waitForTimeout(300);
+    await p.click('#startForm button[type=submit]'); await p.waitForTimeout(300);
     await shot('1-setup-prod');
     await p.click('[data-act="rentProd"]:not([disabled])'); await p.waitForTimeout(200);
     await shot('2-setup-store');
@@ -70,7 +70,7 @@ const vps = (process.argv[4] || 'd1440,m390').split(',');
     await p.reload(); await p.waitForTimeout(200);
     const r = await p.evaluate(() => [document.documentElement.dataset.theme, document.querySelector('.themeseg [aria-pressed="true"]').dataset.arg]);
     await p.screenshot({ path: `${out}/toggle-start-dark.png` });
-    await p.click('#startForm button'); await p.waitForTimeout(200);
+    await p.click('#startForm button[type=submit]'); await p.waitForTimeout(200);
     const cyc = [];
     for (let i = 0; i < 3; i++) { await p.click('.hud [data-act="theme"]'); cyc.push(await p.evaluate(() => (document.documentElement.dataset.theme || 'нет') + '/' + document.querySelector('.hud [data-act="theme"]').getAttribute('aria-label'))); }
     const box = await p.evaluate(() => { const r = document.querySelector('.hud [data-act="theme"]').getBoundingClientRect(); return Math.round(r.width) + '×' + Math.round(r.height); });

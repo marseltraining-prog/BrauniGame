@@ -27,7 +27,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const D = () => BK.SCEN || { list: {} };
   const E = () => BK.Engine;
   const KEY = 'bk-ufa-scen-done';
-  const ls = (typeof localStorage === 'undefined') ? null : localStorage;
+  const ls = (() => { try { return typeof localStorage === 'undefined' ? null : localStorage; } catch (_) { return null; } })();
 
   /* ---------------- пройденные сценарии (между партиями) ---------------- */
   function done() {
@@ -48,8 +48,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const played = () => all().filter((id) => done().indexOf(id) >= 0);
   const left = () => all().filter((id) => done().indexOf(id) < 0);
   // Случайный из непройденных (детерминированно от зерна партии): пройденное не выпадает снова.
-  function pick(seed) {
-    const pool = left();
+  function pick(seed, opts) {
+    // При свободном выборе города история не может перенести игрока в другой город.
+    // Без opts сохраняется прежний выбор (боты и старые интеграции).
+    const pool = left().filter((id) => {
+      const city = info(id) && info(id).start && info(id).start.city;
+      return !opts || !opts.city || !city || city === opts.city;
+    });
     if (!pool.length) return null;
     let t = ((seed | 0) ^ 0x7ac31) | 0;
     t = (Math.imul(t ^ (t >>> 15), 1 | t) + 0x6D2B79F5) | 0;
@@ -69,7 +74,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function set(S, id, o) {
     const st = ensure(S); if (!st) return null;
     let real = id;
-    if (id === 'random') real = pick(S.seed);
+    if (id === 'random') real = pick(S.seed, o && o.city ? { city: o.city } : null);
     if (real && !info(real)) real = null;
     st.id = real === 'ufa' ? null : real;      // «обычная Уфа» — это отсутствие сценария
     st.defer = !!(o && o.defer);               // истина — если партия начнётся с пролога и кофейни

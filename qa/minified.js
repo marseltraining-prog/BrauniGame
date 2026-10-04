@@ -1,14 +1,15 @@
-/* Проверка публикуемой сборки в браузере: node qa/minified.js [chromium|webkit] [min|full]
+/* Проверка публикуемой сборки в браузере: node qa/minified.js [chromium|webkit] [min|full] [полный HTML]
    Берёт dist/khlebnaya-karta.min.html (или несжатый dist/khlebnaya-karta.html), оборачивает в документ, как это делает
    хостинг Artifact, начинает игру, гоняет ~2 игровых месяца на ×10, открывает все вкладки, «Финансы» (период, сортировка,
    фильтр) и окно события. Ждёт «0 ошибок консоли». WebKit ставится так: cd ~/.bk-tools && npx playwright install webkit */
 const fs = require('fs'), os = require('os'), path = require('path');
 const pw = require('playwright');
 const engine = process.argv[2] || 'chromium', which = process.argv[3] || 'min';
-const src = path.join(__dirname, '..', 'dist', which === 'min' ? 'khlebnaya-karta.min.html' : 'khlebnaya-karta.html');
+const external = process.argv[4] ? path.resolve(process.argv[4]) : null;
+const src = external || path.join(__dirname, '..', 'dist', which === 'min' ? 'khlebnaya-karta.min.html' : 'khlebnaya-karta.html');
 if (!fs.existsSync(src)) { console.error('нет файла ' + src + (which === 'min' ? ' — сначала node build.js --min' : '')); process.exit(1); }
-const page = path.join(os.tmpdir(), `bk-${which}-${process.pid}.html`);
-fs.writeFileSync(page, '<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>\n' + fs.readFileSync(src, 'utf8') + '\n</body></html>');
+const page = external || path.join(os.tmpdir(), `bk-${which}-${process.pid}.html`);
+if (!external) fs.writeFileSync(page, '<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>\n' + fs.readFileSync(src, 'utf8') + '\n</body></html>');
 (async () => {
   const b = await pw[engine].launch();
   const errs = [], notes = [];
@@ -21,9 +22,11 @@ fs.writeFileSync(page, '<!doctype html><html lang="ru"><head><meta charset="utf-
     await p.addInitScript(() => { try { localStorage.setItem('bk-ufa-tutorial', '0'); } catch (e) {} let x = 7; Math.random = () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; });
     const t0 = Date.now();
     await p.goto('file://' + page);
-    await p.waitForSelector('#startForm button', { timeout: 20000 });
+    await p.waitForSelector('#startForm button[type=submit]', { timeout: 20000 });
     notes.push(`[${vp.width}] стартовый экран за ${Date.now() - t0} мс`);
-    await p.click('#startForm button'); await p.waitForTimeout(300);
+    // Дымовой прогон базовой сети; сценарии с готовой сетью проверяются в qa/scen-ui.js.
+    await p.evaluate(() => { BK.Scenario.pick = () => null; BK.CFG.STORY.ON = false; });
+    await p.click('#startForm button[type=submit]'); await p.waitForTimeout(300);
     await p.click('[data-act="rentProd"]:not([disabled])'); await p.waitForTimeout(200);
     await p.click('[data-act="rent"]:not([disabled])'); await p.waitForTimeout(300);
     const cm0 = await p.$('#modal [data-act="closeModal"]'); if (cm0) await cm0.click();
@@ -48,7 +51,7 @@ fs.writeFileSync(page, '<!doctype html><html lang="ru"><head><meta charset="utf-
     await ctx.close();
   }
   await b.close();
-  fs.unlinkSync(page);
+  if (!external) fs.unlinkSync(page);
   console.log(`${engine} · ${path.basename(src)} (${(fs.statSync(src).size / 1024).toFixed(0)} КБ)`);
   for (const n of notes) console.log('  ' + n);
   console.log(errs.length ? errs.join('\n') : '0 ошибок консоли');

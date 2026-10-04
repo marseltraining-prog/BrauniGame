@@ -101,7 +101,9 @@ async function screens(b, vp, theme, sv) {
     S.miles.recipes = [one.id];
     const openByRecipe = E.eqUnlocked(S, one.req, one.id);
     const sibOpen = sib ? E.eqUnlocked(S, sib.req, sib.id) : false;
-    const other = BK.PRODUCTS.filter((q) => q.req && q.req !== one.req)[0];
+    // Сравниваем с действительно закрытым продуктом: уже купленное оборудование
+    // законно открывает чужой рецепт и не должно давать ложную ошибку теста.
+    const other = locked.find((q) => q.req !== one.req);
     const otherOpen = other ? E.eqUnlocked(S, other.req, other.id) : false;
     const list = M.recipeList(S).length;
     S.miles.recipes = (S.miles.recipes || []).filter((x) => false);

@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="03.10.2026 20:31 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="04.10.2026 06:42 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -107,7 +107,7 @@ button, input, select { font: inherit; color: inherit; }
 h1, h2, h3 { text-wrap: balance; margin: 0; }
 :focus-visible { outline: 2px solid var(--crust); outline-offset: 2px; }
 
-#app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+#app { height: 100%; display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-width: 0; }
 
 /* ---------- HUD ---------- */
 .hud { display: flex; align-items: center; gap: 16px; padding: 6px 14px; min-height: 64px; background: var(--surface); border-bottom: 1px solid var(--line); position: relative; z-index: 5; }
@@ -163,6 +163,13 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 @media (min-width: 821px) and (max-width: 1180px) { .s-rev, .vsep { display: none; } }
 @media (min-width: 821px) and (max-width: 1100px) { .hud .goal { width: 170px; } .hud { gap: 12px; } .stats { gap: 14px; } .brand-name { max-width: 130px; } }
 @media (min-width: 821px) and (max-width: 960px) { .brand-tx, .s-st { display: none; } }
+/* Длинные суммы и версия 0.9.x должны помещаться на небольшом ноутбуке. */
+@media (min-width: 821px) and (max-width: 1500px) {
+  .hud { gap: 8px; padding-inline: 10px; }
+  .clock { gap: 6px; }
+  .stats { gap: 10px; }
+  .hud .goal { width: 170px; }
+}
 
 /* ---------- main layout ---------- */
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; min-height: 0; }
@@ -402,6 +409,17 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
 .start-map { width: 100%; height: auto; border-radius: 16px; }
 /* выбор уровня сложности */
+.citypick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+.citypick legend { padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--ink-2); }
+.cityopts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cityopt { position: relative; display: flex; align-items: center; min-height: 44px; padding: 8px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--surface); cursor: pointer; font-size: 12px; min-width: 0; }
+.cityopt span { overflow-wrap: anywhere; }
+.cityopt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cityopt:has(input:checked) { border-color: var(--crust); box-shadow: inset 0 0 0 1px var(--crust); background: var(--crust-soft); }
+.cityopt:has(input:focus-visible) { outline: 2px solid var(--crust); outline-offset: 2px; }
+.cityopt.locked, .cityopt.locked input { cursor: not-allowed; color: var(--ink-3); }
+.citypick p { margin: 8px 0 0; }
+@media (max-width: 430px) { .cityopts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .diffpick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 6px; min-width: 0; }
 .diffpick legend { padding: 0; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
 .diffopts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -3598,7 +3616,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.7', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.8', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -15636,7 +15654,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const E = BK.Engine, I = E._int, C = () => BK.CFG, K = () => BK.CFG.CORP;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const def = (id) => BK.CITY_BY_ID[id];
-  const cityName = (id) => (def(id) || {}).name || id;
+  const cityName = (id, S) => (S ? cityDef(S, id) : def(id) || {}).name || id;
   const on = (S) => !!(S && S.corp && S.corp.unlockedDay != null);
 
   function withRng(S, holder, key, fn) { // свой ГСЧ на время вызова (как у соперника)
@@ -15646,8 +15664,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const daysInMonthOf = (day) => { const t = E.dateOf(day); return new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate(); };
   // «уфимский» (корпоративный) рынок зарплат: рынок активного города ÷ его индекс зарплат
   function cityDef(S, id) { // ключ `ufa` в корпорации означает домашний город, в сценарии им может быть Москва
-    const real = id === 'ufa' ? (startCityOf(S) || 'ufa') : id;
+    const real = realCityId(S, id);
     return def(real) || def('ufa') || {};
+  }
+  // Ключ ufa зарезервирован за домашним городом ради совместимости сохранений.
+  // Отдельный вход в настоящую Уфу из другого города пока недоступен.
+  const homeCityId = (S) => startCityOf(S) || 'ufa';
+  const realCityId = (S, id) => id === 'ufa' ? homeCityId(S) : id;
+  const roadKm = (S, a, b) => BK.roadKm(realCityId(S, a), realCityId(S, b));
+  function mapCities(S) {
+    const home = homeCityId(S);
+    if (home === 'ufa') return BK.CITIES;
+    return BK.CITIES.filter((d) => d.id !== home).map((d) => d.id === 'ufa' ? Object.assign({}, cityDef(S, 'ufa'), { id: 'ufa', geoId: home }) : d);
   }
   function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = cityDef(S, S.corp.active).wage || 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
 
@@ -15659,7 +15687,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     unlock(S);
   }
   function unlock(S) {
-    const ufa = { id: 'ufa', name: 'Уфа', enteredDay: 0, status: 'run', seed: S.seed | 0, mapGen: 0, rng: (S.seed ^ 0x3a1f5) | 0, aw: 1,
+    const ufa = { id: 'ufa', name: cityDef(S, 'ufa').name, enteredDay: 0, status: 'run', seed: S.seed | 0, mapGen: 0, rng: (S.seed ^ 0x3a1f5) | 0, aw: 1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: S.flags.storeNum || 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     const homeWage = cityDef(S, 'ufa').wage || 1;
     S.corp = { unlockedDay: S.day, active: 'ufa', market0: { seller: S.market.seller / homeWage, baker: S.market.baker / homeWage }, cities: { ufa }, rng: (S.seed ^ 0x5eed0c) | 0, lastMonthly: S.day, aggRevP: 0 };
@@ -15674,6 +15702,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S.corp) { if (C().CORP_ON && K() && S.phase === 'play' && S.cumRevenue >= K().UNLOCK_REVENUE && !(S.story && S.story.f && S.story.f.ufa === 'deep')) unlock(S); }
     const cr = S.corp;
     if (cr) {
+      if (cr.cities.ufa) cr.cities.ufa.name = cityDef(S, 'ufa').name;
       for (const id in cr.cities) { const c = cr.cities[id]; if (!c.mAcc) c.mAcc = { rev: 0, profit: 0, agg: 0 }; if (!c.hist) c.hist = []; if (c.packed && c.packed.stores) c.packed.stores = c.packed.stores.map(canonStore); }
       if (cr.lastMonthly == null) cr.lastMonthly = S.day - (E.dateOf(S.day).d - 1);
       if (cr.aggRevP == null) cr.aggRevP = 0;
@@ -15932,10 +15961,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const from = cr.active;
     unmount(S); mount(S, id);
     if (BK.HQ) BK.HQ.onVisit(S, id); // личный визит: касса без фильтра директора («цифры не сходятся»)
-    I.log(S, `Вы взяли управление ${cityIn(id)}. ${cityName(from)} — на автопилоте: точки работают, новых не открывается.`, 'info');
+    I.log(S, `Вы взяли управление ${cityIn(id, S)}. ${cityName(from, S)} — на автопилоте: точки работают, новых не открывается.`, 'info');
     return { ok: true };
   }
-  const cityIn = (id) => (def(id) || {}).in || 'в городе ' + cityName(id);
+  const cityIn = (id, S) => (S ? cityDef(S, id) : def(id) || {}).in || 'в городе ' + cityName(id, S);
 
   /* ---------------- агрегированная модель (раз в месяц; «владелец заочно», без директора) ---------------- */
   function salaryCity(S, c, lvl) { const m = corpMarket(S).seller * (cityDef(S, c.id).wage || 1) * (c.payK || 1); return m * (1 + C().EXPECT_PER_LVL * (lvl - 1)); }
@@ -16169,7 +16198,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let fresh = null, frozen = null;
     for (const o in cr.cities) {
       if (o === id || !ownOpen(S, o)) continue;
-      const km = BK.roadKm(o, id);
+      const km = roadKm(S, o, id);
       if (km <= fr && (!fresh || km < fresh.km)) fresh = { from: o, km };
       if (lvl >= 2 && km <= k.FROZEN_KM && (!frozen || km < frozen.km)) frozen = { from: o, km };
     }
@@ -16186,7 +16215,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function remoteDel(S, st) {
     const c = remoteOf(S); if (!c) return null;
     const k = K(), cfg = C(), fz = c.supplyMode === 'frozen', D = fz ? k.DEL_FROZEN : k.DEL_FRESH;
-    const km = c.supplyKm != null ? c.supplyKm : BK.roadKm(c.supplyFrom, c.id);
+    const km = c.supplyKm != null ? c.supplyKm : roadKm(S, c.supplyFrom, c.id);
     const hub = S.corp.cities[c.supplyFrom], payB = corpMarket(S).baker * (cityDef(S, c.supplyFrom).wage || 1) * (hub ? hub.payKb || hub.payK || 1 : 1);
     const units = (st.cpd != null ? st.cpd : 150) * cfg.ITEMS_PER_CHECK;
     const bake = units / cfg.PROD_UNITS_PER_BAKER * payB * (1 + cfg.PAYROLL_TAX) * k.REMOTE_BAKE_K[fz ? 1 : 0];
@@ -16201,13 +16230,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     id = id || cr._with || cr.active;
     let a = 0; const c = remoteOf(S, id), k = K();
     if (c) a += c.supplyMode === 'frozen' ? k.FROZEN_RATING : (c.supplyKm || 0) > k.FRESH_FAR_KM ? k.FRESH_FAR_RATING : 0;
-    const d = def(id);
+    const d = cityDef(S, id);
     if (d && d.natReq && !S.menu.some((m) => { const p = E.byId(BK.PRODUCTS, m.id); return p && p.cat === 'national'; })) a += d.natReq;
     return a;
   }
   function supplyName(S, c) {
     if (!c || !c.supplyFrom) return 'свой цех';
-    return (c.supplyMode === 'frozen' ? 'фабрика заморозки ' : 'цех ') + ((def(c.supplyFrom) || {}).in || cityName(c.supplyFrom));
+    return (c.supplyMode === 'frozen' ? 'фабрика заморозки ' : 'цех ') + (cityDef(S, c.supplyFrom).in || cityName(c.supplyFrom, S));
   }
   // назначить снабжение (вход в город или смена): mode 'fresh' | 'frozen'
   function setSupply(S, id, mode) {
@@ -16224,7 +16253,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const id in cr.cities) {
       const c = cr.cities[id]; if (!c.supplyFrom) continue;
       if (ownOpen(S, id)) { // свой цех заработал — поставки больше не нужны
-        if (!quiet) I.log(S, `${cityName(id)}: свой цех заработал — поставки (${supplyName(S, c)}) прекращены.`, 'good');
+        if (!quiet) I.log(S, `${cityName(id, S)}: свой цех заработал — поставки (${supplyName(S, c)}) прекращены.`, 'good');
         delete c.supplyFrom; delete c.supplyMode; delete c.supplyKm; delete c.supplyOk; continue;
       }
       const h = supplyHubs(S, id), cur = h[c.supplyMode || 'fresh'], alt = c.supplyMode === 'frozen' ? h.fresh : h.frozen;
@@ -16234,14 +16263,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (pick.from !== c.supplyFrom || pick !== cur) {
           c.supplyMode = pick === cur ? c.supplyMode || 'fresh' : c.supplyMode === 'frozen' ? 'fresh' : 'frozen';
           c.supplyFrom = pick.from;
-          if (!quiet) I.log(S, `${cityName(id)}: снабжение переключено — ${supplyName(S, c)} (${pick.km} км).`, 'warn');
+          if (!quiet) I.log(S, `${cityName(id, S)}: снабжение переключено — ${supplyName(S, c)} (${pick.km} км).`, 'warn');
         }
         c.supplyKm = pick.km; c.supplyOk = true;
       } else {
         c.supplyOk = false;
         if (was && !quiet) {
-          I.log(S, `${cityName(id)}: снабжение прервано — нет нашего цеха в досягаемости. Точки стоят без выпечки: откройте свой цех или верните логистику в штабе.`, 'bad');
-          if (BK.Dir && BK.Dir.pushInbox) BK.Dir.pushInbox(S, { kind: 'note', tone: 'bad', city: id, dname: '', title: `${cityName(id)}: нет выпечки`, text: 'Поставки из другого города прервались (хаб без цеха или штаб закрыл логистику). Пока нет своего цеха, точки не продают. Откройте цех в городе или верните отдел логистики.' });
+          I.log(S, `${cityName(id, S)}: снабжение прервано — нет нашего цеха в досягаемости. Точки стоят без выпечки: откройте свой цех или верните логистику в штабе.`, 'bad');
+          if (BK.Dir && BK.Dir.pushInbox) BK.Dir.pushInbox(S, { kind: 'note', tone: 'bad', city: id, dname: '', title: `${cityName(id, S)}: нет выпечки`, text: 'Поставки из другого города прервались (хаб без цеха или штаб закрыл логистику). Пока нет своего цеха, точки не продают. Откройте цех в городе или верните отдел логистики.' });
         }
       }
     }
@@ -16264,7 +16293,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // вход в Москву дешевле, если в сети есть «ворота» (Нижний Новгород)
   function gateK(S, id) {
     let k = 1; if (!on(S)) return k;
-    for (const o in S.corp.cities) { const g = (def(o) || {}).gate; if (g && g[id]) k = Math.min(k, g[id]); }
+    for (const o in S.corp.cities) { const g = cityDef(S, o).gate; if (g && g[id]) k = Math.min(k, g[id]); }
     return k;
   }
 
@@ -16356,14 +16385,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function awStart(S, id) {
     const d = def(id);
     if (d.aw0 != null) return d.aw0;
-    let near = 0; for (const o in S.corp.cities) if (BK.roadKm(o, id) < K().AW_NEAR_KM) near++;
+    let near = 0; for (const o in S.corp.cities) if (roadKm(S, o, id) < K().AW_NEAR_KM) near++;
     return Math.min(K().AW_START_MAX, K().AW_START + K().AW_NEAR * near) + K().AW_MKT + (BK.HQ ? BK.HQ.awStartAdd(S) : 0);
   }
   function enterLock(S, id) { // null — можно; иначе причина
     const d = def(id);
     if (!on(S)) return 'Выход в Россию ещё не открыт';
     if (!d || d.builtin) return 'Город недоступен';
-    if (S.corp.cities[id]) return 'Уже ваш город';
+    if (S.corp.cities[id] || id === homeCityId(S)) return 'Уже ваш город';
     // Москва и Петербург — после 3 городов И финансового департамента (§12 п. 8)
     if (d.big) { const bl = BK.HQ ? BK.HQ.bigLock(S) : ownCount(S) < K().BIG_MIN_CITIES ? `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города` : null; if (bl) return bl; }
     // таймера «один город за раз» больше нет (Р4 ч. 2): темп входа ограничивают цена (enterCost) и мощность штаба (BK.HQ.load — перегрузка даёт утечку)
@@ -16388,11 +16417,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.HQ) BK.HQ.onEnter(S, id); // давление местных сетей и «Хлебного двора», льгота губернатора
     if (S.chron) S.chron.push({ day: S.day, t: 'city', id, cost, over: BK.HQ && BK.HQ.load && BK.HQ.load(S).over > 0 ? 1 : undefined }); // летопись: вход в город (итоги игры)
     if (dirId) {
-      I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.${supTxt}`, 'good');
+      I.log(S, `Вход ${cityIn(id, S)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. Запуск ведёт директор.${supTxt}`, 'good');
       const r = BK.Dir.launch(S, id, dirId);
       return Object.assign({ ok: true, cost, supply: sm }, r);
     }
-    I.log(S, `Вход ${cityIn(id)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. ${sm ? 'Выберите первую точку.' + supTxt : 'Выберите помещение под цех.'}`, 'good');
+    I.log(S, `Вход ${cityIn(id, S)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. ${sm ? 'Выберите первую точку.' + supTxt : 'Выберите помещение под цех.'}`, 'good');
     switchCity(S, id);
     const pc = cr.cities[id].perk; if (pc && pc.prodRent) for (const o of S.prodOffers) o.rentM2 = Math.round(o.rentM2 * pc.prodRent); // цех в индустриальном парке за полцены
     return { ok: true, cost, supply: sm };
@@ -16426,7 +16455,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function rollingAll(S) { let s = 0; for (const x of S.history.slice(-12)) s += x.rev; return s; }
 
   BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, cityDef, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, summary, rollingAll, corpMarket, on, awMult, cityMonth,
-    supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
+    cityDef, homeCityId, realCityId, roadKm, mapCities, supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
   Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();
 
@@ -16794,7 +16823,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (!pk.productions.length) {
         if (!rem) { buildProd(S, c, true); return; }
         const own = K_.SUPPLY_OWN_STORES[rem.supplyMode === 'frozen' ? 'frozen' : 'fresh'];
-        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().def(c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
+        if (rem.supplyOk === false || pk.stores.length >= own) { const r = buildProd(S, c, rem.supplyOk === false); if (r) { c.budget.left = Math.max(0, c.budget.left - r.cost); I.log(S, `${CI().cityDef(S, c.id).name}: директор строит свой цех — поставки ${rem.supplyMode === 'frozen' ? 'с фабрики заморозки' : 'из другого города'} ${rem.supplyOk === false ? 'прервались' : 'обходятся дороже'}.`, 'info'); } }
       }
       // закрытие: полгода подряд в убытке и старше года (§5.3 п. 6)
       for (const s of pk.stores.slice()) {
@@ -16901,7 +16930,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.cash += refund; S.month.income += refund;
     const i = c.packed.stores.indexOf(s); if (i >= 0) c.packed.stores.splice(i, 1); // на месте: внутри withCity S.stores — та же ссылка
     c.dev.closed++; c.dev.mClosed = (c.dev.mClosed || 0) + 1;
-    I.log(S, `${CI().def(c.id).name}: ${d ? d.name + ' закрыл' + (d.f ? 'а' : '') : 'закрыта'} убыточную точку №${s.num} (${s.address}). Продано оборудование на ${fm(refund)}.`, 'warn');
+    I.log(S, `${CI().cityDef(S, c.id).name}: ${d ? d.name + ' закрыл' + (d.f ? 'а' : '') : 'закрыта'} убыточную точку №${s.num} (${s.address}). Продано оборудование на ${fm(refund)}.`, 'warn');
     return refund;
   }
   // покупка местной сети (e208): цех и n работающих точек без затрат (цена сделки — в событии); город без директора
@@ -16937,7 +16966,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let n = 0;
     const rem = !!c.supplyFrom; // Р4: выпечку везут из другого города — без своего цеха
     BK.Corp.withCity(S, id, () => { if (!rem) { const r = buildProd(S, c, true); if (r && c.perk && c.perk.prodRent) r.p.rentM2 = Math.round(r.p.rentM2 * c.perk.prodRent); } n = tryOpen(S, c, d, { first: true, maxN: K().DIR_LAUNCH_STORES }); });
-    I.log(S, `${d.name} запускает ${CI().def(id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${BK.Corp && BK.Corp.openDays ? BK.Corp.openDays(S, id) : 21} дн.`, 'good');
+    I.log(S, `${d.name} запускает ${CI().cityDef(S, id).name}: ${rem ? '' : 'цех и '}${n} ${n === 1 ? 'точка' : n < 5 ? 'точки' : 'точек'} откроются через ${BK.Corp && BK.Corp.openDays ? BK.Corp.openDays(S, id) : 21} дн.`, 'good');
     return { ok: true, opened: n };
   }
 
@@ -16982,9 +17011,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function quit(S, d) {
     const cr = S.corp, c = d.city ? cr.cities[d.city] : null;
     removeDir(S, d); if (BK.HQ) cr.stat.left++;
-    I.log(S, `${d.name} ${d.f ? 'ушла' : 'ушёл'} из сети: лояльность упала до ${Math.round(d.loyalty)}.${c ? ' ' + CI().def(c.id).name + ' без директора.' : ''}`, 'bad');
-    pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: `Лояльность упала до ${Math.round(d.loyalty)}: оклад ниже рынка, отказы и личное управление копились месяцами.${c ? ` ${CI().def(c.id).name} теперь без директора — назначьте нового.` : ''}` });
-    S.notify.push({ type: 'toast', title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: c ? `${CI().def(c.id).name} без директора.` : 'Директор из резерва ушёл.', kind: 'bad' });
+    I.log(S, `${d.name} ${d.f ? 'ушла' : 'ушёл'} из сети: лояльность упала до ${Math.round(d.loyalty)}.${c ? ' ' + CI().cityDef(S, c.id).name + ' без директора.' : ''}`, 'bad');
+    pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: `Лояльность упала до ${Math.round(d.loyalty)}: оклад ниже рынка, отказы и личное управление копились месяцами.${c ? ` ${CI().cityDef(S, c.id).name} теперь без директора — назначьте нового.` : ''}` });
+    S.notify.push({ type: 'toast', title: `${d.name} ${d.f ? 'уволилась' : 'уволился'}`, text: c ? `${CI().cityDef(S, c.id).name} без директора.` : 'Директор из резерва ушёл.', kind: 'bad' });
   }
 
   /* ---------------- план года ---------------- */
@@ -17039,7 +17068,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const list = packedList(c), open = list.filter((s) => s.status !== 'opening');
     let mood = 0, n = 0, missing = 0; for (const s of open) { mood += s.staff.mood * s.staff.n; n += s.staff.n; missing += Math.max(0, s.staffTarget - s.staff.n); }
     mood = n ? mood / n : 60;
-    const reqs = [], ctx = { city: CI().def(c.id).name, director: d.name };
+    const reqs = [], ctx = { city: CI().cityDef(S, c.id).name, director: d.name };
     // просьбы (не больше двух, без повторов открытых)
     if (c.wantBudget && !hasOpen(S, c.id, 'budget')) {
       const w = c.wantBudget, amount = Math.max(1e6, Math.round(w.n * w.cost / 1e6) * 1e6);
@@ -17079,6 +17108,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function districtName(S, c, did) {
     const dc = CI().cityDef(S, c.id);
     if (dc.id === 'ufa') { const d = (BK.UFA && BK.UFA.DISTRICTS || []).find((x) => x.id === did); return d ? d.name : 'центре'; }
+    const big = BK.CITY_BIG && BK.CITY_BIG[dc.id];
+    if (big) { const d = big.districts.find((x) => x.id === did); return d ? d.name : 'Центр'; }
     const g = BK.genCityGeo ? BK.genCityGeo(dc, c.seed | 0, c.mapGen) : null;
     const d = g && g.DISTRICTS.find((x) => x.id === did); return d ? d.name : 'Центр';
   }
@@ -17153,7 +17184,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const n of it.noms) { const d = dirById(S, n.dir); if (!d) continue; if (n.dir === dirId) d.loyalty = clamp(d.loyalty + K_.LOY_AWARD, 0, 100); else if (d.loyalty < 50) d.loyalty = clamp(d.loyalty - 3, 0, 100); }
     it.done = dirId; cr.dirYear[it.y] = dirId;
     const w = it.noms.find((n) => n.dir === dirId);
-    I.log(S, `«Директор года ${it.y}» — ${w ? w.name + ' (' + CI().def(w.city).name + ')' : ''}.`, 'good');
+    I.log(S, `«Директор года ${it.y}» — ${w ? w.name + ' (' + CI().cityDef(S, w.city).name + ')' : ''}.`, 'good');
     return { ok: true };
   }
 
@@ -17244,8 +17275,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => BK.fmtMoney(v);
   const def = (id) => BK.CITY_BY_ID[id] || {};
-  const cname = (id) => def(id).name || id;
-  const cin = (id) => def(id).in || 'в городе ' + cname(id);
+  const cname = (S, id) => BK.Corp.cityDef(S, id).name || id;
+  const cin = (S, id) => BK.Corp.cityDef(S, id).in || 'в городе ' + cname(S, id);
   const KEYS = ['finance', 'hr', 'uni', 'purchasing', 'logistics', 'brand', 'security', 'legal'];
   const MAXLV = { uni: 3, logistics: 2 };
   const KPI_KEYS = ['rev', 'profit', 'rating', 'opens', 'turnover'];
@@ -17397,8 +17428,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     c.rivalIn = S.day; c.rp = Math.max(c.rp || 0, K().RIVAL_PRESS0); c.pressure = pressOf(c);
     if (cityId === cr.active && !(S.rival && S.rival.enabled) && I.rivalInit) I.rivalInit(S, true); // в подробном городе — обычная логика соперника
     if (!quiet) {
-      I.log(S, `«${C().RIVAL_NAME}» вышел ${cin(cityId)}: давление соперника в городе ${n2(c.pressure)}.`, 'bad');
-      D().pushInbox(S, { kind: 'note', tone: 'warn', city: cityId, dname: '', title: `«${C().RIVAL_NAME}» ${cin(cityId)}`, text: `Федеральная сеть идёт за нами: первые вывески уже висят. Выручка точек рядом ниже, сильнее — у точек с низким рейтингом. Держите рейтинг и занимайте места раньше них.` });
+      I.log(S, `«${C().RIVAL_NAME}» вышел ${cin(S, cityId)}: давление соперника в городе ${n2(c.pressure)}.`, 'bad');
+      D().pushInbox(S, { kind: 'note', tone: 'warn', city: cityId, dname: '', title: `«${C().RIVAL_NAME}» ${cin(S, cityId)}`, text: `Федеральная сеть идёт за нами: первые вывески уже висят. Выручка точек рядом ниже, сильнее — у точек с низким рейтингом. Держите рейтинг и занимайте места раньше них.` });
     }
     return 'in';
   }
@@ -17408,7 +17439,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const id in cr.cities) {
       const c = cr.cities[id]; if (id === 'ufa') { c.pressure = 0; continue; }
       if (c.rivalIn) {
-        const st = BK.Corp.cityStats(S, id), cap = def(id).cap || 40;
+        const st = BK.Corp.cityStats(S, id), cap = BK.Corp.cityDef(S, id).cap || 40;
         const dom = st.open >= cap * 0.6 && (st.rating || 0) >= 4.3; // игрок доминирует — соперник отступает
         c.rp = clamp((c.rp || 0) + (dom ? k.RIVAL_PRESS_DOM : k.RIVAL_PRESS_GROW), 0.1, k.RIVAL_PRESS_CAP);
       }
@@ -17543,7 +17574,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function regionCands(S, d) { // соседние города без директора, ближе 600 км к основному
     if (!d.city) return [];
     const cr = S.corp;
-    return Object.keys(cr.cities).filter((id) => id !== d.city && id !== cr.active && !cr.cities[id].directorId && BK.roadKm(d.city, id) <= K().REGION_KM);
+    return Object.keys(cr.cities).filter((id) => id !== d.city && id !== cr.active && !cr.cities[id].directorId && BK.Corp.roadKm(S, d.city, id) <= K().REGION_KM);
   }
   function promote(S, dirId) {
     const d = D().dirById(S, dirId); if (!d) return { ok: false };
@@ -17562,7 +17593,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (regionCands(S, d).indexOf(cityId) < 0) return { ok: false, msg: 'Город далеко или у него уже есть директор' };
     d.region.push(cityId); c.directorId = d.id; if (!c.budget.capex) { c.budget.capex = D().proposeCapex(S, c, d); c.budget.left = c.budget.capex; }
     D().makePlan(S, c, d);
-    I.log(S, `${d.name} ведёт и ${cname(cityId)} (кластер: ${[d.city].concat(d.region).map(cname).join(', ')}).`, 'info');
+    I.log(S, `${d.name} ведёт и ${cname(S, cityId)} (кластер: ${[d.city].concat(d.region).map((id) => cname(S, id)).join(', ')}).`, 'info');
     return { ok: true };
   }
   function dropRegion(S, d, cityId) {
@@ -17575,7 +17606,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function poachP(S, d) {
     if (!d.city) return 0;
     const k = K(), c = S.corp.cities[d.city], mk = D().marketPay(S, d, d.city);
-    const comp = k.POACH_COMP[def(d.city).comp] || 1;
+    const comp = k.POACH_COMP[BK.Corp.cityDef(S, d.city).comp] || 1;
     let p = k.POACH_BASE * comp * Math.pow(mk / Math.max(1, d.salary), 2) * clamp(1.6 - 1.2 * d.loyalty / 100, 0.1, 1.6) * (1 - k.OPT_POACH * unvested(d)) * (d.grade >= 3 ? k.POACH_GRADE : 1);
     if (lvlOf(S, 'hr')) p *= k.HR_POACH_K;
     p *= k.POACH_DIFF[S.difficulty] || 1;
@@ -17599,14 +17630,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       d.caught = true; cr.stat.caught++;
       const stolen = Math.round(d.stolen || 0);
       D().pushInbox(S, { kind: 'caught', trait, tone: 'bad', dir: d.id, dname: d.name, city: cityId, how, gap: +gap.toFixed(3), stolen,
-        title: how === 'visit' ? `Цифры не сходятся ${cityId ? cin(cityId) : ''}` : `${HOW[how] || 'Проверка'}: ${d.name} ${g(d, 'уводил', 'уводила')} выручку`,
-        text: `${how === 'visit' ? `Вы сами открыли кассу: касса и отчёт расходятся на ${pct1(gap)}. ` : ''}${d.name} ${g(d, 'уводил', 'уводила')} ≈ ${pct1(gap)} выручки${cityId ? ' ' + cin(cityId) : ''}; всего ушло около ${fm(stolen)}. Решите, что делать.`,
+        title: how === 'visit' ? `Цифры не сходятся ${cityId ? cin(S, cityId) : ''}` : `${HOW[how] || 'Проверка'}: ${d.name} ${g(d, 'уводил', 'уводила')} выручку`,
+        text: `${how === 'visit' ? `Вы сами открыли кассу: касса и отчёт расходятся на ${pct1(gap)}. ` : ''}${d.name} ${g(d, 'уводил', 'уводила')} ≈ ${pct1(gap)} выручки${cityId ? ' ' + cin(S, cityId) : ''}; всего ушло около ${fm(stolen)}. Решите, что делать.`,
         choices: ['sue', 'quiet', 'forgive'], done: null, due: S.day + 45 });
-      I.log(S, `${HOW[how] || 'Проверка'}: ${d.name}${cityId ? ' (' + cname(cityId) + ')' : ''} — «Нечист на руку», украдено ≈ ${fm(stolen)}.`, 'bad');
+      I.log(S, `${HOW[how] || 'Проверка'}: ${d.name}${cityId ? ' (' + cname(S, cityId) + ')' : ''} — «Нечист на руку», украдено ≈ ${fm(stolen)}.`, 'bad');
       S.notify.push({ type: 'toast', title: how === 'visit' ? 'Цифры не сходятся' : 'Поймали на воровстве', text: `${d.name}: касса и отчёт расходятся на ${pct1(gap)}. Решение — во вкладке «Отчёты».`, kind: 'bad' });
     } else if (trait === 'embellish') {
       D().pushInbox(S, { kind: 'caught', trait, tone: 'warn', dir: d.id, dname: d.name, city: cityId, how, gap: +gap.toFixed(3),
-        title: `${HOW[how] || 'Проверка'}: отчёты ${d.name} приукрашены`, text: `KPI в отчётах завышены примерно на ${pct1(gap)}: премии переплачены, план ${cityId ? cin(cityId) : ''} на деле хуже. Отчёты дальше — уже без прикрас.`,
+        title: `${HOW[how] || 'Проверка'}: отчёты ${d.name} приукрашены`, text: `KPI в отчётах завышены примерно на ${pct1(gap)}: премии переплачены, план ${cityId ? cin(S, cityId) : ''} на деле хуже. Отчёты дальше — уже без прикрас.`,
         choices: ['warn', 'fire'], done: null, due: S.day + 45 });
       I.log(S, `${HOW[how] || 'Проверка'}: ${d.name} приукрашивает отчёты (≈ ${pct1(gap)}).`, 'warn');
     } else {
@@ -17626,7 +17657,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       D().fire(S, d.id, 0);
       if (back > 0) (cr.pending = cr.pending || []).push({ day: S.day + 365, cash: back, text: `Суд с ${d.name}: возвращено ${fm(back)} украденного.` });
       if (it.city && cr.cities[it.city] && it.city !== 'ufa') cr.cities[it.city].aw = clamp(cr.cities[it.city].aw + k.SUE_AW, 0, 1);
-      I.log(S, `${d.name}: уволен${g(d, '', 'а')}, иск подан — через год вернут ≈ ${fm(back)}; скандал: узнаваемость ${it.city ? cname(it.city) : ''} −5 %.`, 'warn');
+      I.log(S, `${d.name}: уволен${g(d, '', 'а')}, иск подан — через год вернут ≈ ${fm(back)}; скандал: узнаваемость ${it.city ? cname(S, it.city) : ''} −5 %.`, 'warn');
     } else if (choice === 'quiet' || choice === 'fire') { D().fire(S, d.id, 0); }
     else if (choice === 'forgive') {
       d.salary = Math.round(d.salary * k.FORGIVE_PAY / 1000) * 1000; d.theta = 0; d.loyalty = clamp(d.loyalty - 5, 0, 100);
@@ -17655,9 +17686,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let loy = 0;
     if (!found.length && !dishonest) { loy = pen; if (d.lastAudit != null && S.day - d.lastAudit < 365) loy += k.AUDIT_AGAIN; d.loyalty = clamp(d.loyalty + loy, 0, 100); }
     d.lastAudit = S.day; d.checked = S.day;
-    if (!found.length) D().pushInbox(S, { kind: 'note', tone: loy < 0 ? 'warn' : '', dir: d.id, dname: d.name, city: cityId, title: `Аудит ${cin(cityId)}: касса и отчёты сходятся`, text: `Нарушений не нашли${cost ? ` (аудит — ${fm(cost)})` : ''}.${loy < 0 ? ` ${d.name} ${g(d, 'обижен', 'обижена')} проверкой: лояльность ${loy}.` : ''}` });
+    if (!found.length) D().pushInbox(S, { kind: 'note', tone: loy < 0 ? 'warn' : '', dir: d.id, dname: d.name, city: cityId, title: `Аудит ${cin(S, cityId)}: касса и отчёты сходятся`, text: `Нарушений не нашли${cost ? ` (аудит — ${fm(cost)})` : ''}.${loy < 0 ? ` ${d.name} ${g(d, 'обижен', 'обижена')} проверкой: лояльность ${loy}.` : ''}` });
     chron(S, { t: 'audit', city: cityId, found: found.length, cost });
-    I.log(S, `Аудит ${cin(cityId)}${cost ? ` (${fm(cost)})` : ''}: ${found.length ? 'найдены нарушения' : 'нарушений нет'}.`, found.length ? 'bad' : 'info');
+    I.log(S, `Аудит ${cin(S, cityId)}${cost ? ` (${fm(cost)})` : ''}: ${found.length ? 'найдены нарушения' : 'нарушений нет'}.`, found.length ? 'bad' : 'info');
     return { ok: true, found, cost, loy };
   }
   // личный визит («зайти» в город директора): касса без фильтра директора
@@ -17723,7 +17754,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const d of cr.directors) {
         if (!d.opt || !d.opt.city || !d.city) continue;
         const c = cr.cities[d.city], y = t.y - 1, p = c.hist.filter((x) => x[0] === y).reduce((a, x) => a + x[3], 0);
-        if (p > 0) { const pay = Math.round(p * d.opt.city); I.spend(S, pay, 'upkeep'); cr.stat.optPaid += pay; I.log(S, `${d.name}: доля ${pct1(d.opt.city)} прибыли ${cname(d.city)} за ${y} — ${fm(pay)}.`, 'info'); }
+        if (p > 0) { const pay = Math.round(p * d.opt.city); I.spend(S, pay, 'upkeep'); cr.stat.optPaid += pay; I.log(S, `${d.name}: доля ${pct1(d.opt.city)} прибыли ${cname(S, d.city)} за ${y} — ${fm(pay)}.`, 'info'); }
       }
     }
   }
@@ -17735,9 +17766,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const where = to === 'agent' ? `в «${C().RIVAL_NAME}»` : d.leaveWho || 'к конкуренту';
     if (to === 'agent' && c && c.id !== 'ufa') { c.rp = Math.max(c.rp || 0, K().RIVAL_PRESS0); c.pressure = pressOf(c); }
     if (to === 'agent' && !knows(d, 'rivalAgent')) d.known.push('rivalAgent');
-    I.log(S, `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}${took ? ` и ${g(d, 'увёл', 'увела')} ${took} лучших продавцов` : ''}.${c ? ' ' + cname(c.id) + ' без директора.' : ''}`, 'bad');
-    D().pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}`, text: `${to === 'agent' ? 'Оказалось, это был человек соперника: он пришёл за нашими людьми и рецептами. ' : ''}${took ? `С ${g(d, 'ним', 'ней')} ушли ${took} лучших продавцов, настроение команды упало. ` : ''}${c ? `${cname(c.id)} без директора — назначьте нового.` : ''}` });
-    S.notify.push({ type: 'toast', title: `${d.name} ${g(d, 'ушёл', 'ушла')}`, text: c ? `${cname(c.id)} без директора.` : '', kind: 'bad' });
+    I.log(S, `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}${took ? ` и ${g(d, 'увёл', 'увела')} ${took} лучших продавцов` : ''}.${c ? ' ' + cname(S, c.id) + ' без директора.' : ''}`, 'bad');
+    D().pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}`, text: `${to === 'agent' ? 'Оказалось, это был человек соперника: он пришёл за нашими людьми и рецептами. ' : ''}${took ? `С ${g(d, 'ним', 'ней')} ушли ${took} лучших продавцов, настроение команды упало. ` : ''}${c ? `${cname(S, c.id)} без директора — назначьте нового.` : ''}` });
+    S.notify.push({ type: 'toast', title: `${d.name} ${g(d, 'ушёл', 'ушла')}`, text: c ? `${cname(S, c.id)} без директора.` : '', kind: 'bad' });
   }
   // увести лучших продавцов из города (упакованного или активного); настроение команды += mood
   function takeStaff(S, c, range, p, mood) {
@@ -17840,7 +17871,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => BK.fmtMoney(v);
   const def = (id) => BK.CITY_BY_ID[id] || {};
-  const cname = (id) => def(id).name || id;
+  const cname = (id, S) => (S ? BK.Corp.cityDef(S, id) : def(id)).name || id;
   const byId = (id) => (BK.CORP_EVENTS || []).find((e) => e.id === id);
   const pctS = (m) => `${m >= 1 ? '+' : '−'}${Math.round(Math.abs(m - 1) * 100)} %`;
   BK.CORP_LOCAL_CHAINS = BK.CORP_LOCAL_CHAINS || ['Пекарня у дома', 'Горячий каравай', 'Булочная №1', 'Пышка', 'Хлебница', 'Тёплый хлеб', 'Сдобный двор'];
@@ -17854,7 +17885,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function ownIds(S) { return Object.keys(S.corp.cities); }
   function runCities(S) { return ownIds(S).filter((id) => S.corp.cities[id].status === 'run' || id === 'ufa'); }
   function dirsOnCity(S) { return (S.corp.directors || []).filter((d) => d.city && S.corp.cities[d.city] && d.leaveDay == null); }
-  function newCities(S) { return BK.CITIES.map((d) => d.id).filter((id) => !S.corp.cities[id] && !(def(id).big && HQ().bigLock(S))); }
+  function newCities(S) { return BK.Corp.mapCities(S).map((d) => d.id).filter((id) => !S.corp.cities[id] && !(def(id).big && HQ().bigLock(S))); }
   function daily(S, t) {
     const cr = S.corp; if (!cr || cr.unlockedDay == null || S.phase !== 'play') return;
     if (ownIds(S).length < 2) return; // до второго города корпоративных событий нет (ГСЧ не трогается)
@@ -17894,7 +17925,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return true;
   }
   // межгородние поставки (Р3 — упрощённо): города дальше 150 км от Уфы на трассе М-5 / Урал (ближе 700 км)
-  function supplied(S) { return ownIds(S).filter((id) => id !== 'ufa' && BK.roadKm('ufa', id) < 700); }
+  function supplied(S) { return ownIds(S).filter((id) => id !== 'ufa' && BK.Corp.roadKm(S, 'ufa', id) < 700); }
 
   /* ---------------- цель и текст ---------------- */
   function districtOf(S, id) {
@@ -17903,7 +17934,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!list.length) return 'Центр';
     const s = list[I.ri(S, 0, list.length - 1)];
     if (id === cr.active) { const d = (BK.DISTRICTS || []).find((x) => x.id === s.district); return d ? d.name : 'Центр'; }
-    return D().districtName(c, s.district);
+    return D().districtName(S, c, s.district);
   }
   function target(S, e, forced) {
     const cr = S.corp, ctx = { city: null, city2: null, dir: null, dir2: null };
@@ -17912,7 +17943,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       Object.assign(ctx, { dir: d.id, city: d.city, offerPct: forced.offerPct, poacher: forced.poacher });
     } else if (e.target === 'city') {
       let ids = runCities(S); if (e.need && e.need.rival) ids = ids.filter((id) => id !== 'ufa' && !cr.cities[id].rivalIn);
-      if (e.need && e.need.cityFeature === 'industry') { const ind = ids.filter((id) => /Промышлен|завод/i.test(def(id).feat || '')); if (ind.length && I.rnd(S) < 0.5) ids = ind; }
+      if (e.need && e.need.cityFeature === 'industry') { const ind = ids.filter((id) => /Промышлен|завод/i.test(BK.Corp.cityDef(S, id).feat || '')); if (ind.length && I.rnd(S) < 0.5) ids = ind; }
       if (!ids.length) return null; ctx.city = I.pick(S, ids);
     } else if (e.target === 'director') {
       let ds = dirsOnCity(S);
@@ -17926,7 +17957,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ctx.dir = d.id; ctx.city = d.city;
     } else if (e.target === 'twoDirectors') {
       const ds = dirsOnCity(S), pairs = [];
-      for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (BK.roadKm(ds[i].city, ds[j].city) <= K().REGION_KM) pairs.push([ds[i], ds[j]]);
+      for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (BK.Corp.roadKm(S, ds[i].city, ds[j].city) <= K().REGION_KM) pairs.push([ds[i], ds[j]]);
       const pr = pairs.length ? I.pick(S, pairs) : [ds[0], ds[1]];
       ctx.dir = pr[0].id; ctx.city = pr[0].city; ctx.dir2 = pr[1].id; ctx.city2 = pr[1].city;
     } else if (e.target === 'newCity') { let ids = newCities(S); if (e.id === 'e208') ids = ids.filter((id) => !E.enterLock(S, id)); if (!ids.length) return null; ctx.city = I.pick(S, ids); }
@@ -17938,7 +17969,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function textCtx(S, ctx) {
     const d = ctx.dir && D().dirById(S, ctx.dir), d2 = ctx.dir2 && D().dirById(S, ctx.dir2);
-    return { city: ctx.city ? cname(ctx.city) : null, city2: ctx.city2 ? cname(ctx.city2) : null, director: d ? d.name : null, director2: d2 ? d2.name : null, district: ctx.district, poacher: ctx.poacher, offerPct: ctx.offerPct, price: ctx.price != null ? fm(ctx.price) : null, rival: C().RIVAL_NAME };
+    return { city: ctx.city ? cname(ctx.city, S) : null, city2: ctx.city2 ? cname(ctx.city2, S) : null, director: d ? d.name : null, director2: d2 ? d2.name : null, district: ctx.district, poacher: ctx.poacher, offerPct: ctx.offerPct, price: ctx.price != null ? fm(ctx.price) : null, rival: C().RIVAL_NAME };
   }
   const tx = (S, s, ctx) => (BK.corpText ? BK.corpText(s, textCtx(S, ctx)) : s);
   // средняя годовая выручка точки сети × доход города — оценка покупаемой местной сети
@@ -18038,7 +18069,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const f0 of effects) {
       if (f0.ifHq && !anyHq(S, f0.ifHq)) continue;
       if (f0.unlessHq && anyHq(S, f0.unlessHq)) continue;
-      const f = scaled(S, f0), ids = whereIds(S, f, ctx), names = ids.map(cname).join(', ') || 'сеть';
+      const f = scaled(S, f0), ids = whereIds(S, f, ctx), names = ids.map((id) => cname(id, S)).join(', ') || 'сеть';
       const all = (f.where || (ctx.city ? 'city' : 'all')) === 'all';
       switch (f.t) {
         case 'traffic': case 'check': case 'conv': case 'competitor': case 'foodcost': {
@@ -22247,7 +22278,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const D = () => BK.SCEN || { list: {} };
   const E = () => BK.Engine;
   const KEY = 'bk-ufa-scen-done';
-  const ls = (typeof localStorage === 'undefined') ? null : localStorage;
+  const ls = (() => { try { return typeof localStorage === 'undefined' ? null : localStorage; } catch (_) { return null; } })();
 
   /* ---------------- пройденные сценарии (между партиями) ---------------- */
   function done() {
@@ -22268,8 +22299,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const played = () => all().filter((id) => done().indexOf(id) >= 0);
   const left = () => all().filter((id) => done().indexOf(id) < 0);
   // Случайный из непройденных (детерминированно от зерна партии): пройденное не выпадает снова.
-  function pick(seed) {
-    const pool = left();
+  function pick(seed, opts) {
+    // При свободном выборе города история не может перенести игрока в другой город.
+    // Без opts сохраняется прежний выбор (боты и старые интеграции).
+    const pool = left().filter((id) => {
+      const city = info(id) && info(id).start && info(id).start.city;
+      return !opts || !opts.city || !city || city === opts.city;
+    });
     if (!pool.length) return null;
     let t = ((seed | 0) ^ 0x7ac31) | 0;
     t = (Math.imul(t ^ (t >>> 15), 1 | t) + 0x6D2B79F5) | 0;
@@ -22289,7 +22325,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function set(S, id, o) {
     const st = ensure(S); if (!st) return null;
     let real = id;
-    if (id === 'random') real = pick(S.seed);
+    if (id === 'random') real = pick(S.seed, o && o.city ? { city: o.city } : null);
     if (real && !info(real)) real = null;
     st.id = real === 'ufa' ? null : real;      // «обычная Уфа» — это отсутствие сценария
     st.defer = !!(o && o.defer);               // истина — если партия начнётся с пролога и кофейни
@@ -22416,6 +22452,38 @@ var BK = globalThis.BK || (globalThis.BK = {});
     all, info, left, played, done, markDone, resetDone, pick, progress, progressHtml,
     state, ensure, set, current, applyStart, day, failed, finish,
   };
+})();
+
+/* start-city.js */
+/* Город новой партии. Завершение партии открывает Москву и Петербург;
+   старые победы по историям тоже учитываются. Без localStorage прогресс живёт во вкладке. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const KEY = 'bk-ufa-run-done';
+  let completed = false;
+  function unlocked() {
+    if (completed) return true;
+    try { if (localStorage.getItem(KEY) === '1') return true; } catch (_) {}
+    if (BK.Scenario && BK.Scenario.done().length) {
+      // Перенос старого прогресса: сброс историй впоследствии не закрывает города.
+      completed = true;
+      try { localStorage.setItem(KEY, '1'); } catch (_) {}
+      return true;
+    }
+    return false;
+  }
+  function complete(S) {
+    if (!S || !(S.won || S.lost || (S.story && S.story.ending))) return false;
+    completed = true;
+    try { localStorage.setItem(KEY, '1'); } catch (_) {}
+    return true;
+  }
+  function available(id) {
+    const d = BK.CITY_BY_ID && BK.CITY_BY_ID[id];
+    return !!d && (!d.big || unlocked());
+  }
+  function resolve(id) { return available(id) ? id : 'ufa'; }
+  BK.StartCity = { unlocked, complete, available, resolve };
 })();
 
 /* sound.js */
@@ -23790,7 +23858,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       mk: (S) => { const d = rint(S, 10, 16), day = Math.max(40, Math.round(ensure(S).gAvg || guestsDay(S))); return { need: step(day * d * 1.06, 100), base: 0, got: 0, d }; },
       val: (S, m) => m.got || 0,
       hit: (S, m) => (m.got || 0) >= m.need,
-      txt: (S, m) => ({ t: 'Полные залы', d: `Накормить ${n0(m.need)} гостей за ${m.d} дней`, u: 'гостей' }),
+      txt: (S, m) => ({ t: 'Полные залы', d: `Накормить ${n0(m.need)} гостей за ${m.until - m.at} дней`, u: 'гостей' }),
       rw: { t: 'traffic', v: 0.045, d: 12 },
     },
     check: { // Чек выше
@@ -27556,11 +27624,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function genSpots(S, T) {
     const c = C(), pl = S.macro.priceLevel;
     return c.SPOTS.map((k) => {
-      const d = E().byId(BK.DISTRICTS, k.districts[ri(T, 0, k.districts.length - 1)]);
+      // Уфа сохраняет прежний выбор и поток ГСЧ; в другом городе выбираем
+      // соответствующий тип района из его карты вместо отсутствующего уфимского id.
+      const local = S.startCity && S.startCity !== 'ufa';
+      const types = k.id === 'mall' ? ['biz', 'prestige', 'sleep'] : k.id === 'stop' ? ['sleep', 'far', 'outskirts'] : ['student', 'center'];
+      const candidates = local ? BK.DISTRICTS.filter((d) => types.includes(d.arch)) : null;
+      const pool = local ? (candidates.length ? candidates : BK.DISTRICTS) : k.districts;
+      const selected = pool[ri(T, 0, pool.length - 1)];
+      const d = local ? selected : E().byId(BK.DISTRICTS, selected);
       const area = ri(T, k.area[0], k.area[1]);
-      const rentM2 = Math.round(rr(T, k.rent[0], k.rent[1]) * pl / 10) * 10;
+      const city = local ? BK.CITY_BY_ID[S.startCity] : null;
+      const rentM2 = Math.round(rr(T, k.rent[0], k.rent[1]) * pl * (city ? city.rent : 1) / 10) * 10;
       const traffic = Math.round(rr(T, k.traffic[0], k.traffic[1]) / 50) * 50;
-      const solv = Math.round(rr(T, k.solv[0], k.solv[1]) / 5) * 5;
+      const solv = Math.round(rr(T, k.solv[0], k.solv[1]) * (city ? city.inc : 1) / 5) * 5;
       const a = rnd(T) * Math.PI * 2, r = 14 + rnd(T) * 20;
       return { kind: k.id, name: k.name, icon: k.icon, note: k.note, district: d.id, dname: d.name, x: d.x + Math.cos(a) * r, y: d.y + Math.sin(a) * r * 0.85,
         address: `${d.streets[ri(T, 0, d.streets.length - 1)]}, ${ri(T, 1, 90)}`, area, rentM2, traffic, solv, landmarks: k.lm.slice(), comp: +rr(T, 0.9, 1).toFixed(2),
@@ -28142,8 +28218,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!S.productions.length) { In.genProdOffers(S, 3); S.phase = 'setup_prod'; }
     if (S.offers.length < 3) In.genStoreOffers(S, true);
     if (T.flags.kalachMine) { // сцена 1.7 «Продайте мне»: «Калач» — точка №2 (особое помещение)
-      const d = E().byId(BK.DISTRICTS, 'center');
-      const o = In.makeStoreOffer(S, { district: 'center', size: 'standard' });
+      const d = E().byId(BK.DISTRICTS, 'center') || BK.DISTRICTS.find((x) => x.arch === 'center') || BK.DISTRICTS[0];
+      const o = In.makeStoreOffer(S, { district: d.id, size: 'standard' });
       Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
       S.offers.push(o);
     }
@@ -28645,6 +28721,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   Map.prototype.render = function (S, sel) {
     const E = BK.Engine;
     this.setCity();
+    const forms = BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS;
+    const city = BK.CITY && BK.CITY.id;
+    this.el.setAttribute('aria-label', `Карта ${forms && forms[city] ? forms[city].g : 'города'} с точками сети`);
     this.lastS = S; this.lastSel = sel;
     const layer = this.layer, upp = this.upp(), kk = this.markerScale(), k = kk.toFixed(3);
     const isSel = (kind, id) => sel && sel.kind === kind && sel.id === id;
@@ -33360,6 +33439,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- 1. стартовый экран: карточки историй ---------------- */
   function card(id, p) {
     const d = SC().info(id) || {}, was = p.played.indexOf(id) >= 0, gl = goal(d);
+    const radio = document.querySelector('#startForm input[name="startCity"]:checked');
+    const city = radio ? radio.value : 'ufa';
+    const localCity = d.start && d.start.city;
+    const cityHint = localCity && localCity !== city ? (BK.StartCity && !BK.StartCity.available(localCity)
+      ? 'Откроется после первой завершённой партии, при выборе Москвы.'
+      : 'Выпадает при выборе Москвы.') : '';
     return `<li class="scen-card${was ? ' done' : ''}">
       <span class="scen-ic" aria-hidden="true">${ic(d)}</span>
       <span class="scen-b">
@@ -33367,6 +33452,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <span class="scen-d">${esc(d.text || '')}</span>
         ${gl ? `<span class="scen-g">Цель: ${esc(gl)}</span>` : ''}
         <span class="scen-s${was ? ' on' : ''}">${was ? 'пройдено ✓' : 'ещё не пройдена'}</span>
+        ${!was && cityHint ? `<span class="scen-g">${cityHint}</span>` : ''}
       </span></li>`;
   }
   function startOpt() {
@@ -33377,13 +33463,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sum = all
       ? `${num} · все истории пройдены — сбросьте прогресс, чтобы сыграть заново`
       : n === 0
-        ? `${num} · впереди все истории — выпадет любая`
+        ? `${num} · история выпадет для выбранного города`
         : `${num} · следующая история выпадет из оставшихся`;
     return `<fieldset class="scenpick"><legend>Истории</legend>
       <div class="scen-head">${pips(p)}<span class="scen-sum">${sum}</span></div>
       <ul class="scen-cards">${SC().all().map((id) => card(id, p)).join('')}</ul>
       <div class="scen-foot">
-        <span class="hint">История выпадает при новой игре — случайно, но только из непройденных.</span>
+        <span class="hint">История выпадает из непройденных для выбранного города. «Старт в Москве» — только в Москве. Если подходящих историй нет, начнётся обычная партия.</span>
         ${n ? `<span class="scen-reset"><button type="button" class="linkbtn" data-scen-act="ask">Сбросить пройденные</button></span>` : ''}
       </div></fieldset>`;
   }
@@ -33630,7 +33716,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.ScenarioUI = { startOpt, bindStart, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
+  BK.ScenarioUI = { startOpt, bindStart, redrawStart: redraw, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
 })();
 
 /* ui/russia.js */
@@ -33757,12 +33843,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   ];
   // потенциал не освоенного города: ёмкость × доход ÷ √(аренда × зарплаты), ближе к нашим городам — лучше (как у бота good)
   function potential(S, id) {
-    const d = BK.CITY_BY_ID[id], own = Object.keys(S.corp.cities);
-    const km = own.length ? Math.min(...own.map((o) => BK.roadKm(o, id))) : d.km;
+    const d = cityDef(S, id), own = Object.keys(S.corp.cities);
+    const km = own.length ? Math.min(...own.map((o) => BK.Corp.roadKm(S, o, id))) : d.km;
     return d.cap * d.inc / Math.sqrt(d.rent * d.wage) / (1 + km / 3000);
   }
   function potTiers(S) { // тройки: высокий / средний / низкий — по свободным городам
-    const free = BK.CITIES.filter((d) => !S.corp.cities[d.id] && !d.builtin).map((d) => [d.id, potential(S, d.id)]).sort((a, b) => b[1] - a[1]);
+    const free = citiesOf(S).filter((d) => !S.corp.cities[d.id] && !d.builtin).map((d) => [d.id, potential(S, d.id)]).sort((a, b) => b[1] - a[1]);
     const t = {}; free.forEach(([id], i) => { t[id] = i < Math.ceil(free.length / 3) ? 'hi' : i < Math.ceil(free.length * 2 / 3) ? 'mid' : 'lo'; });
     return t;
   }
@@ -33882,19 +33968,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const popTxt = (p) => (p >= 1 ? String(p.toFixed(p >= 10 ? 1 : 2)).replace('.', ',') + ' млн' : Math.round(p * 1000) + ' тыс.') + ' жителей';
   // Расстояния в данных считаются от Уфы (src/data/cities.js); в партии из другого города показываем
   // расстояние от домашнего города. Для Уфы строка прежняя: «… км от Уфы».
-  const homeIdOf = (S) => (BK.STORY_CAST && BK.STORY_CAST.cityOf ? BK.STORY_CAST.cityOf(S) : 'ufa');
+  const homeIdOf = (S) => BK.Corp.homeCityId(S);
+  const cityDef = (S, id) => BK.Corp.cityDef(S, id);
+  const citiesOf = (S) => BK.Corp.mapCities(S);
   const cityGen = (id) => { const f = (BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS) || {}; return (f[id] && f[id].g) || 'Уфы'; };
   const kmFrom = (S, d) => { const home = homeIdOf(S); const km = home === 'ufa' ? d.km : (BK.roadKm ? BK.roadKm(home, d.id) : d.km);
     return km ? ` · ${H().n0(km)} км от ${cityGen(home)}` : ''; };
   function tipFor(S, id) {
-    const d = BK.CITY_BY_ID[id], st = BK.Corp.cityStats(S, id);
+    const d = cityDef(S, id), st = BK.Corp.cityStats(S, id);
     if (!d) return '';
-    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.id === homeIdOf(S) ? '' : kmFrom(S, d)}`;
+    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${id === 'ufa' ? '' : kmFrom(S, d)}`;
     if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
     else {
       const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`;
       if (view.layer === 'potential') { const t = potTiers(S)[id]; if (t) s += `<br>Потенциал: ${POT_N[t]}`; }
-      if (view.layer === 'logistics' && BK.Corp.supplyHubs) { const hb = BK.Corp.supplyHubs(S, id); s += `<br>${hb.fresh ? `Без своего цеха: свежая выпечка ${esc(BK.CITY_BY_ID[hb.fresh.from].in || '')}, ${hb.fresh.km} км` : hb.frozen ? `Без своего цеха: заморозка, ${hb.frozen.km} км` : 'Нужен свой цех'}`; }
+      if (view.layer === 'logistics' && BK.Corp.supplyHubs) { const hb = BK.Corp.supplyHubs(S, id); s += `<br>${hb.fresh ? `Без своего цеха: свежая выпечка ${esc(cityDef(S, hb.fresh.from).in || '')}, ${hb.fresh.km} км` : hb.frozen ? `Без своего цеха: заморозка, ${hb.frozen.km} км` : 'Нужен свой цех'}`; }
       if (!lock && BK.HQ && BK.HQ.load) { const L = BK.HQ.load(S, 1); if (L.over > 0) s += `<br><span class="tip-warn">После входа штаб перегружен: ${n1(L.load)} при мощности ${n1(L.cap)}</span>`; }
     }
     if (st) { const pr = problemOf(S, id); if (pr) s += `<br><span class="tip-warn">${esc(PROB[pr].t)}</span>`; }
@@ -33916,14 +34004,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.svg.classList.toggle('far', k > 2.2); // сильно отдалено — без подписей рек и стран
     view.svg.setAttribute('data-layer', L);
     const out = [], labels = [], links = [], zones = [];
-    const ufa = P(BK.CITY_BY_ID.ufa.lon, BK.CITY_BY_ID.ufa.lat);
+    const home = cityDef(S, 'ufa'), ufa = P(home.lon, home.lat);
     const pot = L === 'potential' ? potTiers(S) : null;
     const hubsOf = L === 'logistics' && BK.Corp.supplyHubs ? (id) => BK.Corp.supplyHubs(S, id) : null;
     const tally = view.tally = { good: 0, warn: 0, bad: 0, none: 0, nodir: 0, nodir2: 0, hi: 0, mid: 0, lo: 0, hub: 0, fresh: 0, frozen: 0, rfresh: 0, rfrozen: 0, loss: 0, leak: 0, over: 0 };
-    for (const d of BK.CITIES) {
+    for (const d of citiesOf(S)) {
       const p = P(d.lon, d.lat), c = own[d.id], r = rad(d) * k, sel = view.sel === d.id;
       if (c && d.id !== 'ufa' && !supTo[d.id]) links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
-      if (supTo[d.id]) { const l = supTo[d.id], f = BK.CITY_BY_ID[l.from], q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
+      if (supTo[d.id]) { const l = supTo[d.id], f = cityDef(S, l.from), q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
       let g = `<g class="ru-city${c ? ' own' : ''}${c && c.active ? ' act' : ''}${sel ? ' sel' : ''}" data-city="${d.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">`;
       g += `<circle class="hit" r="${(Math.max(r, 12 * k) + 4 * k).toFixed(1)}"/>`;
       if (c) {
@@ -33940,9 +34028,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         g += `<text class="n" style="font-size:${((c.stores >= 100 ? 9.5 : 11) * k).toFixed(2)}px">${c.stores}</text>`;
         if (c.status === 'launch' && !c.stores) g += `<circle class="launch" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/>`;
         const bd = BK.CorpUI && BK.CorpUI.mapBadge(S, d.id); // инициалы директора или «!» — нет директора
-        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; if (bd.t === '!') tally.nodir2++; }
+        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.geoId || d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; if (bd.t === '!') tally.nodir2++; }
         const pr = problemOf(S, d.id); // иконка проблемы: одна на город
-        if (pr) { tally[pr]++; const px = ((LSIDE[d.id] || 'r') === 'r' ? -1 : 1) * R * 0.78, py = R * 0.78; g += `<g class="ru-prob p-${pr}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${k.toFixed(3)})"><title>${esc(PROB[pr].t)}</title><circle r="6.4"/>${PROB[pr].g}</g>`; }
+        if (pr) { tally[pr]++; const px = ((LSIDE[d.geoId || d.id] || 'r') === 'r' ? -1 : 1) * R * 0.78, py = R * 0.78; g += `<g class="ru-prob p-${pr}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${k.toFixed(3)})"><title>${esc(PROB[pr].t)}</title><circle r="6.4"/>${PROB[pr].g}</g>`; }
       } else {
         const lock = E().enterLock(S, d.id);
         let cls = '';
@@ -33955,7 +34043,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       g += `</g>`;
       out.push([sel || (c && c.active) ? 1 : 0, g]);
       // подпись
-      const side = LSIDE[d.id] || 'r', R2 = (c ? Math.max(r, 11 * k) + 5 * k : r) + 5 * k, name = d.short || d.name;
+      const side = LSIDE[d.geoId || d.id] || 'r', R2 = (c ? Math.max(r, 11 * k) + 5 * k : r) + 5 * k, name = d.short || d.name;
       const lx = side === 'r' ? R2 : side === 'l' ? -R2 : 0, ly = side === 't' ? -R2 - 2 * k : side === 'b' ? R2 + 10 * k : 4 * k;
       const anchor = side === 'r' ? 'start' : side === 'l' ? 'end' : 'middle';
       labels.push(`<text class="ru-clabel${c ? ' own' : ''}${c && c.active ? ' act' : ''}" x="${(p.x + lx).toFixed(1)}" y="${(p.y + ly).toFixed(1)}" text-anchor="${anchor}">${esc(name)}${c && c.active && !narrow ? '<tspan class="here" dx="' + (5 * k).toFixed(1) + '">· вы здесь</tspan>' : ''}</text>`);
@@ -33973,8 +34061,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const n1 = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
   function renderUi(S, sm) {
-    const a = view.el.querySelector('.ru-back'), name = BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].name : '';
-    const bt = `← ${esc(BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].short || name : '')}`;
+    const a = view.el.querySelector('.ru-back'), name = cityDef(S, sm.active) ? cityDef(S, sm.active).name : '';
+    const bt = `← ${esc(cityDef(S, sm.active) ? cityDef(S, sm.active).short || name : '')}`;
     if (a.innerHTML !== bt) { a.innerHTML = bt; a.title = `Вернуться на карту: ${name}`; a.setAttribute('aria-label', `Вернуться на карту города ${name}`); }
     const t = view.tally || {}, L = view.layer;
     const sw = (cls) => `<svg viewBox="-9 -9 18 18" class="lg-sw" aria-hidden="true"><circle r="6" class="${cls}"/></svg>`;
@@ -34012,7 +34100,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // экранная точка города внутри .mapwrap (для анимации)
   function cityScreen(id) {
-    const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa, p = P(d.lon, d.lat);
+    const d = cityDef(view.S, id), p = P(d.lon, d.lat);
     const r = view.px, s = Math.min(r.w / view.vb.w, r.h / view.vb.h);
     const ox = (r.w - view.vb.w * s) / 2, oy = (r.h - view.vb.h * s) / 2;
     return { x: ox + (p.x - view.vb.x) * s, y: oy + (p.y - view.vb.y) * s };
@@ -34113,7 +34201,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const awBar = (aw) => `<div class="ru-aw" title="Узнаваемость бренда: гостей × (0,85 + 0,15 × узнаваемость)"><span>Узнаваемость</span><div class="meter ok"><i style="width:${Math.round(aw * 100)}%"></i></div><b>${Math.round(aw * 100)} %</b></div>`;
   function cityCard(S, id) {
-    const d = BK.CITY_BY_ID[id]; if (!d) return '';
+    const d = cityDef(S, id); if (!d) return '';
     const h = H(), c = BK.Corp.cityStats(S, id);
     let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.id === homeIdOf(S) ? ' · родной город' : kmFrom(S, d)} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
     s += chips(d);
@@ -34157,7 +34245,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (tot > 0) {
       const cols = ['var(--crust)', 'var(--river)', 'var(--good)', 'var(--warn)', 'var(--rye)', 'var(--ink-3)'];
       const list = sm.cities.slice().sort((a, b) => b.rev12 - a.rev12);
-      s += `<div class="sec"><h3>Доля городов в выручке <small>12 мес.</small></h3><div class="ru-stack">${list.map((c, i) => `<i style="width:${(Math.max(0, c.rev12) / tot * 100).toFixed(1)}%;background:${cols[i % cols.length]}" title="${esc(c.name)}: ${fm(c.rev12)}"></i>`).join('')}</div><div class="ru-stack-l">${list.map((c, i) => `<span><i style="background:${cols[i % cols.length]}"></i>${esc(BK.CITY_BY_ID[c.id].short || c.name)} ${h.pct(Math.max(0, c.rev12) / tot)}</span>`).join('')}</div></div>`;
+      s += `<div class="sec"><h3>Доля городов в выручке <small>12 мес.</small></h3><div class="ru-stack">${list.map((c, i) => `<i style="width:${(Math.max(0, c.rev12) / tot * 100).toFixed(1)}%;background:${cols[i % cols.length]}" title="${esc(c.name)}: ${fm(c.rev12)}"></i>`).join('')}</div><div class="ru-stack-l">${list.map((c, i) => `<span><i style="background:${cols[i % cols.length]}"></i>${esc(cityDef(S, c.id).short || c.name)} ${h.pct(Math.max(0, c.rev12) / tot)}</span>`).join('')}</div></div>`;
     }
     const sel = ui.ruSel || sm.active;
     s += `<div class="sec"><h3>${BK.Corp.cityStats(S, sel) ? 'Город' : 'Новый город'} <small>нажмите на кружок на карте</small></h3>${cityCard(S, sel)}</div>`;
@@ -34167,16 +34255,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s;
   }
   function cityRow(S, c, sel) {
-    const h = H(), d = BK.CITY_BY_ID[c.id];
+    const h = H(), d = cityDef(S, c.id);
     return `<div class="card click ru-row${sel === c.id ? ' sel' : ''}" data-act="ruSel" data-arg="${c.id}"><div class="card-h"><div><div class="card-t">${esc(d.name)} ${c.active ? '<span class="chip crust">вы здесь</span>' : hasDir(S, c.id) ? `<span class="chip">${esc(modeTxt(S, c.id))}</span>` : '<span class="chip bad">нет директора</span>'}</div><div class="card-s">${h.nw(c.open, 'точка', 'точки', 'точек')}${c.soon ? ` (+${c.soon})` : ''} · ${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : 'нет рейтинга'}${c.id !== 'ufa' ? ' · узнаваемость ' + Math.round(c.aw * 100) + ' %' : ''}</div></div>
       <div class="ru-rv"><b>${c.lastRev != null ? fm(c.lastRev) : '—'}</b><span class="${c.lastProfit < 0 ? 'negc' : 'pos'}">${c.lastProfit != null ? (c.lastProfit >= 0 ? '+' : '') + fm(c.lastProfit) : 'первый месяц'}</span></div></div></div>`;
   }
   function nextCities(S) { // не наши города по расстоянию до ближайшего нашего
     const own = Object.keys(S.corp.cities);
-    return BK.CITIES.filter((d) => !S.corp.cities[d.id]).map((d) => ({ id: d.id, km: Math.min(...own.map((o) => BK.roadKm(o, d.id))) })).sort((a, b) => a.km - b.km).map((x) => x.id);
+    return citiesOf(S).filter((d) => !S.corp.cities[d.id]).map((d) => ({ id: d.id, km: Math.min(...own.map((o) => BK.Corp.roadKm(S, o, d.id))) })).sort((a, b) => a.km - b.km).map((x) => x.id);
   }
   function freeRow(S, id, sel) {
-    const h = H(), d = BK.CITY_BY_ID[id], lock = E().enterLock(S, id);
+    const h = H(), d = cityDef(S, id), lock = E().enterLock(S, id);
     return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)}${kmFrom(S, d)} · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
   }
   function citiesTab(S, ui) {
@@ -34184,7 +34272,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     snd(citiesSound(S)); // звук: те же события городов, что и на панели «Россия»
     const sel = ui.ruSel || S.corp.active;
     let s = `<div class="sec"><h3>Выбранный город</h3>${cityCard(S, sel)}</div>`;
-    s += `<div class="sec"><h3>Все города <small>${BK.CITIES.length}, по близости к сети</small></h3>`;
+    s += `<div class="sec"><h3>Все города <small>${citiesOf(S).length}, по близости к сети</small></h3>`;
     s += Object.keys(S.corp.cities).map((id) => cityRow(S, BK.Corp.cityStats(S, id), sel)).join('');
     s += nextCities(S).map((id) => freeRow(S, id, sel)).join('') + `</div>`;
     return s;
@@ -34200,7 +34288,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sm = BK.Corp.summary(S), others = sm.cities.filter((c) => !c.active);
     if (!others.length) return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}Открыт выход в Россию: можно открыть второй город.</span><button class="btn sm primary" data-act="russia">Карта России</button></div>`;
     const h = H(), rev = others.reduce((a, c) => a + (c.lastRev || 0), 0), n = others.reduce((a, c) => a + c.open, 0), has = others.some((c) => c.lastRev != null);
-    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
+    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(cityDef(S, c.id).short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
   BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, citiesSound, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };
@@ -34220,9 +34308,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
-  const cname = (id) => (BK.CITY_BY_ID[id] || {}).name || id;
-  const cshort = (id) => { const d = BK.CITY_BY_ID[id] || {}; return d.short || d.name || id; };
-  const cin = (id) => (BK.CITY_BY_ID[id] || {}).in || 'в городе ' + cname(id);
+  const cname = (S, id) => BK.Corp.cityDef(S, id).name || id;
+  const cshort = (S, id) => { const d = BK.Corp.cityDef(S, id); return d.short || d.name || id; };
+  const cin = (S, id) => BK.Corp.cityDef(S, id).in || 'в городе ' + cname(S, id);
   const initials = (n) => String(n || '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const g = (d, m, f) => (d && d.f ? f : m);
   const n1 = (v) => (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
@@ -34300,14 +34388,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function fedCard(S) {
     if (!on(S)) return '';
     const f = D().fedStatus(S), h = H();
-    const segs = []; for (let i = 0; i < f.need; i++) { const r = f.rows[i]; const p = r ? Math.min(1, r.open / f.per) : 0; segs.push(`<span class="fs${p >= 1 ? ' full' : ''}"><i style="width:${(p * 100).toFixed(0)}%"></i><small>${r && r.open ? esc(cshort(r.id).slice(0, 3)) : ''}</small></span>`); }
+    const segs = []; for (let i = 0; i < f.need; i++) { const r = f.rows[i]; const p = r ? Math.min(1, r.open / f.per) : 0; segs.push(`<span class="fs${p >= 1 ? ' full' : ''}"><i style="width:${(p * 100).toFixed(0)}%"></i><small>${r && r.open ? esc(cshort(S, r.id).slice(0, 3)) : ''}</small></span>`); }
     const lack = f.rows.filter((r) => r.open < f.per).sort((a, b) => b.open - a.open)[0];
     const pRev = Math.min(1, f.rev / f.target);
     const top = f.done ? `<span class="gd">взята ${esc(E().fmtDate(S.corp.fed.goalDay))}</span>` : `<span class="gd">${esc(etaFed(S, f))}</span>`;
     let s = `<div class="goalcard fedcard"><div class="top"><span class="caps">Цель акта · Федеральная сеть</span>${top}</div>
       <div class="fr"><span>Города с ${f.per}+ точками</span><b class="big2">${f.cities} <span>из ${f.need}</span></b></div><div class="fsegs">${segs.join('')}</div>
       <div class="fr"><span>Оборот сети за 12 мес.</span><b class="big2">${n1(f.rev / 1e9)} <span>из ${Math.round(f.target / 1e9)} млрд ₽</span></b></div>${h.goalBar(pRev)}
-      <div class="foot"><span>${f.done ? (f.legendDone ? '«Лидер рынка» взят' : `«Лидер рынка»: ${n1(f.rev / 1e9)} из ${Math.round(f.legend / 1e9)} млрд`) : lack ? `${esc(cname(lack.id))}: до ${f.per} точек — ${f.per - lack.open}` : 'Нужны новые города'}</span><span>затем «Лидер рынка» · ${Math.round(f.legend / 1e9)} млрд</span></div></div>`;
+      <div class="foot"><span>${f.done ? (f.legendDone ? '«Лидер рынка» взят' : `«Лидер рынка»: ${n1(f.rev / 1e9)} из ${Math.round(f.legend / 1e9)} млрд`) : lack ? `${esc(cname(S, lack.id))}: до ${f.per} точек — ${f.per - lack.open}` : 'Нужны новые города'}</span><span>затем «Лидер рынка» · ${Math.round(f.legend / 1e9)} млрд</span></div></div>`;
     return s;
   }
   function etaFed(S, f) { // грубо: при темпе роста оборота сети за год
@@ -34361,29 +34449,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.HQ && BK.HQ.load) { const L = BK.HQ.load(S); if (L.over > 0) out.push({ w: 10, ico: '≡', cls: 'bad', t: hqOverTitle(S, L), s: hqOverText(L) + ' — откройте отдел, место в совете, регионального', act: 'tab', arg: 'ruhq', b: 'Штаб', prim: true }); } // Р4 ч. 2
     for (const id in cr.cities) {
       const c = cr.cities[id]; if (id === cr.active) continue;
-      if (!c.directorId) { const st = BK.Corp.cityStats(S, id); out.push({ w: 9, ico: '!', cls: 'bad', t: `${cname(id)}: нет директора`, s: `${H().nw(st.open, 'точка', 'точки', 'точек')} без роста, рейтинг сползает к 3,5★`, act: 'ruHireFor', arg: id, b: 'Назначить', prim: true }); }
+      if (!c.directorId) { const st = BK.Corp.cityStats(S, id); out.push({ w: 9, ico: '!', cls: 'bad', t: `${cname(S, id)}: нет директора`, s: `${H().nw(st.open, 'точка', 'точки', 'точек')} без роста, рейтинг сползает к 3,5★`, act: 'ruHireFor', arg: id, b: 'Назначить', prim: true }); }
     }
     for (const it of cr.inbox) {
       const n = (it.reqs || []).filter((r) => r.st === 'open').length;
-      if (n) { const r0 = it.reqs.find((r) => r.st === 'open'); out.push({ w: 7, ico: initials(it.dname), t: `${cname(it.city)}: ${reqTitle(S, it, r0)}`, s: `ответ до ${dateTxt(it.due)} — иначе отказ (−1 лояльности)`, act: 'ruRep', arg: it.id, b: 'Ответить' }); }
+      if (n) { const r0 = it.reqs.find((r) => r.st === 'open'); out.push({ w: 7, ico: initials(it.dname), t: `${cname(S, it.city)}: ${reqTitle(S, it, r0)}`, s: `ответ до ${dateTxt(it.due)} — иначе отказ (−1 лояльности)`, act: 'ruRep', arg: it.id, b: 'Ответить' }); }
       if (it.kind === 'caught' && !it.done) out.push({ w: 10, ico: '!', cls: 'bad', t: it.title, s: 'решите судьбу директора', act: 'ruRep', arg: it.id, b: 'Решить', prim: true });
       if (it.kind === 'award' && !it.done) out.push({ w: 8, ico: '★', cls: 'crust', t: it.title, s: 'выберите лучшего из номинантов', act: 'ruRep', arg: it.id, b: 'Выбрать', prim: true });
     }
     for (const d of cr.directors) {
-      if (d.loyalty < 40) out.push({ w: 6, ico: initials(d.name), cls: 'warn', t: `${d.city ? cname(d.city) + ': ' : ''}лояльность падает`, s: `${d.name} · ${Math.round(d.loyalty)}${d.loyD < 0 ? ' ▼' : ''} · оклад ${pc1(d.salary / D().marketPay(S, d, d.city) - 1)} к рынку`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
+      if (d.loyalty < 40) out.push({ w: 6, ico: initials(d.name), cls: 'warn', t: `${d.city ? cname(S, d.city) + ': ' : ''}лояльность падает`, s: `${d.name} · ${Math.round(d.loyalty)}${d.loyD < 0 ? ' ▼' : ''} · оклад ${pc1(d.salary / D().marketPay(S, d, d.city) - 1)} к рынку`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
       if (!d.city) out.push({ w: 5, ico: initials(d.name), t: `${d.name} в резерве`, s: 'получает половину оклада', act: 'ruDir', arg: d.id, b: 'Назначить' });
-      else if ((d.poachP || 0) > 0.015 && d.loyalty >= 40) out.push({ w: 5, ico: initials(d.name), cls: 'warn', t: `${cname(d.city)}: директора могут переманить`, s: `${d.name} · ${n1(d.poachP * 100)} % в месяц — оклад, опционы, лояльность`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
-      if (d.leaveDay != null && d.city) out.push({ w: 8, ico: initials(d.name), cls: 'bad', t: `${cname(d.city)}: ${d.name} передаёт дела`, s: `уходит ${dateTxt(d.leaveDay)} — найдите замену`, act: 'ruHireFor', arg: d.city, b: 'Замена' });
+      else if ((d.poachP || 0) > 0.015 && d.loyalty >= 40) out.push({ w: 5, ico: initials(d.name), cls: 'warn', t: `${cname(S, d.city)}: директора могут переманить`, s: `${d.name} · ${n1(d.poachP * 100)} % в месяц — оклад, опционы, лояльность`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
+      if (d.leaveDay != null && d.city) out.push({ w: 8, ico: initials(d.name), cls: 'bad', t: `${cname(S, d.city)}: ${d.name} передаёт дела`, s: `уходит ${dateTxt(d.leaveDay)} — найдите замену`, act: 'ruHireFor', arg: d.city, b: 'Замена' });
     }
     for (const id in cr.cities) {
       if (id === cr.active) continue;
       const dv = D().cityDev(S, id); const st = BK.Corp.cityStats(S, id);
-      if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
-      else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(S, id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
+      else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(S, id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
       const ls = D().leakStatus && D().leakStatus(S, id);
       if (ls && ls.onlyOv) { /* утечка только от перегрузки штаба — одной строкой выше */ }
-      else if (ls) { const a = leakAct(S, ls, id); out.push({ w: ls.lossM >= 3 ? 9 : 6, ico: '₽', cls: 'bad', t: leakTitle(ls, id), s: leakText(ls), act: a.a, arg: a.arg, b: a.b, prim: a.prim }); } // Р4: денежный риск
-      else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      else if (ls) { const a = leakAct(S, ls, id); out.push({ w: ls.lossM >= 3 ? 9 : 6, ico: '₽', cls: 'bad', t: leakTitle(S, ls, id), s: leakText(ls), act: a.a, arg: a.arg, b: a.b, prim: a.prim }); } // Р4: денежный риск
+      else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(S, id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
     }
     return out.sort((a, b) => b.w - a.w);
   }
@@ -34396,7 +34484,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ls.whyKeys.length === 1 && ls.whyKeys[0] === 'mismatch') return { a: 'ruSel', arg: id, b: 'Приоритет' };
     return { a: 'ruHireFor', arg: id, b: 'Сменить', prim: !ls.d.study };
   }
-  function leakTitle(ls, id) { return `${cname(id)}: ${ls.lossM >= 2 ? `теряет деньги ${ls.lossM} мес. подряд` : `утечка денег ${Math.round(ls.leak * 100)} %`}`; }
+  function leakTitle(S, ls, id) { return `${cname(S, id)}: ${ls.lossM >= 2 ? `теряет деньги ${ls.lossM} мес. подряд` : `утечка денег ${Math.round(ls.leak * 100)} %`}`; }
   function leakText(ls) {
     const why = ls.why.length ? ls.why.join('; ') : 'убыточные точки';
     return `${why}${ls.whyKeys.indexOf('skills') >= 0 ? ` (навыки ${ls.skill} при нужных ${ls.need} для ${ls.n} точек)` : ''}. Что сделать: ${ls.fix}.`;
@@ -34404,7 +34492,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function leakBox(S, id, ls) {
     if (!ls) return '';
     const a = leakAct(S, ls, id);
-    return `<div class="leakbox"><b>${esc(leakTitle(ls, id))}</b><span>Расходы ползут вверх, выручка отстаёт${ls.leak >= 0.01 ? ` — утечка ≈ ${Math.round(ls.leak * 100)} % выручки` : ''}. ${esc(leakText(ls))}</span>${ls.d && ls.d.study ? `<span class="hint">Директор учится — утечка спадёт после диплома.</span>` : `<button class="btn sm ${a.prim ? 'primary' : ''}" data-act="${a.a}" data-arg="${esc(a.arg)}">${a.b}</button>`}</div>`;
+    return `<div class="leakbox"><b>${esc(leakTitle(S, ls, id))}</b><span>Расходы ползут вверх, выручка отстаёт${ls.leak >= 0.01 ? ` — утечка ≈ ${Math.round(ls.leak * 100)} % выручки` : ''}. ${esc(leakText(ls))}</span>${ls.d && ls.d.study ? `<span class="hint">Директор учится — утечка спадёт после диплома.</span>` : `<button class="btn sm ${a.prim ? 'primary' : ''}" data-act="${a.a}" data-arg="${esc(a.arg)}">${a.b}</button>`}</div>`;
   }
   function attentionHtml(S, max) {
     const a = attention(S); if (!a.length) return '';
@@ -34428,7 +34516,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${skillRows(d)}<div class="row ru-chips">${styleChip(d, c)}</div>${traitChips(S, d)}
         <div class="drow"><span>Лояльность</span>${loyBar(d, true)}</div>
         <div class="drow"><span>Оклад</span><b class="num">${fm(d.salary)}/мес</b></div><div class="hint">Рынок ${fm(D().marketPay(S, d, id))} · ${pc1(d.salary / D().marketPay(S, d, id) - 1)} к рынку</div>
-        ${d.study ? `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>` : ''}${d.absentUntil > S.day ? `<p class="hint warnc" style="margin:0">В отпуске до ${dateTxt(d.absentUntil)}: город «без директора».</p>` : ''}${id !== d.city ? `<p class="hint" style="margin:0">Региональный директор: основной город — ${esc(cname(d.city))}, здесь навыки ×0,75.</p>` : ''}
+        ${d.study ? `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>` : ''}${d.absentUntil > S.day ? `<p class="hint warnc" style="margin:0">В отпуске до ${dateTxt(d.absentUntil)}: город «без директора».</p>` : ''}${id !== d.city ? `<p class="hint" style="margin:0">Региональный директор: основной город — ${esc(cname(S, d.city))}, здесь навыки ×0,75.</p>` : ''}
         <div class="row dbtns"><button class="btn sm primary" data-act="ruDir" data-arg="${d.id}">Мотивация</button><button class="btn sm" data-act="ruHireFor" data-arg="${id}">Сменить</button>${H().btn('ruAudit', 'Аудит', { cls: 'sm', arg: id, cost: BK.HQ.auditCost(S, id), dis: S.cash < BK.HQ.auditCost(S, id), title: 'Внешний аудит: раскроет воровство с шансом 70 %, приукрашивание — 80 %. Честный директор обидится (−3, второй аудит за год — ещё −5).' })}</div></div>`;
     } else {
       const res = cr.directors.filter((x) => !x.city);
@@ -34487,7 +34575,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function dirRow(S, d, open) {
     const c = d.city ? S.corp.cities[d.city] : null, mk = D().marketPay(S, d, d.city);
-    let s = `<div class="card click drowc${open ? ' sel' : ''}" data-act="ruDir" data-arg="${d.id}"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${d.city ? esc(cname(d.city)) + (d.city === S.corp.active ? ' · вы здесь' : '') : 'резерв'} · ${GRN(d.grade)} · ${STN(d.style)}</span></div>${skillMini(d)}${loyBar(d)}</div>
+    let s = `<div class="card click drowc${open ? ' sel' : ''}" data-act="ruDir" data-arg="${d.id}"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${d.city ? esc(cname(S, d.city)) + (d.city === S.corp.active ? ' · вы здесь' : '') : 'резерв'} · ${GRN(d.grade)} · ${STN(d.style)}</span></div>${skillMini(d)}${loyBar(d)}</div>
       <div class="dsum"><span>Оклад <b>${fm(d.salary)}</b> · рынок ${fm(mk)}</span>${d.hist.length ? `<span>план ${d.hist[d.hist.length - 1].y}: <b class="${d.hist[d.hist.length - 1].pf >= 1 ? 'pos' : 'negc'}">${Math.round(d.hist[d.hist.length - 1].pf * 100)} %</b></span>` : ''}</div></div>`;
     if (open) s += dirDetail(S, d, c);
     return s;
@@ -34495,7 +34583,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function dirDetail(S, d, c) {
     const h = H(), cr = S.corp, mk = D().marketPay(S, d, d.city);
     const why = (d.loyWhy || []).filter((w) => Math.abs(w[1]) >= 0.05).map((w) => `${esc(w[0])} ${w[1] > 0 ? '+' : '−'}${n1(Math.abs(w[1]))}`).join(' · ');
-    const opts = [['', 'В резерв (половина оклада)']].concat(Object.keys(cr.cities).map((id) => { const o = D().dirOf(S, cr.cities[id]); return [id, cname(id) + (o && o !== d ? ` (сейчас ${o.name})` : id === cr.active ? ' (вы здесь — заместитель)' : '')]; }));
+    const opts = [['', 'В резерв (половина оклада)']].concat(Object.keys(cr.cities).map((id) => { const o = D().dirOf(S, cr.cities[id]); return [id, cname(S, id) + (o && o !== d ? ` (сейчас ${o.name})` : id === cr.active ? ' (вы здесь — заместитель)' : '')]; }));
     const fire = Math.round(d.salary * K().DIR_FIRE_SALARIES);
     return `<div class="card ddet">${d.bio ? `<p class="hint" style="margin:0">${esc(txtG(d.bio, d.f))}</p>` : ''}${skillRows(d)}
       <div class="row ru-chips">${styleChip(d, c)}</div>${traitChips(S, d)}
@@ -34505,7 +34593,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row dbtns"><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="0.9">−10 %</button><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="1.05">+5 %</button><button class="btn sm primary" data-act="dirPay" data-arg="${d.id}" data-arg2="1.1">+10 %</button></div>
       ${motivation(S, d)}
       <div class="field"><label for="as-${d.id}">Город</label><select id="as-${d.id}" class="input" data-inp="dirAssign" data-arg="${d.id}">${opts.map((o) => `<option value="${o[0]}"${(d.city || '') === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>
-      ${d.hist.length ? `<div class="dhist">${d.hist.slice(-4).map((x) => `<span>${x.y} · ${esc(cshort(x.city))}</span><b class="num">${fm(x.rev)}</b><b class="num ${x.pf >= 1 ? 'pos' : x.pf < 0.9 ? 'negc' : ''}">${Math.round(x.pf * 100)} % плана</b>`).join('')}</div>` : ''}
+      ${d.hist.length ? `<div class="dhist">${d.hist.slice(-4).map((x) => `<span>${x.y} · ${esc(cshort(S, x.city))}</span><b class="num">${fm(x.rev)}</b><b class="num ${x.pf >= 1 ? 'pos' : x.pf < 0.9 ? 'negc' : ''}">${Math.round(x.pf * 100)} % плана</b>`).join('')}</div>` : ''}
       <div class="row sp"><span class="hint">Уволить — ${K().DIR_FIRE_SALARIES} оклада выходного пособия${d.city ? ', город останется без директора' : ''}.</span>${BK.App && BK.App.ui.confirmDirFire === d.id ? `<button class="btn sm danger" data-act="dirFire" data-arg="${d.id}">Точно уволить · ${fm(fire)}</button>` : `<button class="btn sm danger" data-act="askDirFire" data-arg="${d.id}">Уволить</button>`}</div></div>`;
   }
   const txtG = (s, f) => String(s).replace(/\{g2?:([^|}]*)\|([^}]*)\}/g, (_, m, w) => (f ? w : m));
@@ -34539,7 +34627,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `</div>`;
     if (d.regional) {
       const rc = HQ.regionCands(S, d);
-      s += `<p class="hint" style="margin:0">Региональный директор: ${[d.city].concat(d.region).map((id) => esc(cname(id))).join(', ')}.</p>${rc.length && d.region.length < k.REGION_MAX - 1 ? `<div class="row dbtns">${rc.slice(0, 3).map((id) => h.btn('dirRegion', '+ ' + esc(cname(id)), { cls: 'sm', arg: d.id, arg2: id })).join('')}</div>` : ''}`;
+      s += `<p class="hint" style="margin:0">Региональный директор: ${[d.city].concat(d.region).map((id) => esc(cname(S, id))).join(', ')}.</p>${rc.length && d.region.length < k.REGION_MAX - 1 ? `<div class="row dbtns">${rc.slice(0, 3).map((id) => h.btn('dirRegion', '+ ' + esc(cname(S, id)), { cls: 'sm', arg: d.id, arg2: id })).join('')}</div>` : ''}`;
     }
     // учёба
     const lv = HQ.lvlOf(S, 'uni');
@@ -34588,7 +34676,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lv = HQ.lvlOf(S, 'uni'), P = BK.CORP_UNI.programs;
     s += `<div class="sec"><h3>Корпоративный университет <small>${lv ? `${esc(BK.CORP_UNI.levels[lv].name)} · мест ${HQ.students(S).length}/${HQ.seats(S)}${lv >= 2 ? ' · цены −30 %' : ''}` : 'не открыт'}</small></h3>`;
     const studs = HQ.students(S);
-    if (studs.length) s += studs.map((d) => { const p = P[d.study.prog], tot2 = d.study.until - d.study.from, done = clampN((S.day - d.study.from) / Math.max(1, tot2)); return `<div class="stud">${av(d.name)}<div><b>${esc(d.name)}</b>${d.city ? ' · ' + esc(cname(d.city)) : ''}<span>${esc(p.name)}${d.study.evening ? ' · вечер' : ''} · до ${dateTxt(d.study.until)}</span><span class="pfb good"><i style="width:${Math.round(done * 100)}%"></i></span></div><b class="num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : d.study.prog === 'mba' ? 'грейд +1' : '+0,1★'}</b></div>`; }).join('');
+    if (studs.length) s += studs.map((d) => { const p = P[d.study.prog], tot2 = d.study.until - d.study.from, done = clampN((S.day - d.study.from) / Math.max(1, tot2)); return `<div class="stud">${av(d.name)}<div><b>${esc(d.name)}</b>${d.city ? ' · ' + esc(cname(S, d.city)) : ''}<span>${esc(p.name)}${d.study.evening ? ' · вечер' : ''} · до ${dateTxt(d.study.until)}</span><span class="pfb good"><i style="width:${Math.round(done * 100)}%"></i></span></div><b class="num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : d.study.prog === 'mba' ? 'грейд +1' : '+0,1★'}</b></div>`; }).join('');
     else if (lv) s += `<div class="empty">Никто не учится. Записать директора — кнопки «Учиться» в его карточке (вкладка «Директора»).</div>`;
     s += `<div class="uniwrap"><table class="cmp uni"><thead><tr><th>Программа</th><th class="r">Срок</th><th class="r">Цена</th><th class="r">Эффект</th></tr></thead><tbody>${Object.keys(P).map((k2) => { const p = P[k2]; return `<tr class="${(p.minLevel || 1) > Math.max(1, lv) ? 'lock' : ''}"><td>${esc(p.name)}${p.minLevel ? ` (ур. ${p.minLevel})` : ''}</td><td class="r num">${p.months} мес.</td><td class="r num">${fm(HQ.progCost(S, k2) || Math.round(K().UNI_PROG[k2] * S.macro.priceLevel))}</td><td class="r num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : k2 === 'mba' ? 'грейд +1' : 'рейтинг +0,1★'}</td></tr>`; }).join('')}</tbody></table></div>
       <p class="hint" style="margin:0">${esc(BK.CORP_UNI.eveningNote)} Пока директор учится днём, выручка его города −3 %. MBA поднимает и рыночную цену выпускника на 20 % — удерживайте окладом или опционом.</p></div>`;
@@ -34627,18 +34715,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = H();
     if (it.kind === 'caught') {
       const L = { sue: ['Уволить и подать в суд', 'вернём ~30 % украденного через год; скандал — узнаваемость −5 %'], quiet: ['Уволить тихо', 'без выходного пособия и без шума'], forgive: ['Простить, оклад −30 %', 'воровать перестанет, но с шансом 40 % через год снова'], warn: ['Предупредить', 'отчёты станут честными, лояльность −5'], fire: ['Уволить', 'без выходного пособия'] };
-      return `<div class="card rep caught ${it.tone || ''}${!it.done ? ' need' : ''}" id="rep-${it.id}"><div class="rh"><span class="dav ${it.tone || 'bad'}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.city ? ' · ' + esc(cname(it.city)) : ''}</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div><p style="margin:0">${esc(it.text)}</p>
+      return `<div class="card rep caught ${it.tone || ''}${!it.done ? ' need' : ''}" id="rep-${it.id}"><div class="rh"><span class="dav ${it.tone || 'bad'}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.city ? ' · ' + esc(cname(S, it.city)) : ''}</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div><p style="margin:0">${esc(it.text)}</p>
         ${!it.done ? `<div class="row rqb">${(it.choices || []).map((c, i) => `<button class="btn${i ? '' : ' primary'}" data-act="caughtDecide" data-arg="${it.id}" data-arg2="${c}" title="${esc(L[c][1])}">${esc(L[c][0])}</button>`).join('')}</div><p class="hint" style="margin:0">Нет ответа до ${dateTxt(it.due)} — ${it.trait === 'theft' ? 'уволим тихо' : 'предупредим'}.</p>` : `<span class="rst ${it.done === 'forgive' || it.done === 'warn' ? 'yes' : 'no'}">решение: ${esc((L[it.done] || ['—'])[0].toLowerCase())}</span>`}</div>`;
     }
-    if (it.kind === 'kpi') return `<div class="card rep note ${it.tone || ''}"><div class="rh">${av(it.dname)}<div><b>${esc(it.title)}</b><span>${esc(it.dname)}${it.city ? ' · ' + esc(cname(it.city)) : ''} · ${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0" class="num">${esc(it.text)}</p></div>`;
+    if (it.kind === 'kpi') return `<div class="card rep note ${it.tone || ''}"><div class="rh">${av(it.dname)}<div><b>${esc(it.title)}</b><span>${esc(it.dname)}${it.city ? ' · ' + esc(cname(S, it.city)) : ''} · ${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0" class="num">${esc(it.text)}</p></div>`;
     if (it.kind === 'note') return `<div class="card rep note ${it.tone || ''}"><div class="rh"><span class="dav ${it.tone || ''}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0">${esc(it.text)}</p></div>`;
     if (it.kind === 'award') {
       return `<div class="card rep award${!it.done ? ' need' : ''}"><div class="rh"><span class="dav crust">★</span><div><b>${esc(it.title)}</b><span>Номинанты — лучшие по выполнению плана</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div>
-        ${it.noms.map((n) => `<div class="nom">${av(n.name)}<div><b>${esc(n.name)}</b><span>${esc(cname(n.city))} · план ${Math.round(n.pf * 100)} %</span></div>${!it.done ? `<button class="btn sm primary" data-act="repAward" data-arg="${it.id}" data-arg2="${n.dir}">Наградить</button>` : it.done === n.dir ? '<span class="chip good">директор года</span>' : ''}</div>`).join('')}
+        ${it.noms.map((n) => `<div class="nom">${av(n.name)}<div><b>${esc(n.name)}</b><span>${esc(cname(S, n.city))} · план ${Math.round(n.pf * 100)} %</span></div>${!it.done ? `<button class="btn sm primary" data-act="repAward" data-arg="${it.id}" data-arg2="${n.dir}">Наградить</button>` : it.done === n.dir ? '<span class="chip good">директор года</span>' : ''}</div>`).join('')}
         <p class="hint" style="margin:0">Победителю — лояльность +${K().LOY_AWARD}; номинанты с лояльностью ниже 50 обидятся (−3).${!it.done ? ` Нет ответа до ${dateTxt(it.due)} — награды в этом году не будет.` : ''}</p></div>`;
     }
     const open = (it.reqs || []).filter((r) => r.st === 'open').length;
-    const head = `<div class="rh">${av(it.dname)}<div><b>Отчёт за ${MON[it.m]} ${it.y}</b><span>${esc(it.dname)} · ${esc(cname(it.city))}</span></div>${open ? `<span class="chip bad">Нужен ответ · ${open}</span>` : it.praised ? '<span class="chip good">отмечен ★</span>' : ''}</div>`;
+    const head = `<div class="rh">${av(it.dname)}<div><b>Отчёт за ${MON[it.m]} ${it.y}</b><span>${esc(it.dname)} · ${esc(cname(S, it.city))}</span></div>${open ? `<span class="chip bad">Нужен ответ · ${open}</span>` : it.praised ? '<span class="chip good">отмечен ★</span>' : ''}</div>`;
     if (!full) return `<div class="card click rep short" data-act="ruRep" data-arg="${it.id}">${head}<div class="rsum"><span>выручка <b>${fm(it.rev)}</b></span><span>прибыль <b class="${it.profit < 0 ? 'negc' : ''}">${fm(it.profit)}</b></span><span>точки <b>${it.stores}</b></span></div></div>`;
     const p = it.prev, pl = it.plan, mg = it.rev ? it.profit / it.rev : 0;
     const dl = (a, b) => (b != null && b > 0 ? `${a >= b ? '▲' : '▼'} ${n1(Math.abs(a / b - 1) * 100)} %` : '');
@@ -34671,7 +34759,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (f !== 'all') list = list.filter((it) => it.city === f);
     const cities = [...new Set(cr.inbox.map((it) => it.city).filter(Boolean))];
     let s = `<div class="sec"><h3>Отчёты директоров ${n ? `<em class="badge">${n}</em>` : ''}<small>раз в месяц, 1-го числа</small></h3>
-      <div class="row ru-chips fchips"><button class="fchip" data-act="repFilter" data-arg="all" aria-pressed="${f === 'all'}">Все ${cr.inbox.length}</button><button class="fchip" data-act="repFilter" data-arg="need" aria-pressed="${f === 'need'}">Нужен ответ ${n}</button>${cities.map((id) => `<button class="fchip" data-act="repFilter" data-arg="${id}" aria-pressed="${f === id}">${esc(cshort(id))}</button>`).join('')}</div>`;
+      <div class="row ru-chips fchips"><button class="fchip" data-act="repFilter" data-arg="all" aria-pressed="${f === 'all'}">Все ${cr.inbox.length}</button><button class="fchip" data-act="repFilter" data-arg="need" aria-pressed="${f === 'need'}">Нужен ответ ${n}</button>${cities.map((id) => `<button class="fchip" data-act="repFilter" data-arg="${id}" aria-pressed="${f === id}">${esc(cshort(S, id))}</button>`).join('')}</div>`;
     if (!list.length) s += `<div class="empty">${cr.inbox.length ? 'Здесь пусто.' : 'Отчёты придут 1-го числа от директоров городов. Наймите директора во вкладке «Директора» и назначьте его в город.'}</div>`;
     const shown = new Set();
     s += list.slice(0, 40).map((it) => {
@@ -34715,7 +34803,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const th = (k, lab, cls) => `<th class="${cls || ''}"><button class="thb${sort === k ? ' on' : ''}" data-act="cmpSort" data-arg="${k}">${lab}${sort === k ? (asc ? ' ▲' : ' ▼') : ''}</button></th>`;
     const devBar = (v) => { if (v == null) return '<span class="muted">—</span>'; const cls = v < -0.05 ? 'bad' : v < -0.03 ? 'warn' : 'good'; const w = Math.min(50, Math.abs(v) * 500); return `<span class="devb ${cls}"><span class="db"><i style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(0)}%"></i></span><b>${pc1(v)}</b></span>`; };
     const tone = (r) => (r.st.lastRev > 0 ? (r.st.lastProfit / r.st.lastRev >= 0.15 ? 'good' : r.st.lastProfit >= 0 ? 'warn' : 'bad') : 'none');
-    const who = (r) => (r.d ? `${av(r.d.name, 'sm')}<span class="cw"><b>${esc(r.d.name)}</b>${loyBar(r.d)}</span>` : r.id === S.corp.active ? `<span class="cw"><b>вы управляете</b><small>${r.st.name === 'Уфа' ? 'родной город' : 'активный город'}</small></span>` : `<span class="dav sm bad">!</span><span class="cw"><b class="negc">Нет директора</b><small>${r.st.months} мес. в сети</small></span>`);
+    const who = (r) => (r.d ? `${av(r.d.name, 'sm')}<span class="cw"><b>${esc(r.d.name)}</b>${loyBar(r.d)}</span>` : r.id === S.corp.active ? `<span class="cw"><b>вы управляете</b><small>${r.id === 'ufa' ? 'родной город' : 'активный город'}</small></span>` : `<span class="dav sm bad">!</span><span class="cw"><b class="negc">Нет директора</b><small>${r.st.months} мес. в сети</small></span>`);
     const since = (r) => { const t = E().dateOf(r.c.enteredDay); return r.id === 'ufa' ? 'с ' + C().START_YEAR : `с ${E().MONTHS_G[t.m].slice(0, 4)}. ${t.y}`; };
     const lossTag = (r) => (r.ls ? `<small class="negc lossm">${r.ls.lossM >= 2 ? `в минусе ${r.ls.lossM} мес.` : 'утечка ' + Math.round(r.ls.leak * 100) + ' %'} · ${esc(r.ls.whyKeys.map((k) => ({ skills: 'слабые навыки', nouni: 'не учился', mismatch: 'стиль ≠ приоритет' })[k]).join(', ') || 'убыточные точки')}</small>` : ''); // Р4: денежный риск
     const act = (r) => (r.act ? (r.act.link ? `<button class="linkbtn" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b} →</button>` : `<button class="btn sm ${r.act.prim ? 'primary' : ''}" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b}</button>`) : '<span class="muted">—</span>');
@@ -34740,7 +34828,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (o.candId) {
       const d = cr.dirCand.find((x) => x.id === o.candId); if (!d) return null;
       const cost = BK.HQ.hireCost(S, d);
-      const opts = cities.map((id) => `<button class="choice" data-hire="${id}"><b>${esc(cname(id))}</b><span class="cd">${id === cr.active ? 'вы здесь — будет заместителем, пока вы управляете сами' : `${h.nw(BK.Corp.cityStats(S, id).open, 'точка', 'точки', 'точек')} без директора`}</span><span class="cc">${fm(cost)}</span></button>`).join('')
+      const opts = cities.map((id) => `<button class="choice" data-hire="${id}"><b>${esc(cname(S, id))}</b><span class="cd">${id === cr.active ? 'вы здесь — будет заместителем, пока вы управляете сами' : `${h.nw(BK.Corp.cityStats(S, id).open, 'точка', 'точки', 'точек')} без директора`}</span><span class="cc">${fm(cost)}</span></button>`).join('')
         + `<button class="choice" data-hire=""><b>В резерв</b><span class="cd">Половина оклада; можно поставить на новый город при входе</span><span class="cc">${fm(cost)}</span></button>`;
       return `<div class="modal-h"><span class="eyebrow">Найм директора</span><h2>${esc(d.name)} — куда?</h2></div><div class="modal-b"><p style="margin:0">${GRN(d.grade)}, стиль «${STN(d.style)}», оклад ${fm(d.salary)}/мес. Найм — ${d.src === 'hunter' ? 'хедхантеру 25 % годового оклада' : K().DIR_HIRE_SALARIES + ' оклада'}.</p></div><div class="modal-f">${opts}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
     }
@@ -34748,13 +34836,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cur = D().dirOf(S, cr.cities[id]);
     let opts = res.map((d) => `<button class="choice" data-assign="${d.id}"><b>${esc(d.name)} · из резерва</b><span class="cd">${GRN(d.grade)} · ${STN(d.style)} · лояльность ${Math.round(d.loyalty)}</span><span class="cc">бесплатно</span></button>`).join('');
     opts += cr.dirCand.map((d) => { const cost = BK.HQ.hireCost(S, d); return `<button class="choice" data-cand="${d.id}"${S.cash < cost ? ' disabled' : ''}><b>${esc(d.name)} · ${GRN(d.grade)}${d.src === 'own' ? ' · свои люди' : ''}</b><span class="cd">${STN(d.style)} · ${D().SK.map((k) => SKN[k] + ' ≈' + d.seen[k]).join(', ')} · ${fm(d.salary)}/мес</span><span class="cc">${fm(cost)}</span></button>`; }).join('');
-    return `<div class="modal-h"><span class="eyebrow">Директор города</span><h2>${cur ? 'Сменить директора' : 'Директор'} ${esc(cin(id))}</h2></div><div class="modal-b"><p style="margin:0">${cur ? `${esc(cur.name)} уйдёт в резерв (половина оклада). ` : ''}Новый директор месяц адаптируется (выручка −3 %). Приоритет города по умолчанию — по его стилю.</p></div><div class="modal-f">${opts || '<div class="empty">Нет кандидатов — обновите список во вкладке «Директора».</div>'}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
+    return `<div class="modal-h"><span class="eyebrow">Директор города</span><h2>${cur ? 'Сменить директора' : 'Директор'} ${esc(cin(S, id))}</h2></div><div class="modal-b"><p style="margin:0">${cur ? `${esc(cur.name)} уйдёт в резерв (половина оклада). ` : ''}Новый директор месяц адаптируется (выручка −3 %). Приоритет города по умолчанию — по его стилю.</p></div><div class="modal-f">${opts || '<div class="empty">Нет кандидатов — обновите список во вкладке «Директора».</div>'}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
   }
   // вход в город: кто запускает
   function enterChoices(S, id) {
     const cr = S.corp, res = cr.directors.filter((x) => !x.city);
-    let s = hqLoadHtml(S, { extra: 1 }) + `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
-    s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(cr.active))}</small></span></label>`).join('');
+    let s = hqLoadHtml(S, { extra: 1 }) + `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(S, cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
+    s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(S, cr.active))}</small></span></label>`).join('');
     s += cr.dirCand.map((d) => `<label class="wopt"><input type="radio" name="who" value="c:${d.id}"><span><b>Нанять: ${esc(d.name)}</b><small>${GRN(d.grade)} · ${STN(d.style)} · найм ${fm(d.salary * K().DIR_HIRE_SALARIES)} — запустит город сам</small></span></label>`).join('');
     return s + '</fieldset>' + supplyChoices(S, id);
   }
@@ -34766,10 +34854,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<fieldset class="whopick"><legend>Откуда выпечка</legend>`;
     s += opt('own', 'Свой цех', 'Как в начале игры: помещение под цех, пекари, оборудование. Дороже на старте, дешевле потом.');
     const fr = h.fresh;
-    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
+    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(S, fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(S, fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
       : opt('fresh', 'Свежая выпечка из другого города', `Нужен наш цех ближе ${h.freshKm} км${h.lvl < 1 ? ` (с логистикой 1-го уровня в штабе — ${k.FRESH_KM_L1} км)` : ''}.`, true);
     const fz = h.frozen;
-    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
+    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(S, fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
       : opt('frozen', 'Фабрика заморозки', h.lvl < 2 ? 'Нужна логистика 2-го уровня в штабе.' : `Нет нашего цеха ближе ${k.FROZEN_KM} км.`, true);
     return s + '</fieldset>';
   }
@@ -35411,7 +35499,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const s = S(); if (!s) return;
     const name = s.company, diff = s.difficulty, rival = !!(s.rival && s.rival.enabled), tut = !!(s.prologue && s.prologue.tutOn);
     close();
-    begin(name, diff, { rival, strat: (s.strat && s.strat.chosen && s.strat.id) || '', scen: (s.scen && s.scen.id) || 'random' });   // перезапуск пролога сохраняет выбранный путь
+    begin(name, diff, { rival, strat: (s.strat && s.strat.chosen && s.strat.id) || '', scen: (s.scen && s.scen.id) || 'random', city: s.startCity || 'ufa', keepCity: true, heroName: BK.Story.heroName(s) === 'шеф' ? '' : BK.Story.heroName(s), heroG: BK.Story.heroG(s) || 'm' });   // перезапуск пролога сохраняет выбранный путь
     const s2 = S(); if (s2 && s2.prologue) s2.prologue.tutOn = tut;
   }
 
@@ -36375,6 +36463,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- сохранения ---------------- */
   function save() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     if (!S) return;
     const data = (BK.Rewind && BK.Rewind.freshJson(S)) || JSON.stringify(stripState(S)); // 1-го числа — строка снимка «Переиграть»
     try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
@@ -36488,7 +36577,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}${cityOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -36502,11 +36591,37 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
+    bindCity(el);
     bindHero(el); // имя и пол героя (PLAN.md §8.1)
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG() }); });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG(), city: cityPicked() }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
+  }
+  // Город выбирается до генерации мира и проходит через пролог и свою кофейню.
+  function cityOpt() {
+    return `<fieldset class="citypick"><legend>Город старта</legend>
+      <div class="cityopts">${BK.CITIES.map((d) => {
+        const locked = !BK.StartCity.available(d.id);
+        return `<label class="cityopt${locked ? ' locked' : ''}"><input type="radio" name="startCity" value="${d.id}"${d.id === 'ufa' ? ' checked' : ''}${locked ? ' disabled' : ''}><span>${locked ? '🔒 ' : ''}${H.esc(d.name)}</span></label>`;
+      }).join('')}</div>
+      <p class="hint" id="cityDesc" aria-live="polite">${cityDescription('ufa')}</p>
+      <p class="hint">Москва и Санкт-Петербург открываются после первой завершённой партии: победы, банкротства или финала истории.</p></fieldset>`;
+  }
+  function cityDescription(id) {
+    const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa;
+    return `${H.esc(d.name)} · доходы ×${d.inc.toFixed(2)}, аренда ×${d.rent.toFixed(2)}, зарплаты ×${d.wage.toFixed(2)}. История будет с местными героями и улицами.`;
+  }
+  function cityPicked() {
+    const r = document.querySelector('#startForm input[name="startCity"]:checked');
+    return BK.StartCity.resolve(r ? r.value : 'ufa');
+  }
+  function bindCity(el) {
+    el.querySelectorAll('input[name="startCity"]').forEach((r) => r.addEventListener('change', () => {
+      const desc = el.querySelector('#cityDesc');
+      if (desc) desc.innerHTML = cityDescription(cityPicked());
+      if (BK.ScenarioUI && BK.ScenarioUI.redrawStart) BK.ScenarioUI.redrawStart();
+    }));
   }
   // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
@@ -36587,16 +36702,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // должны генерироваться уже в городе истории, иначе «Старт в Москве» идёт по уфимским районам.
     // Выбор истории детерминирован от зерна (BK.Scenario.pick), поэтому Scenario.set ниже даст тот же id.
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
-    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed) : opts.scen) : null;
+    const pickedCity = opts && opts.city ? (opts.keepCity && BK.CITY_BY_ID[opts.city] ? opts.city : BK.StartCity.resolve(opts.city)) : null;
+    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed, pickedCity ? { city: pickedCity } : null) : opts.scen) : null;
     const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
-    const city = (scDef && scDef.start && scDef.start.city) || null;
-    S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    const city = pickedCity || (scDef && scDef.start && scDef.start.city) || null;
+    S = E.newGame({ company: name, difficulty, seed, city: city === 'ufa' ? null : city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     // герой партии: имя и пол со стартового экрана (PLAN.md §8.1). Пишем до создания S.story — пролог
     // создаёт состояние сам и возьмёт выбор оттуда (src/prologue.js → storyDefaults/syncStory).
     if (BK.Story && BK.Story.heroSet) BK.Story.heroSet(S, { name: (opts && opts.heroName) || '', g: (opts && opts.heroG) || 'm' });
     if (BK.Px && BK.Px.heroSet) BK.Px.heroSet((opts && opts.heroG) || 'm');
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
-    if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
+    if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, scenId || 'ufa', { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
     else if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat);     // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
@@ -36604,7 +36720,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
     hideStart(); closeModal(); map.reset(S); renderAll(); save();
   }
-  function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+  function continueGame(st, raw) {
+    // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+    if (BK.StartCity) BK.StartCity.complete(st);
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     if (BK.Story && BK.Story.applyHero) BK.Story.applyHero(S);          // выбор со стартового экрана — в состояние (§8.1)
     if (BK.Px && BK.Px.heroSet && BK.Story && BK.Story.heroG) BK.Px.heroSet(BK.Story.heroG(S)); // облик героя: у старых сохранений пола нет — «нейтрально»
@@ -37182,9 +37300,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Number.isInteger(r) ? H.nw(r, 'год', 'года', 'лет') : String(r).replace('.', ',') + ' года';
   }
   function openWinModal() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${ufaStoresText()}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой ${H.esc(BK.StoryCast ? BK.StoryCast.swap(S, 'Уфы') : 'Уфы')}. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${ufaStoresText()}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', toStart);
@@ -37197,8 +37316,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openCorpModal() {
     const d = E.dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
     openModal(`<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>РОССИЯ</b><small>${dt} · лист 2</small></div></div><span class="eyebrow pos">Второй акт</span><h2>Сеть переросла город</h2></div><div class="modal-b">
-      <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — в Уфе ей стало тесно. Открыт выход в Россию: ${BK.CITIES.length - 1} городов — от Стерлитамака до Новосибирска.</p>
-      <ul class="ru-list"><li><b>Новый город</b> начинается как Уфа: регистрация, свой цех и первые точки.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные ведут <b>директора</b>: нанимайте их во вкладке «Директора», задавайте бюджет и приоритет, отвечайте на отчёты.</li><li><b>Цель второго акта</b> — «Федеральная сеть»: 10 городов по 10+ точек и 40 млрд ₽ оборота за 12 месяцев.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
+      <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — ${H.esc(BK.Corp.cityDef(S, 'ufa').in)} ей стало тесно. Открыт выход в Россию: ${BK.Corp.mapCities(S).length - 1} городов — от Стерлитамака до Новосибирска.</p>
+      <ul class="ru-list"><li><b>Новый город</b> начинается с регистрации, своего цеха и первых точек.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные ведут <b>директора</b>: нанимайте их во вкладке «Директора», задавайте бюджет и приоритет, отвечайте на отчёты.</li><li><b>Цель второго акта</b> — «Федеральная сеть»: 10 городов по 10+ точек и 40 млрд ₽ оборота за 12 месяцев.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
       </div><div class="modal-f"><button class="btn primary block" id="ruOpen">Открыть карту России</button><button class="btn block" data-act="closeModal">Позже</button></div>`, { closable: true });
     $('#ruOpen').addEventListener('click', () => { closeModal(); openRussia(); });
   }
@@ -37265,8 +37384,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ui.view === 'russia') { BK.Russia.render(S, true); requestAnimationFrame(() => cityView(true)); }
     else { ui.tab = 'dash'; refresh(); }
   }
-  function scenFinish() { try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
+  function scenFinish() { if (BK.StartCity) BK.StartCity.complete(S); try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
   function openLostModal() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
       const e = BK.STORY.endings[S.storyEnding];
       openModal(`<div class="modal-h"><span class="eyebrow">История закончилась</span><h2>${e.name}</h2></div><div class="modal-b">

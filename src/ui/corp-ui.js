@@ -11,9 +11,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return (W && W.chainName) ? W.chainName(W.cityOf(S)) : ((r && r.name) || C().RIVAL_NAME); };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fm = (v) => BK.fmtMoney(v);
-  const cname = (id) => (BK.CITY_BY_ID[id] || {}).name || id;
-  const cshort = (id) => { const d = BK.CITY_BY_ID[id] || {}; return d.short || d.name || id; };
-  const cin = (id) => (BK.CITY_BY_ID[id] || {}).in || 'в городе ' + cname(id);
+  const cname = (S, id) => BK.Corp.cityDef(S, id).name || id;
+  const cshort = (S, id) => { const d = BK.Corp.cityDef(S, id); return d.short || d.name || id; };
+  const cin = (S, id) => BK.Corp.cityDef(S, id).in || 'в городе ' + cname(S, id);
   const initials = (n) => String(n || '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const g = (d, m, f) => (d && d.f ? f : m);
   const n1 = (v) => (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
@@ -91,14 +91,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function fedCard(S) {
     if (!on(S)) return '';
     const f = D().fedStatus(S), h = H();
-    const segs = []; for (let i = 0; i < f.need; i++) { const r = f.rows[i]; const p = r ? Math.min(1, r.open / f.per) : 0; segs.push(`<span class="fs${p >= 1 ? ' full' : ''}"><i style="width:${(p * 100).toFixed(0)}%"></i><small>${r && r.open ? esc(cshort(r.id).slice(0, 3)) : ''}</small></span>`); }
+    const segs = []; for (let i = 0; i < f.need; i++) { const r = f.rows[i]; const p = r ? Math.min(1, r.open / f.per) : 0; segs.push(`<span class="fs${p >= 1 ? ' full' : ''}"><i style="width:${(p * 100).toFixed(0)}%"></i><small>${r && r.open ? esc(cshort(S, r.id).slice(0, 3)) : ''}</small></span>`); }
     const lack = f.rows.filter((r) => r.open < f.per).sort((a, b) => b.open - a.open)[0];
     const pRev = Math.min(1, f.rev / f.target);
     const top = f.done ? `<span class="gd">взята ${esc(E().fmtDate(S.corp.fed.goalDay))}</span>` : `<span class="gd">${esc(etaFed(S, f))}</span>`;
     let s = `<div class="goalcard fedcard"><div class="top"><span class="caps">Цель акта · Федеральная сеть</span>${top}</div>
       <div class="fr"><span>Города с ${f.per}+ точками</span><b class="big2">${f.cities} <span>из ${f.need}</span></b></div><div class="fsegs">${segs.join('')}</div>
       <div class="fr"><span>Оборот сети за 12 мес.</span><b class="big2">${n1(f.rev / 1e9)} <span>из ${Math.round(f.target / 1e9)} млрд ₽</span></b></div>${h.goalBar(pRev)}
-      <div class="foot"><span>${f.done ? (f.legendDone ? '«Лидер рынка» взят' : `«Лидер рынка»: ${n1(f.rev / 1e9)} из ${Math.round(f.legend / 1e9)} млрд`) : lack ? `${esc(cname(lack.id))}: до ${f.per} точек — ${f.per - lack.open}` : 'Нужны новые города'}</span><span>затем «Лидер рынка» · ${Math.round(f.legend / 1e9)} млрд</span></div></div>`;
+      <div class="foot"><span>${f.done ? (f.legendDone ? '«Лидер рынка» взят' : `«Лидер рынка»: ${n1(f.rev / 1e9)} из ${Math.round(f.legend / 1e9)} млрд`) : lack ? `${esc(cname(S, lack.id))}: до ${f.per} точек — ${f.per - lack.open}` : 'Нужны новые города'}</span><span>затем «Лидер рынка» · ${Math.round(f.legend / 1e9)} млрд</span></div></div>`;
     return s;
   }
   function etaFed(S, f) { // грубо: при темпе роста оборота сети за год
@@ -152,29 +152,29 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.HQ && BK.HQ.load) { const L = BK.HQ.load(S); if (L.over > 0) out.push({ w: 10, ico: '≡', cls: 'bad', t: hqOverTitle(S, L), s: hqOverText(L) + ' — откройте отдел, место в совете, регионального', act: 'tab', arg: 'ruhq', b: 'Штаб', prim: true }); } // Р4 ч. 2
     for (const id in cr.cities) {
       const c = cr.cities[id]; if (id === cr.active) continue;
-      if (!c.directorId) { const st = BK.Corp.cityStats(S, id); out.push({ w: 9, ico: '!', cls: 'bad', t: `${cname(id)}: нет директора`, s: `${H().nw(st.open, 'точка', 'точки', 'точек')} без роста, рейтинг сползает к 3,5★`, act: 'ruHireFor', arg: id, b: 'Назначить', prim: true }); }
+      if (!c.directorId) { const st = BK.Corp.cityStats(S, id); out.push({ w: 9, ico: '!', cls: 'bad', t: `${cname(S, id)}: нет директора`, s: `${H().nw(st.open, 'точка', 'точки', 'точек')} без роста, рейтинг сползает к 3,5★`, act: 'ruHireFor', arg: id, b: 'Назначить', prim: true }); }
     }
     for (const it of cr.inbox) {
       const n = (it.reqs || []).filter((r) => r.st === 'open').length;
-      if (n) { const r0 = it.reqs.find((r) => r.st === 'open'); out.push({ w: 7, ico: initials(it.dname), t: `${cname(it.city)}: ${reqTitle(S, it, r0)}`, s: `ответ до ${dateTxt(it.due)} — иначе отказ (−1 лояльности)`, act: 'ruRep', arg: it.id, b: 'Ответить' }); }
+      if (n) { const r0 = it.reqs.find((r) => r.st === 'open'); out.push({ w: 7, ico: initials(it.dname), t: `${cname(S, it.city)}: ${reqTitle(S, it, r0)}`, s: `ответ до ${dateTxt(it.due)} — иначе отказ (−1 лояльности)`, act: 'ruRep', arg: it.id, b: 'Ответить' }); }
       if (it.kind === 'caught' && !it.done) out.push({ w: 10, ico: '!', cls: 'bad', t: it.title, s: 'решите судьбу директора', act: 'ruRep', arg: it.id, b: 'Решить', prim: true });
       if (it.kind === 'award' && !it.done) out.push({ w: 8, ico: '★', cls: 'crust', t: it.title, s: 'выберите лучшего из номинантов', act: 'ruRep', arg: it.id, b: 'Выбрать', prim: true });
     }
     for (const d of cr.directors) {
-      if (d.loyalty < 40) out.push({ w: 6, ico: initials(d.name), cls: 'warn', t: `${d.city ? cname(d.city) + ': ' : ''}лояльность падает`, s: `${d.name} · ${Math.round(d.loyalty)}${d.loyD < 0 ? ' ▼' : ''} · оклад ${pc1(d.salary / D().marketPay(S, d, d.city) - 1)} к рынку`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
+      if (d.loyalty < 40) out.push({ w: 6, ico: initials(d.name), cls: 'warn', t: `${d.city ? cname(S, d.city) + ': ' : ''}лояльность падает`, s: `${d.name} · ${Math.round(d.loyalty)}${d.loyD < 0 ? ' ▼' : ''} · оклад ${pc1(d.salary / D().marketPay(S, d, d.city) - 1)} к рынку`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
       if (!d.city) out.push({ w: 5, ico: initials(d.name), t: `${d.name} в резерве`, s: 'получает половину оклада', act: 'ruDir', arg: d.id, b: 'Назначить' });
-      else if ((d.poachP || 0) > 0.015 && d.loyalty >= 40) out.push({ w: 5, ico: initials(d.name), cls: 'warn', t: `${cname(d.city)}: директора могут переманить`, s: `${d.name} · ${n1(d.poachP * 100)} % в месяц — оклад, опционы, лояльность`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
-      if (d.leaveDay != null && d.city) out.push({ w: 8, ico: initials(d.name), cls: 'bad', t: `${cname(d.city)}: ${d.name} передаёт дела`, s: `уходит ${dateTxt(d.leaveDay)} — найдите замену`, act: 'ruHireFor', arg: d.city, b: 'Замена' });
+      else if ((d.poachP || 0) > 0.015 && d.loyalty >= 40) out.push({ w: 5, ico: initials(d.name), cls: 'warn', t: `${cname(S, d.city)}: директора могут переманить`, s: `${d.name} · ${n1(d.poachP * 100)} % в месяц — оклад, опционы, лояльность`, act: 'ruDir', arg: d.id, b: 'Мотивация' });
+      if (d.leaveDay != null && d.city) out.push({ w: 8, ico: initials(d.name), cls: 'bad', t: `${cname(S, d.city)}: ${d.name} передаёт дела`, s: `уходит ${dateTxt(d.leaveDay)} — найдите замену`, act: 'ruHireFor', arg: d.city, b: 'Замена' });
     }
     for (const id in cr.cities) {
       if (id === cr.active) continue;
       const dv = D().cityDev(S, id); const st = BK.Corp.cityStats(S, id);
-      if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
-      else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      if (dv && dv.dev3 != null && dv.dev3 < -0.05 && cr.cities[id].directorId) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(S, id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес. — воровство, плохие места или слабый директор`, act: 'ruAudit', arg: id, b: 'Аудит' });
+      else if (dv && dv.dev3 != null && dv.dev3 < -0.05) out.push({ w: 4, ico: '▼', cls: 'warn', t: `${cname(S, id)}: выручка ниже прогноза`, s: `${pc1(dv.dev3)} на точку за 3 мес.`, act: 'tab', arg: 'rucmp', b: 'Сравнить' });
       const ls = D().leakStatus && D().leakStatus(S, id);
       if (ls && ls.onlyOv) { /* утечка только от перегрузки штаба — одной строкой выше */ }
-      else if (ls) { const a = leakAct(S, ls, id); out.push({ w: ls.lossM >= 3 ? 9 : 6, ico: '₽', cls: 'bad', t: leakTitle(ls, id), s: leakText(ls), act: a.a, arg: a.arg, b: a.b, prim: a.prim }); } // Р4: денежный риск
-      else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
+      else if (ls) { const a = leakAct(S, ls, id); out.push({ w: ls.lossM >= 3 ? 9 : 6, ico: '₽', cls: 'bad', t: leakTitle(S, ls, id), s: leakText(ls), act: a.a, arg: a.arg, b: a.b, prim: a.prim }); } // Р4: денежный риск
+      else if (st.lastProfit != null && st.lastProfit < 0 && st.months >= 6) out.push({ w: 3, ico: '₽', cls: 'bad', t: `${cname(S, id)}: убыток за месяц`, s: fm(st.lastProfit), act: 'tab', arg: 'rucmp', b: 'Сравнить' });
     }
     return out.sort((a, b) => b.w - a.w);
   }
@@ -187,7 +187,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ls.whyKeys.length === 1 && ls.whyKeys[0] === 'mismatch') return { a: 'ruSel', arg: id, b: 'Приоритет' };
     return { a: 'ruHireFor', arg: id, b: 'Сменить', prim: !ls.d.study };
   }
-  function leakTitle(ls, id) { return `${cname(id)}: ${ls.lossM >= 2 ? `теряет деньги ${ls.lossM} мес. подряд` : `утечка денег ${Math.round(ls.leak * 100)} %`}`; }
+  function leakTitle(S, ls, id) { return `${cname(S, id)}: ${ls.lossM >= 2 ? `теряет деньги ${ls.lossM} мес. подряд` : `утечка денег ${Math.round(ls.leak * 100)} %`}`; }
   function leakText(ls) {
     const why = ls.why.length ? ls.why.join('; ') : 'убыточные точки';
     return `${why}${ls.whyKeys.indexOf('skills') >= 0 ? ` (навыки ${ls.skill} при нужных ${ls.need} для ${ls.n} точек)` : ''}. Что сделать: ${ls.fix}.`;
@@ -195,7 +195,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function leakBox(S, id, ls) {
     if (!ls) return '';
     const a = leakAct(S, ls, id);
-    return `<div class="leakbox"><b>${esc(leakTitle(ls, id))}</b><span>Расходы ползут вверх, выручка отстаёт${ls.leak >= 0.01 ? ` — утечка ≈ ${Math.round(ls.leak * 100)} % выручки` : ''}. ${esc(leakText(ls))}</span>${ls.d && ls.d.study ? `<span class="hint">Директор учится — утечка спадёт после диплома.</span>` : `<button class="btn sm ${a.prim ? 'primary' : ''}" data-act="${a.a}" data-arg="${esc(a.arg)}">${a.b}</button>`}</div>`;
+    return `<div class="leakbox"><b>${esc(leakTitle(S, ls, id))}</b><span>Расходы ползут вверх, выручка отстаёт${ls.leak >= 0.01 ? ` — утечка ≈ ${Math.round(ls.leak * 100)} % выручки` : ''}. ${esc(leakText(ls))}</span>${ls.d && ls.d.study ? `<span class="hint">Директор учится — утечка спадёт после диплома.</span>` : `<button class="btn sm ${a.prim ? 'primary' : ''}" data-act="${a.a}" data-arg="${esc(a.arg)}">${a.b}</button>`}</div>`;
   }
   function attentionHtml(S, max) {
     const a = attention(S); if (!a.length) return '';
@@ -219,7 +219,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${skillRows(d)}<div class="row ru-chips">${styleChip(d, c)}</div>${traitChips(S, d)}
         <div class="drow"><span>Лояльность</span>${loyBar(d, true)}</div>
         <div class="drow"><span>Оклад</span><b class="num">${fm(d.salary)}/мес</b></div><div class="hint">Рынок ${fm(D().marketPay(S, d, id))} · ${pc1(d.salary / D().marketPay(S, d, id) - 1)} к рынку</div>
-        ${d.study ? `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>` : ''}${d.absentUntil > S.day ? `<p class="hint warnc" style="margin:0">В отпуске до ${dateTxt(d.absentUntil)}: город «без директора».</p>` : ''}${id !== d.city ? `<p class="hint" style="margin:0">Региональный директор: основной город — ${esc(cname(d.city))}, здесь навыки ×0,75.</p>` : ''}
+        ${d.study ? `<p class="hint" style="margin:0">Учится: «${esc(BK.CORP_UNI.programs[d.study.prog].name)}» до ${dateTxt(d.study.until)}${d.study.evening ? ' (вечерний формат)' : ' — выручка города −3 %'}.</p>` : ''}${d.absentUntil > S.day ? `<p class="hint warnc" style="margin:0">В отпуске до ${dateTxt(d.absentUntil)}: город «без директора».</p>` : ''}${id !== d.city ? `<p class="hint" style="margin:0">Региональный директор: основной город — ${esc(cname(S, d.city))}, здесь навыки ×0,75.</p>` : ''}
         <div class="row dbtns"><button class="btn sm primary" data-act="ruDir" data-arg="${d.id}">Мотивация</button><button class="btn sm" data-act="ruHireFor" data-arg="${id}">Сменить</button>${H().btn('ruAudit', 'Аудит', { cls: 'sm', arg: id, cost: BK.HQ.auditCost(S, id), dis: S.cash < BK.HQ.auditCost(S, id), title: 'Внешний аудит: раскроет воровство с шансом 70 %, приукрашивание — 80 %. Честный директор обидится (−3, второй аудит за год — ещё −5).' })}</div></div>`;
     } else {
       const res = cr.directors.filter((x) => !x.city);
@@ -278,7 +278,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function dirRow(S, d, open) {
     const c = d.city ? S.corp.cities[d.city] : null, mk = D().marketPay(S, d, d.city);
-    let s = `<div class="card click drowc${open ? ' sel' : ''}" data-act="ruDir" data-arg="${d.id}"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${d.city ? esc(cname(d.city)) + (d.city === S.corp.active ? ' · вы здесь' : '') : 'резерв'} · ${GRN(d.grade)} · ${STN(d.style)}</span></div>${skillMini(d)}${loyBar(d)}</div>
+    let s = `<div class="card click drowc${open ? ' sel' : ''}" data-act="ruDir" data-arg="${d.id}"><div class="dh">${av(d.name)}<div><b>${esc(d.name)}</b><span>${d.city ? esc(cname(S, d.city)) + (d.city === S.corp.active ? ' · вы здесь' : '') : 'резерв'} · ${GRN(d.grade)} · ${STN(d.style)}</span></div>${skillMini(d)}${loyBar(d)}</div>
       <div class="dsum"><span>Оклад <b>${fm(d.salary)}</b> · рынок ${fm(mk)}</span>${d.hist.length ? `<span>план ${d.hist[d.hist.length - 1].y}: <b class="${d.hist[d.hist.length - 1].pf >= 1 ? 'pos' : 'negc'}">${Math.round(d.hist[d.hist.length - 1].pf * 100)} %</b></span>` : ''}</div></div>`;
     if (open) s += dirDetail(S, d, c);
     return s;
@@ -286,7 +286,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function dirDetail(S, d, c) {
     const h = H(), cr = S.corp, mk = D().marketPay(S, d, d.city);
     const why = (d.loyWhy || []).filter((w) => Math.abs(w[1]) >= 0.05).map((w) => `${esc(w[0])} ${w[1] > 0 ? '+' : '−'}${n1(Math.abs(w[1]))}`).join(' · ');
-    const opts = [['', 'В резерв (половина оклада)']].concat(Object.keys(cr.cities).map((id) => { const o = D().dirOf(S, cr.cities[id]); return [id, cname(id) + (o && o !== d ? ` (сейчас ${o.name})` : id === cr.active ? ' (вы здесь — заместитель)' : '')]; }));
+    const opts = [['', 'В резерв (половина оклада)']].concat(Object.keys(cr.cities).map((id) => { const o = D().dirOf(S, cr.cities[id]); return [id, cname(S, id) + (o && o !== d ? ` (сейчас ${o.name})` : id === cr.active ? ' (вы здесь — заместитель)' : '')]; }));
     const fire = Math.round(d.salary * K().DIR_FIRE_SALARIES);
     return `<div class="card ddet">${d.bio ? `<p class="hint" style="margin:0">${esc(txtG(d.bio, d.f))}</p>` : ''}${skillRows(d)}
       <div class="row ru-chips">${styleChip(d, c)}</div>${traitChips(S, d)}
@@ -296,7 +296,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="row dbtns"><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="0.9">−10 %</button><button class="btn sm" data-act="dirPay" data-arg="${d.id}" data-arg2="1.05">+5 %</button><button class="btn sm primary" data-act="dirPay" data-arg="${d.id}" data-arg2="1.1">+10 %</button></div>
       ${motivation(S, d)}
       <div class="field"><label for="as-${d.id}">Город</label><select id="as-${d.id}" class="input" data-inp="dirAssign" data-arg="${d.id}">${opts.map((o) => `<option value="${o[0]}"${(d.city || '') === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>
-      ${d.hist.length ? `<div class="dhist">${d.hist.slice(-4).map((x) => `<span>${x.y} · ${esc(cshort(x.city))}</span><b class="num">${fm(x.rev)}</b><b class="num ${x.pf >= 1 ? 'pos' : x.pf < 0.9 ? 'negc' : ''}">${Math.round(x.pf * 100)} % плана</b>`).join('')}</div>` : ''}
+      ${d.hist.length ? `<div class="dhist">${d.hist.slice(-4).map((x) => `<span>${x.y} · ${esc(cshort(S, x.city))}</span><b class="num">${fm(x.rev)}</b><b class="num ${x.pf >= 1 ? 'pos' : x.pf < 0.9 ? 'negc' : ''}">${Math.round(x.pf * 100)} % плана</b>`).join('')}</div>` : ''}
       <div class="row sp"><span class="hint">Уволить — ${K().DIR_FIRE_SALARIES} оклада выходного пособия${d.city ? ', город останется без директора' : ''}.</span>${BK.App && BK.App.ui.confirmDirFire === d.id ? `<button class="btn sm danger" data-act="dirFire" data-arg="${d.id}">Точно уволить · ${fm(fire)}</button>` : `<button class="btn sm danger" data-act="askDirFire" data-arg="${d.id}">Уволить</button>`}</div></div>`;
   }
   const txtG = (s, f) => String(s).replace(/\{g2?:([^|}]*)\|([^}]*)\}/g, (_, m, w) => (f ? w : m));
@@ -330,7 +330,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `</div>`;
     if (d.regional) {
       const rc = HQ.regionCands(S, d);
-      s += `<p class="hint" style="margin:0">Региональный директор: ${[d.city].concat(d.region).map((id) => esc(cname(id))).join(', ')}.</p>${rc.length && d.region.length < k.REGION_MAX - 1 ? `<div class="row dbtns">${rc.slice(0, 3).map((id) => h.btn('dirRegion', '+ ' + esc(cname(id)), { cls: 'sm', arg: d.id, arg2: id })).join('')}</div>` : ''}`;
+      s += `<p class="hint" style="margin:0">Региональный директор: ${[d.city].concat(d.region).map((id) => esc(cname(S, id))).join(', ')}.</p>${rc.length && d.region.length < k.REGION_MAX - 1 ? `<div class="row dbtns">${rc.slice(0, 3).map((id) => h.btn('dirRegion', '+ ' + esc(cname(S, id)), { cls: 'sm', arg: d.id, arg2: id })).join('')}</div>` : ''}`;
     }
     // учёба
     const lv = HQ.lvlOf(S, 'uni');
@@ -379,7 +379,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lv = HQ.lvlOf(S, 'uni'), P = BK.CORP_UNI.programs;
     s += `<div class="sec"><h3>Корпоративный университет <small>${lv ? `${esc(BK.CORP_UNI.levels[lv].name)} · мест ${HQ.students(S).length}/${HQ.seats(S)}${lv >= 2 ? ' · цены −30 %' : ''}` : 'не открыт'}</small></h3>`;
     const studs = HQ.students(S);
-    if (studs.length) s += studs.map((d) => { const p = P[d.study.prog], tot2 = d.study.until - d.study.from, done = clampN((S.day - d.study.from) / Math.max(1, tot2)); return `<div class="stud">${av(d.name)}<div><b>${esc(d.name)}</b>${d.city ? ' · ' + esc(cname(d.city)) : ''}<span>${esc(p.name)}${d.study.evening ? ' · вечер' : ''} · до ${dateTxt(d.study.until)}</span><span class="pfb good"><i style="width:${Math.round(done * 100)}%"></i></span></div><b class="num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : d.study.prog === 'mba' ? 'грейд +1' : '+0,1★'}</b></div>`; }).join('');
+    if (studs.length) s += studs.map((d) => { const p = P[d.study.prog], tot2 = d.study.until - d.study.from, done = clampN((S.day - d.study.from) / Math.max(1, tot2)); return `<div class="stud">${av(d.name)}<div><b>${esc(d.name)}</b>${d.city ? ' · ' + esc(cname(S, d.city)) : ''}<span>${esc(p.name)}${d.study.evening ? ' · вечер' : ''} · до ${dateTxt(d.study.until)}</span><span class="pfb good"><i style="width:${Math.round(done * 100)}%"></i></span></div><b class="num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : d.study.prog === 'mba' ? 'грейд +1' : '+0,1★'}</b></div>`; }).join('');
     else if (lv) s += `<div class="empty">Никто не учится. Записать директора — кнопки «Учиться» в его карточке (вкладка «Директора»).</div>`;
     s += `<div class="uniwrap"><table class="cmp uni"><thead><tr><th>Программа</th><th class="r">Срок</th><th class="r">Цена</th><th class="r">Эффект</th></tr></thead><tbody>${Object.keys(P).map((k2) => { const p = P[k2]; return `<tr class="${(p.minLevel || 1) > Math.max(1, lv) ? 'lock' : ''}"><td>${esc(p.name)}${p.minLevel ? ` (ур. ${p.minLevel})` : ''}</td><td class="r num">${p.months} мес.</td><td class="r num">${fm(HQ.progCost(S, k2) || Math.round(K().UNI_PROG[k2] * S.macro.priceLevel))}</td><td class="r num pos">${p.skill && p.skill !== 'all' ? esc(SKN[p.skill]) + ' +10' : k2 === 'mba' ? 'грейд +1' : 'рейтинг +0,1★'}</td></tr>`; }).join('')}</tbody></table></div>
       <p class="hint" style="margin:0">${esc(BK.CORP_UNI.eveningNote)} Пока директор учится днём, выручка его города −3 %. MBA поднимает и рыночную цену выпускника на 20 % — удерживайте окладом или опционом.</p></div>`;
@@ -418,18 +418,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = H();
     if (it.kind === 'caught') {
       const L = { sue: ['Уволить и подать в суд', 'вернём ~30 % украденного через год; скандал — узнаваемость −5 %'], quiet: ['Уволить тихо', 'без выходного пособия и без шума'], forgive: ['Простить, оклад −30 %', 'воровать перестанет, но с шансом 40 % через год снова'], warn: ['Предупредить', 'отчёты станут честными, лояльность −5'], fire: ['Уволить', 'без выходного пособия'] };
-      return `<div class="card rep caught ${it.tone || ''}${!it.done ? ' need' : ''}" id="rep-${it.id}"><div class="rh"><span class="dav ${it.tone || 'bad'}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.city ? ' · ' + esc(cname(it.city)) : ''}</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div><p style="margin:0">${esc(it.text)}</p>
+      return `<div class="card rep caught ${it.tone || ''}${!it.done ? ' need' : ''}" id="rep-${it.id}"><div class="rh"><span class="dav ${it.tone || 'bad'}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}${it.city ? ' · ' + esc(cname(S, it.city)) : ''}</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div><p style="margin:0">${esc(it.text)}</p>
         ${!it.done ? `<div class="row rqb">${(it.choices || []).map((c, i) => `<button class="btn${i ? '' : ' primary'}" data-act="caughtDecide" data-arg="${it.id}" data-arg2="${c}" title="${esc(L[c][1])}">${esc(L[c][0])}</button>`).join('')}</div><p class="hint" style="margin:0">Нет ответа до ${dateTxt(it.due)} — ${it.trait === 'theft' ? 'уволим тихо' : 'предупредим'}.</p>` : `<span class="rst ${it.done === 'forgive' || it.done === 'warn' ? 'yes' : 'no'}">решение: ${esc((L[it.done] || ['—'])[0].toLowerCase())}</span>`}</div>`;
     }
-    if (it.kind === 'kpi') return `<div class="card rep note ${it.tone || ''}"><div class="rh">${av(it.dname)}<div><b>${esc(it.title)}</b><span>${esc(it.dname)}${it.city ? ' · ' + esc(cname(it.city)) : ''} · ${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0" class="num">${esc(it.text)}</p></div>`;
+    if (it.kind === 'kpi') return `<div class="card rep note ${it.tone || ''}"><div class="rh">${av(it.dname)}<div><b>${esc(it.title)}</b><span>${esc(it.dname)}${it.city ? ' · ' + esc(cname(S, it.city)) : ''} · ${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0" class="num">${esc(it.text)}</p></div>`;
     if (it.kind === 'note') return `<div class="card rep note ${it.tone || ''}"><div class="rh"><span class="dav ${it.tone || ''}">${esc(initials(it.dname) || '!')}</span><div><b>${esc(it.title)}</b><span>${esc(E().fmtDate(it.day))}</span></div></div><p style="margin:0">${esc(it.text)}</p></div>`;
     if (it.kind === 'award') {
       return `<div class="card rep award${!it.done ? ' need' : ''}"><div class="rh"><span class="dav crust">★</span><div><b>${esc(it.title)}</b><span>Номинанты — лучшие по выполнению плана</span></div>${!it.done ? '<span class="chip bad">Нужен ответ</span>' : ''}</div>
-        ${it.noms.map((n) => `<div class="nom">${av(n.name)}<div><b>${esc(n.name)}</b><span>${esc(cname(n.city))} · план ${Math.round(n.pf * 100)} %</span></div>${!it.done ? `<button class="btn sm primary" data-act="repAward" data-arg="${it.id}" data-arg2="${n.dir}">Наградить</button>` : it.done === n.dir ? '<span class="chip good">директор года</span>' : ''}</div>`).join('')}
+        ${it.noms.map((n) => `<div class="nom">${av(n.name)}<div><b>${esc(n.name)}</b><span>${esc(cname(S, n.city))} · план ${Math.round(n.pf * 100)} %</span></div>${!it.done ? `<button class="btn sm primary" data-act="repAward" data-arg="${it.id}" data-arg2="${n.dir}">Наградить</button>` : it.done === n.dir ? '<span class="chip good">директор года</span>' : ''}</div>`).join('')}
         <p class="hint" style="margin:0">Победителю — лояльность +${K().LOY_AWARD}; номинанты с лояльностью ниже 50 обидятся (−3).${!it.done ? ` Нет ответа до ${dateTxt(it.due)} — награды в этом году не будет.` : ''}</p></div>`;
     }
     const open = (it.reqs || []).filter((r) => r.st === 'open').length;
-    const head = `<div class="rh">${av(it.dname)}<div><b>Отчёт за ${MON[it.m]} ${it.y}</b><span>${esc(it.dname)} · ${esc(cname(it.city))}</span></div>${open ? `<span class="chip bad">Нужен ответ · ${open}</span>` : it.praised ? '<span class="chip good">отмечен ★</span>' : ''}</div>`;
+    const head = `<div class="rh">${av(it.dname)}<div><b>Отчёт за ${MON[it.m]} ${it.y}</b><span>${esc(it.dname)} · ${esc(cname(S, it.city))}</span></div>${open ? `<span class="chip bad">Нужен ответ · ${open}</span>` : it.praised ? '<span class="chip good">отмечен ★</span>' : ''}</div>`;
     if (!full) return `<div class="card click rep short" data-act="ruRep" data-arg="${it.id}">${head}<div class="rsum"><span>выручка <b>${fm(it.rev)}</b></span><span>прибыль <b class="${it.profit < 0 ? 'negc' : ''}">${fm(it.profit)}</b></span><span>точки <b>${it.stores}</b></span></div></div>`;
     const p = it.prev, pl = it.plan, mg = it.rev ? it.profit / it.rev : 0;
     const dl = (a, b) => (b != null && b > 0 ? `${a >= b ? '▲' : '▼'} ${n1(Math.abs(a / b - 1) * 100)} %` : '');
@@ -462,7 +462,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (f !== 'all') list = list.filter((it) => it.city === f);
     const cities = [...new Set(cr.inbox.map((it) => it.city).filter(Boolean))];
     let s = `<div class="sec"><h3>Отчёты директоров ${n ? `<em class="badge">${n}</em>` : ''}<small>раз в месяц, 1-го числа</small></h3>
-      <div class="row ru-chips fchips"><button class="fchip" data-act="repFilter" data-arg="all" aria-pressed="${f === 'all'}">Все ${cr.inbox.length}</button><button class="fchip" data-act="repFilter" data-arg="need" aria-pressed="${f === 'need'}">Нужен ответ ${n}</button>${cities.map((id) => `<button class="fchip" data-act="repFilter" data-arg="${id}" aria-pressed="${f === id}">${esc(cshort(id))}</button>`).join('')}</div>`;
+      <div class="row ru-chips fchips"><button class="fchip" data-act="repFilter" data-arg="all" aria-pressed="${f === 'all'}">Все ${cr.inbox.length}</button><button class="fchip" data-act="repFilter" data-arg="need" aria-pressed="${f === 'need'}">Нужен ответ ${n}</button>${cities.map((id) => `<button class="fchip" data-act="repFilter" data-arg="${id}" aria-pressed="${f === id}">${esc(cshort(S, id))}</button>`).join('')}</div>`;
     if (!list.length) s += `<div class="empty">${cr.inbox.length ? 'Здесь пусто.' : 'Отчёты придут 1-го числа от директоров городов. Наймите директора во вкладке «Директора» и назначьте его в город.'}</div>`;
     const shown = new Set();
     s += list.slice(0, 40).map((it) => {
@@ -506,7 +506,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const th = (k, lab, cls) => `<th class="${cls || ''}"><button class="thb${sort === k ? ' on' : ''}" data-act="cmpSort" data-arg="${k}">${lab}${sort === k ? (asc ? ' ▲' : ' ▼') : ''}</button></th>`;
     const devBar = (v) => { if (v == null) return '<span class="muted">—</span>'; const cls = v < -0.05 ? 'bad' : v < -0.03 ? 'warn' : 'good'; const w = Math.min(50, Math.abs(v) * 500); return `<span class="devb ${cls}"><span class="db"><i style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(0)}%"></i></span><b>${pc1(v)}</b></span>`; };
     const tone = (r) => (r.st.lastRev > 0 ? (r.st.lastProfit / r.st.lastRev >= 0.15 ? 'good' : r.st.lastProfit >= 0 ? 'warn' : 'bad') : 'none');
-    const who = (r) => (r.d ? `${av(r.d.name, 'sm')}<span class="cw"><b>${esc(r.d.name)}</b>${loyBar(r.d)}</span>` : r.id === S.corp.active ? `<span class="cw"><b>вы управляете</b><small>${r.st.name === 'Уфа' ? 'родной город' : 'активный город'}</small></span>` : `<span class="dav sm bad">!</span><span class="cw"><b class="negc">Нет директора</b><small>${r.st.months} мес. в сети</small></span>`);
+    const who = (r) => (r.d ? `${av(r.d.name, 'sm')}<span class="cw"><b>${esc(r.d.name)}</b>${loyBar(r.d)}</span>` : r.id === S.corp.active ? `<span class="cw"><b>вы управляете</b><small>${r.id === 'ufa' ? 'родной город' : 'активный город'}</small></span>` : `<span class="dav sm bad">!</span><span class="cw"><b class="negc">Нет директора</b><small>${r.st.months} мес. в сети</small></span>`);
     const since = (r) => { const t = E().dateOf(r.c.enteredDay); return r.id === 'ufa' ? 'с ' + C().START_YEAR : `с ${E().MONTHS_G[t.m].slice(0, 4)}. ${t.y}`; };
     const lossTag = (r) => (r.ls ? `<small class="negc lossm">${r.ls.lossM >= 2 ? `в минусе ${r.ls.lossM} мес.` : 'утечка ' + Math.round(r.ls.leak * 100) + ' %'} · ${esc(r.ls.whyKeys.map((k) => ({ skills: 'слабые навыки', nouni: 'не учился', mismatch: 'стиль ≠ приоритет' })[k]).join(', ') || 'убыточные точки')}</small>` : ''); // Р4: денежный риск
     const act = (r) => (r.act ? (r.act.link ? `<button class="linkbtn" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b} →</button>` : `<button class="btn sm ${r.act.prim ? 'primary' : ''}" data-act="${r.act.a}" data-arg="${r.act.arg}">${r.act.b}</button>`) : '<span class="muted">—</span>');
@@ -531,7 +531,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (o.candId) {
       const d = cr.dirCand.find((x) => x.id === o.candId); if (!d) return null;
       const cost = BK.HQ.hireCost(S, d);
-      const opts = cities.map((id) => `<button class="choice" data-hire="${id}"><b>${esc(cname(id))}</b><span class="cd">${id === cr.active ? 'вы здесь — будет заместителем, пока вы управляете сами' : `${h.nw(BK.Corp.cityStats(S, id).open, 'точка', 'точки', 'точек')} без директора`}</span><span class="cc">${fm(cost)}</span></button>`).join('')
+      const opts = cities.map((id) => `<button class="choice" data-hire="${id}"><b>${esc(cname(S, id))}</b><span class="cd">${id === cr.active ? 'вы здесь — будет заместителем, пока вы управляете сами' : `${h.nw(BK.Corp.cityStats(S, id).open, 'точка', 'точки', 'точек')} без директора`}</span><span class="cc">${fm(cost)}</span></button>`).join('')
         + `<button class="choice" data-hire=""><b>В резерв</b><span class="cd">Половина оклада; можно поставить на новый город при входе</span><span class="cc">${fm(cost)}</span></button>`;
       return `<div class="modal-h"><span class="eyebrow">Найм директора</span><h2>${esc(d.name)} — куда?</h2></div><div class="modal-b"><p style="margin:0">${GRN(d.grade)}, стиль «${STN(d.style)}», оклад ${fm(d.salary)}/мес. Найм — ${d.src === 'hunter' ? 'хедхантеру 25 % годового оклада' : K().DIR_HIRE_SALARIES + ' оклада'}.</p></div><div class="modal-f">${opts}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
     }
@@ -539,13 +539,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const cur = D().dirOf(S, cr.cities[id]);
     let opts = res.map((d) => `<button class="choice" data-assign="${d.id}"><b>${esc(d.name)} · из резерва</b><span class="cd">${GRN(d.grade)} · ${STN(d.style)} · лояльность ${Math.round(d.loyalty)}</span><span class="cc">бесплатно</span></button>`).join('');
     opts += cr.dirCand.map((d) => { const cost = BK.HQ.hireCost(S, d); return `<button class="choice" data-cand="${d.id}"${S.cash < cost ? ' disabled' : ''}><b>${esc(d.name)} · ${GRN(d.grade)}${d.src === 'own' ? ' · свои люди' : ''}</b><span class="cd">${STN(d.style)} · ${D().SK.map((k) => SKN[k] + ' ≈' + d.seen[k]).join(', ')} · ${fm(d.salary)}/мес</span><span class="cc">${fm(cost)}</span></button>`; }).join('');
-    return `<div class="modal-h"><span class="eyebrow">Директор города</span><h2>${cur ? 'Сменить директора' : 'Директор'} ${esc(cin(id))}</h2></div><div class="modal-b"><p style="margin:0">${cur ? `${esc(cur.name)} уйдёт в резерв (половина оклада). ` : ''}Новый директор месяц адаптируется (выручка −3 %). Приоритет города по умолчанию — по его стилю.</p></div><div class="modal-f">${opts || '<div class="empty">Нет кандидатов — обновите список во вкладке «Директора».</div>'}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
+    return `<div class="modal-h"><span class="eyebrow">Директор города</span><h2>${cur ? 'Сменить директора' : 'Директор'} ${esc(cin(S, id))}</h2></div><div class="modal-b"><p style="margin:0">${cur ? `${esc(cur.name)} уйдёт в резерв (половина оклада). ` : ''}Новый директор месяц адаптируется (выручка −3 %). Приоритет города по умолчанию — по его стилю.</p></div><div class="modal-f">${opts || '<div class="empty">Нет кандидатов — обновите список во вкладке «Директора».</div>'}<button class="btn block" data-act="closeModal">Отмена</button></div>`;
   }
   // вход в город: кто запускает
   function enterChoices(S, id) {
     const cr = S.corp, res = cr.directors.filter((x) => !x.city);
-    let s = hqLoadHtml(S, { extra: 1 }) + `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
-    s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(cr.active))}</small></span></label>`).join('');
+    let s = hqLoadHtml(S, { extra: 1 }) + `<fieldset class="whopick"><legend>Кто запускает город</legend><label class="wopt"><input type="radio" name="who" value="" checked><span><b>Я сам</b><small>Переезд: цех и точки выбираете вы, ${esc(cname(S, cr.active))} ${cr.cities[cr.active].directorId ? 'останется директору' : 'перейдёт на автопилот'}</small></span></label>`;
+    s += res.map((d) => `<label class="wopt"><input type="radio" name="who" value="d:${d.id}"><span><b>${esc(d.name)} · из резерва</b><small>${GRN(d.grade)} · ${STN(d.style)} — цех и ${K().DIR_LAUNCH_STORES} точки откроет сам, вы останетесь ${esc(cin(S, cr.active))}</small></span></label>`).join('');
     s += cr.dirCand.map((d) => `<label class="wopt"><input type="radio" name="who" value="c:${d.id}"><span><b>Нанять: ${esc(d.name)}</b><small>${GRN(d.grade)} · ${STN(d.style)} · найм ${fm(d.salary * K().DIR_HIRE_SALARIES)} — запустит город сам</small></span></label>`).join('');
     return s + '</fieldset>' + supplyChoices(S, id);
   }
@@ -557,10 +557,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<fieldset class="whopick"><legend>Откуда выпечка</legend>`;
     s += opt('own', 'Свой цех', 'Как в начале игры: помещение под цех, пекари, оборудование. Дороже на старте, дешевле потом.');
     const fr = h.fresh;
-    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
+    s += fr ? opt('fresh', `Свежая выпечка из цеха ${esc(cin(S, fr.from))} · ${fr.km} км`, `Без своего цеха: поставка ≈ ${per(k.DEL_FRESH, fr.km)} в месяц на точку + пекари цеха ${esc(cin(S, fr.from))}${fr.km > k.FRESH_FAR_KM ? `; дальше ${k.FRESH_FAR_KM} км — свежесть −${String(k.FRESH_FAR_RATING).replace('.', ',')}★` : ''}. Свой цех можно открыть позже.`)
       : opt('fresh', 'Свежая выпечка из другого города', `Нужен наш цех ближе ${h.freshKm} км${h.lvl < 1 ? ` (с логистикой 1-го уровня в штабе — ${k.FRESH_KM_L1} км)` : ''}.`, true);
     const fz = h.frozen;
-    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
+    s += fz ? opt('frozen', `Фабрика заморозки ${esc(cin(S, fz.from))} · ${fz.km} км`, `Поставка ≈ ${per(k.DEL_FROZEN, fz.km)} в месяц на точку, фудкост +${Math.round(k.FROZEN_FC * 100)} п. п., свежесть −${String(k.FROZEN_RATING).replace('.', ',')}★. Быстро «воткнуть флажок»; свой цех потом выгоднее.`)
       : opt('frozen', 'Фабрика заморозки', h.lvl < 2 ? 'Нужна логистика 2-го уровня в штабе.' : `Нет нашего цеха ближе ${k.FROZEN_KM} км.`, true);
     return s + '</fieldset>';
   }

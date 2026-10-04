@@ -13,7 +13,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => BK.fmtMoney(v);
   const def = (id) => BK.CITY_BY_ID[id] || {};
-  const cname = (id) => def(id).name || id;
+  const cname = (id, S) => (S ? BK.Corp.cityDef(S, id) : def(id)).name || id;
   const byId = (id) => (BK.CORP_EVENTS || []).find((e) => e.id === id);
   const pctS = (m) => `${m >= 1 ? '+' : '−'}${Math.round(Math.abs(m - 1) * 100)} %`;
   BK.CORP_LOCAL_CHAINS = BK.CORP_LOCAL_CHAINS || ['Пекарня у дома', 'Горячий каравай', 'Булочная №1', 'Пышка', 'Хлебница', 'Тёплый хлеб', 'Сдобный двор'];
@@ -27,7 +27,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function ownIds(S) { return Object.keys(S.corp.cities); }
   function runCities(S) { return ownIds(S).filter((id) => S.corp.cities[id].status === 'run' || id === 'ufa'); }
   function dirsOnCity(S) { return (S.corp.directors || []).filter((d) => d.city && S.corp.cities[d.city] && d.leaveDay == null); }
-  function newCities(S) { return BK.CITIES.map((d) => d.id).filter((id) => !S.corp.cities[id] && !(def(id).big && HQ().bigLock(S))); }
+  function newCities(S) { return BK.Corp.mapCities(S).map((d) => d.id).filter((id) => !S.corp.cities[id] && !(def(id).big && HQ().bigLock(S))); }
   function daily(S, t) {
     const cr = S.corp; if (!cr || cr.unlockedDay == null || S.phase !== 'play') return;
     if (ownIds(S).length < 2) return; // до второго города корпоративных событий нет (ГСЧ не трогается)
@@ -67,7 +67,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return true;
   }
   // межгородние поставки (Р3 — упрощённо): города дальше 150 км от Уфы на трассе М-5 / Урал (ближе 700 км)
-  function supplied(S) { return ownIds(S).filter((id) => id !== 'ufa' && BK.roadKm('ufa', id) < 700); }
+  function supplied(S) { return ownIds(S).filter((id) => id !== 'ufa' && BK.Corp.roadKm(S, 'ufa', id) < 700); }
 
   /* ---------------- цель и текст ---------------- */
   function districtOf(S, id) {
@@ -76,7 +76,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!list.length) return 'Центр';
     const s = list[I.ri(S, 0, list.length - 1)];
     if (id === cr.active) { const d = (BK.DISTRICTS || []).find((x) => x.id === s.district); return d ? d.name : 'Центр'; }
-    return D().districtName(c, s.district);
+    return D().districtName(S, c, s.district);
   }
   function target(S, e, forced) {
     const cr = S.corp, ctx = { city: null, city2: null, dir: null, dir2: null };
@@ -85,7 +85,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       Object.assign(ctx, { dir: d.id, city: d.city, offerPct: forced.offerPct, poacher: forced.poacher });
     } else if (e.target === 'city') {
       let ids = runCities(S); if (e.need && e.need.rival) ids = ids.filter((id) => id !== 'ufa' && !cr.cities[id].rivalIn);
-      if (e.need && e.need.cityFeature === 'industry') { const ind = ids.filter((id) => /Промышлен|завод/i.test(def(id).feat || '')); if (ind.length && I.rnd(S) < 0.5) ids = ind; }
+      if (e.need && e.need.cityFeature === 'industry') { const ind = ids.filter((id) => /Промышлен|завод/i.test(BK.Corp.cityDef(S, id).feat || '')); if (ind.length && I.rnd(S) < 0.5) ids = ind; }
       if (!ids.length) return null; ctx.city = I.pick(S, ids);
     } else if (e.target === 'director') {
       let ds = dirsOnCity(S);
@@ -99,7 +99,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ctx.dir = d.id; ctx.city = d.city;
     } else if (e.target === 'twoDirectors') {
       const ds = dirsOnCity(S), pairs = [];
-      for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (BK.roadKm(ds[i].city, ds[j].city) <= K().REGION_KM) pairs.push([ds[i], ds[j]]);
+      for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (BK.Corp.roadKm(S, ds[i].city, ds[j].city) <= K().REGION_KM) pairs.push([ds[i], ds[j]]);
       const pr = pairs.length ? I.pick(S, pairs) : [ds[0], ds[1]];
       ctx.dir = pr[0].id; ctx.city = pr[0].city; ctx.dir2 = pr[1].id; ctx.city2 = pr[1].city;
     } else if (e.target === 'newCity') { let ids = newCities(S); if (e.id === 'e208') ids = ids.filter((id) => !E.enterLock(S, id)); if (!ids.length) return null; ctx.city = I.pick(S, ids); }
@@ -111,7 +111,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function textCtx(S, ctx) {
     const d = ctx.dir && D().dirById(S, ctx.dir), d2 = ctx.dir2 && D().dirById(S, ctx.dir2);
-    return { city: ctx.city ? cname(ctx.city) : null, city2: ctx.city2 ? cname(ctx.city2) : null, director: d ? d.name : null, director2: d2 ? d2.name : null, district: ctx.district, poacher: ctx.poacher, offerPct: ctx.offerPct, price: ctx.price != null ? fm(ctx.price) : null, rival: C().RIVAL_NAME };
+    return { city: ctx.city ? cname(ctx.city, S) : null, city2: ctx.city2 ? cname(ctx.city2, S) : null, director: d ? d.name : null, director2: d2 ? d2.name : null, district: ctx.district, poacher: ctx.poacher, offerPct: ctx.offerPct, price: ctx.price != null ? fm(ctx.price) : null, rival: C().RIVAL_NAME };
   }
   const tx = (S, s, ctx) => (BK.corpText ? BK.corpText(s, textCtx(S, ctx)) : s);
   // средняя годовая выручка точки сети × доход города — оценка покупаемой местной сети
@@ -211,7 +211,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const f0 of effects) {
       if (f0.ifHq && !anyHq(S, f0.ifHq)) continue;
       if (f0.unlessHq && anyHq(S, f0.unlessHq)) continue;
-      const f = scaled(S, f0), ids = whereIds(S, f, ctx), names = ids.map(cname).join(', ') || 'сеть';
+      const f = scaled(S, f0), ids = whereIds(S, f, ctx), names = ids.map((id) => cname(id, S)).join(', ') || 'сеть';
       const all = (f.where || (ctx.city ? 'city' : 'all')) === 'all';
       switch (f.t) {
         case 'traffic': case 'check': case 'conv': case 'competitor': case 'foodcost': {

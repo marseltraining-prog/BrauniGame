@@ -23,6 +23,13 @@ function botSave(years, seed) {
   const r = play({ level: 'good', seed, years });
   const c = Object.assign({}, r.S); delete c.cache; delete c._botRng; c.notify = [];
   c.stores = c.stores.map((st) => { const x = Object.assign({}, st); delete x._bot; return x; });
+  // Бот играет без сюжета, а браузер включает его по умолчанию. Без явного режима
+  // первый тик старого сохранения создаёт главу 2 («Гуля хочет цех») поверх окна
+  // выхода в Россию. Проверяем корпорацию в штатном режиме «без сюжета», сохраняя
+  // настоящий путь загрузки, unlock и обработки уведомления corp.
+  const BK = globalThis.BK, storyOn = BK.CFG.STORY.ON;
+  try { BK.CFG.STORY.ON = true; BK.Story.ensure(c).mode = 'off'; }
+  finally { BK.CFG.STORY.ON = storyOn; }
   return JSON.parse(JSON.stringify(c));
 }
 async function textProblems(p, label) {
@@ -62,7 +69,7 @@ async function live(p, days, act) {
 
 // закрыть окна (события — первым вариантом, шеф — без изменений), чтобы снять экран карты
 async function clear(p) {
-  await p.evaluate(() => { const S = BK.App.state, E = BK.Engine; if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []); S.notify.length = 0; BK.App.ui.modalQueue.length = 0; BK.App.closeModal(); document.getElementById('toasts').innerHTML = ''; });
+  await p.evaluate(() => { const S = BK.App.state, E = BK.Engine; BK.App.setSpeed(0); if (S.ev.pending) E.resolveEvent(S, 0); if (S.chef.pending) E.chefConfirm(S, [], []); S.notify.length = 0; BK.App.ui.modalQueue.length = 0; BK.App.closeModal(); document.getElementById('toasts').innerHTML = ''; });
   await p.waitForTimeout(100);
 }
 async function flow(b, sv) {
@@ -113,6 +120,10 @@ async function flow(b, sv) {
   const ufaBefore = await p.evaluate(() => ({ n: BK.App.state.corp.cities.ufa.packed.stores.length, h: BK.App.state.history.length }));
   const lv = await live(p, 183, true);
   await realTicks(p, 1);
+  // live мог закончиться ровно в день события: realTicks показывает его окно,
+  // но не выбирает ответ. Закрываем штатным resolveEvent, прежде чем проверять
+  // карту и нажимать «Зайти в город»; расчёты шести месяцев остаются настоящими.
+  await clear(p);
   const k2 = await p.evaluate((h0) => {
     const S = BK.App.state, u = S.corp.cities.ufa, kz = S.corp.cities.kazan;
     const hs = S.history.slice(h0);

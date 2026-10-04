@@ -20,8 +20,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => BK.fmtMoney(v);
   const def = (id) => BK.CITY_BY_ID[id] || {};
-  const cname = (id) => def(id).name || id;
-  const cin = (id) => def(id).in || 'в городе ' + cname(id);
+  const cname = (S, id) => BK.Corp.cityDef(S, id).name || id;
+  const cin = (S, id) => BK.Corp.cityDef(S, id).in || 'в городе ' + cname(S, id);
   const KEYS = ['finance', 'hr', 'uni', 'purchasing', 'logistics', 'brand', 'security', 'legal'];
   const MAXLV = { uni: 3, logistics: 2 };
   const KPI_KEYS = ['rev', 'profit', 'rating', 'opens', 'turnover'];
@@ -173,8 +173,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     c.rivalIn = S.day; c.rp = Math.max(c.rp || 0, K().RIVAL_PRESS0); c.pressure = pressOf(c);
     if (cityId === cr.active && !(S.rival && S.rival.enabled) && I.rivalInit) I.rivalInit(S, true); // в подробном городе — обычная логика соперника
     if (!quiet) {
-      I.log(S, `«${C().RIVAL_NAME}» вышел ${cin(cityId)}: давление соперника в городе ${n2(c.pressure)}.`, 'bad');
-      D().pushInbox(S, { kind: 'note', tone: 'warn', city: cityId, dname: '', title: `«${C().RIVAL_NAME}» ${cin(cityId)}`, text: `Федеральная сеть идёт за нами: первые вывески уже висят. Выручка точек рядом ниже, сильнее — у точек с низким рейтингом. Держите рейтинг и занимайте места раньше них.` });
+      I.log(S, `«${C().RIVAL_NAME}» вышел ${cin(S, cityId)}: давление соперника в городе ${n2(c.pressure)}.`, 'bad');
+      D().pushInbox(S, { kind: 'note', tone: 'warn', city: cityId, dname: '', title: `«${C().RIVAL_NAME}» ${cin(S, cityId)}`, text: `Федеральная сеть идёт за нами: первые вывески уже висят. Выручка точек рядом ниже, сильнее — у точек с низким рейтингом. Держите рейтинг и занимайте места раньше них.` });
     }
     return 'in';
   }
@@ -184,7 +184,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const id in cr.cities) {
       const c = cr.cities[id]; if (id === 'ufa') { c.pressure = 0; continue; }
       if (c.rivalIn) {
-        const st = BK.Corp.cityStats(S, id), cap = def(id).cap || 40;
+        const st = BK.Corp.cityStats(S, id), cap = BK.Corp.cityDef(S, id).cap || 40;
         const dom = st.open >= cap * 0.6 && (st.rating || 0) >= 4.3; // игрок доминирует — соперник отступает
         c.rp = clamp((c.rp || 0) + (dom ? k.RIVAL_PRESS_DOM : k.RIVAL_PRESS_GROW), 0.1, k.RIVAL_PRESS_CAP);
       }
@@ -319,7 +319,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function regionCands(S, d) { // соседние города без директора, ближе 600 км к основному
     if (!d.city) return [];
     const cr = S.corp;
-    return Object.keys(cr.cities).filter((id) => id !== d.city && id !== cr.active && !cr.cities[id].directorId && BK.roadKm(d.city, id) <= K().REGION_KM);
+    return Object.keys(cr.cities).filter((id) => id !== d.city && id !== cr.active && !cr.cities[id].directorId && BK.Corp.roadKm(S, d.city, id) <= K().REGION_KM);
   }
   function promote(S, dirId) {
     const d = D().dirById(S, dirId); if (!d) return { ok: false };
@@ -338,7 +338,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (regionCands(S, d).indexOf(cityId) < 0) return { ok: false, msg: 'Город далеко или у него уже есть директор' };
     d.region.push(cityId); c.directorId = d.id; if (!c.budget.capex) { c.budget.capex = D().proposeCapex(S, c, d); c.budget.left = c.budget.capex; }
     D().makePlan(S, c, d);
-    I.log(S, `${d.name} ведёт и ${cname(cityId)} (кластер: ${[d.city].concat(d.region).map(cname).join(', ')}).`, 'info');
+    I.log(S, `${d.name} ведёт и ${cname(S, cityId)} (кластер: ${[d.city].concat(d.region).map((id) => cname(S, id)).join(', ')}).`, 'info');
     return { ok: true };
   }
   function dropRegion(S, d, cityId) {
@@ -351,7 +351,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function poachP(S, d) {
     if (!d.city) return 0;
     const k = K(), c = S.corp.cities[d.city], mk = D().marketPay(S, d, d.city);
-    const comp = k.POACH_COMP[def(d.city).comp] || 1;
+    const comp = k.POACH_COMP[BK.Corp.cityDef(S, d.city).comp] || 1;
     let p = k.POACH_BASE * comp * Math.pow(mk / Math.max(1, d.salary), 2) * clamp(1.6 - 1.2 * d.loyalty / 100, 0.1, 1.6) * (1 - k.OPT_POACH * unvested(d)) * (d.grade >= 3 ? k.POACH_GRADE : 1);
     if (lvlOf(S, 'hr')) p *= k.HR_POACH_K;
     p *= k.POACH_DIFF[S.difficulty] || 1;
@@ -375,14 +375,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       d.caught = true; cr.stat.caught++;
       const stolen = Math.round(d.stolen || 0);
       D().pushInbox(S, { kind: 'caught', trait, tone: 'bad', dir: d.id, dname: d.name, city: cityId, how, gap: +gap.toFixed(3), stolen,
-        title: how === 'visit' ? `Цифры не сходятся ${cityId ? cin(cityId) : ''}` : `${HOW[how] || 'Проверка'}: ${d.name} ${g(d, 'уводил', 'уводила')} выручку`,
-        text: `${how === 'visit' ? `Вы сами открыли кассу: касса и отчёт расходятся на ${pct1(gap)}. ` : ''}${d.name} ${g(d, 'уводил', 'уводила')} ≈ ${pct1(gap)} выручки${cityId ? ' ' + cin(cityId) : ''}; всего ушло около ${fm(stolen)}. Решите, что делать.`,
+        title: how === 'visit' ? `Цифры не сходятся ${cityId ? cin(S, cityId) : ''}` : `${HOW[how] || 'Проверка'}: ${d.name} ${g(d, 'уводил', 'уводила')} выручку`,
+        text: `${how === 'visit' ? `Вы сами открыли кассу: касса и отчёт расходятся на ${pct1(gap)}. ` : ''}${d.name} ${g(d, 'уводил', 'уводила')} ≈ ${pct1(gap)} выручки${cityId ? ' ' + cin(S, cityId) : ''}; всего ушло около ${fm(stolen)}. Решите, что делать.`,
         choices: ['sue', 'quiet', 'forgive'], done: null, due: S.day + 45 });
-      I.log(S, `${HOW[how] || 'Проверка'}: ${d.name}${cityId ? ' (' + cname(cityId) + ')' : ''} — «Нечист на руку», украдено ≈ ${fm(stolen)}.`, 'bad');
+      I.log(S, `${HOW[how] || 'Проверка'}: ${d.name}${cityId ? ' (' + cname(S, cityId) + ')' : ''} — «Нечист на руку», украдено ≈ ${fm(stolen)}.`, 'bad');
       S.notify.push({ type: 'toast', title: how === 'visit' ? 'Цифры не сходятся' : 'Поймали на воровстве', text: `${d.name}: касса и отчёт расходятся на ${pct1(gap)}. Решение — во вкладке «Отчёты».`, kind: 'bad' });
     } else if (trait === 'embellish') {
       D().pushInbox(S, { kind: 'caught', trait, tone: 'warn', dir: d.id, dname: d.name, city: cityId, how, gap: +gap.toFixed(3),
-        title: `${HOW[how] || 'Проверка'}: отчёты ${d.name} приукрашены`, text: `KPI в отчётах завышены примерно на ${pct1(gap)}: премии переплачены, план ${cityId ? cin(cityId) : ''} на деле хуже. Отчёты дальше — уже без прикрас.`,
+        title: `${HOW[how] || 'Проверка'}: отчёты ${d.name} приукрашены`, text: `KPI в отчётах завышены примерно на ${pct1(gap)}: премии переплачены, план ${cityId ? cin(S, cityId) : ''} на деле хуже. Отчёты дальше — уже без прикрас.`,
         choices: ['warn', 'fire'], done: null, due: S.day + 45 });
       I.log(S, `${HOW[how] || 'Проверка'}: ${d.name} приукрашивает отчёты (≈ ${pct1(gap)}).`, 'warn');
     } else {
@@ -402,7 +402,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       D().fire(S, d.id, 0);
       if (back > 0) (cr.pending = cr.pending || []).push({ day: S.day + 365, cash: back, text: `Суд с ${d.name}: возвращено ${fm(back)} украденного.` });
       if (it.city && cr.cities[it.city] && it.city !== 'ufa') cr.cities[it.city].aw = clamp(cr.cities[it.city].aw + k.SUE_AW, 0, 1);
-      I.log(S, `${d.name}: уволен${g(d, '', 'а')}, иск подан — через год вернут ≈ ${fm(back)}; скандал: узнаваемость ${it.city ? cname(it.city) : ''} −5 %.`, 'warn');
+      I.log(S, `${d.name}: уволен${g(d, '', 'а')}, иск подан — через год вернут ≈ ${fm(back)}; скандал: узнаваемость ${it.city ? cname(S, it.city) : ''} −5 %.`, 'warn');
     } else if (choice === 'quiet' || choice === 'fire') { D().fire(S, d.id, 0); }
     else if (choice === 'forgive') {
       d.salary = Math.round(d.salary * k.FORGIVE_PAY / 1000) * 1000; d.theta = 0; d.loyalty = clamp(d.loyalty - 5, 0, 100);
@@ -431,9 +431,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let loy = 0;
     if (!found.length && !dishonest) { loy = pen; if (d.lastAudit != null && S.day - d.lastAudit < 365) loy += k.AUDIT_AGAIN; d.loyalty = clamp(d.loyalty + loy, 0, 100); }
     d.lastAudit = S.day; d.checked = S.day;
-    if (!found.length) D().pushInbox(S, { kind: 'note', tone: loy < 0 ? 'warn' : '', dir: d.id, dname: d.name, city: cityId, title: `Аудит ${cin(cityId)}: касса и отчёты сходятся`, text: `Нарушений не нашли${cost ? ` (аудит — ${fm(cost)})` : ''}.${loy < 0 ? ` ${d.name} ${g(d, 'обижен', 'обижена')} проверкой: лояльность ${loy}.` : ''}` });
+    if (!found.length) D().pushInbox(S, { kind: 'note', tone: loy < 0 ? 'warn' : '', dir: d.id, dname: d.name, city: cityId, title: `Аудит ${cin(S, cityId)}: касса и отчёты сходятся`, text: `Нарушений не нашли${cost ? ` (аудит — ${fm(cost)})` : ''}.${loy < 0 ? ` ${d.name} ${g(d, 'обижен', 'обижена')} проверкой: лояльность ${loy}.` : ''}` });
     chron(S, { t: 'audit', city: cityId, found: found.length, cost });
-    I.log(S, `Аудит ${cin(cityId)}${cost ? ` (${fm(cost)})` : ''}: ${found.length ? 'найдены нарушения' : 'нарушений нет'}.`, found.length ? 'bad' : 'info');
+    I.log(S, `Аудит ${cin(S, cityId)}${cost ? ` (${fm(cost)})` : ''}: ${found.length ? 'найдены нарушения' : 'нарушений нет'}.`, found.length ? 'bad' : 'info');
     return { ok: true, found, cost, loy };
   }
   // личный визит («зайти» в город директора): касса без фильтра директора
@@ -499,7 +499,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const d of cr.directors) {
         if (!d.opt || !d.opt.city || !d.city) continue;
         const c = cr.cities[d.city], y = t.y - 1, p = c.hist.filter((x) => x[0] === y).reduce((a, x) => a + x[3], 0);
-        if (p > 0) { const pay = Math.round(p * d.opt.city); I.spend(S, pay, 'upkeep'); cr.stat.optPaid += pay; I.log(S, `${d.name}: доля ${pct1(d.opt.city)} прибыли ${cname(d.city)} за ${y} — ${fm(pay)}.`, 'info'); }
+        if (p > 0) { const pay = Math.round(p * d.opt.city); I.spend(S, pay, 'upkeep'); cr.stat.optPaid += pay; I.log(S, `${d.name}: доля ${pct1(d.opt.city)} прибыли ${cname(S, d.city)} за ${y} — ${fm(pay)}.`, 'info'); }
       }
     }
   }
@@ -511,9 +511,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const where = to === 'agent' ? `в «${C().RIVAL_NAME}»` : d.leaveWho || 'к конкуренту';
     if (to === 'agent' && c && c.id !== 'ufa') { c.rp = Math.max(c.rp || 0, K().RIVAL_PRESS0); c.pressure = pressOf(c); }
     if (to === 'agent' && !knows(d, 'rivalAgent')) d.known.push('rivalAgent');
-    I.log(S, `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}${took ? ` и ${g(d, 'увёл', 'увела')} ${took} лучших продавцов` : ''}.${c ? ' ' + cname(c.id) + ' без директора.' : ''}`, 'bad');
-    D().pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}`, text: `${to === 'agent' ? 'Оказалось, это был человек соперника: он пришёл за нашими людьми и рецептами. ' : ''}${took ? `С ${g(d, 'ним', 'ней')} ушли ${took} лучших продавцов, настроение команды упало. ` : ''}${c ? `${cname(c.id)} без директора — назначьте нового.` : ''}` });
-    S.notify.push({ type: 'toast', title: `${d.name} ${g(d, 'ушёл', 'ушла')}`, text: c ? `${cname(c.id)} без директора.` : '', kind: 'bad' });
+    I.log(S, `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}${took ? ` и ${g(d, 'увёл', 'увела')} ${took} лучших продавцов` : ''}.${c ? ' ' + cname(S, c.id) + ' без директора.' : ''}`, 'bad');
+    D().pushInbox(S, { kind: 'note', tone: 'bad', dir: d.id, dname: d.name, city: c ? c.id : null, title: `${d.name} ${g(d, 'ушёл', 'ушла')} ${where}`, text: `${to === 'agent' ? 'Оказалось, это был человек соперника: он пришёл за нашими людьми и рецептами. ' : ''}${took ? `С ${g(d, 'ним', 'ней')} ушли ${took} лучших продавцов, настроение команды упало. ` : ''}${c ? `${cname(S, c.id)} без директора — назначьте нового.` : ''}` });
+    S.notify.push({ type: 'toast', title: `${d.name} ${g(d, 'ушёл', 'ушла')}`, text: c ? `${cname(S, c.id)} без директора.` : '', kind: 'bad' });
   }
   // увести лучших продавцов из города (упакованного или активного); настроение команды += mood
   function takeStaff(S, c, range, p, mood) {

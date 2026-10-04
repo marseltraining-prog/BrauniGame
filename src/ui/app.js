@@ -60,6 +60,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- сохранения ---------------- */
   function save() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     if (!S) return;
     const data = (BK.Rewind && BK.Rewind.freshJson(S)) || JSON.stringify(stripState(S)); // 1-го числа — строка снимка «Переиграть»
     try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
@@ -173,7 +174,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="r-diff"><b id="ruleWin">~15 лет</b>на победу у сильного игрока</div>
         <div><b>100+ событий</b>кризисы, конкуренты, проверки</div>
       </div>
-      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
+      <form id="startForm">${BK.PrologueUI ? BK.PrologueUI.startOpt() : ''}${diffPicker()}${BK.StratUI ? BK.StratUI.startOpt() : ''}${BK.ScenarioUI ? BK.ScenarioUI.startOpt() : ''}${heroOpt()}${cityOpt()}<input class="input" id="companyName" maxlength="40" placeholder="Название сети" value="Пекарня «Каравай»" aria-label="Название сети"><button class="btn primary" type="submit">Новая игра</button></form>
       ${BK.Tutorial ? BK.Tutorial.startOpt() : ''}${rivalOpt()}
       ${BK.Slots.startHtml()}
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
@@ -187,11 +188,37 @@ var BK = globalThis.BK || (globalThis.BK = {});
     BK.Slots.bind(el);
     if (BK.Tutorial) BK.Tutorial.bindStart(el);
     if (BK.PrologueUI) BK.PrologueUI.bindStart(el); // «Как начать»: пролог «Бариста» или сразу своя сеть
+    bindCity(el);
     bindHero(el); // имя и пол героя (PLAN.md §8.1)
-    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG() }); });
+    $('#startForm').addEventListener('submit', (e) => { e.preventDefault(); if (BK.Slots.beforeNew()) startNew($('#companyName').value.trim() || 'Пекарня «Каравай»', diffSel(), { scen: 'random', strat: $('#startForm').strategyValue ? $('#startForm').strategyValue() : '', heroName: heroPickedName(), heroG: heroPickedG(), city: cityPicked() }); });
     $('#startCodeBtn').addEventListener('click', () => {
       try { const st = importCode($('#startCode').value); if (!BK.Slots.beforeNew()) return; continueGame(st); save(); toast('Игра загружена', `${st.company}, ${E.fmtDate(st.day)}`, 'good'); } catch (e) { toast('Код не подошёл', 'Проверьте, что он скопирован целиком.', 'bad'); }
     });
+  }
+  // Город выбирается до генерации мира и проходит через пролог и свою кофейню.
+  function cityOpt() {
+    return `<fieldset class="citypick"><legend>Город старта</legend>
+      <div class="cityopts">${BK.CITIES.map((d) => {
+        const locked = !BK.StartCity.available(d.id);
+        return `<label class="cityopt${locked ? ' locked' : ''}"><input type="radio" name="startCity" value="${d.id}"${d.id === 'ufa' ? ' checked' : ''}${locked ? ' disabled' : ''}><span>${locked ? '🔒 ' : ''}${H.esc(d.name)}</span></label>`;
+      }).join('')}</div>
+      <p class="hint" id="cityDesc" aria-live="polite">${cityDescription('ufa')}</p>
+      <p class="hint">Москва и Санкт-Петербург открываются после первой завершённой партии: победы, банкротства или финала истории.</p></fieldset>`;
+  }
+  function cityDescription(id) {
+    const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa;
+    return `${H.esc(d.name)} · доходы ×${d.inc.toFixed(2)}, аренда ×${d.rent.toFixed(2)}, зарплаты ×${d.wage.toFixed(2)}. История будет с местными героями и улицами.`;
+  }
+  function cityPicked() {
+    const r = document.querySelector('#startForm input[name="startCity"]:checked');
+    return BK.StartCity.resolve(r ? r.value : 'ufa');
+  }
+  function bindCity(el) {
+    el.querySelectorAll('input[name="startCity"]').forEach((r) => r.addEventListener('change', () => {
+      const desc = el.querySelector('#cityDesc');
+      if (desc) desc.innerHTML = cityDescription(cityPicked());
+      if (BK.ScenarioUI && BK.ScenarioUI.redrawStart) BK.ScenarioUI.redrawStart();
+    }));
   }
   // сеть-соперник: вкл/выкл для новой игры (по умолчанию — CFG.RIVAL_ON)
   const rivalOpt = () => `<div class="rival-opt"><div class="row"><span>Сеть-соперник «${H.esc(BK.CFG.RIVAL_NAME)}»</span><div class="seg" role="group" aria-label="Сеть-соперник"><button type="button" data-rival="1" aria-pressed="${!!BK.CFG.RIVAL_ON}">вкл</button><button type="button" data-rival="0" aria-pressed="${!BK.CFG.RIVAL_ON}">выкл</button></div></div><small>Растёт вместе с вами, занимает хорошие помещения и отбирает гостей у соседних точек. Без неё игра чуть легче.</small></div>`;
@@ -272,16 +299,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // должны генерироваться уже в городе истории, иначе «Старт в Москве» идёт по уфимским районам.
     // Выбор истории детерминирован от зерна (BK.Scenario.pick), поэтому Scenario.set ниже даст тот же id.
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
-    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed) : opts.scen) : null;
+    const pickedCity = opts && opts.city ? (opts.keepCity && BK.CITY_BY_ID[opts.city] ? opts.city : BK.StartCity.resolve(opts.city)) : null;
+    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed, pickedCity ? { city: pickedCity } : null) : opts.scen) : null;
     const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
-    const city = (scDef && scDef.start && scDef.start.city) || null;
-    S = E.newGame({ company: name, difficulty, seed, city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
+    const city = pickedCity || (scDef && scDef.start && scDef.start.city) || null;
+    S = E.newGame({ company: name, difficulty, seed, city: city === 'ufa' ? null : city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });
     // герой партии: имя и пол со стартового экрана (PLAN.md §8.1). Пишем до создания S.story — пролог
     // создаёт состояние сам и возьмёт выбор оттуда (src/prologue.js → storyDefaults/syncStory).
     if (BK.Story && BK.Story.heroSet) BK.Story.heroSet(S, { name: (opts && opts.heroName) || '', g: (opts && opts.heroG) || 'm' });
     if (BK.Px && BK.Px.heroSet) BK.Px.heroSet((opts && opts.heroG) || 'm');
     if (BK.Tutorial) BK.Tutorial.newGame(S); // «Обучение для новичка» со стартового экрана (tutorial.js)
-    if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, opts.scen, { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
+    if (BK.Scenario && opts && opts.scen) { const viaStory = !!(BK.PrologueUI && BK.PrologueUI.picked() === 'prologue'); BK.Scenario.set(S, scenId || 'ufa', { defer: viaStory }); if (BK.Scenario.current(S)) BK.Scenario.applyStart(S); } // сценарий партии: выпадает из непройденных (scenario.js)
     if (BK.Strat && opts && opts.strat === 'random') BK.Strat.setRandom(S);   // через пролог путь выпадает случайно
     else if (BK.Strat && opts && opts.strat) BK.Strat.set(S, opts.strat);     // выбранный на старте путь (strategy.js)
     if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); // «Переиграть»: снимки этой игры (rewind.js)
@@ -289,7 +317,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
     hideStart(); closeModal(); map.reset(S); renderAll(); save();
   }
-  function continueGame(st, raw) { // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+  function continueGame(st, raw) {
+    // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
+    if (BK.StartCity) BK.StartCity.complete(st);
     S = raw ? st : migrate(st); if (BK.Rewind) BK.Rewind.attach(S, BK.Slots.active); ui.modalQueue = []; ui.storeId = null; ui.sel = null; hudCache = ''; cityView(); if (isRuTab(ui.tab)) ui.tab = 'dash';
     if (BK.Story && BK.Story.applyHero) BK.Story.applyHero(S);          // выбор со стартового экрана — в состояние (§8.1)
     if (BK.Px && BK.Px.heroSet && BK.Story && BK.Story.heroG) BK.Px.heroSet(BK.Story.heroG(S)); // облик героя: у старых сохранений пола нет — «нейтрально»
@@ -867,9 +897,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Number.isInteger(r) ? H.nw(r, 'год', 'года', 'лет') : String(r).replace('.', ',') + ' года';
   }
   function openWinModal() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     const years = yearsText(S.wonDay);
     openModal(`<div class="modal-h"><span class="eyebrow pos">Победа</span><h2>Оборот сети — ${H.fm(E.rolling12(S))} за год</h2></div><div class="modal-b">
-      <p style="margin:0">${qname(S.company)} стала хлебной картой Уфы. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${ufaStoresText()}.</p>
+      <p style="margin:0">${qname(S.company)} стала хлебной картой ${H.esc(BK.StoryCast ? BK.StoryCast.swap(S, 'Уфы') : 'Уфы')}. Вы дошли до цели за <b>${years}</b> на уровне «${diffName(S.difficulty)}», открыв ${ufaStoresText()}.</p>
       <div class="kpis"><div class="kpi"><span class="k">Выручка за всё время</span><span class="v">${H.fm(S.cumRevenue)}</span></div><div class="kpi"><span class="k">Команда</span><span class="v">${E.allStaff(S) + E.bakersTotal(S)}</span></div><div class="kpi"><span class="k">Нанято / ушло</span><span class="v">${S.stats.hires} / ${S.stats.quits}</span></div><div class="kpi"><span class="k">Событий пережито</span><span class="v">${S.stats.eventsSeen}</span></div></div>
       </div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button><button class="btn block" data-act="summary">Итоги игры</button><button class="btn block" id="newAfter">Новая игра</button></div>`);
     $('#newAfter').addEventListener('click', toStart);
@@ -882,8 +913,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function openCorpModal() {
     const d = E.dateOf(S.day), dt = `${String(d.d).padStart(2, '0')}.${String(d.m + 1).padStart(2, '0')}.${d.y}`;
     openModal(`<div class="modal-h ru-mh"><div class="stamp ru-stamp" aria-hidden="true"><div class="in"><b>РОССИЯ</b><small>${dt} · лист 2</small></div></div><span class="eyebrow pos">Второй акт</span><h2>Сеть переросла город</h2></div><div class="modal-b">
-      <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — в Уфе ей стало тесно. Открыт выход в Россию: ${BK.CITIES.length - 1} городов — от Стерлитамака до Новосибирска.</p>
-      <ul class="ru-list"><li><b>Новый город</b> начинается как Уфа: регистрация, свой цех и первые точки.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные ведут <b>директора</b>: нанимайте их во вкладке «Директора», задавайте бюджет и приоритет, отвечайте на отчёты.</li><li><b>Цель второго акта</b> — «Федеральная сеть»: 10 городов по 10+ точек и 40 млрд ₽ оборота за 12 месяцев.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
+      <p style="margin:0">За всё время сеть собрала <b>${H.fm(S.cumRevenue)}</b> выручки — ${H.esc(BK.Corp.cityDef(S, 'ufa').in)} ей стало тесно. Открыт выход в Россию: ${BK.Corp.mapCities(S).length - 1} городов — от Стерлитамака до Новосибирска.</p>
+      <ul class="ru-list"><li><b>Новый город</b> начинается с регистрации, своего цеха и первых точек.</li><li><b>Подробно считается один город</b> — тот, где вы сейчас. Остальные ведут <b>директора</b>: нанимайте их во вкладке «Директора», задавайте бюджет и приоритет, отвечайте на отчёты.</li><li><b>Цель второго акта</b> — «Федеральная сеть»: 10 городов по 10+ точек и 40 млрд ₽ оборота за 12 месяцев.</li><li><b>Цель первого акта</b> не меняется: 5 млрд за 12 месяцев — по обороту Уфы.</li><li>Москва и Петербург откроются, когда в сети будет ${C.CORP.BIG_MIN_CITIES} города.</li></ul>
       </div><div class="modal-f"><button class="btn primary block" id="ruOpen">Открыть карту России</button><button class="btn block" data-act="closeModal">Позже</button></div>`, { closable: true });
     $('#ruOpen').addEventListener('click', () => { closeModal(); openRussia(); });
   }
@@ -950,8 +981,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (ui.view === 'russia') { BK.Russia.render(S, true); requestAnimationFrame(() => cityView(true)); }
     else { ui.tab = 'dash'; refresh(); }
   }
-  function scenFinish() { try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
+  function scenFinish() { if (BK.StartCity) BK.StartCity.complete(S); try { if (BK.Scenario && S) return BK.Scenario.finish(S); } catch (e) {} return null; }
   function openLostModal() {
+    if (BK.StartCity) BK.StartCity.complete(S);
     if (S.storyEnding && BK.STORY && BK.STORY.endings && BK.STORY.endings[S.storyEnding]) {
       const e = BK.STORY.endings[S.storyEnding];
       openModal(`<div class="modal-h"><span class="eyebrow">История закончилась</span><h2>${e.name}</h2></div><div class="modal-b">

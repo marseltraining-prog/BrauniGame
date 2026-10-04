@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
   p.on('pageerror', (e) => console.log('PAGEERR', e.message));
   await p.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
   await p.goto('file://' + __dirname + '/../dist/local.html');
-  await p.click('#startForm button'); await p.waitForTimeout(200);
+  await p.click('#startForm button[type=submit]'); await p.waitForTimeout(200);
   await p.click('[data-act="rentProd"]:not([disabled])'); await p.waitForTimeout(100);
   await p.click('[data-act="rent"]:not([disabled])'); await p.waitForTimeout(100);
   await p.click('#modal [data-act="closeModal"]');

@@ -1,0 +1,19 @@
+{
+  "baseCommit": "e50e740227a78ea73a0615a27a332774adbf2433",
+  "baseVersion": "0.9.7",
+  "currentVersion": "0.9.8",
+  "storyReport": {
+    "identical": true,
+    "sha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a",
+    "note": "Обычный отчёт good,avg 12 22 не покрывает все сценарии и взаимоисключающие ветви. Сохраняется как диагностическое предупреждение, не как зелёный тест покрытия."
+  },
+  "ufaEconomy": {
+    "seed": 7919,
+    "years": 18,
+    "profile": "good",
+    "cacheExcluded": true,
+    "baseSha256": "5b9b17d0c9144b42ab813f2755f847e1b61af0608d0b0589dcfef9a03d147489",
+    "currentSha256": "5b9b17d0c9144b42ab813f2755f847e1b61af0608d0b0589dcfef9a03d147489",
+    "identical": true
+  }
+}

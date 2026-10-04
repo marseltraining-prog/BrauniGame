@@ -12,7 +12,9 @@ const { chromium } = require('playwright');
     await p.addInitScript(() => { try { localStorage.setItem('bk-ufa-tutorial', '0'); } catch (e) {} let x = 7; Math.random = () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; });
     await p.goto('file://' + __dirname + '/../dist/local.html');
     await p.screenshot({ path: `${out}/${vp.n}-0-start.png` });
-    await p.click('#startForm button');
+    // Дымовой прогон базовой сети; сценарии с готовой сетью проверяются в qa/scen-ui.js.
+    await p.evaluate(() => { BK.Scenario.pick = () => null; BK.CFG.STORY.ON = false; });
+    await p.click('#startForm button[type=submit]');
     await p.waitForTimeout(300);
     await p.screenshot({ path: `${out}/${vp.n}-1-setup.png` });
     await p.click('[data-act="rentProd"]:not([disabled])');

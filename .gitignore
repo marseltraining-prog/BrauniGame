@@ -6,4 +6,6 @@ dist/local.html
 dist/game.html
 .claude/worktrees/
 dist/khlebnaya-karta.min.html
+dist/khlebnaya-karta-*.html
 .DS_Store
+tmp/release-checks/

@@ -1,7 +1,7 @@
 /* Полный QA в браузере: вкладки и модалки на 4 экранах в светлой/тёмной теме, сохранение/загрузка (в т.ч. старые
    сохранения), карта (клик, зум, перетаскивание, тач и pinch), тосты на телефоне, производительность на 40–60 точках,
    ошибки консоли. Большие сохранения генерирует сильный бот из sim/ прямо в Node (детерминированно).
-   Запуск: node qa/full.js [папка=qa/shots/full] [экраны=d1440,d1280,m390,m360] [темы=light,dark] [--no-perf]
+   Запуск: node qa/full.js [папка=qa/shots/full] [экраны=d1440,d1280,m390,m360] [темы=light,dark] [--no-perf] [--map-only]
    Итог: список проблем в <папка>/issues.txt, код выхода 1 — если есть ошибки/проблемы вёрстки. */
 const fs = require('fs'), path = require('path');
 const { chromium, openPage, layoutCheck, realTicks } = require('./lib');
@@ -63,7 +63,7 @@ function grow(st, n) {
 const MOBILE = (vp) => vp[0] === 'm';
 const VPW = Object.fromEntries(Object.entries(require('./lib').VIEWPORTS).map(([k, v]) => [k, v.width]));
 async function loadState(p, st) {
-  await p.evaluate((raw) => { localStorage.setItem('bk-ufa-save-v1', raw); BK.App.ACT.continue(); BK.App.setSpeed(0); window.scrollTo(0, 0); }, JSON.stringify(st));
+  await p.evaluate((raw) => { BK.CFG.STORY.ON = false; localStorage.setItem('bk-ufa-save-v1', raw); BK.App.ACT.continue(); BK.App.setSpeed(0); window.scrollTo(0, 0); }, JSON.stringify(st));
   await p.waitForTimeout(150);
 }
 async function textProblems(p, label) {
@@ -114,7 +114,7 @@ async function startBaseGame(p) {
   });
   await p.click('#startForm button[type=submit]');
   await p.waitForFunction(() => BK.App.state && !document.querySelector('#start:not([hidden])'));
-  return p.evaluate(() => ({ phase: BK.App.state.phase, scenario: BK.App.state.story && BK.App.state.story.scenario }));
+  return p.evaluate(() => ({ phase: BK.App.state.phase, scenario: BK.Scenario.current(BK.App.state) || 'ufa' }));
 }
 
 /* ---------- 1. все экраны × темы ---------- */
@@ -184,14 +184,26 @@ async function screens(b, vp, theme, saves) {
   await p.waitForTimeout(150); await modal('21-m-crisis');
   await p.click('#modal [data-choice]'); await p.waitForTimeout(100);
 
-  await p.evaluate(() => BK.Engine.proposeChef(BK.App.state)); await p.waitForTimeout(150);
+  // У бота меню может быть уже полным: +2−1 тогда законно запрещено.
+  // Оставляем одну свободную позицию, чтобы проверить именно принятие выбора 2+1.
+  const chefBefore = await p.evaluate(() => {
+    const S = BK.App.state;
+    S.menu = S.menu.slice(0, BK.CFG.MENU_MAX - 1);
+    BK.Engine.proposeChef(S);
+    return S.menu.map((m) => m.id);
+  });
+  await p.waitForSelector('#chefOk');
   await modal('22-m-chef');
-  const picks = p.locator('#modal label.chefitem:has([data-pick]:not([disabled]))');
-  for (let i = 0; i < Math.min(2, await picks.count()); i++) { await picks.nth(i).click(); await p.waitForTimeout(60); }
-  await p.locator('#modal label.chefitem:has([data-drop])').first().click(); await p.waitForTimeout(60);
+  const pickIds = await p.locator('#modal [data-pick]:not([disabled])').evaluateAll((xs) => xs.slice(0, 2).map((x) => x.dataset.pick));
+  if (pickIds.length !== 2) throw new Error(`[${tag}] шеф: для fixture нужны две доступные новинки`);
+  // Каждое изменение пересоздаёт модалку — обращаемся к стабильному id, а не индексу живого списка.
+  for (const id of pickIds) await p.locator(`#modal [data-pick="${id}"]`).check();
+  const dropId = await p.locator('#modal [data-drop]').first().getAttribute('data-drop');
+  await p.locator(`#modal [data-drop="${dropId}"]`).check();
+  if (await p.locator('#modal [data-pick]:checked').count() !== 2 || await p.locator('#modal [data-drop]:checked').count() !== 1) issues.push(`[${tag}] шеф: выбор 2+1 не отражён в чекбоксах`);
   await modal('23-m-chef-picked');
   if (await p.locator('#chefOk').isDisabled()) issues.push(`[${tag}] шеф: «Утвердить» выключена после выбора 2+1`);
-  else { await p.click('#chefOk'); await p.waitForTimeout(100); if (await p.evaluate(() => !!BK.App.state.chef.pending)) issues.push(`[${tag}] шеф: решение не принято`); }
+  else { await p.click('#chefOk'); await p.waitForTimeout(100); if (await p.evaluate(() => !!BK.App.state.chef.pending)) issues.push(`[${tag}] шеф: решение не принято`); const menuAfter = await p.evaluate(() => BK.App.state.menu.map((m) => m.id)); const expected = chefBefore.filter((id) => id !== dropId).concat(pickIds); if (JSON.stringify(menuAfter) !== JSON.stringify(expected)) issues.push(`[${tag}] шеф: итоговое меню не совпало с выбором 2+1`); }
 
   await p.evaluate(() => { const S = BK.App.state; const y = BK.Engine.dateOf(S.day).y - 1; S.notify.push({ type: 'year', y, rev: S.history.filter((h) => h.y === y).reduce((a, h) => a + h.rev, 0) }); });
   await realTicks(p, 1); await p.waitForTimeout(150);
@@ -208,6 +220,7 @@ async function screens(b, vp, theme, saves) {
   await loadState(p, saves.won);
   await p.evaluate(() => { BK.App.state.notify.push({ type: 'won' }); });
   await realTicks(p, 1); await p.waitForTimeout(150);
+  await p.waitForSelector('#modal [data-act=summary]');
   await modal('28-m-win');
   await p.evaluate(() => BK.App.ACT.closeModal());
   // банкротство: сохранение с lost=true сразу показывает итог
@@ -347,7 +360,7 @@ async function scenarioStartPhases(b) {
       if (mode) mode.checked = true;
       BK.App.newGame('QA сценариев', 'normal', { scen: id, seed, rival: false });
       const S = BK.App.state;
-      return { id, phase: S.phase, scenario: S.story && S.story.scenario, stores: S.stores.length };
+      return { id, phase: S.phase, scenario: BK.Scenario.current(S) || 'ufa', stores: S.stores.length };
     }, { id, seed: QA_SEED });
     got.push(`${id}:${r.phase}`);
     if (r.phase !== phase || r.scenario !== id) issues.push(`[старт сценариев] ${id}: ожидались ${phase}/${id}, получены ${r.phase}/${r.scenario}`);
@@ -419,11 +432,28 @@ async function mapTests(b, vp, sv) {
   // предложение аренды (на телефоне клик по точке прокручивает страницу к её карточке — сначала вернуться наверх, потом искать координаты)
   await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(50);
   // берём «+», не задетый соседними маркерами целиком (центр и края): палец с поправкой касания иначе попадает в соседний кластер
-  const off = await p.evaluate(() => { for (const el of document.querySelectorAll('#map .m-offer')) { const r = el.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; const pts = [[x, y], [r.left + 1, y], [r.right - 1, y], [x, r.top + 1], [x, r.bottom - 1]]; if (pts.every(([a, b]) => { const t = document.elementFromPoint(a, b); return t && t.closest('[data-kind]') === el; })) return { id: el.dataset.id, x, y }; } return null; });
+  const findOffer = () => p.evaluate(() => {
+    const ui = [...document.querySelectorAll('.maplayers, .maplegend, .mapctl, .mapcart, .mapscale')].map(e => e.getBoundingClientRect()).filter(q => q.width);
+    const nearUi = (x, y) => ui.some(q => x > q.left - 24 && x < q.right + 24 && y > q.top - 24 && y < q.bottom + 24);
+    const markers = [...document.querySelectorAll('#map [data-kind]')];
+    for (const el of document.querySelectorAll('#map .m-offer')) {
+      const r = el.querySelector('circle').getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (nearUi(x, y)) continue;
+      // Touch adjustment может выбрать соседний маркер даже при чистом центре «+».
+      const nearMarker = markers.some(other => { if (other === el) return false; const c = new DOMPoint(0, 0).matrixTransform(other.getScreenCTM()); return Math.hypot(c.x - x, c.y - y) < 36; });
+      if (nearMarker) continue;
+      const pts = [[x, y], [r.left + 1, y], [r.right - 1, y], [x, r.top + 1], [x, r.bottom - 1]];
+      if (pts.every(([a, b]) => { const t = document.elementFromPoint(a, b); return t && t.closest('[data-kind]') === el; })) return { id: el.dataset.id, x, y };
+    }
+    return null;
+  });
+  let off = await findOffer();
+  for (let i = 0; i < 5 && !off; i++) { await p.evaluate(() => BK.App.ACT.zoomIn()); await p.waitForTimeout(250); off = await findOffer(); }
   if (off) {
+    await p.evaluate(() => { window.__mapTap = []; document.querySelector('#map').addEventListener('pointerdown', e => { const t = e.target.closest('[data-kind]'); window.__mapTap.push({kind: t && t.dataset.kind, id: t && t.dataset.id, x: e.clientX, y: e.clientY}); }, {capture: true}); });
     await p.evaluate(() => window.scrollTo(0, 0)); await tap(off);
     const u = await p.evaluate(() => ({ tab: BK.App.ui.tab, sel: BK.App.ui.sel, card: !!document.querySelector('.card.sel') }));
-    res.push(`клик по предложению → ${u.tab}, выделена карточка: ${u.card}`);
+    res.push(`клик по предложению ${JSON.stringify(off)} → ${u.tab}, выделена карточка: ${u.card}; pointerdown: ${JSON.stringify(await p.evaluate(() => window.__mapTap))}`);
     if (u.tab !== 'market' || !u.sel || u.sel.id !== off.id) issues.push(`[${tag}] клик по предложению не открыл «Рынок»`);
   } else notes.push(`[${tag}] предложений на карте не видно`);
   // зум кнопками
@@ -489,9 +519,10 @@ async function perf(b, vp, st, label, throttle) {
   if (throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
   await loadState(p, st);
   await p.evaluate(() => {
-    const E = BK.Engine; window.__q = { tick: [], lt: [], fr: [] };
+    const E = BK.Engine; window.__q = { tick: [], lt: [], fr: [], from: Infinity };
     const ot = E.tick; E.tick = function () { const t = performance.now(); const r = ot.apply(this, arguments); __q.tick.push(performance.now() - t); return r; };
-    new PerformanceObserver((l) => { for (const e of l.getEntries()) __q.lt.push(e.duration); }).observe({ type: 'longtask' });
+    window.__qaLongObserver = new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.startTime >= __q.from) __q.lt.push(e.duration); });
+    __qaLongObserver.observe({ type: 'longtask' });
     let last = performance.now(); (function f(t) { __q.fr.push(t - last); last = t; requestAnimationFrame(f); })(last);
     // события и шеф в замере не нужны — сразу решаем
     setInterval(() => { const S = BK.App.state; if (S.ev.pending) BK.Engine.resolveEvent(S, 0); if (S.chef.pending) S.chef.pending = null; if (BK.App.ui.modal) BK.App.ACT.closeModal(); }, 100);
@@ -499,10 +530,14 @@ async function perf(b, vp, st, label, throttle) {
   const out = [];
   for (const tab of ['dash', 'stores', 'team']) {
     await p.evaluate((t) => { BK.App.ACT.tab({ arg: t }); BK.App.setSpeed(10); }, tab);
-    await p.waitForTimeout(400);
-    const d0 = await p.evaluate(() => { __q.tick.length = __q.lt.length = __q.fr.length = 0; return BK.App.state.day; });
+    // Отдельный прогрев вкладки: первый renderPanel, меню и шрифты не входят в steady-state замер.
+    await p.waitForTimeout(1000);
+    await p.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const d0 = await p.evaluate(() => { __qaLongObserver.takeRecords(); __q.tick.length = __q.lt.length = __q.fr.length = 0; __q.from = performance.now(); return BK.App.state.day; });
     await p.waitForTimeout(5000);
     const r = await p.evaluate((d0) => {
+      for (const e of __qaLongObserver.takeRecords()) if (e.startTime >= __q.from) __q.lt.push(e.duration);
+      __q.from = Infinity;
       const s = (a) => [...a].sort((x, y) => x - y), q = __q, fr = s(q.fr.slice(1)), tk = s(q.tick);
       const avg = (a) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
       return { days: BK.App.state.day - d0, tick: +avg(tk).toFixed(1), tickMax: +(tk[tk.length - 1] || 0).toFixed(1), fps: +(1000 / avg(fr)).toFixed(0), frP95: +(fr[Math.floor(fr.length * 0.95)] || 0).toFixed(1), long: q.lt.length, longMax: Math.round(Math.max(0, ...q.lt)), longSum: Math.round(q.lt.reduce((x, y) => x + y, 0)) };
@@ -526,13 +561,15 @@ async function perf(b, vp, st, label, throttle) {
   sv.big60 = grow(JSON.parse(JSON.stringify(sv.won)), 60); sv.big60.won = false;
   log(`  big: ${sv.big.stores.length} точек, won: ${sv.won.stores.length}, big60: ${sv.big60.stores.length}`);
   const b = await chromium.launch();
+  if (!flags.has('--map-only')) {
   for (const vp of VPS) for (const th of THEMES) { log('экраны', vp, th); await screens(b, vp, th, sv); }
   for (const vp of VPS.filter(MOBILE)) { log('тосты', vp); await toasts(b, vp); }
   log('сохранения'); await saves(b, sv);
   log('событие без денег'); await eventEdge(b, sv);
   log('стартовые фазы сценариев'); await scenarioStartPhases(b);
+  }
   for (const vp of VPS.filter((v) => v === 'd1440' || v === 'm390' || v === 'm360')) { log('карта', vp); await mapTests(b, vp, sv); }
-  if (!flags.has('--no-perf')) {
+  if (!flags.has('--no-perf') && !flags.has('--map-only')) {
     log('производительность');
     await perf(b, 'd1440', sv.big, `${sv.big.stores.length} точек`, 1);
     await perf(b, 'd1440', sv.big60, '60 точек', 1);

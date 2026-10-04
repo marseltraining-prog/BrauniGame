@@ -1,0 +1,62 @@
+// Второй акт: домашний ключ ufa сохраняет реальный город, его экономику и географию.
+// Запуск: node sim/start-city-corp.js (короткая проверка всех 19 городов).
+const assert = require('assert/strict');
+const BK = require('./load');
+const E = BK.Engine, C = BK.Corp;
+require('../src/ui/panels');
+require('../src/ui/corp-ui');
+require('../src/ui/russia');
+let checks = 0;
+const eq = (a, b, label) => { assert.deepEqual(a, b, label); checks++; };
+const ok = (v, label) => { assert.ok(v, label); checks++; };
+for (const d of BK.CITIES) {
+  const S = E.newGame({ seed: 7919, city: d.id });
+  S.cash = 1e12;
+  ok(E.chooseProduction(S, S.prodOffers[0].id).ok, d.id + ': цех');
+  ok(E.rentStore(S, S.offers[0].id).ok, d.id + ': точка');
+  S.phase = 'play';
+  S.cumRevenue = BK.CFG.CORP.UNLOCK_REVENUE;
+  C.ensure(S);
+  const st = S.stores[0], district = BK.DISTRICTS.find((x) => x.id === st.district);
+  eq(S.corp.active, 'ufa', d.id + ': совместимый ключ');
+  eq(S.corp.cities.ufa.name, d.name, d.id + ': название');
+  eq(C.cityDef(S, 'ufa'), d, d.id + ': коэффициенты домашнего города');
+  eq(BK.Dir.districtName(S, S.corp.cities.ufa, st.district), district.name, d.id + ': район отчёта');
+  ok(E.enterLock(S, d.id), d.id + ': повторный вход закрыт');
+  const map = C.mapCities(S), home = map.find((x) => x.id === 'ufa');
+  eq([home.lon, home.lat, home.name], [d.lon, d.lat, d.name], d.id + ': метка на настоящем месте');
+  eq(map.length, d.id === 'ufa' ? 19 : 18, d.id + ': нет дубликата домашнего города');
+  ok(BK.Russia.tipFor(S, 'ufa').includes(d.name), d.id + ': подсказка');
+  ok(BK.Russia.cityCard(S, 'ufa').includes(d.name), d.id + ': карточка');
+  S.productions[0].status = 'open';
+  BK.HQ.ensure(S);
+  S.corp.hq.logistics = 2;
+  const target = d.id === 'nnov' ? 'kazan' : 'nnov', km = BK.roadKm(d.id, target);
+  eq(C.roadKm(S, 'ufa', target), km, d.id + ': расстояние от дома');
+  const hub = C.supplyHubs(S, target);
+  eq(hub.frozen, km <= BK.CFG.CORP.FROZEN_KM ? { from: 'ufa', km } : null, d.id + ': радиус заморозки');
+  eq(hub.fresh, km <= BK.CFG.CORP.FRESH_KM_L1 ? { from: 'ufa', km } : null, d.id + ': свежая выпечка');
+  const expectedAw = BK.CITY_BY_ID[target].aw0 != null ? BK.CITY_BY_ID[target].aw0 : Math.min(BK.CFG.CORP.AW_START_MAX, BK.CFG.CORP.AW_START + (km < BK.CFG.CORP.AW_NEAR_KM ? BK.CFG.CORP.AW_NEAR : 0)) + BK.CFG.CORP.AW_MKT + BK.HQ.awStartAdd(S);
+  eq(C.awStart(S, target), expectedAw, d.id + ': узнаваемость рядом с домом');
+  const wage = S.market.seller, ids = S.stores.map((x) => x.id), market0 = C.corpMarket(S).seller;
+  ok(E.enterCity(S, target).ok, d.id + ': второй город');
+  const packed = S.corp.cities.ufa.packed;
+  ok(packed.stores.every((x) => Number.isFinite(x.chk0) && x.dem7.every(Number.isFinite)), d.id + ': снимок домашнего спроса');
+  const sal = C._int.salaryCity(S, S.corp.cities.ufa, 1);
+  eq(sal, market0 * d.wage * S.corp.cities.ufa.payK, d.id + ': домашняя зарплата в агрегате');
+  const report = C.cityMonth(S, S.corp.cities.ufa, 1, { left: 10 });
+  ok(Number.isFinite(report.rev) && Number.isFinite(report.profit), d.id + ': месячный агрегат');
+  eq(BK.Dir.districtName(S, S.corp.cities.ufa, st.district), district.name, d.id + ': район упакованного города');
+  ok(E.switchCity(S, 'ufa').ok, d.id + ': возврат домой');
+  eq(BK.CITY.id, d.id, d.id + ': карта дома');
+  eq(S.market.seller, wage, d.id + ': зарплата при возврате');
+  eq(S.stores.map((x) => x.id), ids, d.id + ': точки сохранились');
+  // Загрузка старого названия Уфа в уже существующей партии исправляет подпись.
+  const saved = JSON.parse(JSON.stringify(S)); saved.corp.cities.ufa.name = 'Уфа';
+  C.ensure(saved);
+  eq(saved.corp.cities.ufa.name, d.name, d.id + ': миграция подписи');
+  eq(BK.CITY.id, d.id, d.id + ': карта после загрузки');
+}
+const old = E.newGame({ seed: 1234 }); delete old.startCity;
+C.ensure(old); eq(BK.CITY.id, 'ufa', 'старое сохранение без города');
+console.log(`start-city-corp: ${checks} проверок, все пройдены`);

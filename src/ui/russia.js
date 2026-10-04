@@ -121,12 +121,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   ];
   // потенциал не освоенного города: ёмкость × доход ÷ √(аренда × зарплаты), ближе к нашим городам — лучше (как у бота good)
   function potential(S, id) {
-    const d = BK.CITY_BY_ID[id], own = Object.keys(S.corp.cities);
-    const km = own.length ? Math.min(...own.map((o) => BK.roadKm(o, id))) : d.km;
+    const d = cityDef(S, id), own = Object.keys(S.corp.cities);
+    const km = own.length ? Math.min(...own.map((o) => BK.Corp.roadKm(S, o, id))) : d.km;
     return d.cap * d.inc / Math.sqrt(d.rent * d.wage) / (1 + km / 3000);
   }
   function potTiers(S) { // тройки: высокий / средний / низкий — по свободным городам
-    const free = BK.CITIES.filter((d) => !S.corp.cities[d.id] && !d.builtin).map((d) => [d.id, potential(S, d.id)]).sort((a, b) => b[1] - a[1]);
+    const free = citiesOf(S).filter((d) => !S.corp.cities[d.id] && !d.builtin).map((d) => [d.id, potential(S, d.id)]).sort((a, b) => b[1] - a[1]);
     const t = {}; free.forEach(([id], i) => { t[id] = i < Math.ceil(free.length / 3) ? 'hi' : i < Math.ceil(free.length * 2 / 3) ? 'mid' : 'lo'; });
     return t;
   }
@@ -246,19 +246,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const popTxt = (p) => (p >= 1 ? String(p.toFixed(p >= 10 ? 1 : 2)).replace('.', ',') + ' млн' : Math.round(p * 1000) + ' тыс.') + ' жителей';
   // Расстояния в данных считаются от Уфы (src/data/cities.js); в партии из другого города показываем
   // расстояние от домашнего города. Для Уфы строка прежняя: «… км от Уфы».
-  const homeIdOf = (S) => (BK.STORY_CAST && BK.STORY_CAST.cityOf ? BK.STORY_CAST.cityOf(S) : 'ufa');
+  const homeIdOf = (S) => BK.Corp.homeCityId(S);
+  const cityDef = (S, id) => BK.Corp.cityDef(S, id);
+  const citiesOf = (S) => BK.Corp.mapCities(S);
   const cityGen = (id) => { const f = (BK.STORY_CAST && BK.STORY_CAST.CITY_FORMS) || {}; return (f[id] && f[id].g) || 'Уфы'; };
   const kmFrom = (S, d) => { const home = homeIdOf(S); const km = home === 'ufa' ? d.km : (BK.roadKm ? BK.roadKm(home, d.id) : d.km);
     return km ? ` · ${H().n0(km)} км от ${cityGen(home)}` : ''; };
   function tipFor(S, id) {
-    const d = BK.CITY_BY_ID[id], st = BK.Corp.cityStats(S, id);
+    const d = cityDef(S, id), st = BK.Corp.cityStats(S, id);
     if (!d) return '';
-    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${d.id === homeIdOf(S) ? '' : kmFrom(S, d)}`;
+    let s = `<b>${esc(d.name)}</b><br>${popTxt(d.pop)}${id === 'ufa' ? '' : kmFrom(S, d)}`;
     if (st) { const c = S.corp.cities[id], dr = BK.Dir && BK.Dir.dirOf(S, c); s += `<br>${H().nw(st.open, 'точка', 'точки', 'точек')}${st.lastRev != null ? ` · выручка ${fm(st.lastRev)}/мес` : ''}<br>${st.active ? 'Вы управляете сами' + (dr ? ` · заместитель ${esc(dr.name)}` : '') : dr ? `Директор: ${esc(dr.name)} · лояльность ${Math.round(dr.loyalty)}` : 'Нет директора: без роста'}`; }
     else {
       const lock = E().enterLock(S, id); s += `<br>${lock ? esc(lock) : 'Вход ≈ ' + fm(E().enterCost(S, id))}`;
       if (view.layer === 'potential') { const t = potTiers(S)[id]; if (t) s += `<br>Потенциал: ${POT_N[t]}`; }
-      if (view.layer === 'logistics' && BK.Corp.supplyHubs) { const hb = BK.Corp.supplyHubs(S, id); s += `<br>${hb.fresh ? `Без своего цеха: свежая выпечка ${esc(BK.CITY_BY_ID[hb.fresh.from].in || '')}, ${hb.fresh.km} км` : hb.frozen ? `Без своего цеха: заморозка, ${hb.frozen.km} км` : 'Нужен свой цех'}`; }
+      if (view.layer === 'logistics' && BK.Corp.supplyHubs) { const hb = BK.Corp.supplyHubs(S, id); s += `<br>${hb.fresh ? `Без своего цеха: свежая выпечка ${esc(cityDef(S, hb.fresh.from).in || '')}, ${hb.fresh.km} км` : hb.frozen ? `Без своего цеха: заморозка, ${hb.frozen.km} км` : 'Нужен свой цех'}`; }
       if (!lock && BK.HQ && BK.HQ.load) { const L = BK.HQ.load(S, 1); if (L.over > 0) s += `<br><span class="tip-warn">После входа штаб перегружен: ${n1(L.load)} при мощности ${n1(L.cap)}</span>`; }
     }
     if (st) { const pr = problemOf(S, id); if (pr) s += `<br><span class="tip-warn">${esc(PROB[pr].t)}</span>`; }
@@ -280,14 +282,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
     view.svg.classList.toggle('far', k > 2.2); // сильно отдалено — без подписей рек и стран
     view.svg.setAttribute('data-layer', L);
     const out = [], labels = [], links = [], zones = [];
-    const ufa = P(BK.CITY_BY_ID.ufa.lon, BK.CITY_BY_ID.ufa.lat);
+    const home = cityDef(S, 'ufa'), ufa = P(home.lon, home.lat);
     const pot = L === 'potential' ? potTiers(S) : null;
     const hubsOf = L === 'logistics' && BK.Corp.supplyHubs ? (id) => BK.Corp.supplyHubs(S, id) : null;
     const tally = view.tally = { good: 0, warn: 0, bad: 0, none: 0, nodir: 0, nodir2: 0, hi: 0, mid: 0, lo: 0, hub: 0, fresh: 0, frozen: 0, rfresh: 0, rfrozen: 0, loss: 0, leak: 0, over: 0 };
-    for (const d of BK.CITIES) {
+    for (const d of citiesOf(S)) {
       const p = P(d.lon, d.lat), c = own[d.id], r = rad(d) * k, sel = view.sel === d.id;
       if (c && d.id !== 'ufa' && !supTo[d.id]) links.push(`<path class="ru-link" d="M${ufa.x.toFixed(1)},${ufa.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"/>`);
-      if (supTo[d.id]) { const l = supTo[d.id], f = BK.CITY_BY_ID[l.from], q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
+      if (supTo[d.id]) { const l = supTo[d.id], f = cityDef(S, l.from), q = P(f.lon, f.lat); links.push(`<path class="ru-sup ${l.mode}${l.ok ? '' : ' off'}" d="M${q.x.toFixed(1)},${q.y.toFixed(1)}L${p.x.toFixed(1)},${p.y.toFixed(1)}"><title>${esc(d.name)}: ${l.mode === 'frozen' ? 'фабрика заморозки' : 'свежая выпечка'} ${esc(f.in || f.name)}, ${l.km} км${l.ok ? '' : ' — поставки прерваны'}</title></path>`); }
       let g = `<g class="ru-city${c ? ' own' : ''}${c && c.active ? ' act' : ''}${sel ? ' sel' : ''}" data-city="${d.id}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)})">`;
       g += `<circle class="hit" r="${(Math.max(r, 12 * k) + 4 * k).toFixed(1)}"/>`;
       if (c) {
@@ -304,9 +306,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
         g += `<text class="n" style="font-size:${((c.stores >= 100 ? 9.5 : 11) * k).toFixed(2)}px">${c.stores}</text>`;
         if (c.status === 'launch' && !c.stores) g += `<circle class="launch" r="${(R + 2.6 * k).toFixed(1)}" stroke-width="${(3 * k).toFixed(2)}"/>`;
         const bd = BK.CorpUI && BK.CorpUI.mapBadge(S, d.id); // инициалы директора или «!» — нет директора
-        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; if (bd.t === '!') tally.nodir2++; }
+        if (bd) { const bw = (bd.t.length > 1 ? 21 : 13) * k, bx = (LSIDE[d.geoId || d.id] || 'r') === 'r' ? -R * 0.72 - bw : R * 0.72, by = -R * 0.72 - 7 * k; g += `<g class="ru-bdg ${bd.cls}" transform="translate(${bx.toFixed(1)},${by.toFixed(1)})"><rect x="0" y="0" width="${bw.toFixed(1)}" height="${(13 * k).toFixed(1)}" rx="${(3 * k).toFixed(1)}" stroke-width="${(1.2 * k).toFixed(2)}"/><text x="${(bw / 2).toFixed(1)}" y="${(6.8 * k).toFixed(1)}" style="font-size:${(8.5 * k).toFixed(2)}px">${esc(bd.t)}</text></g>`; if (bd.t === '!') tally.nodir2++; }
         const pr = problemOf(S, d.id); // иконка проблемы: одна на город
-        if (pr) { tally[pr]++; const px = ((LSIDE[d.id] || 'r') === 'r' ? -1 : 1) * R * 0.78, py = R * 0.78; g += `<g class="ru-prob p-${pr}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${k.toFixed(3)})"><title>${esc(PROB[pr].t)}</title><circle r="6.4"/>${PROB[pr].g}</g>`; }
+        if (pr) { tally[pr]++; const px = ((LSIDE[d.geoId || d.id] || 'r') === 'r' ? -1 : 1) * R * 0.78, py = R * 0.78; g += `<g class="ru-prob p-${pr}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${k.toFixed(3)})"><title>${esc(PROB[pr].t)}</title><circle r="6.4"/>${PROB[pr].g}</g>`; }
       } else {
         const lock = E().enterLock(S, d.id);
         let cls = '';
@@ -319,7 +321,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       g += `</g>`;
       out.push([sel || (c && c.active) ? 1 : 0, g]);
       // подпись
-      const side = LSIDE[d.id] || 'r', R2 = (c ? Math.max(r, 11 * k) + 5 * k : r) + 5 * k, name = d.short || d.name;
+      const side = LSIDE[d.geoId || d.id] || 'r', R2 = (c ? Math.max(r, 11 * k) + 5 * k : r) + 5 * k, name = d.short || d.name;
       const lx = side === 'r' ? R2 : side === 'l' ? -R2 : 0, ly = side === 't' ? -R2 - 2 * k : side === 'b' ? R2 + 10 * k : 4 * k;
       const anchor = side === 'r' ? 'start' : side === 'l' ? 'end' : 'middle';
       labels.push(`<text class="ru-clabel${c ? ' own' : ''}${c && c.active ? ' act' : ''}" x="${(p.x + lx).toFixed(1)}" y="${(p.y + ly).toFixed(1)}" text-anchor="${anchor}">${esc(name)}${c && c.active && !narrow ? '<tspan class="here" dx="' + (5 * k).toFixed(1) + '">· вы здесь</tspan>' : ''}</text>`);
@@ -337,8 +339,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const n1 = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
   function renderUi(S, sm) {
-    const a = view.el.querySelector('.ru-back'), name = BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].name : '';
-    const bt = `← ${esc(BK.CITY_BY_ID[sm.active] ? BK.CITY_BY_ID[sm.active].short || name : '')}`;
+    const a = view.el.querySelector('.ru-back'), name = cityDef(S, sm.active) ? cityDef(S, sm.active).name : '';
+    const bt = `← ${esc(cityDef(S, sm.active) ? cityDef(S, sm.active).short || name : '')}`;
     if (a.innerHTML !== bt) { a.innerHTML = bt; a.title = `Вернуться на карту: ${name}`; a.setAttribute('aria-label', `Вернуться на карту города ${name}`); }
     const t = view.tally || {}, L = view.layer;
     const sw = (cls) => `<svg viewBox="-9 -9 18 18" class="lg-sw" aria-hidden="true"><circle r="6" class="${cls}"/></svg>`;
@@ -376,7 +378,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // экранная точка города внутри .mapwrap (для анимации)
   function cityScreen(id) {
-    const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa, p = P(d.lon, d.lat);
+    const d = cityDef(view.S, id), p = P(d.lon, d.lat);
     const r = view.px, s = Math.min(r.w / view.vb.w, r.h / view.vb.h);
     const ox = (r.w - view.vb.w * s) / 2, oy = (r.h - view.vb.h * s) / 2;
     return { x: ox + (p.x - view.vb.x) * s, y: oy + (p.y - view.vb.y) * s };
@@ -477,7 +479,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const awBar = (aw) => `<div class="ru-aw" title="Узнаваемость бренда: гостей × (0,85 + 0,15 × узнаваемость)"><span>Узнаваемость</span><div class="meter ok"><i style="width:${Math.round(aw * 100)}%"></i></div><b>${Math.round(aw * 100)} %</b></div>`;
   function cityCard(S, id) {
-    const d = BK.CITY_BY_ID[id]; if (!d) return '';
+    const d = cityDef(S, id); if (!d) return '';
     const h = H(), c = BK.Corp.cityStats(S, id);
     let s = `<div class="card ru-card"><div class="card-h"><div><div class="card-t ru-name">${esc(d.name)}</div><div class="card-s">${popTxt(d.pop)}${d.id === homeIdOf(S) ? ' · родной город' : kmFrom(S, d)} · ёмкость ~${d.cap} точек</div></div>${c ? `<span class="chip ${c.active ? 'crust' : hasDir(S, id) ? '' : 'bad'}">${c.active ? 'вы управляете' : modeTxt(S, id)}</span>` : ''}</div>`;
     s += chips(d);
@@ -521,7 +523,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (tot > 0) {
       const cols = ['var(--crust)', 'var(--river)', 'var(--good)', 'var(--warn)', 'var(--rye)', 'var(--ink-3)'];
       const list = sm.cities.slice().sort((a, b) => b.rev12 - a.rev12);
-      s += `<div class="sec"><h3>Доля городов в выручке <small>12 мес.</small></h3><div class="ru-stack">${list.map((c, i) => `<i style="width:${(Math.max(0, c.rev12) / tot * 100).toFixed(1)}%;background:${cols[i % cols.length]}" title="${esc(c.name)}: ${fm(c.rev12)}"></i>`).join('')}</div><div class="ru-stack-l">${list.map((c, i) => `<span><i style="background:${cols[i % cols.length]}"></i>${esc(BK.CITY_BY_ID[c.id].short || c.name)} ${h.pct(Math.max(0, c.rev12) / tot)}</span>`).join('')}</div></div>`;
+      s += `<div class="sec"><h3>Доля городов в выручке <small>12 мес.</small></h3><div class="ru-stack">${list.map((c, i) => `<i style="width:${(Math.max(0, c.rev12) / tot * 100).toFixed(1)}%;background:${cols[i % cols.length]}" title="${esc(c.name)}: ${fm(c.rev12)}"></i>`).join('')}</div><div class="ru-stack-l">${list.map((c, i) => `<span><i style="background:${cols[i % cols.length]}"></i>${esc(cityDef(S, c.id).short || c.name)} ${h.pct(Math.max(0, c.rev12) / tot)}</span>`).join('')}</div></div>`;
     }
     const sel = ui.ruSel || sm.active;
     s += `<div class="sec"><h3>${BK.Corp.cityStats(S, sel) ? 'Город' : 'Новый город'} <small>нажмите на кружок на карте</small></h3>${cityCard(S, sel)}</div>`;
@@ -531,16 +533,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return s;
   }
   function cityRow(S, c, sel) {
-    const h = H(), d = BK.CITY_BY_ID[c.id];
+    const h = H(), d = cityDef(S, c.id);
     return `<div class="card click ru-row${sel === c.id ? ' sel' : ''}" data-act="ruSel" data-arg="${c.id}"><div class="card-h"><div><div class="card-t">${esc(d.name)} ${c.active ? '<span class="chip crust">вы здесь</span>' : hasDir(S, c.id) ? `<span class="chip">${esc(modeTxt(S, c.id))}</span>` : '<span class="chip bad">нет директора</span>'}</div><div class="card-s">${h.nw(c.open, 'точка', 'точки', 'точек')}${c.soon ? ` (+${c.soon})` : ''} · ${c.rating != null ? c.rating.toFixed(1).replace('.', ',') + '★' : 'нет рейтинга'}${c.id !== 'ufa' ? ' · узнаваемость ' + Math.round(c.aw * 100) + ' %' : ''}</div></div>
       <div class="ru-rv"><b>${c.lastRev != null ? fm(c.lastRev) : '—'}</b><span class="${c.lastProfit < 0 ? 'negc' : 'pos'}">${c.lastProfit != null ? (c.lastProfit >= 0 ? '+' : '') + fm(c.lastProfit) : 'первый месяц'}</span></div></div></div>`;
   }
   function nextCities(S) { // не наши города по расстоянию до ближайшего нашего
     const own = Object.keys(S.corp.cities);
-    return BK.CITIES.filter((d) => !S.corp.cities[d.id]).map((d) => ({ id: d.id, km: Math.min(...own.map((o) => BK.roadKm(o, d.id))) })).sort((a, b) => a.km - b.km).map((x) => x.id);
+    return citiesOf(S).filter((d) => !S.corp.cities[d.id]).map((d) => ({ id: d.id, km: Math.min(...own.map((o) => BK.Corp.roadKm(S, o, d.id))) })).sort((a, b) => a.km - b.km).map((x) => x.id);
   }
   function freeRow(S, id, sel) {
-    const h = H(), d = BK.CITY_BY_ID[id], lock = E().enterLock(S, id);
+    const h = H(), d = cityDef(S, id), lock = E().enterLock(S, id);
     return `<div class="card click ru-row${sel === id ? ' sel' : ''}" data-act="ruSel" data-arg="${id}"><div class="card-h"><div><div class="card-t">${esc(d.name)}${lock && d.big ? ' <span class="chip">закрыт</span>' : ''}</div><div class="card-s">${popTxt(d.pop)}${kmFrom(S, d)} · конкуренция ${COMPN(d.comp)}</div></div><div class="ru-rv"><b>${fm(E().enterCost(S, id))}</b><span>вход</span></div></div></div>`;
   }
   function citiesTab(S, ui) {
@@ -548,7 +550,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     snd(citiesSound(S)); // звук: те же события городов, что и на панели «Россия»
     const sel = ui.ruSel || S.corp.active;
     let s = `<div class="sec"><h3>Выбранный город</h3>${cityCard(S, sel)}</div>`;
-    s += `<div class="sec"><h3>Все города <small>${BK.CITIES.length}, по близости к сети</small></h3>`;
+    s += `<div class="sec"><h3>Все города <small>${citiesOf(S).length}, по близости к сети</small></h3>`;
     s += Object.keys(S.corp.cities).map((id) => cityRow(S, BK.Corp.cityStats(S, id), sel)).join('');
     s += nextCities(S).map((id) => freeRow(S, id, sel)).join('') + `</div>`;
     return s;
@@ -564,7 +566,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const sm = BK.Corp.summary(S), others = sm.cities.filter((c) => !c.active);
     if (!others.length) return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}Открыт выход в Россию: можно открыть второй город.</span><button class="btn sm primary" data-act="russia">Карта России</button></div>`;
     const h = H(), rev = others.reduce((a, c) => a + (c.lastRev || 0), 0), n = others.reduce((a, c) => a + c.open, 0), has = others.some((c) => c.lastRev != null);
-    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(BK.CITY_BY_ID[c.id].short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
+    return `<div class="ru-strip"><span>${BK.ICON_GLOBE || ''}<span>Другие города: ${others.map((c) => esc(cityDef(S, c.id).short || c.name)).join(', ')} — ${h.nw(n, 'точка', 'точки', 'точек')}${has ? `, ${fm(rev)} за месяц` : ', отчёт — 1-го числа'}</span></span><button class="btn sm" data-act="russia">Россия</button></div>`;
   }
 
   BK.Russia = { build, render, open, close, isOpen, select, setLayer, bindSheet, sheetSet, sheetCycle, sheetShow, get sheet() { return sheet.pos; }, potential, problemOf, citiesSound, get layer() { return view.layer; }, zoom: (a) => (a === 'reset' ? resetVB() : zoom(a === 'in' ? 1 / 1.3 : 1.3)), panel, citiesTab, dashStrip, cityCard, tipFor };

@@ -1,9 +1,9 @@
 // Сборка в один HTML: dist/khlebnaya-karta.html (для публикации) и dist/local.html (для локальных тестов).
-// `node build.js --min` — дополнительно dist/khlebnaya-karta.min.html (JS сжат terser'ом, CSS без комментариев и пробелов) — его и публиковать.
+// `node build.js --min` — сжатый фрагмент и полный dist/khlebnaya-karta-<версия>.html для скачивания.
 // terser ищется обычным require (NODE_PATH, например ~/.bk-tools/node_modules) или по пути из переменной TERSER.
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const R = (f) => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
-const js = ['config.js', 'data/story.js', 'data/story-cast.js', 'data/scenarios.js', 'data/prolog-v2.js', 'data/scen-legacy.js', 'data/scen-rescue.js', 'data/scen-crisis.js', 'data/scen-moscow.js', 'data/story-war.js', 'data/story-russia.js', 'data/story-bridges.js', 'data/story-lines.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/events-life.js', 'data/corp-events.js', 'data/strat-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'investors.js', 'story.js', 'threads.js', 'strategy.js', 'scenario.js', 'sound.js', 'pwa.js', 'milestones.js', 'thoughts.js', 'prologue.js', 'pixel/px.js', 'pixel/cast.js', 'pixel/stage.js', 'pixel/scenes.js', 'pixel/store.js', 'pixel/coffee.js', 'pixel/live.js', 'stage1.js', 'ui/map.js', 'ui/panels.js', 'ui/delivery.js', 'ui/menu-stats.js', 'ui/extras.js', 'ui/rewind-ui.js', 'ui/tutorial.js', 'ui/trainers-ui.js', 'ui/managers-ui.js', 'ui/growth-ui.js', 'ui/lively-ui.js', 'ui/collateral-ui.js', 'ui/investors-ui.js', 'ui/story-ui.js', 'ui/story-history.js', 'ui/threads-ui.js', 'ui/strategy-ui.js', 'ui/scenario-ui.js', 'ui/russia.js', 'ui/corp-ui.js', 'ui/prologue.js', 'ui/stage1.js', 'ui/app.js', 'data/guests.js', 'ui/moment.js', 'data/cities-big.js'].map((f) => `/* ${f} */\n` + R(f)).join('\n');
+const js = ['config.js', 'data/story.js', 'data/story-cast.js', 'data/scenarios.js', 'data/prolog-v2.js', 'data/scen-legacy.js', 'data/scen-rescue.js', 'data/scen-crisis.js', 'data/scen-moscow.js', 'data/story-war.js', 'data/story-russia.js', 'data/story-bridges.js', 'data/story-lines.js', 'data/world.js', 'data/cities.js', 'data/events.js', 'data/events-life.js', 'data/corp-events.js', 'data/strat-events.js', 'engine.js', 'prodstats.js', 'corp.js', 'directors.js', 'corphq.js', 'corpev.js', 'data/achievements.js', 'trainers.js', 'managers.js', 'growth.js', 'rewind.js', 'collateral.js', 'investors.js', 'story.js', 'threads.js', 'strategy.js', 'scenario.js', 'start-city.js', 'sound.js', 'pwa.js', 'milestones.js', 'thoughts.js', 'prologue.js', 'pixel/px.js', 'pixel/cast.js', 'pixel/stage.js', 'pixel/scenes.js', 'pixel/store.js', 'pixel/coffee.js', 'pixel/live.js', 'stage1.js', 'ui/map.js', 'ui/panels.js', 'ui/delivery.js', 'ui/menu-stats.js', 'ui/extras.js', 'ui/rewind-ui.js', 'ui/tutorial.js', 'ui/trainers-ui.js', 'ui/managers-ui.js', 'ui/growth-ui.js', 'ui/lively-ui.js', 'ui/collateral-ui.js', 'ui/investors-ui.js', 'ui/story-ui.js', 'ui/story-history.js', 'ui/threads-ui.js', 'ui/strategy-ui.js', 'ui/scenario-ui.js', 'ui/russia.js', 'ui/corp-ui.js', 'ui/prologue.js', 'ui/stage1.js', 'ui/app.js', 'data/guests.js', 'ui/moment.js', 'data/cities-big.js'].map((f) => `/* ${f} */\n` + R(f)).join('\n');
 const css = R('styles.css') + '\n' + R('ui/extras.css') + '\n' + R('ui/tutorial.css') + '\n' + R('ui/trainers.css') + '\n' + R('ui/managers.css') + '\n' + R('ui/growth.css') + '\n' + R('lively.css') + '\n' + R('ui/collateral.css') + '\n' + R('ui/investors.css') + '\n' + R('ui/story.css') + '\n' + R('ui/threads.css') + '\n' + R('ui/moment.css') + '\n' + R('ui/strategy.css') + '\n' + R('ui/scenario.css') + '\n' + R('ui/russia.css') + '\n' + R('ui/menu-stats.css') + '\n' + R('ui/delivery.css') + '\n' + R('ui/rewind.css') + '\n' + R('ui/prologue.css') + '\n' + R('pixel/pixel.css') + '\n' + R('ui/stage1.css') + '\n[hidden]{display:none!important}\n';// Шрифты грузим НЕ блокируя показ страницы: обычный <link rel="stylesheet"> держит белый экран, пока
 // Google Fonts не ответит, — а он бывает медленным или недоступным (у владельца из-за этого был белый экран
 // в Safari, а в тестах этого не видели, потому что там шрифты специально блокируются).
@@ -49,6 +49,14 @@ function formatBuildDate(epoch) {
   return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
 }
 const BUILD_DATE = formatBuildDate(buildEpoch());
+// Единственная версия в config.js; README получает ту же дату, что и игра.
+const version = R('config.js').match(/BK\.CFG\.VERSION\s*=\s*\{\s*num:\s*'([^']+)',\s*name:\s*'([^']+)'/);
+const readmePath = path.join(__dirname, 'README.md');
+if (version && fs.existsSync(readmePath)) {
+  const readme = fs.readFileSync(readmePath, 'utf8');
+  const next = readme.replace(/^.*<!-- bk:version -->.*$/m, `**Версия ${version[1]} (${version[2]}) · сборка ${BUILD_DATE}** <!-- bk:version -->`);
+  if (next !== readme) fs.writeFileSync(readmePath, next);
+}
 const page = (c, j) => `${GUARD.replace('</script>', 'window.__BK_BUILD=' + JSON.stringify(BUILD_DATE) + ';</script>')}<title>Хлебная карта</title>\n${fonts}\n<style>\n${c}</style>\n<script>\n${j.replace(/<\/script/gi, '<\\/script')}\n</script>\n`;
 const content = page(css, js);
 // Проверка синтаксиса всех встроенных скриптов: сборка не должна выпускать файл с ошибкой
@@ -87,6 +95,11 @@ if (process.argv.includes('--min')) {
     terser.minify(js, { ecma: 2019, mangle: true, format: { comments: false } }).then((r) => {
       const out = page(minCss + '\n', r.code);
       fs.writeFileSync(path.join(__dirname, 'dist/khlebnaya-karta.min.html'), out);
+      // Для скачивания с GitHub нужен полный документ с viewport, а не фрагмент Artifact.
+      const standalone = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>\n' + out + '\n</body></html>';
+      const assetName = `khlebnaya-karta-${version ? version[1] : 'beta'}.html`;
+      checkScripts(standalone, assetName);
+      fs.writeFileSync(path.join(__dirname, 'dist', assetName), standalone);
       console.log('min', (out.length / 1024).toFixed(0) + ' KB -> dist/khlebnaya-karta.min.html');
     }).catch((e) => { console.error('Ошибка сжатия:', e && e.message || e); process.exitCode = 1; });
   }
