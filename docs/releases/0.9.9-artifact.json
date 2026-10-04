@@ -4,6 +4,9 @@
   "bytes": 2226933,
   "sha256": "810cf8eaab6143a944802ae437f4c6d769fcf55b0260ca1092c4d42fa7836c8b",
   "sourceDateEpoch": 1791099156,
-  "published": false,
-  "note": "Сборка подготовлена. Публикация и замена файла на рабочем столе только после окончания браузерных проверок."
+  "published": true,
+  "release": "https://github.com/marseltraining-prog/BrauniGame/releases/tag/v0.9.9",
+  "codeCommit": "404a234f588e10dbf83bd3b1201d2a2b3be1de59",
+  "desktopPath": "/Users/macbookmarsel/Desktop/Хлебная карта.html",
+  "desktopSha256": "810cf8eaab6143a944802ae437f4c6d769fcf55b0260ca1092c4d42fa7836c8b"
 }
