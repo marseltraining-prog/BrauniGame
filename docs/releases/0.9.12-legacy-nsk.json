@@ -1,0 +1,2424 @@
+{
+  "start": {
+    "v": 1,
+    "seed": 7919,
+    "rng": 112737713,
+    "ids": 19,
+    "day": 0,
+    "difficulty": "normal",
+    "company": "Пекарня «Каравай»",
+    "startCity": "nsk",
+    "phase": "play",
+    "won": false,
+    "wonDay": null,
+    "lost": false,
+    "cash": 999990408752.8,
+    "reserve": 0,
+    "loan": 0,
+    "cumRevenue": 0,
+    "macro": {
+      "keyRate": 0.14,
+      "inflation": 0.025,
+      "inflAdd": 0,
+      "priceLevel": 1,
+      "taxAdd": 0,
+      "regime": "usn"
+    },
+    "market": {
+      "seller": 57750,
+      "baker": 71400
+    },
+    "pay": {
+      "seller": 57750,
+      "baker": 71400
+    },
+    "alloc": {
+      "reserve": 0.15,
+      "bonus": 0.03,
+      "marketing": 0.05
+    },
+    "culture": 0,
+    "office": {
+      "hr": false,
+      "academy": false,
+      "autohireOn": true,
+      "ownerHires": 0,
+      "ownerWeek": 0,
+      "autotrainOn": true,
+      "trainTarget": 3,
+      "ownerTrains": 0,
+      "ownerTrainWeek": 0
+    },
+    "loyaltyMod": 0,
+    "lastBonusPerEmp": 0,
+    "lastMarketingPerStore": 0,
+    "productions": [
+      {
+        "id": "f14",
+        "district": "nsk2",
+        "x": 644.5321211440884,
+        "y": 550.2602317651096,
+        "address": "Красный пр., 62",
+        "area": 250,
+        "rentM2": 920,
+        "status": "opening",
+        "openDay": 14,
+        "equip": {},
+        "staff": 2,
+        "need": 2,
+        "morale": 65,
+        "load": 0,
+        "capex": 3155000,
+        "name": "Цех №1"
+      }
+    ],
+    "stores": [
+      {
+        "id": "s15",
+        "address": "ул. Ленина, 113",
+        "district": "nsk5",
+        "x": 292.57214381799565,
+        "y": 379.076381637478,
+        "area": 51,
+        "size": "standard",
+        "rentM2": 2120,
+        "payMode": "year",
+        "rentPaidUntil": 386,
+        "traffic": 6000,
+        "solv": 425,
+        "landmarks": [
+          "sleep"
+        ],
+        "comp": 0.99,
+        "status": "opening",
+        "openDay": 21,
+        "repair": 0,
+        "repairUntil": 0,
+        "closedUntil": 0,
+        "staff": [],
+        "incoming": [
+          {
+            "p": {
+              "id": "p16",
+              "name": "Юлия Хабибуллина",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -7,
+              "patience": 8,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p17",
+              "name": "Зарина Юсупова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -2,
+              "patience": 0,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p18",
+              "name": "Диляра Каримова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 7,
+              "patience": 3,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p19",
+              "name": "Дарья Галиева",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 7,
+              "patience": 8,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          }
+        ],
+        "staffTarget": 4,
+        "capex": 6436247,
+        "m": {
+          "rev": 0,
+          "checks": 0,
+          "fc": 0,
+          "rent": 0,
+          "lost": 0
+        },
+        "last": null,
+        "hist": [],
+        "num": 1
+      }
+    ],
+    "offers": [
+      {
+        "id": "o5",
+        "district": "nsk2",
+        "x": 663.0579313047616,
+        "y": 502.07356326196964,
+        "address": "ул. Фрунзе, 109",
+        "size": "standard",
+        "area": 89,
+        "rentM2": 2710,
+        "payMode": "month",
+        "traffic": 10250,
+        "solv": 510,
+        "landmarks": [
+          "mall"
+        ],
+        "comp": 0.84,
+        "expires": 87
+      },
+      {
+        "id": "o6",
+        "district": "nsk5",
+        "x": 306.95789342330534,
+        "y": 380.24054377807397,
+        "address": "ул. Лесная, 108",
+        "size": "standard",
+        "area": 80,
+        "rentM2": 1330,
+        "payMode": "month",
+        "traffic": 4450,
+        "solv": 495,
+        "landmarks": [
+          "lux",
+          "fitness"
+        ],
+        "comp": 0.84,
+        "expires": 63
+      }
+    ],
+    "prodOffers": [],
+    "menu": [
+      {
+        "id": "bread_wheat",
+        "pm": 1
+      },
+      {
+        "id": "borodinsky",
+        "pm": 1
+      },
+      {
+        "id": "cinnamon",
+        "pm": 1
+      },
+      {
+        "id": "pie_potato",
+        "pm": 1
+      },
+      {
+        "id": "echpochmak",
+        "pm": 1
+      },
+      {
+        "id": "americano",
+        "pm": 1
+      },
+      {
+        "id": "tea_thyme",
+        "pm": 1
+      }
+    ],
+    "trends": {
+      "bread": 55,
+      "laminated": 70,
+      "sweet": 60,
+      "pies": 50,
+      "national": 62,
+      "desserts": 60,
+      "drinks": 66,
+      "breakfast": 55,
+      "healthy": 45
+    },
+    "chef": {
+      "pending": null,
+      "lastYear": 2027
+    },
+    "candidates": [
+      {
+        "id": "p7",
+        "name": "Софья Нуриева",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -9,
+        "patience": 6,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p8",
+        "name": "Роберт Хабибуллин",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 5,
+        "patience": 1,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p9",
+        "name": "Дарья Николаева",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 7,
+        "patience": 3,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p10",
+        "name": "Регина Исмагилова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -8,
+        "patience": 6,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p11",
+        "name": "Алина Кузнецова",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 2,
+        "patience": 5,
+        "since": 0,
+        "lvlDay": 0
+      }
+    ],
+    "candDay": 0,
+    "mods": [],
+    "ev": {
+      "next": 45,
+      "nextCrisis": 1200,
+      "last": {},
+      "once": {},
+      "pending": null,
+      "lastCrisis": null,
+      "recent": [],
+      "queue": []
+    },
+    "month": {
+      "rev": 0,
+      "checks": 0,
+      "fc": 0,
+      "rent": 1141747.2,
+      "payroll": 0,
+      "util": 0,
+      "delivery": 0,
+      "tax": 0,
+      "interest": 0,
+      "upkeep": 0,
+      "hire": 346500,
+      "train": 0,
+      "other": 0,
+      "income": 0,
+      "capex": 8103000,
+      "lost": 0,
+      "bonus": 0,
+      "marketing": 0,
+      "coll": 0,
+      "inv": 0
+    },
+    "history": [],
+    "log": [
+      {
+        "day": 0,
+        "text": "Достижение «Первая точка»: арендовать помещение под первую пекарню.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендована точка: ул. Ленина, 113 (Калининский), 51 м². Открытие через 21 дн.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Своя пекарня»: арендовать помещение под первый цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендовано помещение под производство: Красный пр., 62 (Заельцовский), 250 м².",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Компания Пекарня «Каравай» зарегистрирована. На счёте 10,0 млн ₽.",
+        "kind": "good"
+      }
+    ],
+    "notify": [
+      {
+        "type": "ach",
+        "id": "prod1"
+      },
+      {
+        "type": "ach",
+        "id": "store1"
+      }
+    ],
+    "flags": {
+      "storeNum": 1
+    },
+    "negMonths": 0,
+    "yearRev": 0,
+    "lastMonthRev": 0,
+    "speed": 1,
+    "stats": {
+      "hires": 4,
+      "quits": 0,
+      "eventsSeen": 0,
+      "peakStores": 0
+    },
+    "offerRefreshDay": 30,
+    "nextOfferDay": 3,
+    "rival": {
+      "enabled": true,
+      "name": "Хлеб Сибири",
+      "rng": -124772008,
+      "agg": 1.1047381830052472,
+      "stores": [
+        {
+          "id": "r12",
+          "x": 496.9849057189644,
+          "y": 395.08643558451575,
+          "district": "nsk1",
+          "address": "Красный пр., 91",
+          "q": 0.95,
+          "day": 0,
+          "how": "random"
+        },
+        {
+          "id": "r13",
+          "x": 567.4253438955476,
+          "y": 722.7399819263114,
+          "district": "nsk4",
+          "address": "ул. Большевистская, 108",
+          "q": 0.99,
+          "day": 0,
+          "how": "random"
+        }
+      ],
+      "hist": [],
+      "nextDay": 90,
+      "ban": {},
+      "opened": 2,
+      "closed": 0,
+      "grabbed": 0,
+      "agg0": 1.1047381830052472
+    },
+    "achievements": {
+      "prod1": 0,
+      "store1": 0
+    },
+    "achx": {
+      "v": 1,
+      "maxRev": 0,
+      "profitMonths": 0,
+      "trains": 0,
+      "risky": 0,
+      "crises": [],
+      "crisisOk": 0,
+      "repaid": 0,
+      "loans": 0,
+      "closed": 0,
+      "lowWaste": false,
+      "q": 0,
+      "lastQuit": 0,
+      "staffSince": null,
+      "hol": {},
+      "hNY": false,
+      "hBay": false,
+      "hSab": false,
+      "gapMonths": 0,
+      "gapMax": 0,
+      "survived": false,
+      "loner": 0,
+      "mKey": null,
+      "lastHeavy": 0
+    },
+    "chron": [
+      {
+        "t": "prod",
+        "n": 1,
+        "addr": "Красный пр., 62",
+        "day": 0
+      },
+      {
+        "t": "open",
+        "num": 1,
+        "addr": "ул. Ленина, 113",
+        "d": "nsk5",
+        "n": 1,
+        "day": 0
+      }
+    ],
+    "player": {
+      "skills": {},
+      "study": [],
+      "log": [],
+      "spent": 0
+    },
+    "waste": {
+      "bake": 0,
+      "disc": 0,
+      "discDay": -9999,
+      "penUntil": 0
+    }
+  },
+  "startWorld": {
+    "map": {
+      "rivers": [
+        {
+          "pts": [
+            [
+              -59,
+              -195
+            ],
+            [
+              42,
+              -84
+            ],
+            [
+              134,
+              35
+            ],
+            [
+              224,
+              155
+            ],
+            [
+              323,
+              269
+            ],
+            [
+              429,
+              375
+            ],
+            [
+              537,
+              480
+            ],
+            [
+              640,
+              588
+            ],
+            [
+              742,
+              698
+            ],
+            [
+              847,
+              806
+            ],
+            [
+              954,
+              911
+            ],
+            [
+              1055,
+              1022
+            ],
+            [
+              1150,
+              1139
+            ]
+          ],
+          "w": 26,
+          "name": "р. Обь"
+        }
+      ],
+      "sea": [],
+      "rail": [
+        [
+          -62,
+          1667
+        ],
+        [
+          277,
+          830
+        ],
+        [
+          411,
+          656
+        ],
+        [
+          510,
+          579
+        ],
+        [
+          1200,
+          41
+        ]
+      ],
+      "station": {
+        "x": 411,
+        "y": 656,
+        "name": "Ж/д вокзал"
+      },
+      "city": [
+        [
+          91,
+          670
+        ],
+        [
+          139,
+          499
+        ],
+        [
+          210,
+          311
+        ],
+        [
+          540,
+          255
+        ],
+        [
+          831,
+          204
+        ],
+        [
+          809,
+          300
+        ],
+        [
+          809,
+          387
+        ],
+        [
+          721,
+          599
+        ],
+        [
+          614,
+          820
+        ],
+        [
+          431,
+          858
+        ],
+        [
+          259,
+          913
+        ],
+        [
+          173,
+          791
+        ]
+      ],
+      "labels": [
+        {
+          "x": 360,
+          "y": 338,
+          "text": "р. Обь",
+          "rot": 45
+        }
+      ],
+      "parks": [
+        {
+          "x": 457,
+          "y": 441,
+          "r": 18,
+          "name": "Набережная"
+        },
+        {
+          "x": 385,
+          "y": 649,
+          "r": 22,
+          "name": "Парк Победы"
+        },
+        {
+          "x": 736,
+          "y": 231,
+          "r": 26,
+          "name": "Лесопарк"
+        }
+      ],
+      "prodGroups": [
+        [
+          "nsk0",
+          "nsk1",
+          "nsk2"
+        ],
+        [
+          "nsk3",
+          "nsk4",
+          "nsk5",
+          "nsk6",
+          "nsk7",
+          "nsk8"
+        ],
+        [
+          "nsk9",
+          "nsk6"
+        ]
+      ],
+      "hq": {
+        "x": 532,
+        "y": 493
+      }
+    },
+    "districts": [
+      {
+        "id": "nsk0",
+        "name": "Центральный",
+        "x": 492,
+        "y": 521,
+        "arch": "center",
+        "ring": 0,
+        "w": 1.4,
+        "rent": [
+          2470,
+          4370
+        ],
+        "solv": [
+          450,
+          670
+        ],
+        "traffic": [
+          6700,
+          12850
+        ],
+        "prodRent": [
+          1190,
+          1570
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "Красный пр.",
+          "ул. Ленина",
+          "ул. Кирова",
+          "ул. Большевистская",
+          "ул. Гагарина",
+          "ул. Ленина",
+          "ул. Советская"
+        ]
+      },
+      {
+        "id": "nsk1",
+        "name": "Железнодорожный",
+        "x": 504,
+        "y": 363,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.3,
+        "rent": [
+          1900,
+          3330
+        ],
+        "solv": [
+          390,
+          545
+        ],
+        "traffic": [
+          6150,
+          11800
+        ],
+        "prodRent": [
+          860,
+          1190
+        ],
+        "streets": [
+          "Красный пр.",
+          "ул. Большевистская",
+          "ул. Фрунзе",
+          "ул. Лесная",
+          "ул. Победы",
+          "ул. Ленина"
+        ]
+      },
+      {
+        "id": "nsk2",
+        "name": "Заельцовский",
+        "x": 669,
+        "y": 530,
+        "arch": "prestige",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1810,
+          2950
+        ],
+        "solv": [
+          410,
+          565
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          900,
+          1240
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "Красный пр.",
+          "ул. Большевистская",
+          "ул. Гагарина",
+          "ул. Победы",
+          "ул. Школьная"
+        ]
+      },
+      {
+        "id": "nsk3",
+        "name": "Октябрьский",
+        "x": 737,
+        "y": 421,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "ул. Большевистская",
+          "ул. Фрунзе",
+          "ул. Кирова",
+          "ул. Ленина",
+          "пр. Мира",
+          "ул. Мира"
+        ]
+      },
+      {
+        "id": "nsk4",
+        "name": "Дзержинский",
+        "x": 578,
+        "y": 751,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Большевистская",
+          "ул. Молодёжная",
+          "ул. Советская",
+          "ул. Кирова"
+        ]
+      },
+      {
+        "id": "nsk5",
+        "name": "Калининский",
+        "x": 276,
+        "y": 372,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Лесная",
+          "ул. Ленина",
+          "ул. Молодёжная"
+        ]
+      },
+      {
+        "id": "nsk6",
+        "name": "Ленинский",
+        "x": 775,
+        "y": 257,
+        "arch": "far",
+        "ring": 3,
+        "w": 0.9,
+        "rent": [
+          950,
+          1620
+        ],
+        "solv": [
+          295,
+          390
+        ],
+        "traffic": [
+          3100,
+          6550
+        ],
+        "prodRent": [
+          450,
+          650
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "Красный пр.",
+          "ул. Большевистская",
+          "ул. Победы",
+          "ул. Школьная",
+          "ул. Гагарина"
+        ]
+      },
+      {
+        "id": "nsk7",
+        "name": "Кировский",
+        "x": 156,
+        "y": 649,
+        "arch": "far",
+        "ring": 3,
+        "w": 0.9,
+        "rent": [
+          950,
+          1620
+        ],
+        "solv": [
+          295,
+          390
+        ],
+        "traffic": [
+          3100,
+          6550
+        ],
+        "prodRent": [
+          450,
+          650
+        ],
+        "streets": [
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Фрунзе",
+          "ул. Лесная",
+          "ул. Строителей",
+          "ул. Ленина"
+        ]
+      },
+      {
+        "id": "nsk8",
+        "name": "Академгородок",
+        "x": 398,
+        "y": 610,
+        "arch": "student",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1140,
+          2000
+        ],
+        "solv": [
+          305,
+          410
+        ],
+        "traffic": [
+          4600,
+          9250
+        ],
+        "prodRent": [
+          570,
+          810
+        ],
+        "streets": [
+          "ул. Ленина",
+          "Красный пр.",
+          "ул. Большевистская",
+          "ул. Школьная",
+          "ул. Садовая",
+          "ул. Ленина"
+        ]
+      },
+      {
+        "id": "nsk9",
+        "name": "Первомайский",
+        "x": 300,
+        "y": 843,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          760,
+          1190
+        ],
+        "solv": [
+          265,
+          335
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          310,
+          460
+        ],
+        "streets": [
+          "Красный пр.",
+          "ул. Ленина",
+          "ул. Кирова",
+          "ул. Победы",
+          "ул. Школьная",
+          "ул. Кирова"
+        ]
+      }
+    ],
+    "center": {
+      "x": 492,
+      "y": 521
+    }
+  },
+  "corp": {
+    "v": 2,
+    "seed": 15838,
+    "rng": -1910643772,
+    "ids": 32,
+    "day": 0,
+    "difficulty": "normal",
+    "company": "Пекарня «Каравай»",
+    "startCity": null,
+    "phase": "play",
+    "won": false,
+    "wonDay": null,
+    "lost": false,
+    "cash": 999958086345,
+    "reserve": 0,
+    "loan": 0,
+    "cumRevenue": 10000000000,
+    "macro": {
+      "keyRate": 0.14,
+      "inflation": 0.025,
+      "inflAdd": 0,
+      "priceLevel": 1,
+      "taxAdd": 0,
+      "regime": "usn"
+    },
+    "market": {
+      "seller": 57750,
+      "baker": 71400
+    },
+    "pay": {
+      "seller": 57750,
+      "baker": 71400
+    },
+    "alloc": {
+      "reserve": 0.15,
+      "bonus": 0.03,
+      "marketing": 0.05
+    },
+    "culture": 0,
+    "office": {
+      "hr": false,
+      "academy": false,
+      "autohireOn": true,
+      "ownerHires": 0,
+      "ownerWeek": 0,
+      "autotrainOn": true,
+      "trainTarget": 3,
+      "ownerTrains": 0,
+      "ownerTrainWeek": 0
+    },
+    "loyaltyMod": 0,
+    "lastBonusPerEmp": 0,
+    "lastMarketingPerStore": 0,
+    "productions": [
+      {
+        "id": "f24",
+        "district": "nsk2",
+        "x": 360.5092501965624,
+        "y": 524.0727190410267,
+        "address": "ул. Кирова, 17",
+        "area": 240,
+        "rentM2": 1200,
+        "status": "opening",
+        "openDay": 14,
+        "equip": {},
+        "staff": 2,
+        "need": 2,
+        "morale": 65,
+        "load": 0,
+        "capex": 3168000,
+        "name": "Цех №1"
+      }
+    ],
+    "stores": [
+      {
+        "id": "s25",
+        "address": "ул. Лесная, 43",
+        "district": "nsk6",
+        "x": 657.4595511739662,
+        "y": 773.8506816994786,
+        "area": 92,
+        "size": "large",
+        "rentM2": 1340,
+        "payMode": "month",
+        "rentPaidUntil": 0,
+        "traffic": 7850,
+        "solv": 285,
+        "landmarks": [
+          "uni",
+          "clinic"
+        ],
+        "comp": 0.85,
+        "status": "opening",
+        "openDay": 21,
+        "repair": 0,
+        "repairUntil": 0,
+        "closedUntil": 0,
+        "staff": [],
+        "incoming": [
+          {
+            "p": {
+              "id": "p26",
+              "name": "Виктория Садыкова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 2,
+              "patience": 2,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p27",
+              "name": "Артём Фёдоров",
+              "lvl": 2,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -8,
+              "patience": 0,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p28",
+              "name": "Азат Галиев",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 4,
+              "patience": 1,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p29",
+              "name": "Эльвира Зиннатуллина",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -6,
+              "patience": 10,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p30",
+              "name": "Ильдар Мухаметов",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 4,
+              "patience": 5,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p31",
+              "name": "Алина Фёдорова",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": -4,
+              "patience": 3,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          },
+          {
+            "p": {
+              "id": "p32",
+              "name": "Марат Хабибуллин",
+              "lvl": 1,
+              "mood": 62,
+              "fatigue": 0,
+              "unhappy": 0,
+              "trait": 9,
+              "patience": 7,
+              "since": 0,
+              "lvlDay": 0
+            },
+            "day": 21
+          }
+        ],
+        "staffTarget": 7,
+        "capex": 9345655,
+        "m": {
+          "rev": 0,
+          "checks": 0,
+          "fc": 0,
+          "rent": 0,
+          "lost": 0
+        },
+        "last": null,
+        "hist": [],
+        "num": 1
+      }
+    ],
+    "offers": [
+      {
+        "id": "o17",
+        "district": "nsk2",
+        "x": 315.646302129418,
+        "y": 479.21665720667215,
+        "address": "ул. Лесная, 65",
+        "size": "large",
+        "area": 119,
+        "rentM2": 1880,
+        "payMode": "year",
+        "traffic": 5850,
+        "solv": 495,
+        "landmarks": [
+          "park"
+        ],
+        "comp": 0.97,
+        "expires": 66
+      },
+      {
+        "id": "o18",
+        "district": "nsk5",
+        "x": 240.89701776703083,
+        "y": 405.04019810402053,
+        "address": "ул. Кирова, 43",
+        "size": "large",
+        "area": 132,
+        "rentM2": 1620,
+        "payMode": "month",
+        "traffic": 6950,
+        "solv": 480,
+        "landmarks": [
+          "bc"
+        ],
+        "comp": 0.86,
+        "expires": 45
+      }
+    ],
+    "prodOffers": [],
+    "menu": [
+      {
+        "id": "bread_wheat",
+        "pm": 1
+      },
+      {
+        "id": "borodinsky",
+        "pm": 1
+      },
+      {
+        "id": "cinnamon",
+        "pm": 1
+      },
+      {
+        "id": "pie_potato",
+        "pm": 1
+      },
+      {
+        "id": "echpochmak",
+        "pm": 1
+      },
+      {
+        "id": "americano",
+        "pm": 1
+      },
+      {
+        "id": "tea_thyme",
+        "pm": 1
+      }
+    ],
+    "trends": {
+      "bread": 55,
+      "laminated": 70,
+      "sweet": 60,
+      "pies": 50,
+      "national": 62,
+      "desserts": 60,
+      "drinks": 66,
+      "breakfast": 55,
+      "healthy": 45
+    },
+    "chef": {
+      "pending": null,
+      "lastYear": 2027
+    },
+    "candidates": [
+      {
+        "id": "p19",
+        "name": "Ксения Иванова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 8,
+        "patience": 5,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p20",
+        "name": "Виктория Ахмадуллина",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -6,
+        "patience": 4,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p21",
+        "name": "Булат Морозов",
+        "lvl": 2,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 4,
+        "patience": 4,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p22",
+        "name": "Наталья Иванова",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": -7,
+        "patience": 4,
+        "since": 0,
+        "lvlDay": 0
+      },
+      {
+        "id": "p23",
+        "name": "Павел Смирнов",
+        "lvl": 1,
+        "mood": 62,
+        "fatigue": 0,
+        "unhappy": 0,
+        "trait": 2,
+        "patience": 4,
+        "since": 0,
+        "lvlDay": 0
+      }
+    ],
+    "candDay": 0,
+    "mods": [],
+    "ev": {
+      "next": 30,
+      "nextCrisis": 1260,
+      "last": {},
+      "once": {},
+      "pending": null,
+      "lastCrisis": null,
+      "recent": [],
+      "queue": []
+    },
+    "month": {
+      "rev": 0,
+      "checks": 0,
+      "fc": 0,
+      "rent": 0,
+      "payroll": 0,
+      "util": 0,
+      "delivery": 0,
+      "tax": 0,
+      "interest": 0,
+      "upkeep": 0,
+      "hire": 606375,
+      "train": 0,
+      "other": 29400000,
+      "income": 0,
+      "capex": 11907280,
+      "lost": 0,
+      "bonus": 0,
+      "marketing": 0,
+      "coll": 0,
+      "inv": 0
+    },
+    "history": [],
+    "log": [
+      {
+        "day": 0,
+        "text": "Достижение «Первая точка»: арендовать помещение под первую пекарню.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендована точка: ул. Лесная, 43 (Ленинский), 92 м². Открытие через 21 дн.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Второй город»: открыть первый город за пределами Уфы.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Десять миллиардов»: выручка за всю игру — 10 млрд ₽.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Достижение «Своя пекарня»: арендовать помещение под первый цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Арендовано помещение под производство: ул. Кирова, 17 (Заельцовский), 240 м².",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Вы взяли управление в Новосибирске. Уфа — на автопилоте: точки работают, новых не открывается.",
+        "kind": "info"
+      },
+      {
+        "day": 0,
+        "text": "Вход в Новосибирске: регистрация, разрешения и стартовый маркетинг — 29,4 млн ₽. Выберите помещение под цех.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Сеть переросла город: оборот за всё время — 10,0 млрд ₽. Открыт выход в Россию.",
+        "kind": "good"
+      },
+      {
+        "day": 0,
+        "text": "Компания Пекарня «Каравай» зарегистрирована. На счёте 10,0 млн ₽.",
+        "kind": "good"
+      }
+    ],
+    "notify": [
+      {
+        "type": "corp"
+      },
+      {
+        "type": "ach",
+        "id": "prod1"
+      },
+      {
+        "type": "ach",
+        "id": "cum10b"
+      },
+      {
+        "type": "ach",
+        "id": "ru2"
+      },
+      {
+        "type": "ach",
+        "id": "store1"
+      }
+    ],
+    "flags": {
+      "storeNum": 1
+    },
+    "negMonths": 0,
+    "yearRev": 0,
+    "lastMonthRev": 0,
+    "speed": 1,
+    "stats": {
+      "hires": 7,
+      "quits": 0,
+      "eventsSeen": 0,
+      "peakStores": 0
+    },
+    "offerRefreshDay": 30,
+    "nextOfferDay": 3,
+    "rival": {
+      "enabled": false,
+      "stores": [],
+      "hist": [],
+      "ban": {},
+      "opened": 0,
+      "closed": 0,
+      "grabbed": 0
+    },
+    "achievements": {
+      "prod1": 0,
+      "cum10b": 0,
+      "ru2": 0,
+      "store1": 0
+    },
+    "achx": {
+      "v": 1,
+      "maxRev": 0,
+      "profitMonths": 0,
+      "trains": 0,
+      "risky": 0,
+      "crises": [],
+      "crisisOk": 0,
+      "repaid": 0,
+      "loans": 0,
+      "closed": 0,
+      "lowWaste": false,
+      "q": 0,
+      "lastQuit": 0,
+      "staffSince": null,
+      "hol": {},
+      "hNY": false,
+      "hBay": false,
+      "hSab": false,
+      "gapMonths": 0,
+      "gapMax": 0,
+      "survived": false,
+      "loner": 0,
+      "mKey": null,
+      "lastHeavy": 0
+    },
+    "chron": [
+      {
+        "day": 0,
+        "t": "city",
+        "id": "nsk",
+        "cost": 29400000,
+        "over": 1
+      },
+      {
+        "t": "prod",
+        "n": 1,
+        "addr": "ул. Кирова, 17",
+        "day": 0
+      },
+      {
+        "t": "open",
+        "num": 1,
+        "addr": "ул. Лесная, 43",
+        "d": "nsk6",
+        "n": 1,
+        "day": 0
+      }
+    ],
+    "player": {
+      "skills": {},
+      "study": [],
+      "log": [],
+      "spent": 0
+    },
+    "corp": {
+      "unlockedDay": 0,
+      "active": "nsk",
+      "market0": {
+        "seller": 55000,
+        "baker": 68000
+      },
+      "cities": {
+        "ufa": {
+          "id": "ufa",
+          "name": "Уфа",
+          "enteredDay": 0,
+          "status": "run",
+          "seed": 15838,
+          "mapGen": 0,
+          "rng": 236587,
+          "aw": 1,
+          "payK": 1,
+          "payKb": 1,
+          "numSeq": 0,
+          "packed": {
+            "stores": [],
+            "productions": [],
+            "offersSpecial": [],
+            "rival": {
+              "enabled": true,
+              "name": "Хлебный двор",
+              "rng": 1770727019,
+              "agg": 1.0450045255711302,
+              "stores": [
+                {
+                  "id": "r12",
+                  "x": 720.4414287873792,
+                  "y": 612.5237427639029,
+                  "district": "sipaylovo",
+                  "address": "ул. Юрия Гагарина, 45",
+                  "q": 1.08,
+                  "day": 0,
+                  "how": "random"
+                }
+              ],
+              "hist": [],
+              "nextDay": 90,
+              "ban": {},
+              "opened": 1,
+              "closed": 0,
+              "grabbed": 0,
+              "agg0": 1.0450045255711302
+            },
+            "office": {
+              "hr": false,
+              "academy": false,
+              "autohireOn": true,
+              "ownerHires": 0,
+              "ownerWeek": 0,
+              "autotrainOn": true,
+              "trainTarget": 3,
+              "ownerTrains": 0,
+              "ownerTrainWeek": 0
+            },
+            "fcMs0": 0.22805977476223377,
+            "fill": 1,
+            "sales": 1,
+            "fcK0": 1,
+            "fcPct": 0.25542694773370184,
+            "fcB": 0.23623,
+            "pf0": 1,
+            "erp0": 0,
+            "wz0": {
+              "left": 0.091,
+              "i": 0,
+              "disc": 0
+            }
+          },
+          "aggFrom": 0,
+          "hist": [],
+          "mAcc": {
+            "rev": 0,
+            "profit": 0,
+            "agg": 0
+          },
+          "directorId": null,
+          "priority": "profit",
+          "budget": {
+            "capex": 0,
+            "left": 0,
+            "train": 3,
+            "close": true,
+            "open": true
+          },
+          "dev": {
+            "y": 2027,
+            "opened": 0,
+            "closed": 0
+          },
+          "rp": 0,
+          "pressure": 0
+        },
+        "nsk": {
+          "id": "nsk",
+          "name": "Новосибирск",
+          "enteredDay": 0,
+          "status": "launch",
+          "seed": 1984331684,
+          "mapGen": 1,
+          "rng": -177591775,
+          "aw": 0.2,
+          "payK": 1,
+          "payKb": 1,
+          "numSeq": 0,
+          "packed": null,
+          "aggFrom": null,
+          "hist": [],
+          "mAcc": {
+            "rev": 0,
+            "profit": 0,
+            "agg": 0
+          },
+          "rp": 0,
+          "pressure": 0.1
+        }
+      },
+      "rng": 1894144552,
+      "lastMonthly": 0,
+      "aggRevP": 0,
+      "directors": [],
+      "inbox": [],
+      "fed": {
+        "goalDay": null,
+        "legendDay": null
+      },
+      "dirYear": {},
+      "dirSeq": 3,
+      "repSeq": 0,
+      "dirCand": [
+        {
+          "id": "d1",
+          "name": "Кирилл Беляев",
+          "f": false,
+          "grade": 2,
+          "skills": {
+            "ops": 39,
+            "econ": 54,
+            "growth": 55,
+            "people": 49
+          },
+          "seen": {
+            "ops": 27,
+            "econ": 62,
+            "growth": 44,
+            "people": 60
+          },
+          "style": "growth",
+          "traits": [
+            "mediaStar"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 67,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "Держал{g:|а} три пекарни в Оренбурге, пока их не выкупила федеральная сеть.",
+          "pot": 3,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 359000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        },
+        {
+          "id": "d2",
+          "name": "Ильдар Попов",
+          "f": false,
+          "grade": 2,
+          "skills": {
+            "ops": 49,
+            "econ": 63,
+            "growth": 35,
+            "people": 46
+          },
+          "seen": {
+            "ops": 59,
+            "econ": 54,
+            "growth": 21,
+            "people": 47
+          },
+          "style": "economy",
+          "traits": [
+            "cityHall",
+            "cautious"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 58,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "{g:Бывший управляющий|Бывшая управляющая} торгового центра — изнутри знает, как выбивают скидки на аренду.",
+          "pot": 2,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 376000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        },
+        {
+          "id": "d3",
+          "name": "Татьяна Громова",
+          "f": true,
+          "grade": 1,
+          "skills": {
+            "ops": 33,
+            "econ": 40,
+            "growth": 43,
+            "people": 39
+          },
+          "seen": {
+            "ops": 25,
+            "econ": 49,
+            "growth": 39,
+            "people": 49
+          },
+          "style": "economy",
+          "traits": [
+            "ambitious"
+          ],
+          "hidden": [],
+          "src": "market",
+          "loyalty": 60,
+          "loyD": 0,
+          "loyWhy": [],
+          "bio": "В прошлом — военный интендант: логистика, склад, порядок и никакой самодеятельности.",
+          "pot": 2,
+          "city": null,
+          "joined": null,
+          "months": 0,
+          "cityMonths": 0,
+          "manualM": 0,
+          "adaptUntil": 0,
+          "praiseDay": -999,
+          "hist": [],
+          "salary": 255000,
+          "known": [],
+          "kpi": {
+            "keys": [],
+            "bonus": 0
+          },
+          "progs": [],
+          "region": []
+        }
+      ],
+      "dirCandDay": 0,
+      "hq": {
+        "finance": 0,
+        "hr": 0,
+        "uni": 0,
+        "purchasing": 0,
+        "logistics": 0,
+        "brand": 0,
+        "security": 0,
+        "legal": 0
+      },
+      "hqSince": {},
+      "stat": {
+        "stolen": 0,
+        "caught": 0,
+        "poached": 0,
+        "left": 0,
+        "kpiPaid": 0,
+        "optPaid": 0,
+        "hqPaid": 0,
+        "audits": 0,
+        "fund": 0
+      },
+      "perks": {},
+      "prePressure": {},
+      "equitySold": 0,
+      "rivalOn": true,
+      "hqFcK": 1,
+      "hqDelK": 1
+    },
+    "waste": {
+      "bake": 0,
+      "disc": 0,
+      "discDay": -9999,
+      "penUntil": 0
+    }
+  },
+  "corpWorld": {
+    "map": {
+      "rivers": [
+        {
+          "pts": [
+            [
+              1071,
+              -195
+            ],
+            [
+              964,
+              -90
+            ],
+            [
+              856,
+              15
+            ],
+            [
+              751,
+              122
+            ],
+            [
+              655,
+              237
+            ],
+            [
+              568,
+              361
+            ],
+            [
+              479,
+              484
+            ],
+            [
+              378,
+              595
+            ],
+            [
+              266,
+              695
+            ],
+            [
+              151,
+              793
+            ],
+            [
+              41,
+              896
+            ],
+            [
+              -64,
+              1003
+            ],
+            [
+              -167,
+              1111
+            ]
+          ],
+          "w": 26,
+          "name": "р. Обь"
+        }
+      ],
+      "sea": [],
+      "rail": [
+        [
+          848,
+          1798
+        ],
+        [
+          602,
+          932
+        ],
+        [
+          567,
+          693
+        ],
+        [
+          547,
+          570
+        ],
+        [
+          410,
+          -295
+        ]
+      ],
+      "station": {
+        "x": 567,
+        "y": 693,
+        "name": "Ж/д вокзал"
+      },
+      "city": [
+        [
+          177,
+          158
+        ],
+        [
+          500,
+          268
+        ],
+        [
+          849,
+          393
+        ],
+        [
+          789,
+          629
+        ],
+        [
+          721,
+          858
+        ],
+        [
+          682,
+          924
+        ],
+        [
+          647,
+          989
+        ],
+        [
+          397,
+          724
+        ],
+        [
+          175,
+          352
+        ],
+        [
+          195,
+          268
+        ]
+      ],
+      "labels": [
+        {
+          "x": 593,
+          "y": 286,
+          "text": "р. Обь",
+          "rot": -55
+        }
+      ],
+      "parks": [
+        {
+          "x": 499,
+          "y": 503,
+          "r": 18,
+          "name": "Набережная"
+        },
+        {
+          "x": 347,
+          "y": 518,
+          "r": 22,
+          "name": "Парк Победы"
+        },
+        {
+          "x": 710,
+          "y": 760,
+          "r": 26,
+          "name": "Лесопарк"
+        }
+      ],
+      "prodGroups": [
+        [
+          "nsk0",
+          "nsk1",
+          "nsk2"
+        ],
+        [
+          "nsk3",
+          "nsk4",
+          "nsk5",
+          "nsk6",
+          "nsk7",
+          "nsk8"
+        ],
+        [
+          "nsk9",
+          "nsk6"
+        ]
+      ],
+      "hq": {
+        "x": 564,
+        "y": 497
+      }
+    },
+    "districts": [
+      {
+        "id": "nsk0",
+        "name": "Центральный",
+        "x": 524,
+        "y": 525,
+        "arch": "center",
+        "ring": 0,
+        "w": 1.4,
+        "rent": [
+          2470,
+          4370
+        ],
+        "solv": [
+          450,
+          670
+        ],
+        "traffic": [
+          6700,
+          12850
+        ],
+        "prodRent": [
+          1190,
+          1570
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Большевистская",
+          "Красный пр.",
+          "ул. Кирова",
+          "ул. Садовая",
+          "пр. Мира"
+        ]
+      },
+      {
+        "id": "nsk1",
+        "name": "Железнодорожный",
+        "x": 496,
+        "y": 641,
+        "arch": "biz",
+        "ring": 1,
+        "w": 1.3,
+        "rent": [
+          1900,
+          3330
+        ],
+        "solv": [
+          390,
+          545
+        ],
+        "traffic": [
+          6150,
+          11800
+        ],
+        "prodRent": [
+          860,
+          1190
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "Красный пр.",
+          "ул. Ленина",
+          "ул. Мира",
+          "ул. Советская",
+          "пр. Мира"
+        ]
+      },
+      {
+        "id": "nsk2",
+        "name": "Заельцовский",
+        "x": 351,
+        "y": 497,
+        "arch": "prestige",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1810,
+          2950
+        ],
+        "solv": [
+          410,
+          565
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          900,
+          1240
+        ],
+        "streets": [
+          "ул. Ленина",
+          "Красный пр.",
+          "ул. Кирова",
+          "ул. Лесная",
+          "ул. Победы",
+          "ул. Школьная"
+        ]
+      },
+      {
+        "id": "nsk3",
+        "name": "Октябрьский",
+        "x": 773,
+        "y": 429,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "Красный пр.",
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Ленина",
+          "ул. Мира",
+          "пр. Мира"
+        ]
+      },
+      {
+        "id": "nsk4",
+        "name": "Дзержинский",
+        "x": 539,
+        "y": 774,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "Красный пр.",
+          "ул. Фрунзе",
+          "ул. Ленина",
+          "ул. Советская",
+          "ул. Ленина",
+          "ул. Лесная"
+        ]
+      },
+      {
+        "id": "nsk5",
+        "name": "Калининский",
+        "x": 252,
+        "y": 398,
+        "arch": "sleep",
+        "ring": 2,
+        "w": 1.1,
+        "rent": [
+          1280,
+          2090
+        ],
+        "solv": [
+          325,
+          440
+        ],
+        "traffic": [
+          4300,
+          8750
+        ],
+        "prodRent": [
+          620,
+          870
+        ],
+        "streets": [
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Большевистская",
+          "ул. Гагарина",
+          "пр. Мира",
+          "ул. Школьная"
+        ]
+      },
+      {
+        "id": "nsk6",
+        "name": "Ленинский",
+        "x": 677,
+        "y": 794,
+        "arch": "far",
+        "ring": 3,
+        "w": 0.9,
+        "rent": [
+          950,
+          1620
+        ],
+        "solv": [
+          295,
+          390
+        ],
+        "traffic": [
+          3100,
+          6550
+        ],
+        "prodRent": [
+          450,
+          650
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "ул. Кирова",
+          "Красный пр.",
+          "ул. Советская",
+          "ул. Победы",
+          "ул. Лесная"
+        ]
+      },
+      {
+        "id": "nsk7",
+        "name": "Кировский",
+        "x": 231,
+        "y": 222,
+        "arch": "far",
+        "ring": 3,
+        "w": 0.9,
+        "rent": [
+          950,
+          1620
+        ],
+        "solv": [
+          295,
+          390
+        ],
+        "traffic": [
+          3100,
+          6550
+        ],
+        "prodRent": [
+          450,
+          650
+        ],
+        "streets": [
+          "ул. Кирова",
+          "Красный пр.",
+          "ул. Большевистская",
+          "ул. Гагарина",
+          "ул. Лесная",
+          "ул. Советская"
+        ]
+      },
+      {
+        "id": "nsk8",
+        "name": "Академгородок",
+        "x": 632,
+        "y": 460,
+        "arch": "student",
+        "ring": 1,
+        "w": 1.2,
+        "rent": [
+          1140,
+          2000
+        ],
+        "solv": [
+          305,
+          410
+        ],
+        "traffic": [
+          4600,
+          9250
+        ],
+        "prodRent": [
+          570,
+          810
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "ул. Кирова",
+          "ул. Ленина",
+          "ул. Ленина",
+          "ул. Гагарина",
+          "ул. Молодёжная"
+        ]
+      },
+      {
+        "id": "nsk9",
+        "name": "Первомайский",
+        "x": 628,
+        "y": 925,
+        "arch": "industrial",
+        "ring": 3,
+        "w": 0.5,
+        "rent": [
+          760,
+          1190
+        ],
+        "solv": [
+          265,
+          335
+        ],
+        "traffic": [
+          1850,
+          4600
+        ],
+        "prodRent": [
+          310,
+          460
+        ],
+        "streets": [
+          "ул. Фрунзе",
+          "ул. Ленина",
+          "ул. Большевистская",
+          "ул. Молодёжная",
+          "пр. Мира",
+          "ул. Садовая"
+        ]
+      }
+    ],
+    "center": {
+      "x": 524,
+      "y": 525
+    }
+  }
+}

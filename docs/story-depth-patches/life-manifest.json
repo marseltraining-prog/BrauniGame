@@ -1,0 +1,42 @@
+{
+  "scope": "family UI, five family definitions, life chains l01-l12",
+  "patch": "tmp/story-depth/life/life.patch",
+  "documentation": "docs/story-life-implementation.md",
+  "files": [
+    {
+      "path": "src/data/events-life.js",
+      "baseline": "af11df4114485e10013df3cd38ca672d6045a534dc8bfdfce26111066e8eb011",
+      "proposed": "10e23186d2974261b75f87cba4318a6a34a056b32ba7a469381508bb25f2e639"
+    },
+    {
+      "path": "src/data/story-russia.js",
+      "baseline": "cf4c71bf4b6d82ffd327a8847968eb29bc77dbf3ff59c723dcbcacf1b2401eba",
+      "proposed": "eb25bbf8175c50fbf74baeed841200aad8923e45bf5232a488e12400255d00ec"
+    },
+    {
+      "path": "src/ui/story-ui.js",
+      "baseline": "eae815461e37337b9107d22a89f82af41667f7f8361afb3ff2411d2157d381ad",
+      "proposed": "918e58c1484c58145961c3a9817216127be414be7e72f79776c0db0ff9f4bc15"
+    }
+  ],
+  "hunks": {
+    "src/ui/story-ui.js": [
+      "famFxChips helper",
+      "famHtml choices only"
+    ],
+    "src/data/story-russia.js": [
+      "BK.STORY.family only"
+    ],
+    "src/data/events-life.js": [
+      "l01-l12 text fields only"
+    ]
+  },
+  "kf3": "owned by threads; no bridges edits here",
+  "checks": {
+    "syntax": 3,
+    "dataNonTextEquality": true,
+    "gitApplyCheck": true,
+    "engineBotsBrowser": false
+  },
+  "frozen": true
+}

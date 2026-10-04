@@ -1,0 +1,186 @@
+{
+  "baseCommit": "aa0630046d320cc736bc8949b2c5b7f5cb8860f0",
+  "baseVersion": "0.9.11",
+  "currentVersion": "0.9.12",
+  "maps": [
+    {
+      "city": "ufa",
+      "base": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d"
+      },
+      "current": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d"
+      },
+      "identical": true
+    },
+    {
+      "city": "moscow",
+      "base": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9"
+      },
+      "current": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9"
+      },
+      "identical": true
+    },
+    {
+      "city": "spb",
+      "base": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c"
+      },
+      "current": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c"
+      },
+      "identical": true
+    },
+    {
+      "city": "kazan",
+      "base": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "61b42e975cf852de29bd7eff12ee944ab4a75560a9093447cf951e07670677ca"
+      },
+      "current": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "61b42e975cf852de29bd7eff12ee944ab4a75560a9093447cf951e07670677ca"
+      },
+      "identical": true
+    },
+    {
+      "city": "ekb",
+      "base": {
+        "world": "9c94fad7e4edd1cc9eaf8530fc09646ddf5c3bfb6c02219606e52194991b23f5",
+        "svg": "566a010414801d55e2d1e73e9cc545d663e75d9ddba5a0277bde63f0fe739167"
+      },
+      "current": {
+        "world": "9c94fad7e4edd1cc9eaf8530fc09646ddf5c3bfb6c02219606e52194991b23f5",
+        "svg": "566a010414801d55e2d1e73e9cc545d663e75d9ddba5a0277bde63f0fe739167"
+      },
+      "identical": true
+    }
+  ],
+  "ufaEconomy": {
+    "base": [
+      {
+        "seed": 7919,
+        "won": 17.1,
+        "lost": null,
+        "sha256": "84afa133c5a2bb20db38b10be8cc33b8a73a41d2675941e7d80df29efe8899f0",
+        "stores": 45
+      },
+      {
+        "seed": 15838,
+        "won": 14,
+        "lost": null,
+        "sha256": "09152a5988f717784c131c109f30f1192d55d10461516c51d5c9757c4a7710fe",
+        "stores": 53
+      },
+      {
+        "seed": 23757,
+        "won": 12.4,
+        "lost": null,
+        "sha256": "f2c2630735b3ed452a89c3788afbb081dc0440cbf72ea956b9cf64c80710c522",
+        "stores": 57
+      }
+    ],
+    "current": [
+      {
+        "seed": 7919,
+        "won": 17.1,
+        "lost": null,
+        "sha256": "84afa133c5a2bb20db38b10be8cc33b8a73a41d2675941e7d80df29efe8899f0",
+        "stores": 45
+      },
+      {
+        "seed": 15838,
+        "won": 14,
+        "lost": null,
+        "sha256": "09152a5988f717784c131c109f30f1192d55d10461516c51d5c9757c4a7710fe",
+        "stores": 53
+      },
+      {
+        "seed": 23757,
+        "won": 12.4,
+        "lost": null,
+        "sha256": "f2c2630735b3ed452a89c3788afbb081dc0440cbf72ea956b9cf64c80710c522",
+        "stores": 57
+      }
+    ],
+    "identical": true
+  },
+  "nskEconomy": {
+    "base": [
+      {
+        "seed": 7919,
+        "won": 13.4,
+        "lost": null,
+        "sha256": "dd3e3bf6e4133392e6c94065345357fc31dee855e439f3f402df5ceccd7e18e9",
+        "stores": 50
+      },
+      {
+        "seed": 15838,
+        "won": 15.6,
+        "lost": null,
+        "sha256": "513166e4578fa8247944055a75b7b6c6a257e2da5fb356d75d9b6adae7feae99",
+        "stores": 52
+      },
+      {
+        "seed": 23757,
+        "won": 12.8,
+        "lost": null,
+        "sha256": "a921e2cce018b05d8caae25dbc8f5c4a689fb42d445b132bddc7c8d8a14a25ea",
+        "stores": 53
+      }
+    ],
+    "current": [
+      {
+        "seed": 7919,
+        "won": 12.4,
+        "lost": null,
+        "sha256": "daaf1182db567009676fcd1f9d9c608b82148159aff556dcd76d3220f91a5385",
+        "stores": 45
+      },
+      {
+        "seed": 15838,
+        "won": 13.3,
+        "lost": null,
+        "sha256": "d87d12269f915fa440613668ffe1dec02a41e17757a5a6bb9d6eb24e8bd89149",
+        "stores": 49
+      },
+      {
+        "seed": 23757,
+        "won": 14.8,
+        "lost": null,
+        "sha256": "e336e5d4dca96c4d3c7956e754fd2c69553d0acca3a10eab0ce26cf339fd112f",
+        "stores": 48
+      }
+    ]
+  },
+  "canonicalLogs": [
+    {
+      "command": "node sim/bot.js good 3 18 --summary",
+      "identical": true,
+      "sha256": "64b1a25c09b219b87ab44c07b4247fec3f412fd2348a09ebc54018d47a7d2be4"
+    },
+    {
+      "command": "node sim/bot.js avg 2 25 --summary",
+      "identical": true,
+      "sha256": "17ef0929bda191f18c4d87454a23412cfca6183159da975776206e6071983c38"
+    },
+    {
+      "command": "node sim/bot.js bad 2 5 --summary",
+      "identical": true,
+      "sha256": "ad60baa0b39a69cb485d60ea906dfbc73fc5b9e140443e0e6afb9cdd297f8680"
+    },
+    {
+      "command": "node sim/story.js good,avg 12 22",
+      "identical": true,
+      "sha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a"
+    }
+  ]
+}

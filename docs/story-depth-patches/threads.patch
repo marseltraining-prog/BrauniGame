@@ -1,0 +1,211 @@
+--- a/src/story.js
++++ b/src/story.js
+@@ -483,12 +483,24 @@
+   }
+   function pendingScene(S) {
+     const R = state(S); if (!R || !R.pending) return null;
+-    return scene(R.pending.id);
++    return sceneView(S, scene(R.pending.id));
++  }
++  // Only presentation changes: ids, choice order and effects stay on the original scene.
++  function sceneView(S, sc) {
++    if (!sc) return sc;
++    const R = state(S); if (!R) return sc;
++    const select = (xs) => (xs || []).find((x) => (x.when || []).every((c) => cond(S, R, c)));
++    const v = select(sc.views);
++    const lines = ((v && v.lines) || sc.lines || []).map((l) => {
++      const alternate = select(l.views);
++      return alternate ? Object.assign({}, l, alternate) : l;
++    });
++    return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
+   }
+   // Выбор варианта: применяет последствия и закрывает сцену.
+   function resolve(S, idx) {
+     const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
+-    const sc = scene(R.pending.id); if (!sc) { R.pending = null; return { ok: false }; }
++    const sc = pendingScene(S); if (!sc) { R.pending = null; return { ok: false }; }
+     const ch = (sc.choices || [])[idx];
+     if (!ch) return { ok: false, msg: 'Нет такого варианта' };
+     const out = [];
+@@ -571,8 +583,16 @@
+   }
+   function givePerk(S, R, id) {
+     const p = (D().perks || {})[id]; if (!p) return null;
++    // Merger is granted at the agreement and mentioned again at the first council.
++    if (id === 'twocrusts' && R.perks.indexOf(id) >= 0) return null;
+     R.perks.push(id);
+-    for (const m of p.mods || []) S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 90), scope: m.scope || 'global', src: 'story' });
++    for (const m of p.mods || []) {
++      if (m.t === 'loyalty' && m.add != null) {
++        E().applyEffects(S, [{ t: 'loyalty', add: m.add }], { scope: 'global', target: null });
++        continue;
++      }
++      S.mods.push({ t: m.t, m: m.m, until: S.day + (m.d || 90), scope: m.scope || 'global', src: 'story' });
++    }
+     if (p.flag) R.f[p.flag.k] = p.flag.v;
+     return `бонус «${p.name}»: ${p.text}`;
+   }
+@@ -587,7 +607,7 @@
+     // Кто идёт рядом (см. mateKind): считаем с 6-го года или после трёх закрытых линий — этого
+     // хватает, чтобы характер партии был уже виден, а игрок успевал прочитать строку заранее.
+     // Первое «есть кто-то» фиксируется и больше не пересчитывается: человек не меняется задним числом.
+-    if (!R.seen.kf3 && (year(S) >= 6 || ((R.f.lineWarm | 0) + (R.f.lineCold | 0)) >= 3)) {
++    if (!R.seen.kf3 && R.f.mateKind !== 'helper' && R.f.mateKind !== 'tyrant' && (year(S) >= 6 || ((R.f.lineWarm | 0) + (R.f.lineCold | 0)) >= 3)) {
+       const k = mateKind(R);
+       if (k !== 'none') { if (R.f.mateKind !== k) R.f.mateKind = k; }
+       else if (R.f.mateKind == null) R.f.mateKind = 'none';
+@@ -844,7 +864,7 @@
+ 
+   BK.Story = {
+     ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
+-    chapter, hero, chapterName, defaults, fits, cond, cityHero,
++    chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
+     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
+     chapter, hero, chapterName, defaults, fits, cond,
+     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
+--- a/src/data/story-bridges.js
++++ b/src/data/story-bridges.js
+@@ -679,20 +679,20 @@
+       trigger: { after: ['kd1'], any: [{ stores: 15 }, { months: 48 }] },
+       fallback: { months: 10 },
+       lines: [
+-        { who: 'rashid', emo: 'calm', text: 'Одну вещь я тебе не сказал. Помнишь куртку в подсобке, в чужую смену? Я её узнал и промолчал: думал, ты {self} разберёшься.' },
+-        { who: 'rashid', emo: 'serious', text: 'Дамир тогда не болел. Он в ту ночь работал на складе за деньги и привёл с собой Айрата. Хлеб уносил Айрат, а говорили на тебя.' },
++        { who: 'rashid', emo: 'calm', text: 'Одну вещь я тебе не сказал. Помнишь куртку в подсобке, в чужую смену? Я её узнал и промолчал: думал, ты {self} разберёшься.', views: [{ when: [{ flag: { rashidGone: true } }], who: 'gulya', text: 'Я нашла Рашидову записку. Про куртку в подсобке, в чужую смену. Он узнал её и тогда промолчал.' }] },
++        { who: 'rashid', emo: 'serious', text: 'Дамир тогда не болел. Он в ту ночь работал на складе за деньги и привёл с собой Айрата. Хлеб уносил Айрат, а говорили на тебя.', views: [{ when: [{ flag: { rashidGone: true } }], who: 'gulya', text: 'В записке: «Хлеб уносил Айрат. Его привёл Дамир. А говорили на тебя». Тут ещё телефон, карандашом.' }] },
+         { who: 'hero', emo: 'calm', text: 'И что теперь?' },
+-        { who: 'rashid', emo: 'calm', text: 'Теперь он у тебя работает или нет. Я не судья. Я тесто мешу.' },
+-      ],
+-      choices: [
+-        { label: '«Позову его. Пусть скажет при тебе»', need: { flag: { lineDamir: 'served' } },
++        { who: 'rashid', emo: 'calm', text: 'Теперь он у тебя работает или нет. Я не судья. Я тесто мешу.', views: [{ when: [{ flag: { rashidGone: true } }], who: 'gulya', text: 'Я записку не выбрасывала. Дамир здесь или нет — решать тебе. Но про ту смену мы так и не спросили.' }] },
++      ],
++      choices: [
++        { label: '«Позову его. Поговорим вместе»', need: { flag: { lineDamir: 'served' } },
+           desc: 'Разговор втроём, без свидетелей. Он либо объяснит, либо уйдёт сам.',
+           effects: [{ t: 'flag', k: 'lineDamir', v: 'trusted' }, { t: 'flag', k: 'damirStep', v: 2 },
+             { t: 'rel', who: 'rashid', add: 10 }, { t: 'thread', rec: { id: 'th-damir-trust', who: 'Дамир Ярмухаметов', role: 'бригадир смены', kind: 'favor',
+-              text: 'он признался при Рашиде сам — и вы дали ему шанс', after: 500, effect: { fx: [{ t: 'loyalty', add: 3 }], text: 'будет держать смену, когда все остальные устанут' } } },
+-            { t: 'journal', text: 'Дамир объяснился при Рашиде' }] },
+-        { label: '«Найду Айрата. Спрошу у него»', need: { flag: { lineDamir: 'shadow' } },
+-          desc: 'Неделя поисков: Айрат в другом городе, но говорит охотно. Правда окажется не той, что вы ждали.',
++              text: 'он рассказал про ту смену — и вы дали ему шанс', after: 500, effect: { fx: [{ t: 'loyalty', add: 3 }], text: 'будет держать смену, когда все остальные устанут' } } },
++            { t: 'journal', text: 'Дамир объяснился про чужую смену' }] },
++        { label: '«Найду Айрата. Спрошу у него»', 
++          desc: 'Разыскать Айрата в другом городе — 120 тыс. ₽. Спросить его про ту смену.',
+           effects: [{ t: 'flag', k: 'lineDamir', v: 'trusted' }, { t: 'flag', k: 'damirStep', v: 2 },
+             { t: 'rel', who: 'rashid', add: 5 }, { t: 'cash', v: -120000 },
+             { t: 'thread', rec: { id: 'th-damir-ayrat', who: 'Айрат', role: 'пекарь «Калача»', kind: 'grudge',
+@@ -715,7 +715,7 @@
+       lines: [
+         { who: 'damir', emo: 'calm', text: 'Я тебе не про смену. Я про город. У меня семь бригад и склад, и я знаю, где у вас воруют, а где просто устали.' },
+         { who: 'gulya', emo: 'serious', text: 'Он мне уже месяц присылает списки. Часть — по делу. Часть — про людей, которых я бы не тронула.' },
+-        { who: 'rashid', emo: 'calm', text: 'Я его знаю дольше тебя. Он или вырос, или научился говорить. Разница видна только по делам.' },
++        { who: 'rashid', emo: 'calm', text: 'Я его знаю дольше тебя. Он или вырос, или научился говорить. Разница видна только по делам.', views: [{ when: [{ flag: { rashidGone: true } }], who: 'semyon', text: 'Рашид говорил: «Он или вырос, или научился говорить». Я записал. А списки бригад читать тебе.' }] },
+       ],
+       choices: [
+         { label: '«Бери город. Управляющим — и на меня смотри напрямую»', need: { flag: { lineDamir: 'trusted' } },
+@@ -729,8 +729,8 @@
+             { t: 'meter', k: 'honesty', add: 5 }, { t: 'line', warm: false, text: 'Дамир ушёл и забрал с собой чужие списки' },
+             { t: 'journal', text: 'Дамир ушёл из сети — и увел людей' }] },
+         { label: '«Работай смену. Город — не твоего масштаба»',
+-          desc: 'Он пожимает плечами. Ещё год он будет рядом — и всё это время будет считать.',
+-          effects: [{ t: 'rel', who: 'damir', add: -5 }, { t: 'rel', who: 'gulya', add: 3 }, { t: 'journal', text: 'Дамиру не дали город' }] },
++          desc: 'Он пожимает плечами. Он останется на сменах. Списки бригад вернёт вам.',
++          effects: [{ t: 'flag', k: 'lineDamir', v: 'worker' }, { t: 'flag', k: 'damirStep', v: 3 }, { t: 'rel', who: 'damir', add: -5 }, { t: 'rel', who: 'gulya', add: 3 }, { t: 'journal', text: 'Дамиру не дали город' }] },
+       ],
+     },
+ 
+@@ -1060,7 +1060,7 @@
+             { t: 'line', warm: true, text: 'рядом встал человек, который считает лучше вас' },
+             { t: 'journal', text: 'Алсу взяла цифры сети' }] },
+         { label: '«Вкладывай. Идеи обсудим на совете»', need: { flag: { mateKind: 'tyrant' } },
+-          desc: 'Два миллиона в оборот сегодня. И его идеи в вашей повестке — надолго.',
++          desc: 'В оборот сегодня — два процента выручки прошлого месяца, не менее 20 тыс. ₽. Идеи обсудим на совете.',
+           effects: [{ t: 'flag', k: 'mateWork', v: 'tyrant' }, { t: 'cash', revPct: 0.02 },
+             { t: 'traffic', m: 0.98, d: 1095 }, { t: 'check', m: 0.985, d: 1095 },
+             { t: 'thread', rec: { id: 'th-mate-ideas', who: 'Ильгиз Валиев', role: 'рядом с вами, инвестор', kind: 'grudge',
+@@ -1078,6 +1078,11 @@
+       id: 'kf4', ch: 'russia', form: 'climax', title: 'Совет или кухня', climax: true,
+       who: ['gulya', 'hero'],
+       trigger: { after: ['kf3'], any: [{ year: 14 }, { stores: 30 }] },
++      views: [{ when: [{ flag: { mateWork: 'no' } }], lines: [
++        { who: 'gulya', emo: 'calm', text: 'Ты сказал: каждый занимается своим. В цеху теперь тише. Дома я за тебя не отвечу.' },
++        { who: 'hero', emo: 'calm', text: 'Я сам поговорю. После смены.' },
++        { who: 'gulya', emo: 'serious', text: 'После смены ты обычно открываешь отчёт. Сегодня закрой его.' },
++      ] }],
+       fallback: { months: 12 },
+       lines: [
+         { who: 'gulya', emo: 'serious', text: 'В цеху говорят, что теперь у нас два начальника. Я не против цифр. Я против, когда считают людей по фотографии в отчёте.' },
+--- a/src/data/story-russia.js
++++ b/src/data/story-russia.js
+@@ -41,7 +41,7 @@
+   BK.STORY.perks.gulyaKazan = { name: 'Гуля ведёт Казань', text: 'переманить её почти нельзя; в городе меньше текучки и воровства', mods: [{ t: 'traffic', m: 1.015, d: 1095 }], flag: { k: 'gulyaTrust', v: true } };
+   BK.STORY.perks.ownHands = { name: 'Хозяин на месте', text: 'город открыт своими руками: гостей +4 % на год', mods: [{ t: 'traffic', m: 1.02, d: 365 }] };
+   BK.STORY.perks.gulyaOption = { name: 'Опцион Гули', text: 'один процент прибыли Казани — её; удерживать больше не нужно', mods: [{ t: 'traffic', m: 1.01, d: 3650 }], flag: { k: 'gulyaTrust', v: true } };
+-  BK.STORY.perks.gulyaBoard = { name: 'Гуля в совете', text: 'её голос в совете: раз в год она растит вам директора', mods: [{ t: 'traffic', m: 1.01, d: 3650 }], flag: { k: 'gulyaBoard', v: true } };
++  BK.STORY.perks.gulyaBoard = { name: 'Гуля в совете', text: 'её голос в совете: производству и директорам легче договориться', mods: [{ t: 'traffic', m: 1.01, d: 3650 }], flag: { k: 'gulyaBoard', v: true } };
+   BK.STORY.perks.gulyaOwn = { name: 'Гулина закваска', text: 'своя закваска и поставка в Казань: себестоимость сети −2 %', mods: [{ t: 'foodcost', m: 0.99, d: 3650 }] };
+   BK.STORY.perks.ipoBell = { name: 'Колокол', text: 'деньги рынка: гостей +5 % на три года, но каждый квартал — план для рынка', mods: [{ t: 'traffic', m: 1.025, d: 1095 }], flag: { k: 'ipo', v: true } };
+   BK.STORY.perks.dvorBought = { name: '«Двор» куплен', text: 'точки «Двора» переходят сети: гостей +5 %', mods: [{ t: 'traffic', m: 1.025, d: 1825 }] };
+@@ -369,7 +369,7 @@
+         },
+         {
+           label: 'Совет директоров и два процента прибыли Казани.', need: { rel: { gulya: 30 } },
+-          desc: 'Она садится в совет и раз в год растит вам директора. Дороже — но это уже партнёрство, а не удержание.',
++          desc: 'Она садится в совет. Доля в прибыли — два процента: теперь у неё свой голос, а не только ставка в штате.',
+           effects: [{ t: 'share', who: 'gulya', what: 'city:kzn', pct: 0.02, buyout: 1.5 }, { t: 'rel', who: 'gulya', add: 20 }, { t: 'meter', k: 'care', add: 10 },
+             { t: 'flag', k: 'gulyaStay', v: 'board' }, { t: 'perk', id: 'gulyaBoard' }, { t: 'journal', text: 'Р7: Гуля в совете директоров' }],
+         },
+@@ -508,11 +508,11 @@
+         { who: 'gulya', emo: 'sad', text: 'Я заперла дверь изнутри и поставила тесто. Так он и учил.' },
+       ],
+       choices: [
+-        { label: 'Дальше', desc: '', log: 'Рашида Хайруллина больше нет',
++        { label: 'Дальше', desc: '', log: 'Банка осталась открытой, с ложкой',
+           effects: [
+             { t: 'flag', k: 'rashidGone', v: true },
+             { t: 'rel', who: 'gulya', add: 5 }, { t: 'meter', k: 'care', add: 5 },
+-            { t: 'journal', text: 'Рашида Хайруллина больше нет. Банку 1987 года он оставил нам' },
++            { t: 'journal', text: 'Рашид не пришёл утром. Гуля закрыла дверь и поставила тесто' },
+           ] },
+       ],
+     },
+@@ -591,8 +591,8 @@
+       trigger: { all: [{ flag: { ufa: '__queued' } }] },
+       lines: [
+         { who: 'oleg', emo: 'calm', text: 'Первое заседание общего совета. Офис на Менделеева, утро. На витрине у метро — чей хлеб? Твой дороже на четыре рубля, мой дешевле. Голосуем, как взрослые.' },
+-        { who: 'rashid', emo: 'calm', text: 'Я тридцать лет пёк и ни разу не голосовал. Поставь мой хлеб рядом с его. Пусть выбирают люди — они честнее совета.' },
+-        { who: 'gulya', emo: 'serious', text: 'В цеху двадцать человек, и половина уже спросила, кто теперь начальник. Скажи им сам — я не буду.' },
++        { who: 'rashid', emo: 'calm', text: 'Я тридцать лет пёк и ни разу не голосовал. Поставь мой хлеб рядом с его. Пусть выбирают люди — они честнее совета.', views: [{ when: [{ flag: { rashidGone: true } }], who: 'semyon', text: 'В Рашидовой тетради: «Поставь мой хлеб рядом с его. Пусть выбирают люди». Я оставлю лист здесь, на столе.' }] },
++        { who: 'gulya', emo: 'serious', text: 'В цеху двадцать человек, и половина уже спросила, кто теперь начальник. Скажи им сам — я не буду.', views: [ { when: [{ flag: { gulya: 'poached' } }], who: 'oleg', text: 'Гуля теперь ведёт мой цех. Она спрашивает то же самое: кто после слияния отвечает за людей? Давай скажем им вместе.' }, { when: [{ flag: { gulya: 'own' } }], who: 'gulya', text: 'Я теперь поставщик, не начальник вашего цеха. Но они звонят мне и спрашивают, кто будет отвечать за смену. Скажи им сам.' } ] },
+         { who: 'oleg', emo: 'smirk', text: 'И сразу, чтобы не было иллюзий: дружбой я это не назову. Это сделка, где нам обоим дороже не ссориться.' },
+       ],
+       choices: [
+@@ -605,7 +605,7 @@
+           desc: 'Его полка дешёвая, ваша — свежая. Гостей больше у обоих, общего у вас — только склад.',
+           effects: [{ t: 'traffic', m: 1.02, d: 1825 }, { t: 'rel', who: 'oleg', add: 5 }, { t: 'meter', k: 'fair', add: 5 },
+             { t: 'journal', text: '«Две корки»: разделили полки' }, { t: 'schedule', id: 'sf2', after: 1 }] },
+-        { label: '«Рашид и Гуля в совете. Без них не решаем»', need: { rel: { rashid: 30, gulya: 20 } },
++        { label: '«Рашид и Гуля в совете. Без них не решаем»', need: { rel: { rashid: 30, gulya: 20 }, noFlag: { rashidGone: true, gulya: 'poached' } },
+           desc: 'Старики садятся за один стол с Олегом. Это дороже и медленнее — но так вы не станете вторым «Двором».',
+           effects: [{ t: 'rel', who: 'rashid', add: 15 }, { t: 'rel', who: 'gulya', add: 10 }, { t: 'rel', who: 'oleg', add: 5 },
+             { t: 'perk', id: 'twocrusts' }, { t: 'perk', id: 'zakvaska1987' }, { t: 'line', warm: true, text: 'в совете «Двух корок» — Рашид и Гуля' },
+@@ -614,12 +614,16 @@
+     },
+     {
+       id: 'sf2', ch: 'final', form: 'scene', title: 'Последний ужин',
++      views: [{ when: [{ flag: { book: 'cold' } }], lines: [
++        { who: 'semyon', emo: 'calm', text: 'Вечер, офис. Я привёз хлеб и сел напротив. Ты положил телефон рядом с тарелкой, экраном вверх.' },
++        { who: 'semyon', emo: 'serious', text: 'В книге остались имена и даты. Некоторые строки я не закончил. Ты скажешь, как её назвать?' },
++      ] }],
+       who: ['family', 'babushka', 'semyon'],
+       trigger: { after: ['sf1'], any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }] },
+       lines: [
+         { who: 'family', emo: 'smile', text: 'Воскресный вечер, дом в Черниковке, стол накрыт. Садись, я на всех напекла. И не говори, что у тебя ещё совещание, я телефон у тебя заберу.' },
+         { who: 'babushka', emo: 'calm', text: 'Лук я уже порезала. Крупно, как ты любишь. И не смотри так — я знаю, что ты рецепт так и не открывал.' },
+-        { who: 'semyon', emo: 'smile', text: 'Я за столом, но я работаю. Так и запишу: «Ели молча — и это была лучшая глава книги». Осталось название. Как назовём?' },
++        { who: 'semyon', emo: 'smile', text: 'Я за столом, но я работаю. Так и запишу: «Ели молча — и это была лучшая глава книги». Осталось название. Как назовём?', views: [{ when: [{ flag: { lineDamir: 'worker' } }], text: 'Дамир передал тебе ключи от смены. Города ему не дали, но утром он придёт первым. Я это записал. Как назовём книгу?' }] },
+       ],
+       choices: [
+         {

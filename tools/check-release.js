@@ -7,6 +7,7 @@ const root = path.join(__dirname, '..');
 const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
   ['qa/start-preview.js'], ['qa/start-preview.js', '@webkit'],
+  ['sim/nsk.js'], ['qa/nsk.js'], ['qa/nsk.js', '@webkit'],
   ['sim/ekb.js'], ['qa/ekb.js'], ['qa/ekb.js', '@webkit'],
   ['sim/kazan.js'], ['qa/kazan.js'], ['qa/kazan.js', '@webkit'], ['sim/city-coefficients.js'],
   ['qa/start-city.js'], ['qa/start-city.js', '@webkit'],

@@ -1,0 +1,14 @@
+{
+  "src/story.js": {
+    "baseSha256": "fc78cb0f40264e1f1376ae67f0271a32967632b4637bbbb0336ed5eb92d4ebc8",
+    "copySha256": "89134be464bfbc41f08a5d6be866d49c1900681b38b389b76179c6b2a6767cfa"
+  },
+  "src/data/story-bridges.js": {
+    "baseSha256": "8b8c53fb6dfcb2b207411a302159612e5e2f89d90a15f4b4eb5a47796c1d6688",
+    "copySha256": "32998a6fc260c3333a0511f0bcb4114fc68a7627707f5c5ca76d714544effa4b"
+  },
+  "src/data/story-russia.js": {
+    "baseSha256": "cf4c71bf4b6d82ffd327a8847968eb29bc77dbf3ff59c723dcbcacf1b2401eba",
+    "copySha256": "c264e1464fa8ed6954b68041d785247e789ae622b2df46520f72e2910150e5cc"
+  }
+}
