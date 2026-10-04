@@ -23,18 +23,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return parts.join(', ');
   };
 
-  /* ---------- значки последствий (как в окне события: ₽ — факт, остальное — по мнению управляющего) ---------- */
+  /* ---------- Область и сила предложения; цены остаются отдельными фактами. ---------- */
   function fx(S, p) {
     const IC = BK.FX_IC || {}, R = Math.max(S.lastMonthRev || 0, 1e6);
     const out = [];
-    const money = (p.cost / 12 + p.monthly) / R * 100, mn = !(p.cost > 0 || p.monthly > 0) ? 0 : money < 5 ? 1 : money < 20 ? 2 : 3; // любой расход — хотя бы ▼
-    out.push(`<span class="fxc ${mn ? 'dn' : 'zero'}" title="Деньги: ${mn ? 'расход' : 'почти без затрат'}">${IC.rub || '₽'}<span class="ar">${mn ? '▼'.repeat(mn) : '·'}</span></span>`);
-    for (const [k, lab, nm] of [['team', 'Команда', 'Команда'], ['guests', 'Гости', 'Гости'], ['check', 'Чек', 'Средний чек']]) {
+    const money = (p.cost / 12 + p.monthly) / R * 100, mn = !(p.cost > 0 || p.monthly > 0) ? 0 : money < 5 ? 1 : money < 20 ? 2 : 3;
+    out.push(BK.choiceImpact(IC.rub || '₽', 'Деньги', mn));
+    for (const [k, nm] of [['team', 'Команда'], ['guests', 'Гости'], ['check', 'Средний чек']]) {
       const v = p.fx[k] || 0; if (!v && k === 'check') continue;
-      const n = Math.min(3, Math.abs(v)), cls = !v ? 'zero' : v > 0 ? 'up' : 'dn';
-      out.push(`<span class="fxc ${cls}" title="${nm}: ${!v ? 'без изменений' : v > 0 ? 'лучше' : 'хуже'} (по мнению управляющего)">${IC[k === 'guests' ? 'guests' : k] || ''}<span class="fxn">${lab}</span><span class="ar">${v ? (v > 0 ? '▲' : '▼').repeat(n) : '·'}</span></span>`);
+      out.push(BK.choiceImpact(IC[k] || '', nm, Math.min(3, Math.abs(v))));
     }
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function card(S, p, opt) {
     const R = S.managers, m = R.list.find((x) => x.id === p.mid) || { name: 'Управляющий', female: false };

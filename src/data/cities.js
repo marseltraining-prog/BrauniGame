@@ -372,6 +372,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   BK.CITIES = CITIES; BK.CITY_BY_ID = byId; BK.CITY_COMP = COMP; BK.CITY_ARCH = ARCH;
   BK.cityMapGen = (id) => (BK.CITY_BIG && BK.CITY_BIG[id] && BK.CITY_BIG[id].mapGen) || 1;
+  // Обложка получает географию отдельно: не меняет активный город и мир сохранения.
+  BK.cityPreview = (id) => {
+    const def = byId[id] || byId.ufa;
+    const g = def.builtin ? UFA : geoOf(def, 7919, BK.cityMapGen(def.id));
+    return { MAP: g.MAP, DISTRICTS: g.DISTRICTS, CITY: cityInfo(def) };
+  };
   BK.genCityGeo = genCityGeo; BK.useCity = useCity; BK.cityProj = proj; BK.roadKm = roadKm; BK.cityKmPerUnit = kmPerUnitOf;
   useCity(null);
 })();

@@ -58,18 +58,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const staticKey = (id, noLabels) => id + '|' + (noLabels ? 0 : 1) + '|' + (BK.CITY && BK.CITY.id || 'ufa') + '|' + (BK.DISTRICTS && BK.DISTRICTS.length);
   BK.mapStaticCacheClear = function () { staticCache.clear(); };
   function staticLayer(opts) {
-    const M = BK.MAP, id = opts.id;
+    const world = opts.world || BK, M = world.MAP, D = world.DISTRICTS, id = opts.id;
     const key = staticKey(id, opts.noLabels);
-    const hit = staticCache.get(key);
+    const hit = opts.world ? null : staticCache.get(key);
     if (hit != null) return hit;
-    const cells = voronoi(BK.DISTRICTS);
+    const cells = voronoi(D);
     const city = smooth(M.city.concat([M.city[0]])) + 'Z';
     let s = `<defs><clipPath id="${id}-city"><path d="${city}"/></clipPath>
       <pattern id="${id}-g1" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="var(--grid-minor)" stroke-width=".6"/></pattern>
       <pattern id="${id}-g5" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="url(#${id}-g1)"/><path d="M50 0H0V50" fill="none" stroke="var(--grid-major)" stroke-width="1"/></pattern></defs>`;
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" class="m-land"/>`;
     s += `<g clip-path="url(#${id}-city)">`;
-    cells.forEach((c, i) => { s += `<path class="m-district${i % 2 ? ' alt' : ''}" data-d="${BK.DISTRICTS[i].id}" d="${pathOf(c, true)}"/>`; });
+    cells.forEach((c, i) => { s += `<path class="m-district${i % 2 ? ' alt' : ''}" data-d="${D[i].id}" d="${pathOf(c, true)}"/>`; });
     s += `</g>`;
     // миллиметровка: один элемент с паттерном поверх земли и районов
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#${id}-g5)" pointer-events="none"/>`;
@@ -100,9 +100,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
-      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      for (const d of D) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
       // характер района мелкой строкой под названием (центр, спальный, промзона, частный сектор)
-      for (const d of BK.DISTRICTS) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
+      for (const d of D) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
       for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
       // подписи соседства — отдельным слоем: их показывает только приближение (см. render)
       let pl = '';
@@ -110,7 +110,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
-    staticCache.set(key, s);
+    if (!opts.world) staticCache.set(key, s);
     return s;
   }
 

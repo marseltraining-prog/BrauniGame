@@ -1,6 +1,6 @@
 /* Сюжет — интерфейс (логика — src/story.js, BK.Story; тексты — src/data/story.js).
    Окно сцены: портрет говорящего и реплики ПО ОДНОЙ (кнопка/тап «Дальше», Enter/Space, прогресс «2 из 5»),
-   затем варианты выбора — крупно, с пояснением последствий и честной причиной недоступности;
+   затем варианты выбора — крупно, с областью/силой влияния и честной причиной недоступности;
    кульминации оформлены заметнее. Письма и посты (form: letter/post) и входящие (S.inbox) — карточкой
    с одной кнопкой «Прочитано». Тост о решении — как у остальных механик игры, клик открывает летопись.
    Лента «История» в «Сводке» — строка о последнем решении и кнопка «Вся летопись».
@@ -134,25 +134,37 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
 
   /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
-  function fxChips(fx) {
+  function fxChips(S, fx) {
     const out = [];
     for (const f of fx || []) {
       if (!f || !f.t) continue;
-      if (f.t === 'rel') { const up = f.add > 0; out.push({ t: `${whoName(f.who)} ${up ? '+' : '−'}${Math.abs(f.add)}`, up, k: 'Отношения' }); }
-      else if (f.t === 'perk') { const p = (BK.STORY.perks || {})[f.id]; if (p) out.push({ t: p.name, up: true, k: 'Бонус' }); }
-      else if (f.t === 'ending') { const e = (BK.STORY.endings || {})[f.id]; out.push({ t: 'Финал: ' + (e ? e.name : f.id), up: false, k: 'История' }); }
-      else if (f.t === 'share') out.push({ t: `${whoName(f.who)} — ${Math.round(f.pct * 100)} %`, up: false, k: 'Доля' });
-      else if (f.t === 'rivalMod') out.push(f.agg > 0 ? { t: '«Двор» жёстче', up: false, k: 'Олег' } : { t: '«Двор» мягче', up: true, k: 'Олег' });
-      else if (f.t === 'rivalOpenNear') out.push({ t: '«Двор» откроется рядом', up: false, k: 'Олег' });
-      else if (f.t === 'deferOpen') out.push({ t: `Открытие позже на ${f.days} дн.`, up: false, k: 'Дело' });
-      // meter и flag не показываем: это скрытые решения (docs/story.md §4.3)
+      if (f.t === 'rel' && f.add) out.push(BK.choiceImpact('', 'Отношения: ' + whoName(f.who), Math.abs(f.add) < 5 ? 1 : Math.abs(f.add) < 10 ? 2 : 3));
+      else if (f.t === 'cash' || f.t === 'loan') {
+        const R = Math.max(S.lastMonthRev || 0, 1e6), v = Math.abs(f.v || f.perStore || (f.revPct || 0) * R);
+        const total = v * (f.perStore ? Math.max(1, S.stores.length) : 1);
+        out.push(BK.choiceImpact('', f.t === 'loan' ? 'Кредит' : 'Деньги', total / R < .05 ? 1 : total / R < .2 ? 2 : 3, BK.fmtMoney(v) + (f.perStore ? ' / точку' : '')));
+      }
+      else if (['traffic', 'competitor', 'conv', 'check', 'foodcost', 'delivery'].includes(f.t)) {
+        const name = {traffic:'Гости',competitor:'Гости',conv:'Гости',check:'Средний чек',foodcost:'Себестоимость',delivery:'Доставка'}[f.t];
+        const amount = Math.abs((f.m || 1) - 1) * 100 * Math.min(f.d || 365, 365) / 30;
+        out.push(BK.choiceImpact('', name, amount < 15 ? 1 : amount < 50 ? 2 : 3));
+      }
+      else if (['loyalty', 'staffQuit', 'staffTrain'].includes(f.t)) out.push(BK.choiceImpact('', 'Команда', f.t === 'loyalty' ? Math.abs(f.add) < 12 ? 1 : Math.abs(f.add) < 25 ? 2 : 3 : Math.min(3, f.n || 1)));
+      else if (f.t === 'close') out.push(BK.choiceImpact('', 'Работа точек', f.d < 3 ? 1 : f.d < 10 ? 2 : 3));
+      else if (f.t === 'perk') out.push(BK.choiceImpact('', 'Возможности', 2));
+      else if (f.t === 'ending') out.push(BK.choiceImpact('', 'История', 3));
+      else if (f.t === 'share') out.push(BK.choiceImpact('', 'Доля: ' + whoName(f.who), f.pct < .1 ? 1 : f.pct < .25 ? 2 : 3));
+      else if (f.t === 'rivalMod') out.push(BK.choiceImpact('', 'Конкуренты', 2));
+      else if (f.t === 'rivalOpenNear') out.push(BK.choiceImpact('', 'Конкуренты', 3));
+      else if (f.t === 'deferOpen') out.push(BK.choiceImpact('', 'Открытие', f.days < 15 ? 1 : f.days < 30 ? 2 : 3));
+      // meter и flag остаются скрытыми решениями.
     }
-    return out.length ? `<span class="st-fx">${out.map((c) => `<span class="st-fxc ${c.up ? 'up' : 'dn'}"><i>${esc(c.k)}</i>${esc(c.t)}</span>`).join('')}</span>` : '';
+    return out.length ? `<span class="st-fx">${BK.choiceImpacts(out)}</span>` : '';
   }
 
   /* ---------- варианты выбора ---------- */
   function choiceHtml(S, c, i, multi) {
-    const need = needText(S, c.need), fx = fxChips(c.effects);
+    const need = needText(S, c.need), fx = fxChips(S, c.effects);
     const dis = need.dis ? ' disabled' : '';
     if (!multi) {
       return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.desc ? `<small class="st-desc">${esc(sub(S, c.desc))}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
@@ -160,7 +172,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
       <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
       <b>${esc(sub(S, c.label))}</b>
-      ${c.desc ? `<span class="cd">${esc(sub(S, c.desc))}</span>` : ''}
       ${c.cost ? `<span class="cc">${esc(sub(S, c.cost))}</span>` : ''}
       ${need.dis ? `<span class="cwhy">${WARN}${esc(need.text)}</span>` : ''}
       ${fx ? `<span class="fx">${fx}</span>` : ''}

@@ -456,9 +456,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FXN = { rub: ['₽', 'Деньги'], guests: ['🙂', 'Гости'], team: ['👥', 'Команда'], hp: ['❤️', 'Силы'], rel: ['🤝', 'Отношения'] };
   function fxChips(fx, risk) {
     const out = [];
-    for (const k of Object.keys(FXN)) { const v = fx && fx[k]; if (!v) continue; const up = v > 0, n = Math.min(3, Math.abs(v)); out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span aria-hidden="true">${FXN[k][0]}</span><span>${FXN[k][1]}</span><span class="ar">${(up ? '▲' : '▼').repeat(n)}</span></span>`); }
+    for (const k of Object.keys(FXN)) {
+      const v = fx && fx[k]; if (!v) continue;
+      out.push(BK.choiceImpact(`<span aria-hidden="true">${FXN[k][0]}</span>`, FXN[k][1], Math.min(3, Math.abs(v))));
+    }
     if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span aria-hidden="true">🎲</span><span>Риск</span></span>');
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function showCard() {
     const s = S(), cv = S1().card(s); if (!cv) { hideOv(); return; }
@@ -469,11 +472,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let h = `<div class="s1-ovbg"><div class="s1-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="s1CardT" tabindex="-1">
       <div class="s1-chd">${portrait(cv.who, true)}<span class="s1-cw"><span class="s1-ey ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
       <h2 id="s1CardT">${esc(HT(cv.title))}</h2><p class="s1-ct">${esc(HT(cv.text))}</p><div class="s1-cc">`;
-    if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>Сила влияния · исход после выбора</span></div>`;
     cv.choices.forEach((c, i) => {
       if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="s1-cd">${esc(HT(c.desc))}</p>` : ''}`; return; }
       const fx = fxChips(c.fx, c.risk);
-      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += '</div></div></div>';
     $('#s1Ov').innerHTML = h;

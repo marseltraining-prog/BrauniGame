@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="04.10.2026 14:33 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="04.10.2026 15:26 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -370,6 +370,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .chq h4 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
 .chq span { font-size: 12px; color: var(--ink-3); }
 .fxc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.choice .fxc.neutral, .choice .fxc.zero { max-width: 100%; height: auto; min-height: 24px; white-space: normal; overflow-wrap: anywhere; }
+.fxc .impact-level { font-size: 12px; opacity: .8; }
 .fxc svg { width: 13px; height: 13px; flex: none; }
 .fxc .ar { font-size: 10.5px; letter-spacing: -1.5px; }
 .fxc.up { background: var(--good-soft); color: var(--good-t); }
@@ -407,6 +409,13 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload { margin-top: 14px; max-width: 460px; font-size: 13px; color: var(--ink-2); }
 .start .codeload summary { cursor: pointer; width: fit-content; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
+.start-preview { position: sticky; top: 32px; align-self: start; margin: 140px 0 0; min-width: 0; aspect-ratio: 1; }
+.start-seal { position: absolute; right: 4%; bottom: 1%; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 16px; max-width: 65%; border: 1px solid var(--line-2); border-radius: 12px; background: var(--paper); color: var(--ink-2); text-align: center; }
+.city-arms { width: 100px; height: auto; color: var(--map-label); overflow: visible; }
+.start-seal span { font-family: var(--f-display); font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.start-seal small { font: 10px var(--f-mono); color: var(--ink-3); }
+.city-preview-choice { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 14px; color: var(--ink); }
+.city-preview-choice .city-arms { width: 34px; flex: 0 0 34px; }
 .start-map { width: 100%; height: auto; border-radius: 16px; }
 /* выбор уровня сложности */
 .citypick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
@@ -498,7 +507,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
-  .start-map { max-width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start-preview { position: relative; top: auto; width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start-seal { right: -8px; bottom: 0; padding: 6px 8px; gap: 2px; }
+  .start-seal .city-arms { width: 48px; }
+  .start-seal span { font-size: 12px; }
+  .start-seal small { display: none; }
   .start .rules .r-diff { display: none; } /* капитал и срок победы — уже в карточках сложности */
   .diffopt { padding: 8px; } .diffopt:has(input:checked) { padding: 7px; } .diffopt .dn { font-size: 13.5px; } .diffopt .dm { font-size: 11px; } .diffopt::after { display: none; } .diffdesc { min-height: 0; margin-top: 6px; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
@@ -651,6 +664,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .m-rlabel { font-family: var(--f-body); font-style: italic; font-size: calc(13px * var(--lk, 1)); stroke-width: calc(3.5px * var(--lk, 1)); stroke: var(--map-land); font-weight: 500; fill: var(--river-t); letter-spacing: .04em; }
 .m-small { font-family: var(--f-body); font-size: calc(10px * var(--lk, 1)); stroke-width: calc(3px * var(--lk, 1)); fill: var(--map-label); }
 .map.far .m-small { display: none; }
+.start-map .m-small { display: none; }
 .start-map { --lk: 1.8; } /* обложка: вся карта в ~400 px, подписи крупнее, чтобы читались */
 .m-route { fill: none; stroke: var(--map-route); stroke-width: 1.3; stroke-dasharray: 2 4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .rt-on .m-route { opacity: .8; stroke-width: 1.8; }
@@ -3616,7 +3630,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.10', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.11', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -10918,6 +10932,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   BK.CITIES = CITIES; BK.CITY_BY_ID = byId; BK.CITY_COMP = COMP; BK.CITY_ARCH = ARCH;
   BK.cityMapGen = (id) => (BK.CITY_BIG && BK.CITY_BIG[id] && BK.CITY_BIG[id].mapGen) || 1;
+  // Обложка получает географию отдельно: не меняет активный город и мир сохранения.
+  BK.cityPreview = (id) => {
+    const def = byId[id] || byId.ufa;
+    const g = def.builtin ? UFA : geoOf(def, 7919, BK.cityMapGen(def.id));
+    return { MAP: g.MAP, DISTRICTS: g.DISTRICTS, CITY: cityInfo(def) };
+  };
   BK.genCityGeo = genCityGeo; BK.useCity = useCity; BK.cityProj = proj; BK.roadKm = roadKm; BK.cityKmPerUnit = kmPerUnitOf;
   useCity(null);
 })();
@@ -28286,6 +28306,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
   };
 })();
 
+/* ui/choice-impact.js */
+/* Подсказка перед решением: область и сила, без направления последствия. */
+var BK = globalThis.BK || (globalThis.BK = {});
+BK.choiceImpact = function (icon, name, strength, value) {
+  const n = Math.max(0, Math.min(3, Math.ceil(Math.abs(strength || 0))));
+  const level = ['нет влияния', 'слабо', 'умеренно', 'сильно'][n];
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tip = esc(name + ': ' + level);
+  return `<span data-strength="${n}" class="fxc ${n ? 'neutral' : 'zero'}" title="${tip}">${icon || ''}<span class="fxn">${esc(name)}</span><span class="impact-level">${value ? esc(value) : level}</span></span>`;
+};
+
+BK.choiceImpacts = function (chips) {
+  const strength = html => Number((html.match(/data-strength="(\d)"/) || [0, 0])[1]);
+  return chips.slice().sort((a, b) => strength(b) - strength(a)).join('');
+};
+
 /* ui/map.js */
 /* Карта Уфы — «градплан на миллиметровке»: статичный слой (районы, сетка, реки, подписи),
    динамические маркеры с кластерами при отдалении, слои «Прибыль / Настроение / Штат / Доставка»,
@@ -28347,18 +28383,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const staticKey = (id, noLabels) => id + '|' + (noLabels ? 0 : 1) + '|' + (BK.CITY && BK.CITY.id || 'ufa') + '|' + (BK.DISTRICTS && BK.DISTRICTS.length);
   BK.mapStaticCacheClear = function () { staticCache.clear(); };
   function staticLayer(opts) {
-    const M = BK.MAP, id = opts.id;
+    const world = opts.world || BK, M = world.MAP, D = world.DISTRICTS, id = opts.id;
     const key = staticKey(id, opts.noLabels);
-    const hit = staticCache.get(key);
+    const hit = opts.world ? null : staticCache.get(key);
     if (hit != null) return hit;
-    const cells = voronoi(BK.DISTRICTS);
+    const cells = voronoi(D);
     const city = smooth(M.city.concat([M.city[0]])) + 'Z';
     let s = `<defs><clipPath id="${id}-city"><path d="${city}"/></clipPath>
       <pattern id="${id}-g1" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="var(--grid-minor)" stroke-width=".6"/></pattern>
       <pattern id="${id}-g5" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="url(#${id}-g1)"/><path d="M50 0H0V50" fill="none" stroke="var(--grid-major)" stroke-width="1"/></pattern></defs>`;
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" class="m-land"/>`;
     s += `<g clip-path="url(#${id}-city)">`;
-    cells.forEach((c, i) => { s += `<path class="m-district${i % 2 ? ' alt' : ''}" data-d="${BK.DISTRICTS[i].id}" d="${pathOf(c, true)}"/>`; });
+    cells.forEach((c, i) => { s += `<path class="m-district${i % 2 ? ' alt' : ''}" data-d="${D[i].id}" d="${pathOf(c, true)}"/>`; });
     s += `</g>`;
     // миллиметровка: один элемент с паттерном поверх земли и районов
     s += `<rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#${id}-g5)" pointer-events="none"/>`;
@@ -28389,9 +28425,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
     if (!opts.noLabels) {
-      for (const d of BK.DISTRICTS) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
+      for (const d of D) s += `<text class="m-dlabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40)}">${d.name}</text>`;
       // характер района мелкой строкой под названием (центр, спальный, промзона, частный сектор)
-      for (const d of BK.DISTRICTS) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
+      for (const d of D) if (d.kind) s += `<text class="m-small m-klabel" x="${d.x + (d.lx || LABEL_DX[d.id] || 0)}" y="${d.y + (d.ly != null ? d.ly : LABEL_DY[d.id] != null ? LABEL_DY[d.id] : -40) + 12}" text-anchor="middle">${d.kind}</text>`;
       for (const p of M.parks) if (p.name !== 'Кашкадан') s += `<text class="m-small" x="${p.x}" y="${p.y + p.r + 11}" text-anchor="middle">${p.name}</text>`;
       // подписи соседства — отдельным слоем: их показывает только приближение (см. render)
       let pl = '';
@@ -28399,7 +28435,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (pl) s += `<g class="m-poilabels">${pl}</g>`;
       s += `<circle cx="${M.station.x}" cy="${M.station.y}" r="3.5" fill="var(--ink-3)"/><text class="m-small" x="${M.station.x - 8}" y="${M.station.y + 16}" text-anchor="end">${M.station.name}</text>`;
     }
-    staticCache.set(key, s);
+    if (!opts.world) staticCache.set(key, s);
     return s;
   }
 
@@ -31172,18 +31208,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return parts.join(', ');
   };
 
-  /* ---------- значки последствий (как в окне события: ₽ — факт, остальное — по мнению управляющего) ---------- */
+  /* ---------- Область и сила предложения; цены остаются отдельными фактами. ---------- */
   function fx(S, p) {
     const IC = BK.FX_IC || {}, R = Math.max(S.lastMonthRev || 0, 1e6);
     const out = [];
-    const money = (p.cost / 12 + p.monthly) / R * 100, mn = !(p.cost > 0 || p.monthly > 0) ? 0 : money < 5 ? 1 : money < 20 ? 2 : 3; // любой расход — хотя бы ▼
-    out.push(`<span class="fxc ${mn ? 'dn' : 'zero'}" title="Деньги: ${mn ? 'расход' : 'почти без затрат'}">${IC.rub || '₽'}<span class="ar">${mn ? '▼'.repeat(mn) : '·'}</span></span>`);
-    for (const [k, lab, nm] of [['team', 'Команда', 'Команда'], ['guests', 'Гости', 'Гости'], ['check', 'Чек', 'Средний чек']]) {
+    const money = (p.cost / 12 + p.monthly) / R * 100, mn = !(p.cost > 0 || p.monthly > 0) ? 0 : money < 5 ? 1 : money < 20 ? 2 : 3;
+    out.push(BK.choiceImpact(IC.rub || '₽', 'Деньги', mn));
+    for (const [k, nm] of [['team', 'Команда'], ['guests', 'Гости'], ['check', 'Средний чек']]) {
       const v = p.fx[k] || 0; if (!v && k === 'check') continue;
-      const n = Math.min(3, Math.abs(v)), cls = !v ? 'zero' : v > 0 ? 'up' : 'dn';
-      out.push(`<span class="fxc ${cls}" title="${nm}: ${!v ? 'без изменений' : v > 0 ? 'лучше' : 'хуже'} (по мнению управляющего)">${IC[k === 'guests' ? 'guests' : k] || ''}<span class="fxn">${lab}</span><span class="ar">${v ? (v > 0 ? '▲' : '▼').repeat(n) : '·'}</span></span>`);
+      out.push(BK.choiceImpact(IC[k] || '', nm, Math.min(3, Math.abs(v))));
     }
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function card(S, p, opt) {
     const R = S.managers, m = R.list.find((x) => x.id === p.mid) || { name: 'Управляющий', female: false };
@@ -32181,7 +32216,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 /* ui/story-ui.js */
 /* Сюжет — интерфейс (логика — src/story.js, BK.Story; тексты — src/data/story.js).
    Окно сцены: портрет говорящего и реплики ПО ОДНОЙ (кнопка/тап «Дальше», Enter/Space, прогресс «2 из 5»),
-   затем варианты выбора — крупно, с пояснением последствий и честной причиной недоступности;
+   затем варианты выбора — крупно, с областью/силой влияния и честной причиной недоступности;
    кульминации оформлены заметнее. Письма и посты (form: letter/post) и входящие (S.inbox) — карточкой
    с одной кнопкой «Прочитано». Тост о решении — как у остальных механик игры, клик открывает летопись.
    Лента «История» в «Сводке» — строка о последнем решении и кнопка «Вся летопись».
@@ -32315,25 +32350,37 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
 
   /* ---------- значки последствий варианта (без скрытых стилей — они и есть скрытые) ---------- */
-  function fxChips(fx) {
+  function fxChips(S, fx) {
     const out = [];
     for (const f of fx || []) {
       if (!f || !f.t) continue;
-      if (f.t === 'rel') { const up = f.add > 0; out.push({ t: `${whoName(f.who)} ${up ? '+' : '−'}${Math.abs(f.add)}`, up, k: 'Отношения' }); }
-      else if (f.t === 'perk') { const p = (BK.STORY.perks || {})[f.id]; if (p) out.push({ t: p.name, up: true, k: 'Бонус' }); }
-      else if (f.t === 'ending') { const e = (BK.STORY.endings || {})[f.id]; out.push({ t: 'Финал: ' + (e ? e.name : f.id), up: false, k: 'История' }); }
-      else if (f.t === 'share') out.push({ t: `${whoName(f.who)} — ${Math.round(f.pct * 100)} %`, up: false, k: 'Доля' });
-      else if (f.t === 'rivalMod') out.push(f.agg > 0 ? { t: '«Двор» жёстче', up: false, k: 'Олег' } : { t: '«Двор» мягче', up: true, k: 'Олег' });
-      else if (f.t === 'rivalOpenNear') out.push({ t: '«Двор» откроется рядом', up: false, k: 'Олег' });
-      else if (f.t === 'deferOpen') out.push({ t: `Открытие позже на ${f.days} дн.`, up: false, k: 'Дело' });
-      // meter и flag не показываем: это скрытые решения (docs/story.md §4.3)
+      if (f.t === 'rel' && f.add) out.push(BK.choiceImpact('', 'Отношения: ' + whoName(f.who), Math.abs(f.add) < 5 ? 1 : Math.abs(f.add) < 10 ? 2 : 3));
+      else if (f.t === 'cash' || f.t === 'loan') {
+        const R = Math.max(S.lastMonthRev || 0, 1e6), v = Math.abs(f.v || f.perStore || (f.revPct || 0) * R);
+        const total = v * (f.perStore ? Math.max(1, S.stores.length) : 1);
+        out.push(BK.choiceImpact('', f.t === 'loan' ? 'Кредит' : 'Деньги', total / R < .05 ? 1 : total / R < .2 ? 2 : 3, BK.fmtMoney(v) + (f.perStore ? ' / точку' : '')));
+      }
+      else if (['traffic', 'competitor', 'conv', 'check', 'foodcost', 'delivery'].includes(f.t)) {
+        const name = {traffic:'Гости',competitor:'Гости',conv:'Гости',check:'Средний чек',foodcost:'Себестоимость',delivery:'Доставка'}[f.t];
+        const amount = Math.abs((f.m || 1) - 1) * 100 * Math.min(f.d || 365, 365) / 30;
+        out.push(BK.choiceImpact('', name, amount < 15 ? 1 : amount < 50 ? 2 : 3));
+      }
+      else if (['loyalty', 'staffQuit', 'staffTrain'].includes(f.t)) out.push(BK.choiceImpact('', 'Команда', f.t === 'loyalty' ? Math.abs(f.add) < 12 ? 1 : Math.abs(f.add) < 25 ? 2 : 3 : Math.min(3, f.n || 1)));
+      else if (f.t === 'close') out.push(BK.choiceImpact('', 'Работа точек', f.d < 3 ? 1 : f.d < 10 ? 2 : 3));
+      else if (f.t === 'perk') out.push(BK.choiceImpact('', 'Возможности', 2));
+      else if (f.t === 'ending') out.push(BK.choiceImpact('', 'История', 3));
+      else if (f.t === 'share') out.push(BK.choiceImpact('', 'Доля: ' + whoName(f.who), f.pct < .1 ? 1 : f.pct < .25 ? 2 : 3));
+      else if (f.t === 'rivalMod') out.push(BK.choiceImpact('', 'Конкуренты', 2));
+      else if (f.t === 'rivalOpenNear') out.push(BK.choiceImpact('', 'Конкуренты', 3));
+      else if (f.t === 'deferOpen') out.push(BK.choiceImpact('', 'Открытие', f.days < 15 ? 1 : f.days < 30 ? 2 : 3));
+      // meter и flag остаются скрытыми решениями.
     }
-    return out.length ? `<span class="st-fx">${out.map((c) => `<span class="st-fxc ${c.up ? 'up' : 'dn'}"><i>${esc(c.k)}</i>${esc(c.t)}</span>`).join('')}</span>` : '';
+    return out.length ? `<span class="st-fx">${BK.choiceImpacts(out)}</span>` : '';
   }
 
   /* ---------- варианты выбора ---------- */
   function choiceHtml(S, c, i, multi) {
-    const need = needText(S, c.need), fx = fxChips(c.effects);
+    const need = needText(S, c.need), fx = fxChips(S, c.effects);
     const dis = need.dis ? ' disabled' : '';
     if (!multi) {
       return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.desc ? `<small class="st-desc">${esc(sub(S, c.desc))}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
@@ -32341,7 +32388,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
       <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
       <b>${esc(sub(S, c.label))}</b>
-      ${c.desc ? `<span class="cd">${esc(sub(S, c.desc))}</span>` : ''}
       ${c.cost ? `<span class="cc">${esc(sub(S, c.cost))}</span>` : ''}
       ${need.dis ? `<span class="cwhy">${WARN}${esc(need.text)}</span>` : ''}
       ${fx ? `<span class="fx">${fx}</span>` : ''}
@@ -35310,17 +35356,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <p class="ps-k" data-kb>Продукт — <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> · <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> · <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · допродажа — <kbd>Пробел</kbd> · отдать заказ — <kbd>Enter</kbd></p>
     </div>`;
   }
-  // значки последствий: ▲/▼ × сила (как в окне события основной игры)
+  // Перед решением показываем показатель и силу; направление остаётся неизвестным.
   const FXN = { rub: ['₽', 'Деньги'], hp: ['❤️', 'Силы'], mood: ['🙂', 'Настроение'], rep: ['👔', 'Начальник'], skill: ['⭐', 'Навык'], rel: ['🤝', 'Отношения'] };
   function fxChips(fx, risk) {
     const out = [];
     for (const k of Object.keys(FXN)) {
       const v = fx && fx[k]; if (!v) continue;
-      const up = v > 0, n = Math.min(3, Math.abs(v));
-      out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span class="fxe" aria-hidden="true">${FXN[k][0]}</span><span class="fxn">${FXN[k][1]}</span><span class="ar" aria-label="${up ? 'лучше' : 'хуже'}">${(up ? '▲' : '▼').repeat(n)}</span></span>`);
+      out.push(BK.choiceImpact(`<span aria-hidden="true">${FXN[k][0]}</span>`, FXN[k][1], Math.min(3, Math.abs(v))));
     }
     if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span class="fxe" aria-hidden="true">🎲</span><span class="fxn">Риск</span></span>');
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function optBtn(pa, v, on, name, price, fx, dis, title) {
     return `<button type="button" class="po${on ? ' on' : ''}" data-pa="${pa}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}><b>${esc(name)}</b><span class="pp">${price}</span>${fx ? `<span class="pfx">${fx}</span>` : ''}</button>`;
@@ -35395,11 +35440,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
       <div class="pcd-h">${portrait(cv)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
       <h2 id="proCardT">${esc(HT(cv.title))}</h2><p class="pcd-t">${esc(HT(cv.text))}</p><div class="pcd-c">`;
-    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>Сила влияния · исход после выбора</span></div>`;
     cv.choices.forEach((c, i) => {
       const fx = fxChips(c.fx, c.risk);
       if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="pcd-d">${esc(HT(c.desc))}</p>` : ''}`; return; }
-      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += `</div></div></div>`;
     $('#proOv').innerHTML = h;
@@ -36236,9 +36281,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FXN = { rub: ['₽', 'Деньги'], guests: ['🙂', 'Гости'], team: ['👥', 'Команда'], hp: ['❤️', 'Силы'], rel: ['🤝', 'Отношения'] };
   function fxChips(fx, risk) {
     const out = [];
-    for (const k of Object.keys(FXN)) { const v = fx && fx[k]; if (!v) continue; const up = v > 0, n = Math.min(3, Math.abs(v)); out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span aria-hidden="true">${FXN[k][0]}</span><span>${FXN[k][1]}</span><span class="ar">${(up ? '▲' : '▼').repeat(n)}</span></span>`); }
+    for (const k of Object.keys(FXN)) {
+      const v = fx && fx[k]; if (!v) continue;
+      out.push(BK.choiceImpact(`<span aria-hidden="true">${FXN[k][0]}</span>`, FXN[k][1], Math.min(3, Math.abs(v))));
+    }
     if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span aria-hidden="true">🎲</span><span>Риск</span></span>');
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function showCard() {
     const s = S(), cv = S1().card(s); if (!cv) { hideOv(); return; }
@@ -36249,11 +36297,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let h = `<div class="s1-ovbg"><div class="s1-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="s1CardT" tabindex="-1">
       <div class="s1-chd">${portrait(cv.who, true)}<span class="s1-cw"><span class="s1-ey ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
       <h2 id="s1CardT">${esc(HT(cv.title))}</h2><p class="s1-ct">${esc(HT(cv.text))}</p><div class="s1-cc">`;
-    if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    if (cv.choices.length > 1) h += `<div class="s1-chq"><h4>Что ответим?</h4><span>Сила влияния · исход после выбора</span></div>`;
     cv.choices.forEach((c, i) => {
       if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block s1-big" data-s1="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="s1-cd">${esc(HT(c.desc))}</p>` : ''}`; return; }
       const fx = fxChips(c.fx, c.risk);
-      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-s1="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += '</div></div></div>';
     $('#s1Ov').innerHTML = h;
@@ -36410,6 +36458,55 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }, true);
 
   BK.Stage1UI = { begin, resume, open, close, active, render, drawShop, portrait, toMain, get ui() { return ui; } };
+})();
+
+/* data/city-arms.js */
+/* Hand-drawn cartographic interpretations of city arms, not official reproductions.
+   Motifs and source documents: docs/city-arms-sources.md. Pure presentation only. */
+(function () {
+  'use strict';
+  const ink = 'currentColor';
+  const gold = 'var(--crust)';
+  const water = 'var(--map-river)';
+  const path = (d, color = ink, opacity = 1) => `<path d="${d}" stroke="${color}" opacity="${opacity}"/>`;
+  const circle = (x, y, r, color = ink) => `<circle cx="${x}" cy="${y}" r="${r}" stroke="${color}"/>`;
+  const waves = (y = 128) => path(`M36 ${y}q11 -7 22 0t22 0t22 0t22 0M40 ${y + 8}q10 -6 20 0t20 0t20 0t20 0`, water);
+  const cross = (x, y, s = 12) => path(`M${x - 4} ${y - s}h8v${s - 4}h${s - 4}v8h-${s - 4}v${s - 4}h-8v-${s - 4}h-${s - 4}v-8h${s - 4}Z`, gold);
+  const crown = (x, y, w = 22) => path(`M${x - w / 2} ${y}l-2 -10 7 5 6 -9 6 9 7 -5 -2 10Z`, gold);
+  const marten = path('M37 105C24 102 27 83 39 80C31 92 36 97 47 96L80 85Q91 79 99 79L107 70L113 74L121 80L124 86L113 88L106 96L90 100L102 117L96 121L80 105L64 106L54 120L45 120L51 105ZM105 82h1') + path('M38 134H121', water);
+  const bear = path('M38 104L33 96L37 88L36 81L44 78L50 83Q68 76 91 82Q114 85 117 102L113 121H105L102 105L91 105L85 121H77L76 104L58 104L52 121H44L46 103ZM42 89h1');
+  const deer = path('M42 104L52 95L74 96L89 88L93 73L101 67L113 72L111 79L102 84L100 102L94 121H87L89 103L76 105L62 124H55L60 105L46 111ZM108 74h1') + path('M100 66L97 55L88 48M96 57L86 57M102 65L106 52L116 44M109 52L119 54', gold);
+  const boat = (sail) => path('M37 111L47 126H112L123 109L112 112H46ZM79 111V53M62 109L98 109', gold) + (sail ? path('M83 59Q113 66 114 102H83ZM76 61Q56 64 48 102H76Z', gold) + path('M83 83H112M50 84H75', water) : path('M79 56L99 51L94 59L99 65L79 66M41 111V86L58 82L54 90L58 96L41 97', gold)) + waves(137);
+  const eagle = path('M80 105V74M80 79L69 69L57 63L50 67L58 72L64 77M80 79L91 69L103 63L110 67L102 72L96 77M76 86L64 77L43 72L46 84L58 91L44 88L50 98L64 100L56 105L70 107L80 99L90 107L104 105L96 100L110 98L116 88L102 91L114 84L117 72L96 77L84 86', gold) + crown(80, 61);
+  const goose = (x, y) => `<g transform="translate(${x} ${y})">${path('M-14 6Q-19 -3 -8 -3H3V-14Q3 -21 10 -21L15 -18L10 -15H7V-2Q19 0 15 6Q7 13 -6 10ZM-9 2Q-3 7 5 3')}${path('M14 -18h5', gold)}</g>`;
+  const gear = `<g transform="translate(63 108)">${path('M-7 -23h14l2 8 7 3 8 -2 7 12 -6 6v8l6 6 -7 12 -8 -2 -7 3 -2 8h-14l-2 -8 -7 -3 -8 2 -7 -12 6 -6v-8l-6 -6 7 -12 8 2 7 -3Z', gold)}${circle(0, 0, 10, gold)}</g>`;
+  const wheat = (x, y) => path(`M${x} ${y + 31}V${y - 24}M${x} ${y - 18}q-16 -3 -14 -13q14 1 14 13q16 -3 14 -13q-14 1 -14 13M${x} ${y - 3}q-16 -3 -14 -13q14 1 14 13q16 -3 14 -13q-14 1 -14 13M${x} ${y + 12}q-16 -3 -14 -13q14 1 14 13q16 -3 14 -13q-14 1 -14 13`, gold);
+  const motifs = {
+    ufa: marten,
+    sterlitamak: goose(55, 76) + goose(108, 76) + goose(80, 110) + waves(133),
+    chelny: boat(true) + path('M49 118L39 137M61 119L53 139M74 119L69 140M86 119L84 140M98 119L99 139M109 117L114 135M116 114L126 128', gold),
+    orenburg: `<g transform="translate(0 -10)">${eagle}</g>` + waves(111) + path('M64 131L96 150M96 131L64 150', water),
+    chelyabinsk: path('M35 71V59H47V66H59V59H71V66H83V59H95V66H107V59H123V72', ink, .5) + path('M37 103L43 92Q42 79 48 74L56 77L58 97L66 95Q70 78 78 86Q86 72 93 85L101 99L117 102L119 113L113 123H105V111H91L85 126H78L82 110H61L57 126H50L51 109L44 110ZM49 82h1', gold) + path('M69 90H96V102H69ZM77 91V101M87 91V101', gold) + path('M39 137H122', water),
+    samara: path('M47 103L58 97L82 97L89 90L90 78L96 69L107 76L109 84L102 88L100 103L92 125H85L87 107H72L65 126H58L61 106L49 109ZM103 78h1M97 69Q81 57 83 47Q97 49 99 64M105 69Q101 54 110 48', gold) + path('M91 86L86 94L92 93M52 98L44 88M40 136H121', water),
+    perm: bear + `<g transform="translate(0 -5)">${cross(80, 52, 11)}</g>` + path('M65 79V62H94V80M69 65H89M78 66V76M74 70H82', gold),
+    kazan: path('M48 119Q26 119 32 101Q35 93 44 95Q34 102 40 107Q45 111 56 104L64 92L65 70L72 63L84 63L86 55L93 62L108 63L104 70L93 73L88 88L88 100L104 111L112 111M87 99L82 119L94 122M64 102L59 122L69 122M82 75L67 75M101 67h1', gold) + path('M65 88Q52 77 45 55L60 59L51 42L72 54L77 85ZM53 58L72 75M60 60L74 69', ink) + crown(87, 49) + path('M104 70L114 74L122 72M40 137H120', water),
+    ekb: path('M34 55H45V46H57V55H69V46H81V55H93V46H105V55H124', ink, .55) + path('M41 105V73H70V105M38 74H74M40 84H72M51 74V68H62V73M57 69V64M35 86V78H41M70 79H76V87M44 103H67M44 95H67', gold) + path('M88 105V81L93 69H111L116 81V105ZM97 69V56H107V69M94 105V91H109V105M99 100Q94 96 101 87Q101 92 106 95L104 100', gold) + waves(123) + path('M60 146L70 133L80 145L90 133L100 146M70 133V148M90 133V148', gold),
+    tyumen: boat(false),
+    nnov: deer,
+    volgograd: path('M45 65L49 70L57 70L51 76L54 85L45 80L36 85L39 76L33 70L41 70ZM65 73H119M67 80H117', gold) + gear + wheat(105, 109) + path('M38 145H121', water),
+    voronezh: path('M37 134L47 112L42 104L52 88L54 76L69 70L80 83L74 97L83 107L74 119L85 139M48 109L64 108L72 120M54 86L70 88M53 128L73 130', gold) + `<g transform="rotate(36 95 88)">${path('M86 68H102V77Q119 85 110 100Q100 111 86 101Q73 88 86 77ZM99 76Q117 70 116 84Q115 91 111 91')}</g>` + path('M111 106Q94 120 108 128Q127 138 108 148M116 110Q105 122 116 129', water),
+    rostov: path('M80 49V146', ink, .35) + path('M38 124V91H45V76H41V68H49V73H57V68H65V76H62V91H70V124ZM38 94H70M47 124V111Q54 103 61 111V124M50 82H55M55 67V48L72 51L72 62H55', gold) + path('M94 88Q94 66 110 66Q123 66 123 88ZM91 89H126M96 95L89 105L95 111V125H124V111L128 105L121 95ZM105 96V124M116 97V124M89 57L127 138M124 53L89 140', ink),
+    krasnodar: path('M80 48V146M34 96H127', ink, .35) + path('M38 89V76H42V66H50V76H63V66H71V76H75V89M50 89V81Q56 76 63 81V89M88 127V114H93V104H102V114H115V104H123V114H127V127M100 127V120Q107 114 115 120V127', gold) + path('M91 57L117 88M117 57L91 88M95 63H109L108 75H105M114 63H102M41 106L68 137M68 106L41 137M45 112H59L57 124H54M64 112H51', gold) + path('M68 104V88H86M68 96H82M68 104H86M91 88H100M95 88V104H91M92 93L99 100', gold),
+    sochi: path('M80 47V146M34 94H126', ink, .35) + path('M37 82L46 62L55 76L61 60L74 83M47 64L51 70M60 64L65 72', gold) + path('M102 88V64M101 66Q90 54 84 67M102 66Q112 52 122 62M102 66Q115 62 124 74M102 66Q91 61 83 76', water) + circle(55, 118, 10, gold) + path('M55 100V96M55 140V136M37 118H33M76 118H72M42 105L38 101M68 132L72 136M42 131L38 135M68 104L72 100', gold) + `<g transform="translate(51 -10) scale(.5 1)">${waves(122)}</g>` + path('M69 96H93Q92 109 81 111Q70 109 69 96ZM81 111V119M73 120H89M78 89Q71 82 80 76M87 89Q80 82 89 76', gold),
+    moscow: path('M40 101Q48 90 64 94L84 92L96 80L100 63L107 60L114 66L119 68L116 76L108 78L106 97L97 107L107 122H99L87 107L72 108L64 124H55L60 106L46 108L43 122H36L38 105ZM106 68h1M100 62L102 55', gold) + circle(79, 57, 6) + path('M76 64L66 82L77 88L75 95M81 65L88 76L102 78M74 65L58 64L51 78L65 77', ink) + path('M94 47L117 133', gold) + path('M91 139Q76 127 69 136Q60 145 47 137Q52 149 67 146L88 148L109 137L124 140L120 132L112 130L102 138M113 134h1', water),
+    spb: `<g transform="rotate(-38 80 99)">${circle(80, 67, 6)}${path('M80 73V125M65 84H95M58 111Q61 129 80 130Q99 129 102 111M58 111L57 124M102 111L103 124')}</g><g transform="rotate(38 80 99)">${circle(80, 67, 6)}${path('M80 73V125M60 111Q65 129 80 130Q95 129 100 111M60 111L58 125M100 111L102 125M70 116L80 125L90 116')}</g>` + path('M80 58V144M74 137H86', gold) + `<g transform="translate(40 13) scale(.5)">${eagle}</g>`,
+    nsk: path('M40 139L116 53M45 144L121 58', water) + path('M35 97H123M35 105H123M62 98Q79 78 98 98M79 89V104', gold) + path('M39 84L36 71L42 64L47 69L56 70L57 76L48 80L47 109L40 119M48 90L59 86M43 103L36 117M34 122Q23 111 30 91M117 84L120 71L114 64L109 69L100 70L99 76L108 80L109 109L116 119M108 90L97 86M113 103L120 117M122 122Q133 111 126 91', ink) + path('M59 141Q80 126 101 141M60 141H100M66 132L93 146M92 132L66 146', gold)
+  };
+  const frame = path('M24 30H136V99C136 129 116 151 80 168C44 151 24 129 24 99Z', gold) + path('M31 37H129V99C129 124 112 144 80 160C48 144 31 124 31 99Z', ink, .25) + path('M52 19H108M65 12H95', ink, .4);
+  BK.cityArms = function (id) {
+    const motif = Object.prototype.hasOwnProperty.call(motifs, id) ? motifs[id] : motifs.ufa;
+    return `<g fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${frame}${motif}</g>`;
+  };
 })();
 
 /* ui/app.js */
@@ -36576,7 +36673,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
   }
   function startScreen() {
-    if (BK.useCity) BK.useCity(null); // обложка — карта Уфы
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
@@ -36595,7 +36691,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
-    </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
+    </div><figure class="start-preview" id="startPreview" data-city="ufa">${cityPreviewHtml('ufa')}</figure></div>`;
     $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
@@ -36617,8 +36713,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const locked = !BK.StartCity.available(d.id);
         return `<label class="cityopt${locked ? ' locked' : ''}"><input type="radio" name="startCity" value="${d.id}"${d.id === 'ufa' ? ' checked' : ''}${locked ? ' disabled' : ''}><span>${locked ? '🔒 ' : ''}${H.esc(d.name)}</span></label>`;
       }).join('')}</div>
+      <div class="city-preview-choice" id="cityPreviewChoice">${citySealHtml('ufa')}</div>
       <p class="hint" id="cityDesc" aria-live="polite">${cityDescription('ufa')}</p>
       <p class="hint">Москва и Санкт-Петербург открываются после первой завершённой партии: победы, банкротства или финала истории.</p></fieldset>`;
+  }
+  function citySealHtml(id) {
+    const name = H.esc((BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa).name);
+    return `<svg class="city-arms" viewBox="0 0 160 180" role="img" aria-label="Стилизованный герб: ${name}">${BK.cityArms(id)}</svg><span>${name}</span>`;
+  }
+  function cityPreviewHtml(id) {
+    return `<svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm', world: BK.cityPreview(id) })}</svg><figcaption class="start-seal">${citySealHtml(id)}<small>Ваш город старта</small></figcaption>`;
   }
   function cityDescription(id) {
     const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa;
@@ -36630,6 +36734,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function bindCity(el) {
     el.querySelectorAll('input[name="startCity"]').forEach((r) => r.addEventListener('change', () => {
+      const city = cityPicked();
+      el.querySelector('#startPreview').innerHTML = cityPreviewHtml(city);
+      el.querySelector('#startPreview').dataset.city = city;
+      el.querySelector('#cityPreviewChoice').innerHTML = citySealHtml(city);
       const desc = el.querySelector('#cityDesc');
       if (desc) desc.innerHTML = cityDescription(cityPicked());
       if (BK.ScenarioUI && BK.ScenarioUI.redrawStart) BK.ScenarioUI.redrawStart();
@@ -37239,13 +37347,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     for (const k of ['rub', 'team', 'guests', 'check', 'prod', 'dir']) {
       const n = lvl(k); if (!n && !['rub', 'team', 'guests'].includes(k)) continue;
-      const up = v[k] > 0, cls = !n ? 'zero' : up ? 'up' : 'dn';
-      const ar = n ? (up ? '▲' : '▼').repeat(n) : '·';
-      const tip = FX_NAME[k] + (n ? `: ${up ? 'лучше' : 'хуже'}${n > 1 ? (n > 2 ? ', очень сильно' : ', заметно') : ''}` : ': без изменений');
-      out.push(`<span class="fxc ${cls}" title="${tip}">${FX_IC[k]}${FX_AX[k][0] ? `<span class="fxn">${FX_AX[k][0]}</span>` : ''}<span class="ar" aria-label="${tip}">${ar}</span></span>`);
+      out.push(BK.choiceImpact(FX_IC[k], FX_NAME[k], n));
     }
     if (risk) out.push(`<span class="fxc risk" title="Исход не гарантирован">${FX_IC.risk}<span class="fxn">Риск</span></span>`);
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
 
   function openEventModal() {
@@ -37260,12 +37365,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const afford = (c) => !c.dis && (!c.cost || c.cost <= S.cash + S.reserve); // c.dis — корпоративный выбор без нужного отдела штаба / грейда
       const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (!c.dis && (ev.choices[b].dis || c.cost < ev.choices[b].cost) ? i : b), 0);
       const LET = 'АБВГДЕЖЗ';
-      html += `<div class="chq"><h4>Как ответим?</h4><span>▲ — лучше, ▼ — хуже, число стрелок — сила</span></div>`;
+      html += `<div class="chq"><h4>Как ответим?</h4><span>Сила влияния · исход после выбора</span></div>`;
       ev.choices.forEach((c, i) => {
         const can = afford(c) || i === cheapest;
         const why = c.dis ? `Недоступно: ${H.esc(c.dis)}` : !can ? `Недоступно: не хватает ${H.fm(c.cost - S.cash - S.reserve)} (на счёте и в резерве ${H.fm(Math.max(0, S.cash + S.reserve))})` : '';
         let fx = ''; try { fx = choiceFx(S, ev, i); } catch (e) { fx = ''; }
-        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
     html += `</div>`;

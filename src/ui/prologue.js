@@ -409,17 +409,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <p class="ps-k" data-kb>Продукт — <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> · <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> · <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · допродажа — <kbd>Пробел</kbd> · отдать заказ — <kbd>Enter</kbd></p>
     </div>`;
   }
-  // значки последствий: ▲/▼ × сила (как в окне события основной игры)
+  // Перед решением показываем показатель и силу; направление остаётся неизвестным.
   const FXN = { rub: ['₽', 'Деньги'], hp: ['❤️', 'Силы'], mood: ['🙂', 'Настроение'], rep: ['👔', 'Начальник'], skill: ['⭐', 'Навык'], rel: ['🤝', 'Отношения'] };
   function fxChips(fx, risk) {
     const out = [];
     for (const k of Object.keys(FXN)) {
       const v = fx && fx[k]; if (!v) continue;
-      const up = v > 0, n = Math.min(3, Math.abs(v));
-      out.push(`<span class="fxc ${up ? 'up' : 'dn'}" title="${FXN[k][1]}: ${up ? 'лучше' : 'хуже'}"><span class="fxe" aria-hidden="true">${FXN[k][0]}</span><span class="fxn">${FXN[k][1]}</span><span class="ar" aria-label="${up ? 'лучше' : 'хуже'}">${(up ? '▲' : '▼').repeat(n)}</span></span>`);
+      out.push(BK.choiceImpact(`<span aria-hidden="true">${FXN[k][0]}</span>`, FXN[k][1], Math.min(3, Math.abs(v))));
     }
     if (risk) out.push('<span class="fxc risk" title="Исход не гарантирован"><span class="fxe" aria-hidden="true">🎲</span><span class="fxn">Риск</span></span>');
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
   function optBtn(pa, v, on, name, price, fx, dis, title) {
     return `<button type="button" class="po${on ? ' on' : ''}" data-pa="${pa}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}><b>${esc(name)}</b><span class="pp">${price}</span>${fx ? `<span class="pfx">${fx}</span>` : ''}</button>`;
@@ -494,11 +493,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let h = `<div class="pro-ovbg"><div class="pro-card ${kind}" role="dialog" aria-modal="true" aria-labelledby="proCardT" tabindex="-1">
       <div class="pcd-h">${portrait(cv)}<span class="pcd-w"><span class="eyebrow ${kind}">${ey}</span><small>${esc(cv.hero.role)}</small></span></div>
       <h2 id="proCardT">${esc(HT(cv.title))}</h2><p class="pcd-t">${esc(HT(cv.text))}</p><div class="pcd-c">`;
-    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>▲ — лучше, ▼ — хуже</span></div>`;
+    if (cv.choices.length > 1) h += `<div class="chq"><h4>Что делаем?</h4><span>Сила влияния · исход после выбора</span></div>`;
     cv.choices.forEach((c, i) => {
       const fx = fxChips(c.fx, c.risk);
       if (cv.choices.length === 1) { h += `<button type="button" class="btn primary block pro-big" data-pa="choose" data-v="${i}">${esc(HT(c.label))}</button>${c.desc ? `<p class="pcd-d">${esc(HT(c.desc))}</p>` : ''}`; return; }
-      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cd">${esc(HT(c.desc || ''))}</span><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+      h += `<button type="button" class="choice" data-pa="choose" data-v="${i}"${c.can ? '' : ' disabled'}><span class="cl">${LET[i]}</span><b>${esc(HT(c.label))}</b><span class="cc">${c.cost ? fm(c.cost) : ''}</span>${!c.can && c.why ? `<span class="cwhy">${esc(c.why)}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
     });
     h += `</div></div></div>`;
     $('#proOv').innerHTML = h;

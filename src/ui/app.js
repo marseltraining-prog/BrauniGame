@@ -161,7 +161,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<fieldset class="diffpick"><legend>Сложность</legend><div class="diffopts">${['easy', 'normal', 'hard'].map((d) => `<label class="diffopt ${d}"><input type="radio" name="difficulty" value="${d}"${d === 'normal' ? ' checked' : ''}><span class="dn">${diffName(d)}</span><span class="dm">${DIFF_UI[d].cash}<br>победа ${DIFF_UI[d].win}</span></label>`).join('')}</div><p class="diffdesc" id="diffDesc" aria-live="polite">${DIFF_UI.normal.desc}</p></fieldset>`;
   }
   function startScreen() {
-    if (BK.useCity) BK.useCity(null); // обложка — карта Уфы
     const el = $('#start');
     el.className = 'start';
     el.hidden = false;
@@ -180,7 +179,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <details class="codeload"><summary>Есть код сохранения с другого устройства?</summary>
         <textarea id="startCode" class="input" rows="3" placeholder="Вставьте код сохранения"></textarea>
         <button class="btn" type="button" id="startCodeBtn">Загрузить игру</button></details>
-    </div><svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm' })}</svg></div>`;
+    </div><figure class="start-preview" id="startPreview" data-city="ufa">${cityPreviewHtml('ufa')}</figure></div>`;
     $('#start').querySelectorAll('[data-rival]').forEach((b) => b.addEventListener('click', () => $('#start').querySelectorAll('[data-rival]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))));
     const diffSel = () => { const r = $('#startForm input[name=difficulty]:checked'); return r ? r.value : 'normal'; };
     $('#startForm').addEventListener('change', () => { const d = DIFF_UI[diffSel()]; $('#diffDesc').textContent = d.desc; $('#ruleCash').textContent = d.cash; $('#ruleWin').textContent = d.win; });
@@ -202,8 +201,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const locked = !BK.StartCity.available(d.id);
         return `<label class="cityopt${locked ? ' locked' : ''}"><input type="radio" name="startCity" value="${d.id}"${d.id === 'ufa' ? ' checked' : ''}${locked ? ' disabled' : ''}><span>${locked ? '🔒 ' : ''}${H.esc(d.name)}</span></label>`;
       }).join('')}</div>
+      <div class="city-preview-choice" id="cityPreviewChoice">${citySealHtml('ufa')}</div>
       <p class="hint" id="cityDesc" aria-live="polite">${cityDescription('ufa')}</p>
       <p class="hint">Москва и Санкт-Петербург открываются после первой завершённой партии: победы, банкротства или финала истории.</p></fieldset>`;
+  }
+  function citySealHtml(id) {
+    const name = H.esc((BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa).name);
+    return `<svg class="city-arms" viewBox="0 0 160 180" role="img" aria-label="Стилизованный герб: ${name}">${BK.cityArms(id)}</svg><span>${name}</span>`;
+  }
+  function cityPreviewHtml(id) {
+    return `<svg class="start-map" viewBox="0 0 1000 1000" aria-hidden="true">${BK.mapStatic({ id: 'sm', world: BK.cityPreview(id) })}</svg><figcaption class="start-seal">${citySealHtml(id)}<small>Ваш город старта</small></figcaption>`;
   }
   function cityDescription(id) {
     const d = BK.CITY_BY_ID[id] || BK.CITY_BY_ID.ufa;
@@ -215,6 +222,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function bindCity(el) {
     el.querySelectorAll('input[name="startCity"]').forEach((r) => r.addEventListener('change', () => {
+      const city = cityPicked();
+      el.querySelector('#startPreview').innerHTML = cityPreviewHtml(city);
+      el.querySelector('#startPreview').dataset.city = city;
+      el.querySelector('#cityPreviewChoice').innerHTML = citySealHtml(city);
       const desc = el.querySelector('#cityDesc');
       if (desc) desc.innerHTML = cityDescription(cityPicked());
       if (BK.ScenarioUI && BK.ScenarioUI.redrawStart) BK.ScenarioUI.redrawStart();
@@ -824,13 +835,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     for (const k of ['rub', 'team', 'guests', 'check', 'prod', 'dir']) {
       const n = lvl(k); if (!n && !['rub', 'team', 'guests'].includes(k)) continue;
-      const up = v[k] > 0, cls = !n ? 'zero' : up ? 'up' : 'dn';
-      const ar = n ? (up ? '▲' : '▼').repeat(n) : '·';
-      const tip = FX_NAME[k] + (n ? `: ${up ? 'лучше' : 'хуже'}${n > 1 ? (n > 2 ? ', очень сильно' : ', заметно') : ''}` : ': без изменений');
-      out.push(`<span class="fxc ${cls}" title="${tip}">${FX_IC[k]}${FX_AX[k][0] ? `<span class="fxn">${FX_AX[k][0]}</span>` : ''}<span class="ar" aria-label="${tip}">${ar}</span></span>`);
+      out.push(BK.choiceImpact(FX_IC[k], FX_NAME[k], n));
     }
     if (risk) out.push(`<span class="fxc risk" title="Исход не гарантирован">${FX_IC.risk}<span class="fxn">Риск</span></span>`);
-    return out.join('');
+    return BK.choiceImpacts(out);
   }
 
   function openEventModal() {
@@ -845,12 +853,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const afford = (c) => !c.dis && (!c.cost || c.cost <= S.cash + S.reserve); // c.dis — корпоративный выбор без нужного отдела штаба / грейда
       const cheapest = ev.choices.some(afford) ? -1 : ev.choices.reduce((b, c, i) => (!c.dis && (ev.choices[b].dis || c.cost < ev.choices[b].cost) ? i : b), 0);
       const LET = 'АБВГДЕЖЗ';
-      html += `<div class="chq"><h4>Как ответим?</h4><span>▲ — лучше, ▼ — хуже, число стрелок — сила</span></div>`;
+      html += `<div class="chq"><h4>Как ответим?</h4><span>Сила влияния · исход после выбора</span></div>`;
       ev.choices.forEach((c, i) => {
         const can = afford(c) || i === cheapest;
         const why = c.dis ? `Недоступно: ${H.esc(c.dis)}` : !can ? `Недоступно: не хватает ${H.fm(c.cost - S.cash - S.reserve)} (на счёте и в резерве ${H.fm(Math.max(0, S.cash + S.reserve))})` : '';
         let fx = ''; try { fx = choiceFx(S, ev, i); } catch (e) { fx = ''; }
-        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cd">${H.esc(c.desc || '')}</span><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
+        html += `<button class="choice" data-choice="${i}"${can ? '' : ' disabled'}${c.dis ? ` title="${H.esc(c.dis)}"` : ''}><span class="cl">${LET[i] || i + 1}</span><b>${H.esc(c.label)}</b><span class="cc">${c.cost ? H.fm(c.cost) : 'бесплатно'}${c.cost ? '<small>сразу</small>' : ''}</span>${why ? `<span class="cwhy">${FX_IC.risk}${why}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}</button>`;
       });
     } else html += `<button class="btn primary block" data-choice="-1">Понятно</button>`;
     html += `</div>`;

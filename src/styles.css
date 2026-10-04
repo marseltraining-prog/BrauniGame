@@ -355,6 +355,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .chq h4 { font-family: var(--f-display); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
 .chq span { font-size: 12px; color: var(--ink-3); }
 .fxc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.choice .fxc.neutral, .choice .fxc.zero { max-width: 100%; height: auto; min-height: 24px; white-space: normal; overflow-wrap: anywhere; }
+.fxc .impact-level { font-size: 12px; opacity: .8; }
 .fxc svg { width: 13px; height: 13px; flex: none; }
 .fxc .ar { font-size: 10.5px; letter-spacing: -1.5px; }
 .fxc.up { background: var(--good-soft); color: var(--good-t); }
@@ -392,6 +394,13 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .start .codeload { margin-top: 14px; max-width: 460px; font-size: 13px; color: var(--ink-2); }
 .start .codeload summary { cursor: pointer; width: fit-content; }
 .start .codeload textarea { margin: 8px 0; font-family: var(--f-mono); font-size: 11px; resize: vertical; }
+.start-preview { position: sticky; top: 32px; align-self: start; margin: 140px 0 0; min-width: 0; aspect-ratio: 1; }
+.start-seal { position: absolute; right: 4%; bottom: 1%; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 16px; max-width: 65%; border: 1px solid var(--line-2); border-radius: 12px; background: var(--paper); color: var(--ink-2); text-align: center; }
+.city-arms { width: 100px; height: auto; color: var(--map-label); overflow: visible; }
+.start-seal span { font-family: var(--f-display); font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.start-seal small { font: 10px var(--f-mono); color: var(--ink-3); }
+.city-preview-choice { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 14px; color: var(--ink); }
+.city-preview-choice .city-arms { width: 34px; flex: 0 0 34px; }
 .start-map { width: 100%; height: auto; border-radius: 16px; }
 /* выбор уровня сложности */
 .citypick { flex: 1 1 100%; border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
@@ -483,7 +492,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .start-in { grid-template-columns: 1fr; padding-block: 20px 28px; gap: 20px; }
   .start-top { position: static; order: -2; justify-content: space-between; }
   /* карта-обложка поменьше: кнопка «Новая игра» должна попадать в первый экран телефона */
-  .start-map { max-width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start-preview { position: relative; top: auto; width: min(360px, 26vh); margin: 0 auto; order: -1; }
+  .start-seal { right: -8px; bottom: 0; padding: 6px 8px; gap: 2px; }
+  .start-seal .city-arms { width: 48px; }
+  .start-seal span { font-size: 12px; }
+  .start-seal small { display: none; }
   .start .rules .r-diff { display: none; } /* капитал и срок победы — уже в карточках сложности */
   .diffopt { padding: 8px; } .diffopt:has(input:checked) { padding: 7px; } .diffopt .dn { font-size: 13.5px; } .diffopt .dm { font-size: 11px; } .diffopt::after { display: none; } .diffdesc { min-height: 0; margin-top: 6px; }
   .setupbanner { top: auto; bottom: 12px; max-width: calc(100% - 24px); }
@@ -636,6 +649,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .m-rlabel { font-family: var(--f-body); font-style: italic; font-size: calc(13px * var(--lk, 1)); stroke-width: calc(3.5px * var(--lk, 1)); stroke: var(--map-land); font-weight: 500; fill: var(--river-t); letter-spacing: .04em; }
 .m-small { font-family: var(--f-body); font-size: calc(10px * var(--lk, 1)); stroke-width: calc(3px * var(--lk, 1)); fill: var(--map-label); }
 .map.far .m-small { display: none; }
+.start-map .m-small { display: none; }
 .start-map { --lk: 1.8; } /* обложка: вся карта в ~400 px, подписи крупнее, чтобы читались */
 .m-route { fill: none; stroke: var(--map-route); stroke-width: 1.3; stroke-dasharray: 2 4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .rt-on .m-route { opacity: .8; stroke-width: 1.8; }
