@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="04.10.2026 06:42 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="04.10.2026 07:32 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3616,7 +3616,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.8', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.9', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -10853,7 +10853,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
 
-  /* ---------- проектные карты Москвы и Санкт-Петербурга (PLAN.md, этап 8.3) ----------
+  /* ---------- проектные карты городов (PLAN.md, этап 8.3) ----------
      Районы, улицы, соседство и схема карты нарисованы руками — src/data/cities-big.js
      (как Уфа в src/data/world.js). Числа районов там записаны в УФИМСКОМ масштабе, а
      городские коэффициенты rent/inc и плотность dens применяются здесь — тем же способом,
@@ -10886,7 +10886,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const bigGeoCache = {};
   function geoOf(def, seed, mapGen) {
-    if (!(BK.CITY_BIG && BK.CITY_BIG[def.id])) return genCityGeo(def, seed, mapGen);
+    const big = BK.CITY_BIG && BK.CITY_BIG[def.id];
+    // Партии до появления подробной карты сохраняют прежние координаты.
+    if (!big || (big.mapGen > 1 && mapGen != null && mapGen < big.mapGen)) return genCityGeo(def, seed, mapGen);
     return bigGeoCache[def.id] || (bigGeoCache[def.id] = bigGeo(def)); // рукописная карта от зерна не зависит
   }
 
@@ -10915,6 +10917,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Math.round(2 * 6371 * Math.asin(Math.sqrt(h)) * 1.25 / 10) * 10;
   }
   BK.CITIES = CITIES; BK.CITY_BY_ID = byId; BK.CITY_COMP = COMP; BK.CITY_ARCH = ARCH;
+  BK.cityMapGen = (id) => (BK.CITY_BIG && BK.CITY_BIG[id] && BK.CITY_BIG[id].mapGen) || 1;
   BK.genCityGeo = genCityGeo; BK.useCity = useCity; BK.cityProj = proj; BK.roadKm = roadKm; BK.cityKmPerUnit = kmPerUnitOf;
   useCity(null);
 })();
@@ -13834,6 +13837,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       yearRev: 0, lastMonthRev: 0, speed: 1,
       stats: { hires: 0, quits: 0, eventsSeen: 0, peakStores: 0 },
     };
+    // Версию подробной карты сохраняем только у городов с новой географией.
+    // Уфа и остальные прежние партии не получают новых полей состояния.
+    const mapGen = BK.cityMapGen ? BK.cityMapGen(city) : 1;
+    if (mapGen > 1) S.startMapGen = mapGen;
     resetMonth(S);
     genProdOffers(S, 3);
     genStoreOffers(S, true);
@@ -15736,7 +15743,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // («Старт в Москве»). Остальные города — сами собой (id + зерно + mapGen из S.corp.cities).
   function useCityFor(S, id, c) {
     if (id && id !== 'ufa' && c) BK.useCity(id, c.seed, c.mapGen);
-    else BK.useCity(startCityOf(S), (S && S.seed) || 0);
+    else BK.useCity(startCityOf(S), (S && S.seed) || 0, (S && S.startMapGen) || 1);
   }
   function applyGlobals(S) {
     if (!BK.useCity) return;
@@ -16409,7 +16416,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     I.spend(S, cost, 'other');
     const cur = cr.cities[cr.active] || {};
     const dirId = opts && opts.director && BK.Dir ? opts.director : null;
-    cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
+    cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: BK.cityMapGen ? BK.cityMapGen(id) : 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     void cur;
     let supTxt = '';
@@ -28373,6 +28380,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
       s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
     }
+    // Мосты подробной карты видны поверх воды; у остальных карт слой отсутствует.
+    for (const bridge of M.bridges || []) {
+      const d = smooth(bridge.pts);
+      s += `<g class="m-bridge"><title>${bridge.name}</title><path d="${d}" style="fill:none;stroke:var(--map-land);stroke-width:6"/><path d="${d}" style="fill:none;stroke:var(--map-label);stroke-width:2;opacity:.65"/></g>`;
+    }
     // точки притяжения — соседство районов (вокзалы, БЦ, метро, рынки, вузы, парки)
     for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
@@ -38768,6 +38780,125 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ],
       },
     },
+  };
+})();
+
+/* data/city-kazan.js */
+/* Казань: схема севером вверх, 1000×1000. Кварталы — игровые зоны, не границы
+   административных районов. Источники: docs/kazan-map-sources.md.
+   mapGen:2 отличает новую географию от старых партий с процедурной картой.
+   Все десять id/архетипов сохранены; экономика — прежние базовые диапазоны. */
+var BK = globalThis.BK || (globalThis.BK = {});
+(function () {
+  const economy = {
+    center: { rent: [2600, 4600], solv: [430, 640], traffic: [6500, 12500], prodRent: [1250, 1650] },
+    biz: { rent: [2000, 3500], solv: [370, 520], traffic: [6000, 11500], prodRent: [900, 1250] },
+    prestige: { rent: [1900, 3100], solv: [390, 540], traffic: [4200, 8500], prodRent: [950, 1300] },
+    sleep: { rent: [1350, 2200], solv: [310, 420], traffic: [4200, 8500], prodRent: [650, 920] },
+    far: { rent: [1000, 1700], solv: [280, 370], traffic: [3000, 6400], prodRent: [470, 680] },
+    student: { rent: [1200, 2100], solv: [290, 390], traffic: [4500, 9000], prodRent: [600, 850] },
+    outskirts: { rent: [600, 1000], solv: [230, 300], traffic: [1500, 3800], prodRent: [260, 400] },
+    industrial: { rent: [800, 1250], solv: [250, 320], traffic: [1800, 4500], prodRent: [330, 480] }
+  };
+  const zone = d => Object.assign({}, economy[d.arch], d);
+  BK.CITY_BIG.kazan = {
+    mapGen: 2,
+    center: { x: 425, y: 550 },
+    districts: [
+      zone({ id: 'kazan0', name: 'Вахитовский', arch: 'center', kind: 'исторический центр, туризм', x: 425, y: 550, ly: -48,
+        sizeW: { small: 0.30, standard: 0.50, large: 0.20 }, lm: ['theatre', 'uni', 'mall', 'station'],
+        streets: ['ул. Баумана', 'ул. Кремлёвская', 'ул. Пушкина', 'ул. Петербургская', 'ул. Татарстан', 'ул. Габдуллы Тукая'],
+        pois: [[-35, -65, 'theatre', 'Казанский Кремль', 1], [32, -4, 'uni', 'Казанский университет', 1], [45, 40, 'mall', 'ТЦ «Кольцо»'], [-64, 45, 'station', 'Казань-Пассажирская', 1], [14, 65, 'theatre', 'Старо-Татарская слобода']] }),
+      zone({ id: 'kazan1', name: 'Ново-Савиновский', arch: 'biz', kind: 'деловой, спорт и набережные', x: 570, y: 285, ly: -48,
+        sizeW: { small: 0.25, standard: 0.50, large: 0.25 }, lm: ['bc', 'mall', 'fitness', 'lux'],
+        streets: ['пр. Ямашева', 'ул. Чистопольская', 'ул. Сибгата Хакима', 'ул. Четаева', 'пр. Фатыха Амирхана', 'ул. Адоратского'],
+        pois: [[-27, 68, 'theatre', 'Центр семьи «Казан»', 1], [85, 55, 'fitness', 'Ак Барс Арена', 1], [20, 52, 'fitness', '«Ривьера»'], [30, -20, 'mall', 'ТЦ «Парк Хаус»'], [5, 18, 'uni', 'КАИ, ул. Четаева']] }),
+      zone({ id: 'kazan2', name: 'Приволжский', arch: 'prestige', kind: 'южные кварталы, жильё и озёра', x: 420, y: 790, lx: -15, ly: 52,
+        sizeW: { small: 0.32, standard: 0.50, large: 0.18 }, lm: ['lux', 'mall', 'clinic', 'park'],
+        streets: ['ул. Павлюхина', 'ул. Хади Такташа', 'ул. Оренбургский тракт', 'ул. Даурская', 'ул. Роторная', 'ул. Техническая'],
+        pois: [[35, -43, 'fitness', 'Центр гребных видов спорта', 1], [-3, -62, 'park', 'Казанский зооботсад'], [60, -35, 'station', 'метро «Аметьево»'], [90, 86, 'uni', 'Деревня Универсиады', 1]] }),
+      zone({ id: 'kazan3', name: 'Советский', arch: 'sleep', kind: 'жилые кварталы, восточные магистрали', x: 750, y: 510, ly: -48,
+        sizeW: { small: 0.34, standard: 0.49, large: 0.17 }, lm: ['sleep', 'school', 'station', 'clinic'],
+        streets: ['ул. Николая Ершова', 'ул. Гвардейская', 'ул. Патриса Лумумбы', 'ул. Аделя Кутуя', 'ул. Сибирский тракт', 'ул. Академика Губкина'],
+        pois: [[-95, -24, 'park', 'Парк Горького', 1], [-72, 0, 'bc', '«Корстон»'], [-25, 33, 'fitness', 'Ипподром', 1], [37, -15, 'station', 'Компрессорный']] }),
+      zone({ id: 'kazan4', name: 'Московский', arch: 'sleep', kind: 'спальный, рынки и парки', x: 310, y: 280, ly: -48,
+        sizeW: { small: 0.34, standard: 0.50, large: 0.16 }, lm: ['sleep', 'market', 'clinic', 'park'],
+        streets: ['ул. Декабристов', 'ул. Восстания', 'ул. Волгоградская', 'ул. Ибрагимова', 'ул. Восход', 'ул. Гагарина'],
+        pois: [[10, -47, 'park', 'Парк Урицкого', 1], [22, 40, 'market', 'Московский рынок'], [46, 68, 'park', 'Парк «Сосновая роща»'], [-10, -25, 'station', 'Казань-2', 1]] }),
+      zone({ id: 'kazan5', name: 'Азино', arch: 'sleep', kind: 'спальный, многоэтажные кварталы', x: 820, y: 700, ly: -48,
+        sizeW: { small: 0.35, standard: 0.50, large: 0.15 }, lm: ['sleep', 'school', 'mall', 'fitness'],
+        streets: ['пр. Победы', 'ул. Закиева', 'ул. Минская', 'ул. Ломжинская', 'ул. Юлиуса Фучика', 'ул. Академика Сахарова'],
+        pois: [[35, -25, 'mall', 'ТЦ «МЕГА»', 1], [-3, -18, 'fitness', '«Ак Буре»'], [-60, 48, 'park', 'Горкинско-Ометьевский лес', 1], [20, 20, 'school', 'Лицей №149']] }),
+      zone({ id: 'kazan6', name: 'Кировский', arch: 'far', kind: 'Адмиралтейская слобода, старые кварталы', x: 240, y: 370, ly: -48,
+        sizeW: { small: 0.40, standard: 0.47, large: 0.13 }, lm: ['market', 'sleep', 'station', 'park'],
+        streets: ['ул. Клары Цеткин', 'ул. Большая', 'ул. Гладилова', 'ул. 1 Мая', 'ул. Краснококшайская', 'ул. Несмелова'],
+        pois: [[-8, 35, 'park', 'Сад рыбака'], [22, -72, 'park', 'Парк «Петрушкин двор»'], [15, -8, 'station', 'Адмиралтейская слобода', 1], [33, -25, 'sleep', 'Ягодная слобода']] }),
+      zone({ id: 'kazan7', name: 'Горки', arch: 'student', kind: 'студенческий, южные жилые кварталы', x: 700, y: 835, ly: -48,
+        sizeW: { small: 0.38, standard: 0.48, large: 0.14 }, lm: ['uni', 'station', 'sleep', 'mall'],
+        streets: ['ул. Рихарда Зорге', 'ул. Мавлютова', 'ул. Карбышева', 'ул. Братьев Касимовых', 'ул. Дубравная', 'ул. Сыртлановой'],
+        pois: [[-23, -18, 'station', 'метро «Горки»', 1], [34, 28, 'station', 'метро «Дубравная»'], [-42, 34, 'park', 'Парк «Калейдоскоп»'], [-45, 3, 'mall', 'ТЦ «ГоркиПарк»']] }),
+      zone({ id: 'kazan8', name: 'Дербышки', arch: 'outskirts', kind: 'дальний посёлок, малоэтажные кварталы', x: 900, y: 190, ly: -48,
+        sizeW: { small: 0.48, standard: 0.44, large: 0.08 }, lm: ['sleep', 'school', 'clinic', 'park'],
+        streets: ['ул. Мира', 'ул. Советская', 'ул. Халезова', 'ул. Начальная', 'ул. Липатова', 'ул. Главная'],
+        pois: [[-12, -12, 'theatre', 'ДК имени Саид-Галеева', 1], [10, 24, 'park', 'Парк по ул. Мира'], [-20, 32, 'park', 'Сквер Дербышки'], [38, -25, 'station', 'Дербышки']] }),
+      zone({ id: 'kazan9', name: 'Авиастроительный', arch: 'industrial', kind: 'Соцгород, авиационные предприятия', x: 420, y: 130, ly: -48,
+        sizeW: { small: 0.44, standard: 0.46, large: 0.10 }, lm: ['station', 'clinic', 'sleep', 'school'],
+        streets: ['ул. Копылова', 'ул. Дементьева', 'ул. Максимова', 'ул. Лядова', 'ул. Белинского', 'ул. Тэцевская'],
+        pois: [[-5, 25, 'park', 'Парк «Крылья Советов»', 1], [-30, 5, 'station', 'метро «Авиастроительная»'], [30, -28, 'industrial', 'Казанский авиационный завод', 1], [20, 22, 'theatre', 'ДК имени Ленина']] })
+    ],
+    map: {
+      city: [[185, 110], [450, 55], [700, 120], [950, 130], [970, 340], [905, 545], [960, 740], [845, 950], [620, 960], [330, 935], [180, 775], [175, 575], [170, 365]],
+      sea: [{ name: 'Волга', pts: [[0, 100], [125, 100], [130, 350], [140, 490], [165, 680], [145, 890], [115, 1000], [0, 1000], [0, 100]] }],
+      rivers: [
+        { name: 'р. Казанка', w: 25, pts: [[1000, 305], [880, 330], [775, 367], [655, 408], [540, 430], [415, 428], [310, 455], [220, 490], [135, 505]] },
+        { name: 'Нижний Кабан', w: 21, pts: [[520, 603], [525, 630], [527, 660], [530, 685]] },
+        { name: 'Средний Кабан', w: 27, pts: [[548, 720], [555, 755], [563, 790], [573, 825]] },
+        { name: 'Верхний Кабан', w: 18, pts: [[608, 865], [620, 885], [630, 910]] },
+        { name: 'Булак', w: 4, pts: [[506, 594], [490, 555], [470, 505], [454, 445]] }
+      ],
+      roads: [
+        { name: 'Кремлёвская транспортная дамба', w: 2.4, pts: [[455, 550], [420, 480], [395, 410], [360, 330], [350, 205]] },
+        { name: 'Адмиралтейская дамба', w: 2.2, pts: [[430, 585], [365, 545], [310, 490], [250, 455], [225, 400]] },
+        { name: 'Мост Миллениум', w: 2.4, pts: [[605, 535], [625, 463], [650, 408], [675, 360], [660, 285]] },
+        { name: 'Третья транспортная дамба', w: 2.2, pts: [[775, 485], [800, 415], [810, 355], [805, 300]] },
+        { name: 'пр. Ямашева', w: 1.8, pts: [[250, 295], [400, 295], [570, 295], [730, 305], [820, 340]] },
+        { name: 'Сибирский тракт', w: 1.5, pts: [[555, 560], [670, 505], [780, 455], [860, 390], [900, 285], [920, 150]] },
+        { name: 'пр. Победы', w: 2.0, pts: [[890, 520], [840, 630], [800, 760], [730, 865], [630, 920], [420, 920]] },
+        { name: 'Оренбургский тракт', w: 1.6, pts: [[480, 620], [455, 715], [475, 815], [510, 950]] },
+        { name: 'ул. Татарстан', w: 1.5, pts: [[355, 635], [430, 635], [495, 600], [570, 585]] },
+        { name: 'ул. Ершова', w: 1.5, pts: [[490, 540], [600, 540], [720, 535], [855, 540]] }
+      ],
+      bridges: [
+        { name: 'Кремлёвская транспортная дамба', pts: [[410, 452], [395, 410]] },
+        { name: 'Адмиралтейская дамба', pts: [[323, 503], [280, 472]] },
+        { name: 'Мост Миллениум', pts: [[635, 442], [665, 378]] },
+        { name: 'Третья транспортная дамба', pts: [[800, 400], [810, 343]] }
+      ],
+      rails: [
+        [[250, 40], [290, 225], [285, 360], [280, 445], [345, 525], [380, 595], [360, 740], [400, 880], [445, 990]],
+        [[285, 360], [465, 355], [650, 350], [805, 405], [870, 335], [950, 180], [1000, 105]],
+        [[805, 405], [810, 485], [790, 590], [730, 700], [625, 790], [575, 860], [590, 990]]
+      ],
+      station: { x: 380, y: 595, name: 'Казань-Пассажирская' },
+      parks: [
+        { x: 320, y: 233, r: 18, name: 'Парк Урицкого' },
+        { x: 415, y: 160, r: 20, name: 'Крылья Советов' },
+        { x: 530, y: 235, r: 19, name: 'Парк Победы' },
+        { x: 655, y: 486, r: 23, name: 'Парк Горького' },
+        { x: 760, y: 748, r: 25, name: 'Горкинско-Ометьевский лес' },
+        { x: 720, y: 930, r: 19, name: 'Дубрава' },
+        { x: 910, y: 214, r: 18, name: 'Парк по ул. Мира' }
+      ],
+      labels: [
+        { x: 68, y: 690, text: 'Волга', rot: -88, sea: true },
+        { x: 535, y: 433, text: 'р. Казанка', rot: 0 },
+        { x: 550, y: 645, text: 'Нижний Кабан', rot: 0 },
+        { x: 585, y: 752, text: 'Средний Кабан', rot: 0 },
+        { x: 470, y: 940, text: 'Верхний Кабан', rot: 0 },
+        { x: 650, y: 450, text: 'Миллениум', rot: -70 },
+        { x: 805, y: 590, text: 'пр. Победы', rot: -68 }
+      ]
+    }
   };
 })();
 

@@ -1,0 +1,134 @@
+{
+  "baseCommit": "b33c7a9",
+  "baseVersion": "0.9.8",
+  "currentVersion": "0.9.9",
+  "maps": [
+    {
+      "city": "ufa",
+      "baseSha256": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+      "currentSha256": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+      "identical": true,
+      "baseSvgSha256": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d",
+      "currentSvgSha256": "64761767854a789ed0b45853df33c89eda0752865c62dcd0b21ba7044bdd101d",
+      "svgIdentical": true
+    },
+    {
+      "city": "moscow",
+      "baseSha256": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+      "currentSha256": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+      "identical": true,
+      "baseSvgSha256": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9",
+      "currentSvgSha256": "421cadf36b5fb3c705e5a9a012c2386a00bd0357149e54f29550335f8258fcc9",
+      "svgIdentical": true
+    },
+    {
+      "city": "spb",
+      "baseSha256": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+      "currentSha256": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+      "identical": true,
+      "baseSvgSha256": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c",
+      "currentSvgSha256": "332416e99dd44f1cac2f2086b6d1efe451c8e5b80f961b2b9b889f559b47de8c",
+      "svgIdentical": true
+    },
+    {
+      "city": "ekb",
+      "baseSha256": "a55075383a7cf8225f07e546d39e1f911eac3a5cdf02c473d3cf5ee634739d28",
+      "currentSha256": "a55075383a7cf8225f07e546d39e1f911eac3a5cdf02c473d3cf5ee634739d28",
+      "identical": true,
+      "baseSvgSha256": "b8f3ae2e9ea8202c9b2fcc25ad5786aed080afa8b5fd34e5243245a5c18f6d6f",
+      "currentSvgSha256": "b8f3ae2e9ea8202c9b2fcc25ad5786aed080afa8b5fd34e5243245a5c18f6d6f",
+      "svgIdentical": true
+    }
+  ],
+  "ufaEconomy": {
+    "profile": "good",
+    "years": 20,
+    "cacheExcluded": true,
+    "runs": [
+      {
+        "seed": 7919,
+        "won": 17.1,
+        "lost": null,
+        "sha256": "563976db80198551e65d5cb6ffc21e61048f38b1808851de67c18e8c0c017c44",
+        "stores": 45,
+        "currentSha256": "563976db80198551e65d5cb6ffc21e61048f38b1808851de67c18e8c0c017c44",
+        "identical": true
+      },
+      {
+        "seed": 15838,
+        "won": 14,
+        "lost": null,
+        "sha256": "241a95b72620fa5d4ec3b43638dce386171daa41eb0a002a16e034b7d3f09f86",
+        "stores": 53,
+        "currentSha256": "241a95b72620fa5d4ec3b43638dce386171daa41eb0a002a16e034b7d3f09f86",
+        "identical": true
+      },
+      {
+        "seed": 23757,
+        "won": 12.4,
+        "lost": null,
+        "sha256": "31d284f0081063dea7ca0653161f0afa5bddcddddb4ba3662c49c28b9cb298aa",
+        "stores": 54,
+        "currentSha256": "31d284f0081063dea7ca0653161f0afa5bddcddddb4ba3662c49c28b9cb298aa",
+        "identical": true
+      }
+    ]
+  },
+  "kazanBalance": {
+    "profile": "good",
+    "years": 20,
+    "base": [
+      {
+        "seed": 7919,
+        "won": 14.3,
+        "lost": null,
+        "sha256": "980ecc5a129cf18bfcd2fb3043fd4f3c0525a976180f60b2d1d6caeb6433ff7b",
+        "stores": 50
+      },
+      {
+        "seed": 15838,
+        "won": 13.3,
+        "lost": null,
+        "sha256": "c125c95bc724680e7b3120fd76adeac4c505e057ef3e96b6c6f497842aa7b8ac",
+        "stores": 42
+      },
+      {
+        "seed": 23757,
+        "won": 13.6,
+        "lost": null,
+        "sha256": "1ef65b864b27de4300a272176e45d7ae2c0e005f7eb3071239735c07f6c7f7dc",
+        "stores": 47
+      }
+    ],
+    "current": [
+      {
+        "seed": 7919,
+        "won": 15,
+        "lost": null,
+        "sha256": "f83da2a12cd393e0f11fbd81a3c2fd6cb32b0d8db2199a84c33c5f5d3d38cce7",
+        "stores": 44
+      },
+      {
+        "seed": 15838,
+        "won": 11.8,
+        "lost": null,
+        "sha256": "d113e6809cd0fb10956eac1113b4cded25f8e83fc7fd0092485bde06f3a92907",
+        "stores": 47
+      },
+      {
+        "seed": 23757,
+        "won": 18.4,
+        "lost": null,
+        "sha256": "9b8ecac80666391643e5f4cc953d9719a27e15f1202393da3d9dada39bf8fe37",
+        "stores": 46
+      }
+    ],
+    "note": "Центральные размеры сохранены .30/.50/.20: увеличение крупных залов до 24% давало на seed 15838 недоступный старт и банкротство 1.7 года. Исправлено без изменений стартового капитала/городских коэффициентов."
+  },
+  "storyReport": {
+    "baseSha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a",
+    "currentSha256": "2aacbcd7a6c6ae848758e177963c11fdca60523786bdb8b26ef2033c7d66da5a",
+    "identical": true,
+    "note": "Прежнее диагностическое предупреждение о сюжетных паузах/покрытии альтернативных ветвей; не считать зелёным тестом."
+  }
+}

@@ -101,7 +101,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // («Старт в Москве»). Остальные города — сами собой (id + зерно + mapGen из S.corp.cities).
   function useCityFor(S, id, c) {
     if (id && id !== 'ufa' && c) BK.useCity(id, c.seed, c.mapGen);
-    else BK.useCity(startCityOf(S), (S && S.seed) || 0);
+    else BK.useCity(startCityOf(S), (S && S.seed) || 0, (S && S.startMapGen) || 1);
   }
   function applyGlobals(S) {
     if (!BK.useCity) return;
@@ -774,7 +774,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     I.spend(S, cost, 'other');
     const cur = cr.cities[cr.active] || {};
     const dirId = opts && opts.director && BK.Dir ? opts.director : null;
-    cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
+    cr.cities[id] = { id, name: cityName(id), enteredDay: S.day, status: 'launch', seed, mapGen: BK.cityMapGen ? BK.cityMapGen(id) : 1, rng: (seed ^ 0x51ed27) | 0, aw: awStart(S, id),
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     void cur;
     let supTxt = '';

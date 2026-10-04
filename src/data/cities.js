@@ -307,7 +307,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
 
-  /* ---------- проектные карты Москвы и Санкт-Петербурга (PLAN.md, этап 8.3) ----------
+  /* ---------- проектные карты городов (PLAN.md, этап 8.3) ----------
      Районы, улицы, соседство и схема карты нарисованы руками — src/data/cities-big.js
      (как Уфа в src/data/world.js). Числа районов там записаны в УФИМСКОМ масштабе, а
      городские коэффициенты rent/inc и плотность dens применяются здесь — тем же способом,
@@ -340,7 +340,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   const bigGeoCache = {};
   function geoOf(def, seed, mapGen) {
-    if (!(BK.CITY_BIG && BK.CITY_BIG[def.id])) return genCityGeo(def, seed, mapGen);
+    const big = BK.CITY_BIG && BK.CITY_BIG[def.id];
+    // Партии до появления подробной карты сохраняют прежние координаты.
+    if (!big || (big.mapGen > 1 && mapGen != null && mapGen < big.mapGen)) return genCityGeo(def, seed, mapGen);
     return bigGeoCache[def.id] || (bigGeoCache[def.id] = bigGeo(def)); // рукописная карта от зерна не зависит
   }
 
@@ -369,6 +371,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return Math.round(2 * 6371 * Math.asin(Math.sqrt(h)) * 1.25 / 10) * 10;
   }
   BK.CITIES = CITIES; BK.CITY_BY_ID = byId; BK.CITY_COMP = COMP; BK.CITY_ARCH = ARCH;
+  BK.cityMapGen = (id) => (BK.CITY_BIG && BK.CITY_BIG[id] && BK.CITY_BIG[id].mapGen) || 1;
   BK.genCityGeo = genCityGeo; BK.useCity = useCity; BK.cityProj = proj; BK.roadKm = roadKm; BK.cityKmPerUnit = kmPerUnitOf;
   useCity(null);
 })();

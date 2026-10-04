@@ -104,6 +104,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
       yearRev: 0, lastMonthRev: 0, speed: 1,
       stats: { hires: 0, quits: 0, eventsSeen: 0, peakStores: 0 },
     };
+    // Версию подробной карты сохраняем только у городов с новой географией.
+    // Уфа и остальные прежние партии не получают новых полей состояния.
+    const mapGen = BK.cityMapGen ? BK.cityMapGen(city) : 1;
+    if (mapGen > 1) S.startMapGen = mapGen;
     resetMonth(S);
     genProdOffers(S, 3);
     genStoreOffers(S, true);

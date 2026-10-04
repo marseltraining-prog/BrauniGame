@@ -91,6 +91,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += `<path class="m-river-edge" stroke-width="34" d="${smooth(M.belaya)}"/><path class="m-river-edge" stroke-width="24" d="${smooth(M.ufa)}"/>`;
       s += `<path class="m-river" stroke-width="16" d="${smooth(M.belaya)}"/><path class="m-river" stroke-width="11" d="${smooth(M.ufa)}"/><path class="m-river" stroke-width="6" d="${smooth(M.dema)}"/>`;
     }
+    // Мосты подробной карты видны поверх воды; у остальных карт слой отсутствует.
+    for (const bridge of M.bridges || []) {
+      const d = smooth(bridge.pts);
+      s += `<g class="m-bridge"><title>${bridge.name}</title><path d="${d}" style="fill:none;stroke:var(--map-land);stroke-width:6"/><path d="${d}" style="fill:none;stroke:var(--map-label);stroke-width:2;opacity:.65"/></g>`;
+    }
     // точки притяжения — соседство районов (вокзалы, БЦ, метро, рынки, вузы, парки)
     for (const p of M.pois || []) s += `<circle class="m-poi" cx="${p.x}" cy="${p.y}" r="3.2" style="fill:${POI_COL[p.kind] || 'var(--map-label)'}"/>`;
     for (const l of M.labels) s += `<text class="m-rlabel${l.sea ? ' sea' : ''}" transform="translate(${l.x},${l.y}) rotate(${l.rot})">${l.text}</text>`;
