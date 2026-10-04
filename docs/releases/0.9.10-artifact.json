@@ -1,8 +1,12 @@
 {
   "version": "0.9.10",
   "sourceDateEpoch": 1791124416,
-  "published": false,
+  "published": true,
   "asset": "dist/khlebnaya-karta-0.9.10.html",
   "bytes": 2237664,
-  "sha256": "819b0f74be72edea84c5950a7906717f3b32af353a115f11628e47cff28d6536"
+  "sha256": "819b0f74be72edea84c5950a7906717f3b32af353a115f11628e47cff28d6536",
+  "release": "https://github.com/marseltraining-prog/BrauniGame/releases/tag/v0.9.10",
+  "codeCommit": "f0e06f57b0c3324562cfaf3b475b3d578f6febf7",
+  "desktopPath": "/Users/macbookmarsel/Desktop/Хлебная карта.html",
+  "desktopSha256": "819b0f74be72edea84c5950a7906717f3b32af353a115f11628e47cff28d6536"
 }
