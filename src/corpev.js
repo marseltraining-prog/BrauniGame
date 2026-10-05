@@ -331,7 +331,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function buyChain(S, ctx, f) {
     const cr = S.corp, id = ctx.city; if (!id || cr.cities[id] || E.enterLock(S, id)) return 'сделка не состоялась: в этот город сейчас не войти';
     const seed = I.ri(S, 1, 2e9);
-    cr.cities[id] = { id, name: cname(id), enteredDay: S.day, status: 'run', bought: true, seed, mapGen: 1, rng: (seed ^ 0x51ed27) | 0, aw: BK.Corp.awStart(S, id) - K().AW_MKT + 0.1,
+    cr.cities[id] = { id, name: cname(id), enteredDay: S.day, status: 'run', bought: true, seed, mapGen: BK.cityMapGen ? BK.cityMapGen(id) : 1, rng: (seed ^ 0x51ed27) | 0, aw: BK.Corp.awStart(S, id) - K().AW_MKT + 0.1,
       payK: S.pay.seller / S.market.seller, payKb: S.pay.baker / S.market.baker, numSeq: 0, packed: null, aggFrom: null, hist: [], mAcc: { rev: 0, profit: 0, agg: 0 } };
     HQ().onEnter(S, id);
     if (S.chron) S.chron.push({ day: S.day, t: 'city', id, bought: true }); // летопись: покупка местной сети (итоги игры)

@@ -1,0 +1,394 @@
+{
+  "baseVersion": "0.9.14",
+  "currentVersion": "0.9.15",
+  "baseCommit": "f46f03c",
+  "samaraBefore": [
+    {
+      "seed": 7919,
+      "summary": {
+        "won": 13.3,
+        "wSt": 43,
+        "lost": null,
+        "y1p": -2,
+        "s3": 6,
+        "s5": 27,
+        "s10": 41,
+        "s15": 43,
+        "s20": 44,
+        "r5": 1.17,
+        "r10": 3.93,
+        "r15": 5.29,
+        "mood10": 89,
+        "lvl10": 5,
+        "rev0": 2.27,
+        "chk0": 485,
+        "cpd0": 162,
+        "flag": 12.1,
+        "pb": 7,
+        "pbNet": 9,
+        "turn": 5,
+        "fc": 25.2,
+        "pay": 25.7,
+        "rent": 9.2,
+        "del": 0.7,
+        "upk": 6.7,
+        "tax": 10.7,
+        "minLiq": -18,
+        "cris": 8,
+        "g10": 741,
+        "g15": 1157,
+        "gp15": 22,
+        "fr15": 25,
+        "rv5": 16,
+        "rv10": 24,
+        "rv15": 28,
+        "rvW": 27,
+        "rvL": 2.5
+      }
+    },
+    {
+      "seed": 15838,
+      "summary": {
+        "won": 14.9,
+        "wSt": 38,
+        "lost": null,
+        "y1p": 1,
+        "s3": 7,
+        "s5": 24,
+        "s10": 31,
+        "s15": 38,
+        "s20": 38,
+        "r5": 1.07,
+        "r10": 3.09,
+        "r15": 5.08,
+        "mood10": 87,
+        "lvl10": 5,
+        "rev0": 2.41,
+        "chk0": 462,
+        "cpd0": 154,
+        "flag": 10.5,
+        "pb": 7,
+        "pbNet": 9,
+        "turn": 5,
+        "fc": 26.8,
+        "pay": 26.9,
+        "rent": 8.9,
+        "del": 0.7,
+        "upk": 6.6,
+        "tax": 10,
+        "minLiq": -13,
+        "cris": 7,
+        "g10": 609,
+        "g15": 1141,
+        "gp15": 22,
+        "fr15": 25,
+        "rv5": 14,
+        "rv10": 21,
+        "rv15": 28,
+        "rvW": 28,
+        "rvL": 3.2
+      }
+    },
+    {
+      "seed": 23757,
+      "summary": {
+        "won": 15.4,
+        "wSt": 43,
+        "lost": null,
+        "y1p": -4,
+        "s3": 5,
+        "s5": 21,
+        "s10": 40,
+        "s15": 42,
+        "s20": 45,
+        "r5": 0.64,
+        "r10": 3.5,
+        "r15": 4.72,
+        "mood10": 88,
+        "lvl10": 4.99,
+        "rev0": 2.05,
+        "chk0": 467,
+        "cpd0": 146,
+        "flag": 9.3,
+        "pb": 7,
+        "pbNet": 9,
+        "turn": 5,
+        "fc": 27,
+        "pay": 26,
+        "rent": 8.8,
+        "del": 0.7,
+        "upk": 6.8,
+        "tax": 10,
+        "minLiq": -8,
+        "cris": 9,
+        "g10": 682,
+        "g15": 1237,
+        "gp15": 26,
+        "fr15": 25,
+        "rv5": 13,
+        "rv10": 25,
+        "rv15": 27,
+        "rvW": 29,
+        "rvL": 3.3
+      }
+    }
+  ],
+  "mapsBefore": [
+    {
+      "city": "ufa",
+      "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+      "svg": "f7790f520c4d769be51b1bc58929d8d1b1646ba34accd759f5a442bf0bb9f69e"
+    },
+    {
+      "city": "moscow",
+      "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+      "svg": "9fc93e6feb464ed6fb291744020926fd8b75bafc640680bb2771c52b101c4c66"
+    },
+    {
+      "city": "spb",
+      "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+      "svg": "44772f40499adda29782dce498e768fcefc3030259b11a5247bdea6abaeac56d"
+    },
+    {
+      "city": "kazan",
+      "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+      "svg": "3c36ccfe01333f5a81383771a5f552e48ec1ac4d8682e6ec5e969092c320ab2d"
+    },
+    {
+      "city": "ekb",
+      "world": "9c94fad7e4edd1cc9eaf8530fc09646ddf5c3bfb6c02219606e52194991b23f5",
+      "svg": "b71e9570b1a0b22da435b830ca01eee3786e74c68fb5cac902bb6fbd3328dac8"
+    },
+    {
+      "city": "nsk",
+      "world": "7ec91dbfacd0138b870edba0abc6e60e6196fd6a8616dc78be6c8e221051e144",
+      "svg": "88092b3849af2764e30e837dd64276f040a2471a861f71d6f39b4a05db0700a5"
+    }
+  ],
+  "complete": true,
+  "maps": [
+    {
+      "city": "ufa",
+      "before": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "f7790f520c4d769be51b1bc58929d8d1b1646ba34accd759f5a442bf0bb9f69e"
+      },
+      "current": {
+        "world": "51bc2fd5f20edb7848de7aa86305845a752925026da2af008b3a6c6bf0cee9f2",
+        "svg": "f7790f520c4d769be51b1bc58929d8d1b1646ba34accd759f5a442bf0bb9f69e"
+      },
+      "identical": true
+    },
+    {
+      "city": "moscow",
+      "before": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "9fc93e6feb464ed6fb291744020926fd8b75bafc640680bb2771c52b101c4c66"
+      },
+      "current": {
+        "world": "579844af145e4d8e636fbfa301bb27b057dc3a32f6dee48726f7aca069ca0c59",
+        "svg": "9fc93e6feb464ed6fb291744020926fd8b75bafc640680bb2771c52b101c4c66"
+      },
+      "identical": true
+    },
+    {
+      "city": "spb",
+      "before": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "44772f40499adda29782dce498e768fcefc3030259b11a5247bdea6abaeac56d"
+      },
+      "current": {
+        "world": "d3444a74a9f4d7b612dd97f623f00aa96e37f7c73fc7e82ec44acd7c10353438",
+        "svg": "44772f40499adda29782dce498e768fcefc3030259b11a5247bdea6abaeac56d"
+      },
+      "identical": true
+    },
+    {
+      "city": "kazan",
+      "before": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "3c36ccfe01333f5a81383771a5f552e48ec1ac4d8682e6ec5e969092c320ab2d"
+      },
+      "current": {
+        "world": "2362e6885ecca27ec0e8aac74d4ec06bdf095780378d0dcdd3dc09cd8fd1c751",
+        "svg": "3c36ccfe01333f5a81383771a5f552e48ec1ac4d8682e6ec5e969092c320ab2d"
+      },
+      "identical": true
+    },
+    {
+      "city": "ekb",
+      "before": {
+        "world": "9c94fad7e4edd1cc9eaf8530fc09646ddf5c3bfb6c02219606e52194991b23f5",
+        "svg": "b71e9570b1a0b22da435b830ca01eee3786e74c68fb5cac902bb6fbd3328dac8"
+      },
+      "current": {
+        "world": "9c94fad7e4edd1cc9eaf8530fc09646ddf5c3bfb6c02219606e52194991b23f5",
+        "svg": "b71e9570b1a0b22da435b830ca01eee3786e74c68fb5cac902bb6fbd3328dac8"
+      },
+      "identical": true
+    },
+    {
+      "city": "nsk",
+      "before": {
+        "world": "7ec91dbfacd0138b870edba0abc6e60e6196fd6a8616dc78be6c8e221051e144",
+        "svg": "88092b3849af2764e30e837dd64276f040a2471a861f71d6f39b4a05db0700a5"
+      },
+      "current": {
+        "world": "7ec91dbfacd0138b870edba0abc6e60e6196fd6a8616dc78be6c8e221051e144",
+        "svg": "88092b3849af2764e30e837dd64276f040a2471a861f71d6f39b4a05db0700a5"
+      },
+      "identical": true
+    }
+  ],
+  "samaraCurrent": [
+    {
+      "seed": 7919,
+      "summary": {
+        "won": 16.9,
+        "wSt": 40,
+        "lost": null,
+        "y1p": -4,
+        "s3": 5,
+        "s5": 15,
+        "s10": 33,
+        "s15": 39,
+        "s20": 40,
+        "r5": 0.45,
+        "r10": 2.86,
+        "r15": 4.14,
+        "mood10": 91,
+        "lvl10": 4.99,
+        "rev0": 1.96,
+        "chk0": 464,
+        "cpd0": 132,
+        "flag": 13.2,
+        "pb": 8,
+        "pbNet": 12,
+        "turn": 5,
+        "fc": 27.8,
+        "pay": 26.8,
+        "rent": 9.3,
+        "del": 0.7,
+        "upk": 6.7,
+        "tax": 9.9,
+        "minLiq": -12,
+        "cris": 9,
+        "g10": 515,
+        "g15": 1113,
+        "gp15": 27,
+        "fr15": 25,
+        "rv5": 12,
+        "rv10": 23,
+        "rv15": 27,
+        "rvW": 30,
+        "rvL": 2.8
+      }
+    },
+    {
+      "seed": 15838,
+      "summary": {
+        "won": 15,
+        "wSt": 39,
+        "lost": null,
+        "y1p": 5,
+        "s3": 7,
+        "s5": 21,
+        "s10": 33,
+        "s15": 39,
+        "s20": 40,
+        "r5": 0.97,
+        "r10": 3.42,
+        "r15": 5.01,
+        "mood10": 94,
+        "lvl10": 5,
+        "rev0": 2.38,
+        "chk0": 444,
+        "cpd0": 157,
+        "flag": 10.7,
+        "pb": 8,
+        "pbNet": 11,
+        "turn": 5,
+        "fc": 25.3,
+        "pay": 26.9,
+        "rent": 8.7,
+        "del": 0.7,
+        "upk": 6.7,
+        "tax": 10.4,
+        "minLiq": -12,
+        "cris": 8,
+        "g10": 680,
+        "g15": 1122,
+        "gp15": 22,
+        "fr15": 25,
+        "rv5": 13,
+        "rv10": 22,
+        "rv15": 26,
+        "rvW": 26,
+        "rvL": 3.8
+      }
+    },
+    {
+      "seed": 23757,
+      "summary": {
+        "won": 21.8,
+        "wSt": 38,
+        "lost": null,
+        "y1p": -3,
+        "s3": 4,
+        "s5": 16,
+        "s10": 34,
+        "s15": 37,
+        "s20": 38,
+        "r5": 0.49,
+        "r10": 2.91,
+        "r15": 3.8,
+        "mood10": 81,
+        "lvl10": 4.99,
+        "rev0": 2.3,
+        "chk0": 450,
+        "cpd0": 152,
+        "flag": 9.1,
+        "pb": 7,
+        "pbNet": 10,
+        "turn": 5,
+        "fc": 26.7,
+        "pay": 27.3,
+        "rent": 9.3,
+        "del": 0.8,
+        "upk": 6.9,
+        "tax": 10.1,
+        "minLiq": -12,
+        "cris": 7,
+        "g10": 581,
+        "g15": 948,
+        "gp15": 25,
+        "fr15": 25,
+        "rv5": 12,
+        "rv10": 23,
+        "rv15": 27,
+        "rvW": 32,
+        "rvL": 3.3
+      }
+    }
+  ],
+  "canonicalBots": [
+    {
+      "command": "node sim/bot.js good 3 18 --summary",
+      "beforeSha256": "64b1a25c09b219b87ab44c07b4247fec3f412fd2348a09ebc54018d47a7d2be4",
+      "currentSha256": "64b1a25c09b219b87ab44c07b4247fec3f412fd2348a09ebc54018d47a7d2be4",
+      "identical": true
+    },
+    {
+      "command": "node sim/bot.js avg 2 25 --summary",
+      "beforeSha256": "17ef0929bda191f18c4d87454a23412cfca6183159da975776206e6071983c38",
+      "currentSha256": "17ef0929bda191f18c4d87454a23412cfca6183159da975776206e6071983c38",
+      "identical": true
+    },
+    {
+      "command": "node sim/bot.js bad 2 5 --summary",
+      "beforeSha256": "ad60baa0b39a69cb485d60ea906dfbc73fc5b9e140443e0e6afb9cdd297f8680",
+      "currentSha256": "ad60baa0b39a69cb485d60ea906dfbc73fc5b9e140443e0e6afb9cdd297f8680",
+      "identical": true
+    }
+  ]
+}

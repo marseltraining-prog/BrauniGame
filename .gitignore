@@ -14,3 +14,6 @@ tmp/story-branches/
 
 # Isolated next-city preparation (reviewable copy in docs/samara-map-draft/)
 tmp/samara-draft/
+
+# Samara local baseline/probe logs
+tmp/samara/

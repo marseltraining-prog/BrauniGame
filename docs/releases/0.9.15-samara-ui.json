@@ -1,0 +1,45 @@
+{
+  "version": "0.9.15",
+  "chromium": {
+    "browser": "chromium",
+    "checks": 212,
+    "issues": [],
+    "layoutObservations": [],
+    "limitations": [
+      "Financial unlock and mature-city day are explicit prerequisites, not balance checks.",
+      "Old street catalogs vary across JavaScript sort implementations; geometry and saved coordinates/addresses are compared.",
+      "Full layout observations are retained; horizontal overflow is blocking. SVG label overlap needs screenshot review."
+    ]
+  },
+  "webkit": {
+    "browser": "webkit",
+    "checks": 212,
+    "issues": [],
+    "layoutObservations": [],
+    "limitations": [
+      "Financial unlock and mature-city day are explicit prerequisites, not balance checks.",
+      "Old street catalogs vary across JavaScript sort implementations; geometry and saved coordinates/addresses are compared.",
+      "Full layout observations are retained; horizontal overflow is blocking. SVG label overlap needs screenshot review."
+    ]
+  },
+  "attempts": [
+    {
+      "browser": "chromium",
+      "exit": 1,
+      "reason": "Test corporate prerequisite did not open home premises before Corp.ensure",
+      "log": "tmp/samara/qa-chromium.log"
+    },
+    {
+      "browser": "chromium",
+      "exit": 1,
+      "reason": "Test wrote replacement save before pagehide; fixed by native ACT.continue/save",
+      "log": "tmp/samara/qa-chromium-final.log"
+    },
+    {
+      "reason": "Manual screenshot review found overlapping SVG labels; full runner interrupted before completion, labels shortened and separated, Chromium rechecked",
+      "log": "tmp/samara/release-0.9.15.log",
+      "exit": 130
+    }
+  ],
+  "visualReview": "Final Chromium desktop light and mobile dark screenshots reviewed; long district descriptions shortened and northern settlement/bridge captions separated."
+}
