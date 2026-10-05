@@ -1,8 +1,12 @@
 {
   "version": "0.9.15",
   "sourceDateEpoch": 1791180616,
-  "published": false,
+  "published": true,
   "asset": "dist/khlebnaya-karta-0.9.15.html",
   "bytes": 2281536,
-  "sha256": "8ef3f4284bacb8d9c11a1cb3ddba53497cf7adb6af9f5d985e69bb5140092f53"
+  "sha256": "8ef3f4284bacb8d9c11a1cb3ddba53497cf7adb6af9f5d985e69bb5140092f53",
+  "releaseUrl": "https://github.com/marseltraining-prog/BrauniGame/releases/tag/v0.9.15",
+  "codeCommit": "c151721ab2c873a7550eaa1b0ead3e1a026a745b",
+  "githubDigest": "sha256:8ef3f4284bacb8d9c11a1cb3ddba53497cf7adb6af9f5d985e69bb5140092f53",
+  "desktopSha256": "8ef3f4284bacb8d9c11a1cb3ddba53497cf7adb6af9f5d985e69bb5140092f53"
 }
