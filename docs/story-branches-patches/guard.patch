@@ -1,0 +1,58 @@
+diff --git a/src/story.js b/src/story.js
+--- a/src/story.js
++++ b/src/story.js
+@@ -501,12 +501,25 @@
+     });
+     return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
+   }
++  // Один чистый предикат для API, интерфейса и CLI. Не создаёт состояние и не тратит ГСЧ.
++  function canChoose(S, need) {
++    if (!need) return true;
++    const R = state(S);
++    if (!R) return false;
++    const rel = R.rel || {}, meter = R.m || {}, flag = R.f || {};
++    if (need.rel) for (const k of Object.keys(need.rel)) if ((rel[k] || 0) < need.rel[k]) return false;
++    if (need.meter) for (const k of Object.keys(need.meter)) if ((meter[k] || 0) < need.meter[k]) return false;
++    if (need.flag) for (const k of Object.keys(need.flag)) if (flag[k] !== need.flag[k]) return false;
++    if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (flag[k] === need.noFlag[k]) return false;
++    return true;
++  }
+   // Выбор варианта: применяет последствия и закрывает сцену.
+   function resolve(S, idx) {
+     const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
+     const sc = pendingScene(S); if (!sc) { R.pending = null; return { ok: false }; }
+     const ch = (sc.choices || [])[idx];
+     if (!ch) return { ok: false, msg: 'Нет такого варианта' };
++    if (!canChoose(S, ch.need)) return { ok: false, msg: 'Этот вариант пока недоступен' };
+     const out = [];
+     for (const fx of ch.effects || []) { const t = apply(S, R, fx); if (t) out.push(t); }
+     const list = (ch.effects || []).map((fx) => fx.t);
+@@ -867,7 +880,7 @@
+   const htmlEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+ 
+   BK.Story = {
+-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
++    ensure, state, fill, scene, scenes, pendingScene, canChoose, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
+     chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
+     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
+     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
+diff --git a/src/ui/story-ui.js b/src/ui/story-ui.js
+--- a/src/ui/story-ui.js
++++ b/src/ui/story-ui.js
+@@ -122,13 +122,14 @@
+   // Пишем причину отдельной фразой, а не через «нужно …»: «нужно Рашида больше нет» — не по-русски.
+   const NOFLAG_WHY = { rashidGone: 'Рашида больше нет — этот разговор не состоится' };
+   function needText(S, need) {
+-    const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
++    if (ST.canChoose(S, need)) return { dis: false, text: '' };
++    const R = ST.state(S); if (!R) return { dis: true, text: 'Этот вариант пока недоступен' };
+     const bad = [], why = [];
+     if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
+     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
+     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
+     if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (R.f[k] === need.noFlag[k]) why.push(NOFLAG_WHY[k] || 'другой ход событий');
+-    if (!bad.length && !why.length) return { dis: false, text: '' };
++    if (!bad.length && !why.length) return { dis: true, text: 'Этот вариант пока недоступен' };
+     const needTxt = bad.length ? 'нужно ' + sub(S, bad.join(', ')) : '';   // «судьба „Калача“» — по городу партии
+     const whyTxt = why.length ? why.join(', ') : '';
+     return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }

@@ -439,6 +439,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     /* ============ 9. Банк напоминает (ставится в очередь развилкой) ============ */
     {
       id: 'mosBank', ch: 'city', form: 'scene', title: 'Банк напоминает',
+      once: false, // продление/реструктуризация/пени назначают следующий платёж
       who: ['elvira'],
       queueOnly: true,   // каркас не показывает сцену сам: только из очереди (эффект schedule)
       trigger: { all: [{ scen: 'moscow' }] },

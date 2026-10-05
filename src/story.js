@@ -256,11 +256,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fits(S, R, sc) {
     if (!sc) return false;
-    if (R.seen[sc.id] && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
+    if (R.seen[sc.id] != null && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
     if (sc.once === false) { /* повторяемые сцены разрешены */ }
     const t = sc.trigger || {};
-    if (t.after && !t.after.every((id) => R.seen[id])) return false;
-    if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) return false;
+    if (t.after && !t.after.every((id) => R.seen[id] != null)) return false;
+    if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id] != null)) return false;
     if (t.all && !t.all.every((c) => cond(S, R, c))) return false;
     if (t.any && t.any.length && !t.any.some((c) => cond(S, R, c))) return false;
     return true;
@@ -289,10 +289,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const sc of list) { if (sc.queueOnly) continue; if (fits(S, R, sc)) return sc; }   // queueOnly — только по очереди
     // запасной вариант: срок вышел — приходим в мягкой версии
     for (const sc of list) {
-      if (!sc.fallback || R.seen[sc.id]) continue;
+      if (sc.queueOnly || !sc.fallback || R.seen[sc.id] != null) continue;
       const t = sc.trigger || {};
-      if (t.after && !t.after.every((id) => R.seen[id])) continue;
-      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
+      if (t.after && !t.after.every((id) => R.seen[id] != null)) continue;
+      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id] != null)) continue;   // запасной вариант не обходит ветвление
       if (t.all && !t.all.every((c) => cond(S, R, c))) continue;
       // срок запасного варианта: от самого раннего временного условия, а если их нет —
       // от момента, когда пришли предпосылки (after/afterAny): иначе сцены вроде «обеда с Олегом»
@@ -478,9 +478,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FAM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>';
 
   /* ---------------- показ и выбор ---------------- */
-  function start(S, sc) {
-    const R = ensure(S); if (!R) return null;
-    R.pending = { id: sc.id, day: S.day };
+  function start(S, sc, origin) {
+    const R = ensure(S); if (!R || !sc || R.pending) return null;
+    // Уже прочитанную одноразовую сцену не открываем второй раз, в том числе из старой очереди.
+    if (sc.once !== false && R.seen[sc.id] != null) return null;
+    R.pending = Object.assign({ id: sc.id, day: S.day }, { origin: origin || { kind: 'explicit' } });
     R.ch = chapter(S, R);
     if (S.notify) S.notify.push({ type: 'story', phase: 'scene', id: sc.id });
     return R.pending;
@@ -501,12 +503,25 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
     return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
   }
+  // Один чистый предикат для API, интерфейса и CLI. Не создаёт состояние и не тратит ГСЧ.
+  function canChoose(S, need) {
+    if (!need) return true;
+    const R = state(S);
+    if (!R) return false;
+    const rel = R.rel || {}, meter = R.m || {}, flag = R.f || {};
+    if (need.rel) for (const k of Object.keys(need.rel)) if ((rel[k] || 0) < need.rel[k]) return false;
+    if (need.meter) for (const k of Object.keys(need.meter)) if ((meter[k] || 0) < need.meter[k]) return false;
+    if (need.flag) for (const k of Object.keys(need.flag)) if (flag[k] !== need.flag[k]) return false;
+    if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (flag[k] === need.noFlag[k]) return false;
+    return true;
+  }
   // Выбор варианта: применяет последствия и закрывает сцену.
   function resolve(S, idx) {
     const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
     const sc = pendingScene(S); if (!sc) { R.pending = null; return { ok: false }; }
     const ch = (sc.choices || [])[idx];
     if (!ch) return { ok: false, msg: 'Нет такого варианта' };
+    if (!canChoose(S, ch.need)) return { ok: false, msg: 'Этот вариант пока недоступен' };
     const out = [];
     for (const fx of ch.effects || []) { const t = apply(S, R, fx); if (t) out.push(t); }
     const list = (ch.effects || []).map((fx) => fx.t);
@@ -562,7 +577,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'schedule': {
         const a = fx.after;
         const d = Array.isArray(a) ? Math.round(a[0] + (a[1] - a[0]) * rnd(R)) : (a || 30);   // в сценах after бывает диапазоном
-        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p });
+        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p, source: R.pending && R.pending.id || null });
         return null;
       }
       case 'ending': {
@@ -622,10 +637,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (q.day > S.day) return true;
         if (q.kind === 'scene') {
           const sc = scene(q.id); if (!sc) return false;
-          // то же правило, что и у обычного триггера: не в день события и не при открытом окне шефа
+          // Просроченная копия одноразовой сцены больше не нужна; once:false остаётся повторяемой.
+          if (sc.once !== false && R.seen[sc.id] != null) return false;
+          // Решение игрока не перезаписываем. После первого start следующие due-сцены
+          // остаются в очереди с исходным сроком и откроются после ответа в следующем tick.
+          if (R.pending) return true;
+          // Как у обычного триггера: не поверх события, не сразу после него и не поверх шефа.
           const r0 = (S.ev && S.ev.recent && S.ev.recent[0]) || null;
-          if ((r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
-          start(S, sc); return false;
+          if ((S.ev && S.ev.pending) || (r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
+          return !start(S, sc, { kind: 'scheduled', due: q.day, source: q.source || null });
         }
         if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
         if (q.kind === 'journal') return false;
@@ -641,7 +661,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
-    if (sc) start(S, sc);
+    if (sc) start(S, sc, { kind: fits(S, R, sc) ? 'natural' : 'fallback' });
   }
   function monthStart(S) { return E().dateOf(S.day).d === 1; }
 
@@ -867,7 +887,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const htmlEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
+    ensure, state, fill, scene, scenes, pendingScene, canChoose, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет

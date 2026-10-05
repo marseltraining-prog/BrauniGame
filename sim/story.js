@@ -31,6 +31,7 @@
    (--strict поднимает и их).
    ===================================================================== */
 process.env.BK_STORY = process.env.BK_STORY || '1';
+if (process.argv.slice(2).some(a => /^--(?:all-branches|allbranches)(=|$)/.test(a))) process.env.BK_THREADS = '1';
 if (process.env.BK_STORY) delete require.cache[require.resolve('./load')];
 const BK = require('./load');
 // реплики не входят в sim/load.js (это данные интерфейса) — подключаем вручную и проверяем
@@ -200,21 +201,18 @@ function scoreFor(policy, f, pl) {
   }
 }
 function needOk(S, R, need) {
-  if (!need) return true;
-  if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) return false;
-  if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) return false;
-  if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) return false;
-  return true;
+  return ST.canChoose(S, need);
 }
+
 function eligible(S, R, sc) {
   const chs = sc.choices || [];
   const ok = [];
   for (let i = 0; i < chs.length; i++) if (needOk(S, R, chs[i].need)) ok.push(i);
-  return ok.length ? ok : chs.map((_, i) => i);
+  return ok;
 }
 function chooseIdx(S, R, sc, policy, rng) {
   const list = eligible(S, R, sc);
-  if (!list.length) return 0;
+  if (!list.length) return null;
   if (policy === 'avg' || policy === 'random') {
     if (policy === 'random') return list[Math.floor(rng() * list.length) % list.length];
     // перекос к первому варианту (геометрический): первому ~57 %, дальше вдвое меньше
@@ -238,13 +236,16 @@ function chooseIdx(S, R, sc, policy, rng) {
 /* ======================= один прогон ======================= */
 function runOne(prof, seed, yrs, forceMap) {
   const items = [];
-  const forcedSeen = {};
+  const forcedSeen = {}, blocked = [], effectErrors = [];
+  const fixture = prof.fixture ? branchFixture(prof.fixture, seed) : null;
   let russiaStart = null;
   let rngState = ((seed | 0) ^ 0x2f6b1) >>> 0;
   const rng = () => { rngState = (Math.imul(rngState, 1664525) + 1013904223) >>> 0; return rngState / 4294967296; };
   const opts = {
-    level: prof.level, seed, years: yrs,
+    level: prof.level, seed, years: yrs, initialized: !!(prof.fixture && prof.fixture.stage1),
+    stopWhen: prof.target ? () => items.some(it => it.id === prof.target.id && it.idx === prof.target.idx && it.forced && it.resolved && it.needMet) : null,
     onDay: (S) => {
+      if (fixture) fixture.step(S);
       if (russiaStart == null && S.corp && S.corp.active) russiaStart = S.day;
       if (!CFG.STORY.ON) return;
       const R = ST.state(S); if (!R || !R.pending) return;
@@ -252,15 +253,29 @@ function runOne(prof, seed, yrs, forceMap) {
       const day = S.day;
       const chNow = ST.chapter(S, R);
       let idx, forced = false;
-      if (forceMap && forceMap[sc.id] != null) { idx = forceMap[sc.id]; forced = true; forcedSeen[sc.id] = true; }
+      if (forceMap && forceMap[sc.id] != null) { idx = forceMap[sc.id]; forced = true; }
       else idx = chooseIdx(S, R, sc, prof.policy, rng);
       const nCh = (sc.choices || []).length;
-      idx = Math.max(0, Math.min(nCh - 1, idx));
+      if (idx == null || idx < 0 || idx >= nCh || !needOk(S, R, sc.choices[idx].need)) {
+        blocked.push({ id: sc.id, idx, day, need: idx == null ? null : sc.choices[idx].need || null });
+        // Never resolve a forbidden forced option. Continue the fixture along a legal
+        // alternative, while recording that the requested option was NOT exercised.
+        idx = chooseIdx(S, R, sc, prof.policy, rng); forced = false;
+        if (idx == null) return;
+      }
       // «доступность» варианта считаем ДО применения эффектов: сквозные линии меняют тот же
       // флаг, которым гейтят свой следующий шаг (lineDamir: served → trusted), и проверка
       // после resolve ругалась бы на честный выбор
       const needMet = needOk(S, R, (sc.choices || [])[idx] && sc.choices[idx].need);
+      const triggerFits = fixture ? ST.fits(S, R, ST.scene(sc.id)) : null;
+      const origin = R.pending.origin || { kind: 'legacy-unknown' };
+      const before = fixture ? branchEffectSnapshot(S) : null;
+      if (fixture && prof.target && prof.target.id === sc.id && prof.target.idx === idx && forced && needMet) {
+        before.audit = require('./story-effect-audit').snapshot(S);
+      }
       const res = ST.resolve(S, idx);
+      if (forced && res && res.ok) forcedSeen[sc.id] = true;
+      if (fixture) effectErrors.push(...branchEffectCheck(S, sc, idx, before, res));
       const evIds = (S.ev.recent || []).filter((x) => x.day === day).map((x) => x.id);
       if (S.ev.pending && S.ev.pending.day === day && evIds.indexOf(S.ev.pending.id) < 0) evIds.push(S.ev.pending.id);
       const evSame = evIds.length > 0;
@@ -268,15 +283,20 @@ function runOne(prof, seed, yrs, forceMap) {
         id: sc.id, day, form: sc.form || 'scene', ch: chNow, idx,
         label: res && res.ok ? res.choice.label : '', out: res && res.ok ? (res.out || []).slice() : [],
         forced, eventSameDay: evSame, evIds, chefSameDay: !!S.chef.pending,
-        needMet,
+        needMet, resolved: !!(res && res.ok), triggerFits, origin, audit: before && before.auditReport || null,
       });
     },
   };
   if (prof.reserve != null) opts.reserve = prof.reserve;
-  const r = play(opts);
+  let r;
+  if (fixture) {
+    const original = E.newGame; let supplied = false;
+    E.newGame = function (o) { if (!supplied) { supplied = true; return fixture.S; } return original.call(this, o); };
+    try { r = play(opts); } finally { E.newGame = original; }
+  } else r = play(opts);
   const notForced = [];
   if (forceMap) for (const id of Object.keys(forceMap)) if (!forcedSeen[id]) notForced.push(id);
-  return { prof, seed, r, items, russiaStart, notForced };
+  return { prof, seed, r, items, russiaStart, notForced, blocked, effectErrors, fixture: fixture ? { id: fixture.id, assistance: fixture.assistance, errors: fixture.errors } : null };
 }
 
 /* ======================= статистика прогона ======================= */
@@ -455,59 +475,186 @@ function report() {
 }
 
 /* ======================= --all-branches ======================= */
-function allBranches(branchSeeds, yrs) {
-  const scenes = ST.scenes();
-  const forceable = scenes.filter((sc) => (sc.choices || []).length >= 2);
-  const prof = { name: 'good', level: 'good', policy: 'good', label: 'good' };
-  const seenAny = {};
-  const rows = [];
-  let bad = 0;
-  console.log(`Достижимость развилок: перебор каждого варианта на ${branchSeeds} сид(ах) × ${yrs} лет (бот good).`);
-  console.log(`Развилок с выбором: ${forceable.length} из ${scenes.length} сцен.\n`);
-  for (const sc of forceable) {
-    for (let i = 0; i < sc.choices.length; i++) {
-      const fm = {}; fm[sc.id] = i;
-      const seen = {}, ends = [];
-      let reachedForce = false;
-      for (let s = 1; s <= branchSeeds; s++) {
-        const run = runOne(prof, s * 7919, yrs, fm);
-        for (const it of run.items) { seen[it.id] = 1; seenAny[it.id] = 1; if (it.id === sc.id && it.idx === i) reachedForce = true; }
-        ends.push(run.r.S.storyEnding || (run.r.lost ? 'банкрот' : null));
-      }
-      const afterDeps = scenes.filter((x) => { const t = x.trigger || {}; return (t.after && t.after.indexOf(sc.id) >= 0) || (t.afterAny && t.afterAny.indexOf(sc.id) >= 0); }).map((x) => x.id);
-      // исход этого варианта (флаги) — какие сцены ждут его через need у своих вариантов
-      const produced = {};
-      for (const f of sc.choices[i].effects || []) {
-        if (f.t === 'flag') produced[f.k] = f.v;
-        if (f.t === 'perk') { const p = (BK.STORY.perks || {})[f.id]; if (p && p.flag) produced[p.flag.k] = p.flag.v; }
-      }
-      const needDeps = scenes.filter((x) => x.id !== sc.id && (x.choices || []).some((c) => c.need && c.need.flag && Object.keys(c.need.flag).every((k) => produced[k] === c.need.flag[k]))).map((x) => x.id);
-      const deps = afterDeps.concat(needDeps.filter((d) => afterDeps.indexOf(d) < 0));
-      const optionEnds = (sc.choices[i].effects || []).some((f) => f.t === 'ending');
-      const gameOverEvery = ends.every((e) => e != null);
-      const missing = deps.filter((d) => !seen[d]);
-      if (missing.length && !optionEnds && !gameOverEvery) bad++;
-      rows.push({
-        сцена: sc.id, 'выб.': i, вариант: (sc.choices[i].label || '').slice(0, 44),
-        зависит: (afterDeps.join(',') || '—') + (needDeps.length ? ' · need: ' + needDeps.join(',') : ''),
-        пришли: optionEnds && missing.length ? 'обрыв игры' : (missing.length ? 'нет: ' + missing.join(',') : 'да'),
-        итог: optionEnds ? 'обрыв игры (выбор)' : ends.some((e) => e === 'банкрот') ? 'бывает банкрот' : '—',
-        достигнут: reachedForce ? 'да' : 'НЕТ',
-      });
+// Coverage fixtures are deliberately assisted; their wealth/revenue corrections
+// never enter --balance or ordinary runOne. Routes use real choices, not f.ufa writes.
+const BRANCH_PROFILES = [
+  { id: 'warm-russia', route: 'russia', character: 'warm', policy: 'care', walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } },
+  { id: 'cold-russia', route: 'russia', character: 'cold', policy: 'cold', walk: { s37: 0, ko1: 1, ko2: 2, kd1: 2, kd2: 2, kd3: 1, kf3: 1, kf4: 2 } },
+  { id: 'warm-deep', route: 'deep', character: 'warm', policy: 'care', walk: { s37: 1, ko1: 0, ko2: 0 } },
+  { id: 'cold-deep', route: 'deep', character: 'cold', policy: 'cold', walk: { s37: 1, ko1: 1, ko2: 2 } },
+  ...['legacy', 'rescue', 'crisis', 'moscow'].map(scenario => ({ id: scenario, scenario, character: scenario === 'rescue' ? 'warm' : null, route: 'russia', policy: 'good', walk: { s37: 0 } })),
+];
+function branchFixture(profile, seed) {
+  const S = profile.character
+    ? prologueState(seed, Object.assign({}, profile.character === 'warm' ? WARM_PICKS : COLD_PICKS, profile.guestPicks || {}))
+    : E.newGame({ seed, city: profile.scenario === 'moscow' ? 'moscow' : 'ufa' });
+  const assistance = [], errors = [];
+  const floor = profile.cashFloor == null ? 2e9 : profile.cashFloor;
+  if (!BK.Threads) errors.push({ kind: 'Threads-module-not-loaded' });
+  function cashFloor(state) {
+    if (state.cash < floor) {
+      const add = floor - state.cash; state.cash += add;
+      let ledger = assistance.find(x => x.kind === 'cash-fixture');
+      if (!ledger) { ledger = { kind: 'cash-fixture', firstDay: state.day, lastDay: state.day, count: 0, total: 0 }; assistance.push(ledger); }
+      ledger.lastDay = state.day; ledger.count++; ledger.total += add;
     }
   }
-  console.table(rows);
-  const unseen = scenes.filter((s) => !seenAny[s.id]);
-  if (unseen.length) {
-    console.log('\nСцены, которых не увидел никто:');
-    for (const s of unseen) console.log(`  ✗ ${s.id} «${s.title}»`);
-  } else console.log(`\nВсе ${scenes.length} сцен увидены хотя бы в одной ветке.`);
-  const missed = rows.filter((r) => r.пришли.startsWith('нет'));
-  if (missed.length) {
-    console.log('Зависимости, которые не сработали:');
-    for (const r of missed) console.log(`  ✗ ${r.сцена}:${r['выб.']} → ${r.пришли}`);
+  if (profile.scenario) {
+    // Select before the bot builds its first point; defer scenario network setup
+    // until Engine's real Scenario.day detects the play phase. This is a coverage
+    // fixture, not a faithful scenario starting-balance benchmark.
+    BK.Scenario.set(S, profile.scenario, { defer: true });
+    BK.Scenario.applyStart(S);
   }
-  return bad + unseen.length > 0 ? 1 : 0;
+  cashFloor(S);
+  if (profile.stage1) {
+    const prepared = require('./story-stage1-fixture').prepareStage1(BK, S, { hire: profile.stage1, cashFloor: 2e9, assistance });
+    errors.push(...prepared.errors.map(detail => ({ kind: 'stage1-fixture-failed', detail })));
+  }
+  let entered = false;
+  return { id: profile.id, S, assistance, errors, step(state) {
+    cashFloor(state);
+    const R = ST.state(state); if (!R || state.lost) return;
+    if (profile.route !== 'russia' || R.f.ufa !== 'russia' || entered) return;
+    const threshold = CFG.CORP.UNLOCK_REVENUE;
+    if (state.cumRevenue < threshold) {
+      assistance.push({ day: state.day, kind: 'corp-unlock-revenue-fixture', add: threshold - state.cumRevenue });
+      state.cumRevenue = threshold;
+    }
+    BK.Corp.ensure(state);
+    const result = E.enterCity(state, 'kazan');
+    if (!result || !result.ok || !state.corp || state.corp.active !== 'kazan' || !state.corp.cities.kazan) {
+      errors.push({ day: state.day, kind: 'second-act-entry-failed', result }); entered = true; return;
+    }
+    entered = true;
+    assistance.push({ day: state.day, kind: 'real-enterCity', city: 'kazan', cost: result.cost });
+    const offer = state.prodOffers.slice().sort((a, b) => E.prodOpenCost(state, a).total - E.prodOpenCost(state, b).total)[0];
+    if (!offer || !E.chooseProduction(state, offer.id).ok) errors.push({ day: state.day, kind: 'second-act-production-failed' });
+    const shop = state.offers[0];
+    if (!shop || !E.rentStore(state, shop.id).ok) errors.push({ day: state.day, kind: 'second-act-first-store-failed' });
+  } };
+}
+function branchEffectSnapshot(S) {
+  const R = ST.state(S);
+  return { pending: R.pending && R.pending.id, seen: Object.assign({}, R.seen), flags: Object.assign({}, R.f), threads: BK.Threads ? BK.Threads.list(S).map(t => t.id) : [] };
+}
+function branchEffectCheck(S, sc, idx, before, result) {
+  const out = [], R = ST.state(S), fail = detail => out.push({ id: sc.id, idx, day: S.day, detail });
+  if (!result || !result.ok || R.pending || R.seen[sc.id] !== S.day) fail('resolve did not close and record the real scene');
+  // Check final flag values after all effects, named perks, created threads and
+  // legal terminal outcomes. Economic magnitude/expired modifier checks require
+  // dedicated integration tests; do not label these checks as full effect coverage.
+  const expected = {};
+  for (const fx of sc.choices[idx].effects || []) {
+    if (fx.t === 'flag') expected[fx.k] = fx.v;
+    if (fx.t === 'perk') {
+      if (!R.perks.includes(fx.id)) fail('missing perk ' + fx.id);
+      const p = BK.STORY.perks[fx.id]; if (p && p.flag) expected[p.flag.k] = p.flag.v;
+    }
+    if (fx.t === 'thread' && fx.rec && fx.rec.id && BK.Threads && !BK.Threads.byId(S, fx.rec.id)) fail('missing thread ' + fx.rec.id);
+    if (fx.t === 'ending' && (R.ending !== fx.id || S.storyEnding !== fx.id || !S.lost)) fail('invalid terminal outcome ' + fx.id);
+  }
+  for (const [k, v] of Object.entries(expected)) if (R.f[k] !== v) fail('effect flag mismatch ' + k);
+  if (!before || before.pending !== sc.id) fail('choice did not originate from the real pending scene');
+  if (before && before.audit) {
+    const report = require('./story-effect-audit').check(BK, S, sc, idx, before.audit, result);
+    before.auditReport = report;
+    out.push(...report.errors.map(detail => ({ id: sc.id, idx, day: S.day, detail })));
+    if (result && result.ok && flags.snapshots) {
+      const fs = require('fs'), path = require('path');
+      const dir = path.join(__dirname, '..', 'tmp', 'story-branches', 'states'); fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, sc.id + '-' + idx + '-' + S.seed + '.json'), before.audit.json);
+    }
+  }
+  return out;
+}
+function branchProfilesFor(sc, idx) {
+  if (sc.id === 'b4i') return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 1, ko1: 0, ko2: 0 } }];
+  const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : null;
+  const walks = {
+    ls7: { ls1: 0, ls6: 0 }, ls8: { ls1: 0, ls6: 1 },
+    'kc3:2': { kc2: 0 }, kc6a: { kc4: 0 }, kc6c: { kc4: 2 },
+    'sr3:2': { sr1: 0 }, 'sr5:2': { sr1: 0, sr3: 2 }, 'sr6:2': { sr2: 1 },
+    'mos6:3': { mos1: 1 }, mosBank: { mos1: 1 },
+    s31b: { s25: 2, s31: 0 }, s32b: { s32: 1 },
+    'kb2:1': { kb1: 2 }, 'kg2:0': { kg1: 0 }, 'kg2:1': { kg1: 2 },
+    'ke2:1': { ke1: 0 }, 'ke2:0': { ke1: 1 },
+    'sf1:2': { ko1: 0, ko2: 0 }, 'sf2:0': { ko1: 1, ko2: 2, sf1: 3 },
+    's31:3': { s25: 2 },
+  };
+  return BRANCH_PROFILES.filter(p => {
+    if (scenario) return p.scenario === scenario;
+    if (p.scenario) return false;
+    if (sc.ch === 'deep' && p.route !== 'deep') return false;
+    if (['s41','s42','s43','s44','s45','s46','s47'].includes(sc.id) && p.route !== 'russia') return false;
+    if (sc.id === 's37' && idx < 2 && p.walk.s37 !== idx) return false;
+    return true;
+  }).map(p => Object.assign({}, p, {
+    id: ['s31','s35','s36b','s41'].includes(sc.id) ? p.id + '-warm-stage1' : p.id,
+    seedOffset: sc.id === 's35' ? 5 : 0,
+    character: ['s31','s35','s36b','s41'].includes(sc.id) ? 'warm' : p.character,
+    stage1: sc.id === 's35' ? 'lara' : ['s31','s36b','s41'].includes(sc.id) ? 'aidar' : null,
+    walk: Object.assign({}, p.walk, walks[sc.id + ':' + idx] || walks[sc.id] || {}),
+    guestPicks: /^sg[1256]$/.test(sc.id) ? { g_rad1: 0, g_petr1: 0, g_petr2: 1, g_ali1: 1, g_zoya1: 0 } : null,
+  }));
+}
+
+function allBranches(branchSeeds, yrs) {
+  const scenes = ST.scenes();
+  const selected = flags.targets ? new Set(String(flags.targets).split(',')) : null;
+  const forceable = scenes.filter(sc => (sc.choices || []).length >= 1 && (!selected || selected.has(sc.id)));
+  const seenAny = {}, rows = [], unresolved = [], errors = [];
+  console.log(`Independent coverage fixtures: ${branchSeeds} seeds x ${yrs} years. ASSISTED; NOT BALANCE.`);
+  console.log('Each target gets a fresh state. Russia is a real Corp/enterCity transition after s37; deep is a separate run.');
+  for (const sc of forceable) for (let idx = 0; idx < sc.choices.length; idx++) {
+    const cases = branchProfilesFor(sc, idx); let passed = false;
+    attempts: for (const profile of cases) for (let seed = 1; seed <= branchSeeds; seed++) {
+      const fm = Object.assign({}, profile.walk, { [sc.id]: idx });
+      const prof = { name: profile.id, label: profile.id, level: profile.level || 'good', policy: profile.policy, fixture: profile, target: { id: sc.id, idx } };
+      const actualSeed = (seed + (profile.seedOffset || 0)) * 7919;
+      const run = runOne(prof, actualSeed, yrs, fm);
+      for (const it of run.items) if (it.resolved && it.needMet) seenAny[it.id] = 1;
+      const target = run.items.find(it => it.id === sc.id && it.idx === idx && it.forced && it.resolved && it.needMet);
+      const blocked = run.blocked.some(x => x.id === sc.id && x.idx === idx);
+      const fixtureErrors = run.fixture.errors || [];
+      const status = fixtureErrors.length ? 'fixture-failed' : run.effectErrors.length ? 'effect-failed'
+        : target ? ((sc.choices[idx].effects || []).some(f => f.t === 'ending') ? 'legal-ending' : 'choice-executed')
+        : blocked ? 'need-blocked' : run.r.S.storyEnding ? 'earlier-legal-ending' : run.r.lost ? 'bankrupt-before-target' : 'not-reached';
+      if (target && !fixtureErrors.length && !run.effectErrors.length) passed = true;
+      errors.push(...fixtureErrors.map(x => ({ profile: profile.id, ...x })), ...run.effectErrors.map(x => ({ profile: profile.id, ...x })));
+      rows.push({ scene: sc.id, choice: idx, fixture: profile.id, seed, actualSeed, status, assistance: run.fixture.assistance,
+        end: run.r.S.storyEnding || null, observed: run.items.map(x => ({ id: x.id, idx: x.idx, forced: x.forced, resolved: x.resolved, needMet: x.needMet, triggerFits: x.triggerFits, origin: x.origin, day: x.day })), blocked: run.blocked, audit: target && target.audit || null });
+      console.log(`PROBE ${sc.id}:${idx} ${profile.id} ${status} day=${run.r.S.day}`);
+      if (passed) break attempts;
+    }
+    // Being behind incompatible gates is explanatory, not proof that the target
+    // is covered. No passed fixture for a target remains a red diagnostic.
+    if (!passed) unresolved.push({ id: sc.id, idx, attempted: cases.map(x => x.id) });
+  }
+  const unseen = scenes.filter(sc => !seenAny[sc.id]).map(sc => sc.id);
+  console.table(rows.map(({ scene, choice, fixture, seed, status, end, assistance }) => ({ scene, choice, fixture, seed, status, end, assisted: assistance.length })));
+  console.log(JSON.stringify({ kind: 'story-branch-coverage-assisted', balance: false, rows, unresolved, unseen, errors,
+    limitations: ['fixtures are assisted, not balance', 'no global all-afterDeps claim: alternative scene gates are mutually exclusive', 'not full economic effect/time/load coverage', 'scenario initialization is a deferred coverage fixture', 'profiles do not yet construct every rare premise'] }, null, 2));
+
+  if (!selected && !unresolved.length && !unseen.length && !errors.length && flags.snapshots) {
+    const fs = require('fs'), path = require('path');
+    const successfulTargets = [];
+    for (const sc of scenes) for (let choice=0;choice<sc.choices.length;choice++) {
+      const row=rows.find(r=>r.scene===sc.id && r.choice===choice && ['choice-executed','legal-ending'].includes(r.status));
+      if (!row) throw new Error('Missing successful target '+sc.id+':'+choice);
+      successfulTargets.push({scene:sc.id,choice,fixture:row.fixture,actualSeed:row.actualSeed,
+        stateFile:'tmp/story-branches/states/'+sc.id+'-'+choice+'-'+row.actualSeed+'.json',
+        checks:row.audit && row.audit.checks || 0, declaredChecks:row.audit && row.audit.declaredChecks || {},
+        unsupported:row.audit && row.audit.unsupported || []});
+    }
+    const manifest={complete:true,version:CFG.VERSION.num,balance:false,scenes:scenes.length,
+      successfulTargets,attempts:rows.length,checks:rows.reduce((n,r)=>n+(r.audit && r.audit.checks || 0),0),
+      limitations:['independent legal choice reachability; not every combination of preceding choices',
+        'assisted financial fixtures are not a balance benchmark','core effects use durable replay plus existing Engine tests']};
+    fs.writeFileSync(path.join(__dirname,'..','docs','story-branches-coverage.json'),JSON.stringify(manifest,null,2)+'\n');
+  }
+  if (unresolved.length || unseen.length || errors.length) console.log('Код выхода 1. Непройденные варианты и сцены перечислены в отчёте.');
+  return unresolved.length || unseen.length || errors.length ? 1 : 0;
 }
 
 /* ======================= --balance ======================= */
@@ -631,6 +778,9 @@ function prologueState(seed, picks) {
   const P = PR.start(S0);
   if (F && !P.v2) F.init(S0);
   for (const id of Object.keys(picks)) {
+    if (PR.CARDS && PR.CARDS[id]) {
+      P.cards.unshift({ id, v: {} }); PR.card(S0); PR.choose(S0, picks[id]); continue;
+    }
     if (!F || !F.DILEMMAS[id]) continue;
     P.cards.unshift({ id: id, v: {}, v2: 1 });     // карточка идёт первой: PR.card() читает P.cards[0]
     if (P.v2) P.v2.seen[id] = P.m;
@@ -808,6 +958,8 @@ function check() {
 /* ======================= запуск ======================= */
 const isNum = (v) => v != null && /^\d+$/.test(String(v));
 const numOr = (v, d) => (isNum(v) ? +v : d);
+module.exports = { runOne, prologueState, branchFixture, branchProfilesFor, WARM_PICKS, COLD_PICKS };
+if (require.main === module) {
 if (flags.check) {
   process.exitCode = check() ? 1 : 0;
 } else if (flags.help) {
@@ -835,4 +987,6 @@ if (flags.check) {
 } else {
   if (!pos.length) usage();
   process.exitCode = report() ? 1 : 0;
+}
+
 }

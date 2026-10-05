@@ -11,3 +11,6 @@ dist/khlebnaya-karta-*.html
 tmp/release-checks/
 tmp/story-depth/
 tmp/story-branches/
+
+# Isolated next-city preparation (reviewable copy in docs/samara-map-draft/)
+tmp/samara-draft/

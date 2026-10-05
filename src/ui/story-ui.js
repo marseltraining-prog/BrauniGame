@@ -122,13 +122,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Пишем причину отдельной фразой, а не через «нужно …»: «нужно Рашида больше нет» — не по-русски.
   const NOFLAG_WHY = { rashidGone: 'Рашида больше нет — этот разговор не состоится' };
   function needText(S, need) {
-    const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
+    if (ST.canChoose(S, need)) return { dis: false, text: '' };
+    const R = ST.state(S); if (!R) return { dis: true, text: 'Этот вариант пока недоступен' };
     const bad = [], why = [];
     if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
     if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (R.f[k] === need.noFlag[k]) why.push(NOFLAG_WHY[k] || 'другой ход событий');
-    if (!bad.length && !why.length) return { dis: false, text: '' };
+    if (!bad.length && !why.length) return { dis: true, text: 'Этот вариант пока недоступен' };
     const needTxt = bad.length ? 'нужно ' + sub(S, bad.join(', ')) : '';   // «судьба „Калача“» — по городу партии
     const whyTxt = why.length ? why.join(', ') : '';
     return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
@@ -168,7 +169,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const need = needText(S, c.need), fx = fxChips(S, c.effects);
     const dis = need.dis ? ' disabled' : '';
     if (!multi) {
-      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.desc ? `<small class="st-desc">${esc(sub(S, c.desc))}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
+      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.cost ? `<span class="cc">${esc(sub(S, c.cost))}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
     }
     return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
       <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
@@ -201,8 +202,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function paperActions(S, sc) {
     const c = (sc.choices || [])[0];
     if (!c) return '';
-    const need = needText(S, c.need);
-    return `<div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="0"${need.dis ? ' disabled' : ''}>Прочитано${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>${c.desc && !need.dis ? `<p class="st-note">${esc(sub(S, c.desc))}</p>` : ''}</div>`;
+    return `<div class="st-choices st-one">${choiceHtml(S, Object.assign({}, c, { label: 'Прочитано' }), 0, false)}</div>`;
   }
 
   /* ---------- тело окна ---------- */

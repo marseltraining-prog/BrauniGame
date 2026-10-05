@@ -6,6 +6,9 @@ const fs = require('fs'), path = require('path'), { spawnSync } = require('child
 const root = path.join(__dirname, '..');
 const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
+  ['sim/story.js', '--all-branches', '1', '22', '--snapshots'],
+  ['sim/story-choice-guard.js'], ['sim/story-queue.js'],
+  ['qa/story-branches.js'], ['qa/story-branches.js', '@webkit'],
   ['sim/story-depth.js'], ['qa/story-depth.js'], ['qa/story-depth.js', '@webkit'],
   ['qa/start-preview.js'], ['qa/start-preview.js', '@webkit'],
   ['sim/nsk.js'], ['qa/nsk.js'], ['qa/nsk.js', '@webkit'],

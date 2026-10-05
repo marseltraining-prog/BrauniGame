@@ -1,0 +1,18 @@
+{
+  "version": "0.9.14",
+  "chromium": {
+    "checks": 11158,
+    "issues": [],
+    "scenes": 123
+  },
+  "limitations": [
+    "Browser clicks one legally reached representative choice per scene; CLI verifies effects of every choice.",
+    "Full layout/contrast audit targets long and branch-sensitive windows; every scene receives geometry/eligibility/neutrality checks.",
+    "Moment animation uses the supported reduced-motion mode."
+  ],
+  "webkit": {
+    "checks": 11158,
+    "issues": [],
+    "scenes": 123
+  }
+}

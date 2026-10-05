@@ -10,7 +10,7 @@
   }, true);
   window.addEventListener('unhandledrejection', function(e){ show('обещание отклонено: ' + (e.reason && e.reason.message || e.reason)); });
   setTimeout(function(){ try{ if(!document.querySelector('#app *') && !document.querySelector('#start')) show('скрипт не создал интерфейс за 10 секунд (возможно, он очень медленный или заблокирован)'); }catch(e){} }, 10000);
-})();window.__BK_BUILD="04.10.2026 19:00 UTC";</script><title>Хлебная карта</title>
+})();window.__BK_BUILD="04.10.2026 20:28 UTC";</script><title>Хлебная карта</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@500;600;700&display=swap"></noscript>
 <style>
 :root {
@@ -3630,7 +3630,7 @@ BK.CFG.COLL = {
 
 /* Версия игры: видна в правом верхнем углу рядом с темой (номер + дата сборки).
    При выпуске версии поднимай номер здесь — дату сборки подставляет build.js. */
-BK.CFG.VERSION = { num: '0.9.13', name: 'бета' };
+BK.CFG.VERSION = { num: '0.9.14', name: 'бета' };
 
 /* Стратегии (этап 3 плана, vision-plan §5.3). Логика — src/strategy.js (BK.Strat), проверка — sim/strat.js.
    Четыре пути к победе. Сумма «гости × чек» у всех примерно одна (никто не сильнее всегда),
@@ -7269,6 +7269,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     /* ============ 9. Банк напоминает (ставится в очередь развилкой) ============ */
     {
       id: 'mosBank', ch: 'city', form: 'scene', title: 'Банк напоминает',
+      once: false, // продление/реструктуризация/пени назначают следующий платёж
       who: ['elvira'],
       queueOnly: true,   // каркас не показывает сцену сам: только из очереди (эффект schedule)
       trigger: { all: [{ scen: 'moscow' }] },
@@ -8253,11 +8254,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     {
       id: 'sf1', ch: 'final', form: 'climax', title: 'Лодочная станция', climax: true,
       who: ['oleg', 'semyon'],
-      queueOnly: true,   // финал ставит очередь: через месяц после победы (story.js) или по запасному сроку
+      queueOnly: true,   // финал ставит очередь story.js: через 30 дней после победы
       trigger: {
         afterAny: ['s47', 's4g4'],
         any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }, { months: 192 }],
-        fallback: { months: 24 },   // не выиграл за 16 лет — финал всё равно придёт (18 лет)
       },
       lines: [
         { who: 'oleg', emo: 'serious', text: 'Четверг, семь вечера, лодочная станция на Белой. Фонд забрал деньги. У «Двора» двести точек и четыре миллиарда долга. Две тысячи человек, у каждого ипотека.' },
@@ -21184,11 +21184,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function fits(S, R, sc) {
     if (!sc) return false;
-    if (R.seen[sc.id] && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
+    if (R.seen[sc.id] != null && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
     if (sc.once === false) { /* повторяемые сцены разрешены */ }
     const t = sc.trigger || {};
-    if (t.after && !t.after.every((id) => R.seen[id])) return false;
-    if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) return false;
+    if (t.after && !t.after.every((id) => R.seen[id] != null)) return false;
+    if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id] != null)) return false;
     if (t.all && !t.all.every((c) => cond(S, R, c))) return false;
     if (t.any && t.any.length && !t.any.some((c) => cond(S, R, c))) return false;
     return true;
@@ -21217,10 +21217,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const sc of list) { if (sc.queueOnly) continue; if (fits(S, R, sc)) return sc; }   // queueOnly — только по очереди
     // запасной вариант: срок вышел — приходим в мягкой версии
     for (const sc of list) {
-      if (!sc.fallback || R.seen[sc.id]) continue;
+      if (sc.queueOnly || !sc.fallback || R.seen[sc.id] != null) continue;
       const t = sc.trigger || {};
-      if (t.after && !t.after.every((id) => R.seen[id])) continue;
-      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
+      if (t.after && !t.after.every((id) => R.seen[id] != null)) continue;
+      if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id] != null)) continue;   // запасной вариант не обходит ветвление
       if (t.all && !t.all.every((c) => cond(S, R, c))) continue;
       // срок запасного варианта: от самого раннего временного условия, а если их нет —
       // от момента, когда пришли предпосылки (after/afterAny): иначе сцены вроде «обеда с Олегом»
@@ -21406,9 +21406,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const FAM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>';
 
   /* ---------------- показ и выбор ---------------- */
-  function start(S, sc) {
-    const R = ensure(S); if (!R) return null;
-    R.pending = { id: sc.id, day: S.day };
+  function start(S, sc, origin) {
+    const R = ensure(S); if (!R || !sc || R.pending) return null;
+    // Уже прочитанную одноразовую сцену не открываем второй раз, в том числе из старой очереди.
+    if (sc.once !== false && R.seen[sc.id] != null) return null;
+    R.pending = Object.assign({ id: sc.id, day: S.day }, { origin: origin || { kind: 'explicit' } });
     R.ch = chapter(S, R);
     if (S.notify) S.notify.push({ type: 'story', phase: 'scene', id: sc.id });
     return R.pending;
@@ -21429,12 +21431,25 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
     return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
   }
+  // Один чистый предикат для API, интерфейса и CLI. Не создаёт состояние и не тратит ГСЧ.
+  function canChoose(S, need) {
+    if (!need) return true;
+    const R = state(S);
+    if (!R) return false;
+    const rel = R.rel || {}, meter = R.m || {}, flag = R.f || {};
+    if (need.rel) for (const k of Object.keys(need.rel)) if ((rel[k] || 0) < need.rel[k]) return false;
+    if (need.meter) for (const k of Object.keys(need.meter)) if ((meter[k] || 0) < need.meter[k]) return false;
+    if (need.flag) for (const k of Object.keys(need.flag)) if (flag[k] !== need.flag[k]) return false;
+    if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (flag[k] === need.noFlag[k]) return false;
+    return true;
+  }
   // Выбор варианта: применяет последствия и закрывает сцену.
   function resolve(S, idx) {
     const R = state(S); if (!R || !R.pending) return { ok: false, msg: 'Сцены нет' };
     const sc = pendingScene(S); if (!sc) { R.pending = null; return { ok: false }; }
     const ch = (sc.choices || [])[idx];
     if (!ch) return { ok: false, msg: 'Нет такого варианта' };
+    if (!canChoose(S, ch.need)) return { ok: false, msg: 'Этот вариант пока недоступен' };
     const out = [];
     for (const fx of ch.effects || []) { const t = apply(S, R, fx); if (t) out.push(t); }
     const list = (ch.effects || []).map((fx) => fx.t);
@@ -21490,7 +21505,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'schedule': {
         const a = fx.after;
         const d = Array.isArray(a) ? Math.round(a[0] + (a[1] - a[0]) * rnd(R)) : (a || 30);   // в сценах after бывает диапазоном
-        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p });
+        R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p, source: R.pending && R.pending.id || null });
         return null;
       }
       case 'ending': {
@@ -21550,10 +21565,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (q.day > S.day) return true;
         if (q.kind === 'scene') {
           const sc = scene(q.id); if (!sc) return false;
-          // то же правило, что и у обычного триггера: не в день события и не при открытом окне шефа
+          // Просроченная копия одноразовой сцены больше не нужна; once:false остаётся повторяемой.
+          if (sc.once !== false && R.seen[sc.id] != null) return false;
+          // Решение игрока не перезаписываем. После первого start следующие due-сцены
+          // остаются в очереди с исходным сроком и откроются после ответа в следующем tick.
+          if (R.pending) return true;
+          // Как у обычного триггера: не поверх события, не сразу после него и не поверх шефа.
           const r0 = (S.ev && S.ev.recent && S.ev.recent[0]) || null;
-          if ((r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
-          start(S, sc); return false;
+          if ((S.ev && S.ev.pending) || (r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
+          return !start(S, sc, { kind: 'scheduled', due: q.day, source: q.source || null });
         }
         if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
         if (q.kind === 'journal') return false;
@@ -21569,7 +21589,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // победа взята — через месяц приходит финал (игрок успевает увидеть экран победы)
     if (S.won && !R.wonQueued) { R.wonQueued = true; const fin = scene('sf1'); if (fin && !R.seen.sf1) R.queue.push({ kind: 'scene', id: 'sf1', day: S.day + 30 }); }
     const sc = pick(S, R);
-    if (sc) start(S, sc);
+    if (sc) start(S, sc, { kind: fits(S, R, sc) ? 'natural' : 'fallback' });
   }
   function monthStart(S) { return E().dateOf(S.day).d === 1; }
 
@@ -21795,7 +21815,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const htmlEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   BK.Story = {
-    ensure, state, fill, scene, scenes, pendingScene, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
+    ensure, state, fill, scene, scenes, pendingScene, canChoose, resolve, start, day, history, summary, attItems, letter, rivalNear, shareBase, sharesMonthly,
     chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
@@ -32380,13 +32400,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // Пишем причину отдельной фразой, а не через «нужно …»: «нужно Рашида больше нет» — не по-русски.
   const NOFLAG_WHY = { rashidGone: 'Рашида больше нет — этот разговор не состоится' };
   function needText(S, need) {
-    const R = ST.state(S); if (!need || !R) return { dis: false, text: '' };
+    if (ST.canChoose(S, need)) return { dis: false, text: '' };
+    const R = ST.state(S); if (!R) return { dis: true, text: 'Этот вариант пока недоступен' };
     const bad = [], why = [];
     if (need.rel) for (const k of Object.keys(need.rel)) if ((R.rel[k] || 0) < need.rel[k]) bad.push(`отношения с ${whoName(k)} ≥ ${need.rel[k]}`);
     if (need.meter) for (const k of Object.keys(need.meter)) if ((R.m[k] || 0) < need.meter[k]) bad.push(`${METER_NAME[k] || 'стиль «' + k + '»'} ≥ ${need.meter[k]}`);
     if (need.flag) for (const k of Object.keys(need.flag)) if (R.f[k] !== need.flag[k]) bad.push(FLAG_NAME[k] || 'другое решение раньше');
     if (need.noFlag) for (const k of Object.keys(need.noFlag)) if (R.f[k] === need.noFlag[k]) why.push(NOFLAG_WHY[k] || 'другой ход событий');
-    if (!bad.length && !why.length) return { dis: false, text: '' };
+    if (!bad.length && !why.length) return { dis: true, text: 'Этот вариант пока недоступен' };
     const needTxt = bad.length ? 'нужно ' + sub(S, bad.join(', ')) : '';   // «судьба „Калача“» — по городу партии
     const whyTxt = why.length ? why.join(', ') : '';
     return { dis: true, text: 'Пока нельзя: ' + needTxt + (needTxt && whyTxt ? '. ' : '') + whyTxt };  }
@@ -32426,7 +32447,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const need = needText(S, c.need), fx = fxChips(S, c.effects);
     const dis = need.dis ? ' disabled' : '';
     if (!multi) {
-      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.desc ? `<small class="st-desc">${esc(sub(S, c.desc))}</small>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
+      return `<button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="${i}"${dis}>${esc(sub(S, c.label))}${c.cost ? `<span class="cc">${esc(sub(S, c.cost))}</span>` : ''}${fx ? `<span class="fx">${fx}</span>` : ''}${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>`;
     }
     return `<button type="button" class="choice st-choice" data-act="storyPick" data-arg="${i}"${dis}>
       <span class="cl" aria-hidden="true">${LET[i] || (i + 1)}</span>
@@ -32459,8 +32480,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function paperActions(S, sc) {
     const c = (sc.choices || [])[0];
     if (!c) return '';
-    const need = needText(S, c.need);
-    return `<div class="st-choices st-one"><button type="button" class="btn primary block st-big" data-act="storyPick" data-arg="0"${need.dis ? ' disabled' : ''}>Прочитано${need.dis ? `<small class="st-need">${WARN}${esc(need.text)}</small>` : ''}</button>${c.desc && !need.dis ? `<p class="st-note">${esc(sub(S, c.desc))}</p>` : ''}</div>`;
+    return `<div class="st-choices st-one">${choiceHtml(S, Object.assign({}, c, { label: 'Прочитано' }), 0, false)}</div>`;
   }
 
   /* ---------- тело окна ---------- */

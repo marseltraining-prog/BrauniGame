@@ -1,0 +1,598 @@
+{
+  "versionBase": "0.9.13",
+  "complete": false,
+  "firstAttemptInterrupted": true,
+  "first": {
+    "rows": 335,
+    "covered": [
+      "kc1:0",
+      "kc1:1",
+      "kc2:0",
+      "kc2:1",
+      "kc2:2",
+      "kc3:0",
+      "kc3:1",
+      "kc4:0",
+      "kc4:1",
+      "kc4:2",
+      "kc5:0",
+      "kc5:1",
+      "kc5:2",
+      "kc6b:0",
+      "kc6b:1",
+      "kc7:0",
+      "kc7:1",
+      "sr1:0",
+      "sr1:1",
+      "sr2:0",
+      "sr2:1",
+      "sr2:2",
+      "sr3:0",
+      "sr3:1",
+      "sr4:0",
+      "sr4:1",
+      "sr4:2",
+      "sr5:0",
+      "sr5:1",
+      "sr6:0",
+      "sr6:1",
+      "sr7:0",
+      "sr7:1",
+      "sr7:2",
+      "s21:0",
+      "s21:1",
+      "s22:0",
+      "s22:1",
+      "s24:0",
+      "s24:1",
+      "s25:0",
+      "s25:1",
+      "s25:2",
+      "ls2:0",
+      "ls2:1",
+      "ls3:0",
+      "ls3:1",
+      "ls4:0",
+      "ls4:1",
+      "ls6:0",
+      "ls6:1",
+      "mos1:0",
+      "mos1:1",
+      "mos1:2",
+      "mos2:0",
+      "mos2:1",
+      "mos2:2",
+      "mos3:0",
+      "mos3:1",
+      "mos3:2",
+      "mos4:0",
+      "mos4:1",
+      "mos4:2",
+      "mos5:0",
+      "mos5:1",
+      "mos5:2",
+      "mos6:0",
+      "mos6:1",
+      "mos6:2",
+      "mos7:0",
+      "mos7:1",
+      "mos7:2",
+      "mos8:0",
+      "mos8:1",
+      "mos8:2",
+      "s31:0",
+      "s31:1",
+      "s31:2",
+      "s32:0",
+      "s32:1",
+      "s32:2",
+      "s32b:0",
+      "s32b:1",
+      "s33:0",
+      "s33:1",
+      "s33:2",
+      "s34:0",
+      "s34:1",
+      "s34:2",
+      "s36:0",
+      "s36:1",
+      "s36:2",
+      "s37:0",
+      "s37:1",
+      "s37:2",
+      "s4g1:0",
+      "s4g1:1",
+      "s4g1:2",
+      "s4g2:0",
+      "s4g2:1",
+      "s4g2:2",
+      "s4g3:0",
+      "s4g3:1",
+      "s4g3:2",
+      "s4g4:0",
+      "s4g4:1",
+      "s4g4:2",
+      "sg2:1",
+      "sg2:2",
+      "s41:0",
+      "s41:1",
+      "s41:2",
+      "s42:0",
+      "s42:1",
+      "s42:2",
+      "s42:3",
+      "s43:0",
+      "s43:1",
+      "s43:2",
+      "s44:0",
+      "s44:1",
+      "s44:2",
+      "s44:3",
+      "s45:0",
+      "s45:1",
+      "s45:2",
+      "s46:0",
+      "s46:1",
+      "s46:2",
+      "s46:3",
+      "s47:0",
+      "s47:1",
+      "s47:2",
+      "sf1:0",
+      "sf1:1",
+      "sf1:3",
+      "sf1:4",
+      "sf1:5",
+      "sf1b:0",
+      "sf1b:1",
+      "sf1b:2",
+      "sf2:1",
+      "sf2:2",
+      "sf2:3",
+      "sf2:4",
+      "sf2:5",
+      "kd1:0",
+      "kd1:1",
+      "kd1:2",
+      "kd2:0",
+      "kd2:1",
+      "kd2:2",
+      "kd2:3",
+      "kd3:0",
+      "kd3:1",
+      "kd3:2",
+      "kb1:0",
+      "kb1:1",
+      "kb1:2",
+      "kb1:3",
+      "kb2:0",
+      "kb2:2",
+      "kg1:0",
+      "kg1:1",
+      "kg1:2",
+      "kg1:3",
+      "kg2:1",
+      "kg2:2",
+      "kf1:0",
+      "kf1:1",
+      "kf1:2",
+      "kf2:0",
+      "kf2:1",
+      "kf2:2",
+      "ke1:0",
+      "ke1:1",
+      "ke1:2",
+      "ke2:0",
+      "ke2:2",
+      "ko1:0",
+      "ko1:1",
+      "ko2:0",
+      "ko2:1",
+      "ko2:2",
+      "kf3:0",
+      "kf3:1",
+      "kf3:2",
+      "kf4:0",
+      "kf4:1",
+      "kf4:2",
+      "kf4:3",
+      "sg1:1",
+      "sg1:2",
+      "sg3:0",
+      "sg3:1",
+      "sg3:2",
+      "sg4:0",
+      "sg4:1",
+      "sg4:2",
+      "sg5:1",
+      "sg5:2",
+      "sg6:1",
+      "sg6:2",
+      "sg7:0",
+      "sg7:1",
+      "sg7:2",
+      "sg8:0",
+      "sg8:1",
+      "sg8:2",
+      "sg9:0",
+      "sg9:1",
+      "sg9:2"
+    ],
+    "unresolved": [
+      {
+        "id": "kc3",
+        "idx": 2,
+        "attempted": [
+          "crisis"
+        ]
+      },
+      {
+        "id": "kc6a",
+        "idx": 0,
+        "attempted": [
+          "crisis"
+        ]
+      },
+      {
+        "id": "kc6a",
+        "idx": 1,
+        "attempted": [
+          "crisis"
+        ]
+      },
+      {
+        "id": "kc6c",
+        "idx": 0,
+        "attempted": [
+          "crisis"
+        ]
+      },
+      {
+        "id": "kc6c",
+        "idx": 1,
+        "attempted": [
+          "crisis"
+        ]
+      },
+      {
+        "id": "sr3",
+        "idx": 2,
+        "attempted": [
+          "rescue"
+        ]
+      },
+      {
+        "id": "sr5",
+        "idx": 2,
+        "attempted": [
+          "rescue"
+        ]
+      },
+      {
+        "id": "sr6",
+        "idx": 2,
+        "attempted": [
+          "rescue"
+        ]
+      },
+      {
+        "id": "mos6",
+        "idx": 3,
+        "attempted": [
+          "moscow"
+        ]
+      },
+      {
+        "id": "mosBank",
+        "idx": 0,
+        "attempted": [
+          "moscow"
+        ]
+      },
+      {
+        "id": "mosBank",
+        "idx": 1,
+        "attempted": [
+          "moscow"
+        ]
+      },
+      {
+        "id": "mosBank",
+        "idx": 2,
+        "attempted": [
+          "moscow"
+        ]
+      },
+      {
+        "id": "mosBank",
+        "idx": 3,
+        "attempted": [
+          "moscow"
+        ]
+      },
+      {
+        "id": "s31",
+        "idx": 3,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s31b",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s31b",
+        "idx": 1,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s35",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s35",
+        "idx": 1,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s35",
+        "idx": 2,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s36b",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s36b",
+        "idx": 1,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "sg2",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "s41",
+        "idx": 3,
+        "attempted": [
+          "warm-russia",
+          "cold-russia"
+        ]
+      },
+      {
+        "id": "sf1",
+        "idx": 2,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "sf2",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "kb2",
+        "idx": 1,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "kg2",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "ke2",
+        "idx": 1,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "sg1",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "sg5",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      },
+      {
+        "id": "sg6",
+        "idx": 0,
+        "attempted": [
+          "warm-russia",
+          "cold-russia",
+          "warm-deep",
+          "cold-deep"
+        ]
+      }
+    ],
+    "unseen": [
+      "kc6a",
+      "kc6c",
+      "ls7",
+      "ls8",
+      "mosBank",
+      "s31b",
+      "s35",
+      "s36b",
+      "b4i"
+    ],
+    "errors": []
+  },
+  "targeted": {
+    "rows": 50,
+    "covered": [
+      "kc3:0",
+      "kc3:1",
+      "kc3:2",
+      "kc6a:0",
+      "kc6a:1",
+      "kc6c:0",
+      "kc6c:1",
+      "sr3:0",
+      "sr3:1",
+      "sr3:2",
+      "sr5:0",
+      "sr5:1",
+      "sr5:2",
+      "sr6:0",
+      "sr6:1",
+      "sr6:2",
+      "mos6:0",
+      "mos6:1",
+      "mos6:2",
+      "mos6:3",
+      "mosBank:0",
+      "mosBank:1",
+      "mosBank:2",
+      "mosBank:3",
+      "s31b:0",
+      "s31b:1",
+      "sg2:0",
+      "sg2:1",
+      "sg2:2",
+      "kb2:0",
+      "kb2:1",
+      "kb2:2",
+      "kg2:0",
+      "kg2:1",
+      "kg2:2",
+      "ke2:0",
+      "ke2:1",
+      "ke2:2",
+      "sg1:0",
+      "sg1:1",
+      "sg1:2",
+      "sg5:0",
+      "sg5:1",
+      "sg5:2",
+      "sg6:0",
+      "sg6:1",
+      "sg6:2"
+    ],
+    "unresolved": [],
+    "unseen": [
+      "kc6b",
+      "kc7",
+      "sr7",
+      "ls1",
+      "ls2",
+      "ls3",
+      "ls4",
+      "ls5",
+      "ls6",
+      "ls7",
+      "ls8",
+      "mos7",
+      "mos8",
+      "s35",
+      "s36b",
+      "s4g1",
+      "s4g2",
+      "s4g3",
+      "s4g4",
+      "sf1",
+      "sf1b",
+      "sf2",
+      "b46",
+      "b47",
+      "b4a",
+      "b48",
+      "b4c",
+      "b4d",
+      "b49",
+      "b4e",
+      "b4f",
+      "b4g",
+      "b4h",
+      "b4i",
+      "b44",
+      "b45"
+    ],
+    "errors": []
+  },
+  "note": "Targeted 16-scene run: all choices executed; overall unseen remains red. Next: Stage1 premises, all single-choice scenes, effects and continuation."
+}

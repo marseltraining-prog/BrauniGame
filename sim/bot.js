@@ -219,6 +219,7 @@ function play(opts) {
   const buffer = () => Math.max(1.5e6 * pl(), S.lastMonthRev * P.bufferRev, P.greedy ? 0 : Math.max(fixedLast(), settlementEstimate(S)) * 0.9);
 
   // старт: производство (good/avg — недорогой средний район, bad — первое, обычно центр) + лучшая точка
+  if (!opts.initialized) { // real Stage1 fixture already owns its first shop/production
   let po;
   if (lvl === 'bad') po = S.prodOffers[0];
   else { // открытие + 2 года аренды/коммуналки + доставка на ~5 точек, разбросанных по городу как предложения
@@ -241,6 +242,7 @@ function play(opts) {
     else first = (aff[0] || all[all.length - 1]).o;
   }
   if (!E.rentStore(S, first.id).ok) { E.takeLoan(S, E.storeOpenCost(S, first).total - S.cash + 1e6); E.rentStore(S, first.id); }
+  }
   if (P.bake != null && E.setBake) E.setBake(S, P.bake);
   if (P.eveDisc != null && E.setEveDiscount) E.setEveDiscount(S, P.eveDisc);
   E.setAlloc(S, { reserve: P.reserveFixed != null ? P.reserveFixed : P.reserveShare, bonus: lvl === 'bad' ? 0 : 0.03, marketing: lvl === 'bad' ? 0 : 0.04 });
@@ -288,6 +290,7 @@ function play(opts) {
       yQuits = 0; yStaffDays = 0; yDays = 0;
     }
     if (opts.onDay) opts.onDay(S, P, mem); // внешняя стратегия поверх бота (sim/corp.js — города России)
+    if (opts.stopWhen && opts.stopWhen(S, P, mem)) break; // coverage probe only; ordinary bots have no predicate
     if (opts.corp && S.corp) { // корпоративный профиль (флаг --corp): директора и новые города — sim/corpbot.js
       const CB = require('./corpbot');
       if (t.d === 3) CB.corpMonth(S, P, mem, opts.corpOpt);

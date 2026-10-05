@@ -1,0 +1,6889 @@
+{
+  "complete": true,
+  "version": "0.9.14",
+  "balance": false,
+  "scenes": 123,
+  "successfulTargets": [
+    {
+      "scene": "kc1",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc1-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc1",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc1-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc2",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc2-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost"
+      ]
+    },
+    {
+      "scene": "kc2",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc2-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc2",
+      "choice": 2,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc2-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check"
+      ]
+    },
+    {
+      "scene": "kc3",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc3-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "keyRate"
+      ]
+    },
+    {
+      "scene": "kc3",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc3-1-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "keyRate"
+      ]
+    },
+    {
+      "scene": "kc3",
+      "choice": 2,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc3-2-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "keyRate"
+      ]
+    },
+    {
+      "scene": "kc4",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc4-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "kc4",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc4-1-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc4",
+      "choice": 2,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc4-2-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "foodcost"
+      ]
+    },
+    {
+      "scene": "kc5",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc5-0-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "offer"
+      ]
+    },
+    {
+      "scene": "kc5",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc5-1-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check"
+      ]
+    },
+    {
+      "scene": "kc5",
+      "choice": 2,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc5-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "offer",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "kc6a",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6a-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "trend"
+      ]
+    },
+    {
+      "scene": "kc6a",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6a-1-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "kc6b",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6b-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc6b",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6b-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic",
+        "trend"
+      ]
+    },
+    {
+      "scene": "kc6c",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6c-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "trend"
+      ]
+    },
+    {
+      "scene": "kc6c",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc6c-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc7",
+      "choice": 0,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc7-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kc7",
+      "choice": 1,
+      "fixture": "crisis",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kc7-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic",
+        "trend"
+      ]
+    },
+    {
+      "scene": "sr1",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr1-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr1",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr1-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr2",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr2-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr2",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr2-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rent"
+      ]
+    },
+    {
+      "scene": "sr2",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr2-2-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr3",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr3-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffQuit"
+      ]
+    },
+    {
+      "scene": "sr3",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr3-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffTrain"
+      ]
+    },
+    {
+      "scene": "sr3",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr3-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr4",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr4-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr4",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr4-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal",
+        "staffQuit"
+      ]
+    },
+    {
+      "scene": "sr4",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr4-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "offer"
+      ]
+    },
+    {
+      "scene": "sr5",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr5-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr5",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr5-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "offer"
+      ]
+    },
+    {
+      "scene": "sr5",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr5-2-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr6",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr6-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr6",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr6-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr6",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr6-2-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr7",
+      "choice": 0,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr7-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "offer"
+      ]
+    },
+    {
+      "scene": "sr7",
+      "choice": 1,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr7-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sr7",
+      "choice": 2,
+      "fixture": "rescue",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sr7-2-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s21",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s21-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s21",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s21-1-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s22",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s22-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s22",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s22-1-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s24",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s24-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s24",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s24-1-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s25",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s25-0-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "s25",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s25-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s25",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s25-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s2hook",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s2hook-0-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "rivalOpenNear"
+      ]
+    },
+    {
+      "scene": "ls1",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls1-0-7919.json",
+      "checks": 45,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 21,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls2",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls2-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls2",
+      "choice": 1,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls2-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls3",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls3-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 4,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "ls3",
+      "choice": 1,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls3-1-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 4,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "ls4",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls4-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 3,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "ls4",
+      "choice": 1,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls4-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 3,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "ls5",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls5-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls6",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls6-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls6",
+      "choice": 1,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls6-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls7",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls7-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ls8",
+      "choice": 0,
+      "fixture": "legacy",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ls8-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos1",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos1-0-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos1",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos1-1-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos1",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos1-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos2",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos2-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rent"
+      ]
+    },
+    {
+      "scene": "mos2",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos2-1-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rent"
+      ]
+    },
+    {
+      "scene": "mos2",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos2-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos3",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos3-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos3",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos3-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "mos3",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos3-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "mos4",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos4-0-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos4",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos4-1-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "salary"
+      ]
+    },
+    {
+      "scene": "mos4",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos4-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffQuit"
+      ]
+    },
+    {
+      "scene": "mos5",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos5-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos5",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos5-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "mos5",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos5-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "capacity",
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos6",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos6-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffTrain"
+      ]
+    },
+    {
+      "scene": "mos6",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos6-1-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "mos6",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos6-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "mos6",
+      "choice": 3,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos6-3-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 2,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos7",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos7-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos7",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos7-1-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "mos7",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos7-2-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "mos8",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos8-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos8",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos8-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mos8",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mos8-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv"
+      ]
+    },
+    {
+      "scene": "mosBank",
+      "choice": 0,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mosBank-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mosBank",
+      "choice": 1,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mosBank-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mosBank",
+      "choice": 2,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mosBank-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "mosBank",
+      "choice": 3,
+      "fixture": "moscow",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/mosBank-3-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s31",
+      "choice": 0,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 5,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "rivalMod",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s31",
+      "choice": 1,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31-1-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor"
+      ]
+    },
+    {
+      "scene": "s31",
+      "choice": 2,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31-2-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s31",
+      "choice": 3,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31-3-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost"
+      ]
+    },
+    {
+      "scene": "s31b",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31b-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s31b",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s31b-1-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "staffQuit"
+      ]
+    },
+    {
+      "scene": "s32",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s32-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "close",
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s32",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s32-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 5,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s32",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s32-2-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s32b",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s32b-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s32b",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s32b-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor"
+      ]
+    },
+    {
+      "scene": "s33",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s33-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "aggComm",
+        "journal"
+      ]
+    },
+    {
+      "scene": "s33",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s33-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s33",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s33-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "aggComm",
+        "journal"
+      ]
+    },
+    {
+      "scene": "s34",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s34-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffTrain"
+      ]
+    },
+    {
+      "scene": "s34",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s34-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s34",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s34-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s35",
+      "choice": 0,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 47514,
+      "stateFile": "tmp/story-branches/states/s35-0-47514.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s35",
+      "choice": 1,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 47514,
+      "stateFile": "tmp/story-branches/states/s35-1-47514.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s35",
+      "choice": 2,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 47514,
+      "stateFile": "tmp/story-branches/states/s35-2-47514.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor"
+      ]
+    },
+    {
+      "scene": "s36",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s36-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s36",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s36-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s36",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s36-2-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s36b",
+      "choice": 0,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s36b-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s36b",
+      "choice": 1,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s36b-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s37",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s37-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s37",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s37-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s37",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s37-2-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "s3hook",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s3hook-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s4g1",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g1-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s4g1",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g1-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4g1",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g1-2-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4g2",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g2-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s4g2",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g2-1-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s4g2",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g2-2-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4g3",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g3-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s4g3",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g3-1-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "rivalMod",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s4g3",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g3-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4g4",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g4-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s4g4",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g4-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4g4",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4g4-2-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "sg2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg2-0-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg2",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg2-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg2-2-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "s41",
+      "choice": 0,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s41-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s41",
+      "choice": 1,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s41-1-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s41",
+      "choice": 2,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s41-2-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s41",
+      "choice": 3,
+      "fixture": "warm-russia-warm-stage1",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s41-3-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 3,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s42",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s42-0-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s42",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s42-1-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "rivalMod",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s42",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s42-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s42",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s42-3-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s43",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s43-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s43",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s43-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s43",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s43-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s44",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s44-0-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s44",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s44-1-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s44",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s44-2-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "s44",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s44-3-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s45",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s45-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s45",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s45-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s45",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s45-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s46",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s46-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s46",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s46-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s46",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s46-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s46",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s46-3-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "s47",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s47-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s47",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s47-1-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "s47",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s47-2-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "s4m1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/s4m1-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-0-7919.json",
+      "checks": 38,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-1-7919.json",
+      "checks": 38,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 2,
+      "fixture": "cold-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-2-7919.json",
+      "checks": 50,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 5,
+        "threads": 16,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 3,
+      "fixture": "cold-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-3-7919.json",
+      "checks": 45,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 4,
+      "fixture": "cold-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-4-7919.json",
+      "checks": 42,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "sf1",
+      "choice": 5,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1-5-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf1b",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1b-0-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 5,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "sf1b",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1b-1-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "sf1b",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf1b-2-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 0,
+      "fixture": "cold-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 1,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 2,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-2-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 3,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-3-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 4,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-4-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "sf2",
+      "choice": 5,
+      "fixture": "cold-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sf2-5-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "ending"
+      ]
+    },
+    {
+      "scene": "b21",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b21-0-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b22",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b22-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b23",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b23-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b24",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b24-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "delivery",
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b25",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b25-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalOpenNear"
+      ]
+    },
+    {
+      "scene": "b26",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b26-0-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b27",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b27-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b28",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b28-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b29",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b29-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b2a",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b2a-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b2c",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b2c-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "delivery",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b2d",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b2d-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b46",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b46-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "delivery",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b47",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b47-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b4a",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4a-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b48",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b48-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4c",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4c-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b4d",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4d-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b49",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b49-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "b4e",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4e-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b4f",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4f-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b4g",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4g-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4h",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4h-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4i",
+      "choice": 0,
+      "fixture": "patient-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4i-0-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b31",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b31-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b32",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b32-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b33",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b33-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b34",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b34-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor"
+      ]
+    },
+    {
+      "scene": "b35",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b35-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b36",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b36-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 5,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b41",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b41-0-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "b42",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b42-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "delivery",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b43",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b43-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "b44",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b44-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost",
+        "journal"
+      ]
+    },
+    {
+      "scene": "b45",
+      "choice": 0,
+      "fixture": "warm-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b45-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 4,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd1-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffTrain"
+      ]
+    },
+    {
+      "scene": "kd1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd1-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd1-2-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd2-0-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd2",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd2-1-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd2",
+      "choice": 2,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd2-2-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 10,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd2",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd2-3-7919.json",
+      "checks": 29,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 6,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kd3",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd3-0-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kd3",
+      "choice": 1,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd3-1-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 10,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kd3",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kd3-2-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 2,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kb1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb1-0-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kb1",
+      "choice": 1,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb1-1-7919.json",
+      "checks": 44,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 17,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kb1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb1-2-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kb1",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb1-3-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 15,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kb2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb2-0-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kb2",
+      "choice": 1,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb2-1-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 10,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kb2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kb2-2-7919.json",
+      "checks": 38,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kg1",
+      "choice": 0,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg1-0-7919.json",
+      "checks": 42,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 18,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kg1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg1-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 7,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kg1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg1-2-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 15,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kg1",
+      "choice": 3,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg1-3-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 10,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "offer"
+      ]
+    },
+    {
+      "scene": "kg2",
+      "choice": 0,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg2-0-7919.json",
+      "checks": 43,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 20,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kg2",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg2-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kg2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kg2-2-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf1-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf1-1-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kf1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf1-2-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf2-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf2",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf2-1-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 16,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "kf2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf2-2-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "ke1",
+      "choice": 0,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke1-0-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "ke1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke1-1-7919.json",
+      "checks": 40,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 16,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ke1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke1-2-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "ke2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke2-0-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 9,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "ke2",
+      "choice": 1,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke2-1-7919.json",
+      "checks": 38,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "ke2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ke2-2-7919.json",
+      "checks": 31,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "ko1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ko1-0-7919.json",
+      "checks": 40,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 16,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "ko1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ko1-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 8,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "ko2",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ko2-0-7919.json",
+      "checks": 41,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 17,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "ko2",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ko2-1-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 9,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "ko2",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/ko2-2-7919.json",
+      "checks": 33,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 9,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "rivalMod"
+      ]
+    },
+    {
+      "scene": "kf3",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf3-0-7919.json",
+      "checks": 49,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 18,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf3",
+      "choice": 1,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf3-1-7919.json",
+      "checks": 51,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 21,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "journal",
+        "line",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kf3",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf3-2-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 10,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf4",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf4-0-7919.json",
+      "checks": 41,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "kf4",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf4-1-7919.json",
+      "checks": 41,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "staffQuit"
+      ]
+    },
+    {
+      "scene": "kf4",
+      "choice": 2,
+      "fixture": "cold-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf4-2-7919.json",
+      "checks": 41,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "kf4",
+      "choice": 3,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/kf4-3-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "line"
+      ]
+    },
+    {
+      "scene": "sg1",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg1-0-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "offer"
+      ]
+    },
+    {
+      "scene": "sg1",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg1-1-7919.json",
+      "checks": 26,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 3,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "offer"
+      ]
+    },
+    {
+      "scene": "sg1",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg1-2-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv"
+      ]
+    },
+    {
+      "scene": "sg3",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg3-0-7919.json",
+      "checks": 40,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "sg3",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg3-1-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "sg3",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg3-2-7919.json",
+      "checks": 34,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg4",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg4-0-7919.json",
+      "checks": 46,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 19,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "aggOrders",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg4",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg4-1-7919.json",
+      "checks": 45,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 19,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check"
+      ]
+    },
+    {
+      "scene": "sg4",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg4-2-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 11,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg5",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg5-0-7919.json",
+      "checks": 48,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 21,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "staffTrain"
+      ]
+    },
+    {
+      "scene": "sg5",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg5-1-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "sg5",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg5-2-7919.json",
+      "checks": 39,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "competitor",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg6",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg6-0-7919.json",
+      "checks": 49,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 22,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg6",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg6-1-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "sg6",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg6-2-7919.json",
+      "checks": 45,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 22,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg7",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg7-0-7919.json",
+      "checks": 41,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "sg7",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg7-1-7919.json",
+      "checks": 38,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "sg7",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg7-2-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "sg8",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg8-0-7919.json",
+      "checks": 47,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 20,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg8",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg8-1-7919.json",
+      "checks": 35,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 12,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "sg8",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg8-2-7919.json",
+      "checks": 43,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 20,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg9",
+      "choice": 0,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg9-0-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg9",
+      "choice": 1,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg9-1-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "sg9",
+      "choice": 2,
+      "fixture": "warm-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/sg9-2-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    }
+  ],
+  "attempts": 331,
+  "checks": 8962,
+  "limitations": [
+    "independent legal choice reachability; not every combination of preceding choices",
+    "assisted financial fixtures are not a balance benchmark",
+    "core effects use durable replay plus existing Engine tests"
+  ]
+}

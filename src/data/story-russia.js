@@ -524,11 +524,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     {
       id: 'sf1', ch: 'final', form: 'climax', title: 'Лодочная станция', climax: true,
       who: ['oleg', 'semyon'],
-      queueOnly: true,   // финал ставит очередь: через месяц после победы (story.js) или по запасному сроку
+      queueOnly: true,   // финал ставит очередь story.js: через 30 дней после победы
       trigger: {
         afterAny: ['s47', 's4g4'],
         any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }, { months: 192 }],
-        fallback: { months: 24 },   // не выиграл за 16 лет — финал всё равно придёт (18 лет)
       },
       lines: [
         { who: 'oleg', emo: 'serious', text: 'Четверг, семь вечера, лодочная станция на Белой. Фонд забрал деньги. У «Двора» двести точек и четыре миллиарда долга. Две тысячи человек, у каждого ипотека.' },

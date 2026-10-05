@@ -1,0 +1,56 @@
+--- a/src/story.js
++++ b/src/story.js
+@@ -289,7 +289,7 @@
+     for (const sc of list) { if (sc.queueOnly) continue; if (fits(S, R, sc)) return sc; }   // queueOnly — только по очереди
+     // запасной вариант: срок вышел — приходим в мягкой версии
+     for (const sc of list) {
+-      if (!sc.fallback || R.seen[sc.id]) continue;
++      if (sc.queueOnly || !sc.fallback || R.seen[sc.id]) continue;
+       const t = sc.trigger || {};
+       if (t.after && !t.after.every((id) => R.seen[id])) continue;
+       if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id])) continue;   // запасной вариант не обходит ветвление
+@@ -479,7 +479,9 @@
+ 
+   /* ---------------- показ и выбор ---------------- */
+   function start(S, sc) {
+-    const R = ensure(S); if (!R) return null;
++    const R = ensure(S); if (!R || !sc || R.pending) return null;
++    // Уже прочитанную одноразовую сцену не открываем второй раз, в том числе из старой очереди.
++    if (sc.once !== false && R.seen[sc.id] != null) return null;
+     R.pending = { id: sc.id, day: S.day };
+     R.ch = chapter(S, R);
+     if (S.notify) S.notify.push({ type: 'story', phase: 'scene', id: sc.id });
+@@ -622,10 +624,15 @@
+         if (q.day > S.day) return true;
+         if (q.kind === 'scene') {
+           const sc = scene(q.id); if (!sc) return false;
+-          // то же правило, что и у обычного триггера: не в день события и не при открытом окне шефа
++          // Просроченная копия одноразовой сцены больше не нужна; once:false остаётся повторяемой.
++          if (sc.once !== false && R.seen[sc.id] != null) return false;
++          // Решение игрока не перезаписываем. После первого start следующие due-сцены
++          // остаются в очереди с исходным сроком и откроются после ответа в следующем tick.
++          if (R.pending) return true;
++          // Как у обычного триггера: не поверх события, не сразу после него и не поверх шефа.
+           const r0 = (S.ev && S.ev.recent && S.ev.recent[0]) || null;
+-          if ((r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
+-          start(S, sc); return false;
++          if ((S.ev && S.ev.pending) || (r0 && S.day - r0.day < (K().DEFER_DAYS[0] || 3)) || (S.chef && S.chef.pending)) { q.day = S.day + 2; return true; }
++          return !start(S, sc);
+         }
+         if (q.kind === 'rivalNear') { rivalNear(S, q.count || 1); return false; }
+         if (q.kind === 'journal') return false;
+--- a/src/data/story-russia.js
++++ b/src/data/story-russia.js
+@@ -524,11 +524,10 @@
+     {
+       id: 'sf1', ch: 'final', form: 'climax', title: 'Лодочная станция', climax: true,
+       who: ['oleg', 'semyon'],
+-      queueOnly: true,   // финал ставит очередь: через месяц после победы (story.js) или по запасному сроку
++      queueOnly: true,   // финал ставит очередь story.js: через 30 дней после победы
+       trigger: {
+         afterAny: ['s47', 's4g4'],
+         any: [{ flag: { ufa: 'russia' } }, { flag: { ufa: 'deep' } }, { months: 192 }],
+-        fallback: { months: 24 },   // не выиграл за 16 лет — финал всё равно придёт (18 лет)
+       },
+       lines: [
+         { who: 'oleg', emo: 'serious', text: 'Четверг, семь вечера, лодочная станция на Белой. Фонд забрал деньги. У «Двора» двести точек и четыре миллиарда долга. Две тысячи человек, у каждого ипотека.' },
