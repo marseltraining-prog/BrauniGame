@@ -2,6 +2,8 @@
 
 ## 0.9.17 (06.10.2026): Челябинск, настоящая Уфа, большая сеть, паузы сюжета
 
+Опубликовано в main и на Artifact https://claude.ai/artifact/B34cjJvLrqSpYXVN73kKkM; страницу релиза и тег `v0.9.17` создать на Mac (облачной сессии GitHub запрещает), там же прогнать WebKit и `node tools/update-desktop.js`.
+
 - **Челябинск** — подробная карта (`src/data/city-chelyabinsk.js`), старые сохранения — `docs/releases/0.9.17-legacy-chelyabinsk.json` (снято `tools/capture-legacy-city.js` ДО подключения — так же делать для следующих городов), `sim/chelyabinsk.js` 562, `qa/chelyabinsk.js` 212. В соседство 4 районов добавлен ТЦ; контрольные партии `tools/city-control.js chelyabinsk 3 24`: было 14,9/14,8/17,3 → стало 16,6/16,1/19,3. Подписи районов сдвинуты после просмотра снимка.
 - **Настоящая Уфа** при старте в другом городе — ключ `ufaCity` (псевдоним в `BK.CITY_BY_ID`, не в `BK.CITIES`), `sim/real-ufa.js` 77, `qa/real-ufa.js`.
 - **Большая сеть** — `src/savecodec.js` (сжатое сохранение только при нехватке места), `sim/perf-big.js`, `qa/bigsave.js`; подробности — PLAN.

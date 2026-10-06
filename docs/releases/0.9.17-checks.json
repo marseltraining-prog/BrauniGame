@@ -241,21 +241,38 @@
     },
     {
       "command": "node qa/story-branches.js",
-      "exit": 1,
-      "blocking": true,
+      "exit": 0,
+      "blocking": false,
       "diagnostic": false,
       "warning": false,
-      "seconds": 1102,
-      "log": "tmp/release-checks/0.9.17/15-story-branches.log",
+      "seconds": 1018,
+      "log": "tmp/release-checks/0.9.17/15-story-branches-retry1.log",
       "lastLines": [
-        "chromium-d1440-light-m: all 123 scenes have actual snapshots",
-        "chromium-d1440-light-f: all 123 scenes have actual snapshots",
-        "chromium-d1440-dark-m: all 123 scenes have actual snapshots",
-        "chromium-d1440-dark-f: all 123 scenes have actual snapshots",
-        "chromium-m360-light-m: all 123 scenes have actual snapshots",
-        "chromium-m360-light-f: all 123 scenes have actual snapshots",
-        "chromium-m360-dark-m: all 123 scenes have actual snapshots",
-        "chromium-m360-dark-f: all 123 scenes have actual snapshots"
+        "chromium-d1440-light-f",
+        "chromium-d1440-dark-m",
+        "chromium-d1440-dark-f",
+        "chromium-m360-light-m",
+        "chromium-m360-light-f",
+        "chromium-m360-dark-m",
+        "chromium-m360-dark-f",
+        "11788 checks, 0 issues"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 1102,
+          "log": "tmp/release-checks/0.9.17/15-story-branches.log",
+          "lastLines": [
+            "chromium-d1440-light-m: all 123 scenes have actual snapshots",
+            "chromium-d1440-light-f: all 123 scenes have actual snapshots",
+            "chromium-d1440-dark-m: all 123 scenes have actual snapshots",
+            "chromium-d1440-dark-f: all 123 scenes have actual snapshots",
+            "chromium-m360-light-m: all 123 scenes have actual snapshots",
+            "chromium-m360-light-f: all 123 scenes have actual snapshots",
+            "chromium-m360-dark-m: all 123 scenes have actual snapshots",
+            "chromium-m360-dark-f: all 123 scenes have actual snapshots"
+          ]
+        }
       ]
     },
     {
@@ -265,7 +282,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 3,
-      "log": "tmp/release-checks/0.9.17/16-story-branches.log",
+      "log": "tmp/release-checks/0.9.17/16-story-branches-retry1.log",
       "lastLines": [
         "║ Please run the following command to download new browsers:              ║",
         "║                                                                         ║",
@@ -275,6 +292,23 @@
         "╚═════════════════════════════════════════════════════════════════════════╝",
         "    at /home/user/braunigame/qa/story-branches.js:121:30",
         "    at Object.<anonymous> (/home/user/braunigame/qa/story-branches.js:163:3)"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 3,
+          "log": "tmp/release-checks/0.9.17/16-story-branches.log",
+          "lastLines": [
+            "║ Please run the following command to download new browsers:              ║",
+            "║                                                                         ║",
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/story-branches.js:121:30",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/story-branches.js:163:3)"
+          ]
+        }
       ]
     },
     {
@@ -320,7 +354,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/19-story-depth.log",
+      "log": "tmp/release-checks/0.9.17/19-story-depth-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -330,6 +364,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/story-depth.js:224:3) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/19-story-depth.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/story-depth.js:205:86",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/story-depth.js:224:3) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -351,7 +402,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/21-start-preview.log",
+      "log": "tmp/release-checks/0.9.17/21-start-preview-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -361,6 +412,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/start-preview.js:57:29) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/21-start-preview.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/start-preview.js:5:69",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/start-preview.js:57:29) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -394,7 +462,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/24-nsk.log",
+      "log": "tmp/release-checks/0.9.17/24-nsk-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -404,6 +472,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/nsk.js:66:3) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/24-nsk.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/nsk.js:9:64",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/nsk.js:66:3) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -437,7 +522,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/27-ekb.log",
+      "log": "tmp/release-checks/0.9.17/27-ekb-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -447,6 +532,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/ekb.js:66:3) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/27-ekb.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/ekb.js:9:64",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/ekb.js:66:3) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -480,7 +582,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/30-kazan.log",
+      "log": "tmp/release-checks/0.9.17/30-kazan-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -490,6 +592,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/kazan.js:66:3) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/30-kazan.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/kazan.js:9:64",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/kazan.js:66:3) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -530,7 +649,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/33-start-city.log",
+      "log": "tmp/release-checks/0.9.17/33-start-city-retry1.log",
       "lastLines": [
         "║     npx playwright install                                              ║",
         "║                                                                         ║",
@@ -540,6 +659,23 @@
         "    at Object.<anonymous> (/home/user/braunigame/qa/start-city.js:88:3) {",
         "  name: 'Error'",
         "}"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/33-start-city.log",
+          "lastLines": [
+            "║     npx playwright install                                              ║",
+            "║                                                                         ║",
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/start-city.js:18:22",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/start-city.js:88:3) {",
+            "  name: 'Error'",
+            "}"
+          ]
+        }
       ]
     },
     {
@@ -556,21 +692,31 @@
     },
     {
       "command": "node sim/start-city-corp.js",
-      "exit": 1,
-      "blocking": true,
+      "exit": 0,
+      "blocking": false,
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/35-start-city-corp.log",
+      "log": "tmp/release-checks/0.9.17/35-start-city-corp-retry1.log",
       "lastLines": [
-        "  code: 'ERR_ASSERTION',",
-        "  actual: 19,",
-        "  expected: 18,",
-        "  operator: 'deepStrictEqual',",
-        "  diff: 'simple'",
-        "}",
-        "",
-        "Node.js v22.22.2"
+        "start-city-corp: 533 проверок, все пройдены"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/35-start-city-corp.log",
+          "lastLines": [
+            "  code: 'ERR_ASSERTION',",
+            "  actual: 19,",
+            "  expected: 18,",
+            "  operator: 'deepStrictEqual',",
+            "  diff: 'simple'",
+            "}",
+            "",
+            "Node.js v22.22.2"
+          ]
+        }
       ]
     },
     {
@@ -614,17 +760,34 @@
       "blocking": true,
       "diagnostic": false,
       "warning": false,
-      "seconds": 290,
-      "log": "tmp/release-checks/0.9.17/38-full.log",
+      "seconds": 273,
+      "log": "tmp/release-checks/0.9.17/38-full-retry1.log",
       "lastLines": [
         "",
         "# Проблемы (2)",
-        "[перф 60 точек m390 CPU×4] dash: долгие задачи 2246 мс за 5 с",
-        "[перф 60 точек m390 CPU×4] stores: долгие задачи 1267 мс за 5 с",
+        "[перф 60 точек m390 CPU×4] dash: долгие задачи 1562 мс за 5 с",
+        "[перф 60 точек m390 CPU×4] stores: долгие задачи 1418 мс за 5 с",
         "",
         "# Ошибки консоли (0)",
         "",
-        "готово за 290 с, скриншоты: qa/shots/full"
+        "готово за 273 с, скриншоты: qa/shots/full"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 290,
+          "log": "tmp/release-checks/0.9.17/38-full.log",
+          "lastLines": [
+            "",
+            "# Проблемы (2)",
+            "[перф 60 точек m390 CPU×4] dash: долгие задачи 2246 мс за 5 с",
+            "[перф 60 точек m390 CPU×4] stores: долгие задачи 1267 мс за 5 с",
+            "",
+            "# Ошибки консоли (0)",
+            "",
+            "готово за 290 с, скриншоты: qa/shots/full"
+          ]
+        }
       ]
     },
     {
@@ -804,17 +967,34 @@
       "blocking": true,
       "diagnostic": false,
       "warning": false,
-      "seconds": 134,
-      "log": "tmp/release-checks/0.9.17/48-pixel.log",
+      "seconds": 133,
+      "log": "tmp/release-checks/0.9.17/48-pixel-retry1.log",
       "lastLines": [
-        "m360-dark пролог → «жизнь в найме»: смен сыграно 1, окон 17 (дилемм живого сюжета 1, гостей-завсегдатаев 16), месяцев 180",
+        "m360-dark пролог → «жизнь в найме»: смен сыграно 1, окон 18 (дилемм живого сюжета 1, гостей-завсегдатаев 16), месяцев 180",
         "m360-dark живая точка s305: утро очередь 8, витрина 91 %, мысли очередь/дорого; вечер очередь 7, витрина 21 %, мысли очередь/дорого",
-        "перф CPU×1: 41 точек, живая точка открыта, ×10: 48 дн/5с, кадров сцены 38 (7.6/с), задач > 50 мс: 0",
+        "перф CPU×1: 41 точек, живая точка открыта, ×10: 50 дн/5с, кадров сцены 38 (7.6/с), задач > 50 мс: 0",
         "перф: после закрытия карточки кадров сцены за 2 с — 0",
-        "перф CPU×4: 41 точек, живая точка открыта, ×10: 47 дн/5с, кадров сцены 35 (7.0/с), задач > 50 мс: 30 (макс 473, сумма 2750 мс)",
+        "перф CPU×4: 41 точек, живая точка открыта, ×10: 47 дн/5с, кадров сцены 34 (6.8/с), задач > 50 мс: 35 (макс 513, сумма 3087 мс)",
         "перф: после закрытия карточки кадров сцены за 2 с — 0",
-        "[перф CPU×4] долгие задачи 2750 мс за 5 с",
+        "[перф CPU×4] долгие задачи 3087 мс за 5 с",
         "1 проблем, 0 ошибок консоли. Скриншоты: /home/user/braunigame/qa/shots/pixel"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 134,
+          "log": "tmp/release-checks/0.9.17/48-pixel.log",
+          "lastLines": [
+            "m360-dark пролог → «жизнь в найме»: смен сыграно 1, окон 17 (дилемм живого сюжета 1, гостей-завсегдатаев 16), месяцев 180",
+            "m360-dark живая точка s305: утро очередь 8, витрина 91 %, мысли очередь/дорого; вечер очередь 7, витрина 21 %, мысли очередь/дорого",
+            "перф CPU×1: 41 точек, живая точка открыта, ×10: 48 дн/5с, кадров сцены 38 (7.6/с), задач > 50 мс: 0",
+            "перф: после закрытия карточки кадров сцены за 2 с — 0",
+            "перф CPU×4: 41 точек, живая точка открыта, ×10: 47 дн/5с, кадров сцены 35 (7.0/с), задач > 50 мс: 30 (макс 473, сумма 2750 мс)",
+            "перф: после закрытия карточки кадров сцены за 2 с — 0",
+            "[перф CPU×4] долгие задачи 2750 мс за 5 с",
+            "1 проблем, 0 ошибок консоли. Скриншоты: /home/user/braunigame/qa/shots/pixel"
+          ]
+        }
       ]
     },
     {
@@ -1028,7 +1208,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/61-minified.log",
+      "log": "tmp/release-checks/0.9.17/61-minified-retry1.log",
       "lastLines": [
         "║ <3 Playwright Team                                                      ║",
         "╚═════════════════════════════════════════════════════════════════════════╝",
@@ -1038,6 +1218,23 @@
         "}",
         "",
         "Node.js v22.22.2"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/61-minified.log",
+          "lastLines": [
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/minified.js:14:30",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/minified.js:59:3) {",
+            "  name: 'Error'",
+            "}",
+            "",
+            "Node.js v22.22.2"
+          ]
+        }
       ]
     },
     {
@@ -1066,7 +1263,7 @@
       "diagnostic": false,
       "warning": false,
       "seconds": 0,
-      "log": "tmp/release-checks/0.9.17/63-minified.log",
+      "log": "tmp/release-checks/0.9.17/63-minified-retry1.log",
       "lastLines": [
         "║ <3 Playwright Team                                                      ║",
         "╚═════════════════════════════════════════════════════════════════════════╝",
@@ -1076,6 +1273,23 @@
         "}",
         "",
         "Node.js v22.22.2"
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 0,
+          "log": "tmp/release-checks/0.9.17/63-minified.log",
+          "lastLines": [
+            "║ <3 Playwright Team                                                      ║",
+            "╚═════════════════════════════════════════════════════════════════════════╝",
+            "    at /home/user/braunigame/qa/minified.js:14:30",
+            "    at Object.<anonymous> (/home/user/braunigame/qa/minified.js:59:3) {",
+            "  name: 'Error'",
+            "}",
+            "",
+            "Node.js v22.22.2"
+          ]
+        }
       ]
     },
     {
