@@ -1,0 +1,18 @@
+{
+  "version": "0.9.17",
+  "complete": false,
+  "results": [
+    {
+      "command": "node sim/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/01-chelyabinsk.log",
+      "lastLines": [
+        "ЧЕЛЯБИНСК: 562 проверок, 0 проблем"
+      ]
+    }
+  ]
+}
