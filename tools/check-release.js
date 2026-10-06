@@ -50,7 +50,8 @@ for (const cmd of commands) {
   if (retry && previous && (previous.exit === 0 || previous.blocking === false) && !forced.includes(args[0])) continue;
   console.log('RUN ' + label);
   const start = Date.now();
-  const run = spawnSync(process.execPath, args, { cwd: root, env: { ...process.env, BR: webkit ? 'webkit' : 'chromium' }, encoding: 'utf8', timeout: 720000, maxBuffer: 8 * 1024 * 1024 });
+  const run = spawnSync(process.execPath, args, { cwd: root, env: { ...process.env, BR: webkit ? 'webkit' : 'chromium' }, encoding: 'utf8', timeout: +(process.env.BK_CHECK_TIMEOUT || 720000), // BK_CHECK_TIMEOUT=1800000 — медленная машина (облако)
+    maxBuffer: 8 * 1024 * 1024 });
   const output = (run.stdout || '') + (run.stderr || '') + (run.error ? '\n' + run.error.message : '');
   const logfile = `${String(commands.indexOf(cmd) + 1).padStart(2, '0')}-${path.basename(args[0], '.js')}${retry ? '-retry' + ((previous && previous.attempts ? previous.attempts.length : 0) + 1) : ''}.log`;
   fs.writeFileSync(path.join(logdir, logfile), output);
