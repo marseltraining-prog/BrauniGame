@@ -127,7 +127,7 @@ async function resolution(p, target, meta, label, reload) {
       await p.emulateMedia({ reducedMotion: 'reduce' });
       const catalog = await p.evaluate(() => BK.Story.scenes().map(s => ({ id: s.id, n: s.choices.length })));
       const keys = new Set(coverage.targets.map(t => t.scene + ':' + t.choice));
-      ok(catalog.length === 123 && coverage.representatives.length === catalog.length, config + ': all 123 scenes have actual snapshots');
+      ok(catalog.length >= 123 && coverage.representatives.length === catalog.length, config + `: all ${catalog.length} scenes have actual snapshots`); // 0.9.17: 130 сцен (добавлены b4j/b4k, b4r1–b4r5)
       ok(catalog.every(s => coverage.representatives.some(t => t.scene === s.id) && Array.from({ length: s.n }, (_, i) => keys.has(s.id + ':' + i)).every(Boolean)), config + ': manifest covers every catalog choice');
       for (const target of coverage.representatives) {
         const label = config + '/' + target.scene;
