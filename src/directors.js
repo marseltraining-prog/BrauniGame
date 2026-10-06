@@ -280,7 +280,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let nd = 0; for (const s of pk.stores) if (s.district === o.district) nd++;
     for (const s of pk.stores) {
       if (!s.last || !s.last.frac) continue;
-      let f = 1; if (E.dist(s, o) < R) f *= F;
+      let f = 1; if (E.near(s, o, R)) f *= F;
       if (s.district === o.district) f *= (1 + SK_ * Math.max(0, nd - 1)) / (1 + SK_ * nd);
       if (f < 1) cannibal += s.last.rev / s.last.frac * (1 - f) * 0.6;
     }

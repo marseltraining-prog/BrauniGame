@@ -5,6 +5,16 @@
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
   const C = () => BK.CFG;
+  /* Производительность (0.9.18): BK.CFG у V8 — «словарный» объект (свойство-геттер RIVAL_NAME в конце config.js и поля, которые
+     добавляют модули), и каждое чтение cfg.X в циклах движка — поиск по хэшу. Объект, через который прочитали поле наследника,
+     V8 переводит в быстрый режим. Значения и поведение CFG не меняются; в других движках это одно лишнее чтение.
+     Вызывается в начале tick: к этому времени все модули загружены и свои поля в CFG добавили. */
+  let cfgFast = null;
+  function cfgFastOnce() {
+    const c = BK.CFG; if (!c || cfgFast === c) return; cfgFast = c;
+    try { const o = Object.create(c); for (let i = 0; i < 32; i++) cfgRead(o); } catch (e) { /* не важно */ }
+  }
+  function cfgRead(o) { return o.START_YEAR; } // чтение через наследника (V8 заводит кэш чтения не с первого вызова функции)
   // уровень сложности: множитель/добавка из CFG.DIFFICULTY (старые сохранения без S.difficulty — «Нормальный»)
   function diffK(S, key) {
     const D = C().DIFFICULTY || {}, d = D[(S && S.difficulty) || 'normal'] || D.normal || {};
@@ -31,13 +41,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function gauss(S) { return (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.414; }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  // ровно dist(a, b) < r, но без Math.hypot там, где ответ ясен по квадрату расстояния с запасом (производительность, 0.9.18):
+  // у самой границы (±0,001 %) — тот же Math.hypot, поэтому результат побитно прежний
+  function near(a, b, r) {
+    const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy, r2 = r * r;
+    if (d2 < r2 * 0.99999) return true;
+    if (d2 > r2 * 1.00001) return false;
+    return Math.hypot(dx, dy) < r;
+  }
   const byId = (arr, id) => arr.find((x) => x.id === id);
   const round = (v, s) => Math.round(v / s) * s;
 
+  // дата игрового дня; память по дню (производительность, 0.9.18) — без нового Date на каждый вызов, наружу — свежий объект, как раньше
+  const dateMemo = new Map(); let dateMemoY = null;
   function dateOf(day) {
-    const d = new Date(Date.UTC(C().START_YEAR, 0, 1));
-    d.setUTCDate(d.getUTCDate() + day);
-    return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), dow: (d.getUTCDay() + 6) % 7 };
+    const Y = C().START_YEAR;
+    if (Y !== dateMemoY) { dateMemo.clear(); dateMemoY = Y; }
+    let r = dateMemo.get(day);
+    if (!r) {
+      const d = new Date(Date.UTC(Y, 0, 1));
+      d.setUTCDate(d.getUTCDate() + day);
+      r = { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), dow: (d.getUTCDay() + 6) % 7 };
+      if (dateMemo.size >= 8192) dateMemo.clear();
+      dateMemo.set(day, r);
+    }
+    return { y: r.y, m: r.m, d: r.d, dow: r.dow };
   }
   const MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
   const MONTHS_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -126,12 +154,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const w = { center: 1.4, grove: 1.2, october: 1.3, sipaylovo: 1.2, glumilino: 0.9, chernikovka: 1.2, inors: 0.9, north: 0.5, shaksha: 0.5, nizh: 0.8, zaton: 0.8, dema: 1.0 };
     return w[d.id] || 1;
   }
+  // занято ли место p (ближе 14 к точке, помещению, цеху или соседу) — без склейки списков на каждую попытку (производительность)
+  function spotBusy(S, p) {
+    const L = [S.stores, S.offers, S.productions, S.prodOffers, (S.rival && S.rival.stores) || []];
+    for (const arr of L) for (const o of arr) if (near(o, p, 14)) return true;
+    return false;
+  }
   function freeSpot(S, d, radius) {
     for (let k = 0; k < 30; k++) {
       const a = rnd(S) * Math.PI * 2, r = Math.sqrt(rnd(S)) * radius;
       const p = { x: d.x + Math.cos(a) * r, y: d.y + Math.sin(a) * r * 0.85 };
-      const busy = S.stores.concat(S.offers, S.productions, S.prodOffers, (S.rival && S.rival.stores) || []).some((o) => dist(o, p) < 14);
-      if (!busy) return p;
+      if (!spotBusy(S, p)) return p;
     }
     return { x: d.x + rr(S, -radius, radius), y: d.y + rr(S, -radius, radius) };
   }
@@ -209,7 +242,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.prodOffers = [];
     const groups = (BK.MAP && BK.MAP.prodGroups) || [['center', 'grove', 'october'], ['sipaylovo', 'glumilino', 'chernikovka', 'inors', 'zaton', 'dema', 'nizh'], ['north', 'shaksha', 'north', 'nizh']];
     if (S.productions.length) { // для второго/третьего цеха — районы подальше от существующих
-      const far = BK.DISTRICTS.slice().sort((a, b) => Math.min(...S.productions.map((p) => dist(p, b))) - Math.min(...S.productions.map((p) => dist(p, a))));
+      const md = new Map(); for (const d of BK.DISTRICTS) md.set(d, Math.min(...S.productions.map((p) => dist(p, d)))); // расстояние до ближайшего цеха — раз на район, а не в каждом сравнении
+      const far = BK.DISTRICTS.slice().sort((a, b) => md.get(b) - md.get(a));
       for (let i = 0; i < n; i++) S.prodOffers.push(makeProdOffer(S, far[Math.min(far.length - 1, i * 2 + ri(S, 0, 1))]));
       return;
     }
@@ -320,6 +354,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const ref = C().DELIVERY_UNITS_REF;
     const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * C().ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
     return (C().DELIVERY_BASE + C().DELIVERY_PER_KM * km) * volF * S.macro.priceLevel * prodDelMult(p) * modMult(S, 'delivery', st) * (S.corp && S.corp.hqDelK ? S.corp.hqDelK : 1); // логистика штаба
+  }
+  // для месячного агрегата (corp.js): стоимость доставки по точкам одного города — множитель оборудования цеха и масштаб карты
+  // считаются раз на город, формула и порядок умножения — как в deliveryCost (результат побитно тот же; производительность, 0.9.18)
+  function deliveryCostFn(S) {
+    const cfg = C(), kmU = kmPerUnit(), pl = S.macro.priceLevel, hq = S.corp && S.corp.hqDelK ? S.corp.hqDelK : 1, dmOf = new Map();
+    return (st) => {
+      if (S.corp && BK.Corp && BK.Corp.remoteDel) { const r = BK.Corp.remoteDel(S, st); if (r != null) return r; }
+      const p = nearestProd(S, st); if (!p) return 0;
+      const km = dist(p, st) * kmU;
+      const ref = cfg.DELIVERY_UNITS_REF;
+      const volF = ref ? clamp(Math.sqrt(((st.cpd != null ? st.cpd : 150) * cfg.ITEMS_PER_CHECK) / ref), 0.6, 2.2) : 1;
+      let dm = dmOf.get(p); if (dm === undefined) { dm = prodDelMult(p); dmOf.set(p, dm); }
+      return (cfg.DELIVERY_BASE + cfg.DELIVERY_PER_KM * km) * volF * pl * dm * modMult(S, 'delivery', st) * hq;
+    };
   }
   function prod2Stores() { return (BK.CITY && BK.CITY.prod2) || C().SECOND_PROD_STORES; } // второй цех: город-лента (Р4) — раньше
   function kmPerUnit() { return (BK.CITY && BK.CITY.kmPerUnit) || C().KM_PER_UNIT; } // масштаб активного города (Уфа — KM_PER_UNIT)
@@ -465,9 +513,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.CITY && BK.CITY.season) season *= BK.CITY.season[t.m]; // сезонный профиль города (у Уфы нет)
     if (lms.some((l) => l.summer) && t.m >= 5 && t.m <= 7) season *= (BK.CITY && BK.CITY.park) || 1.25; // парки летом (Самара — набережная Волги, сильнее)
     let cannibal = 1, inDistrict = 0;
+    const cR = cfg.CANNIBAL_RADIUS || 26;
     for (const o of S.stores) {
       if (o === st || o.status === 'opening') continue;
-      if (dist(o, st) < (cfg.CANNIBAL_RADIUS || 26)) cannibal *= (cfg.CANNIBAL_F || 0.86);
+      if (near(o, st, cR)) cannibal *= (cfg.CANNIBAL_F || 0.86);
       if (o.district === st.district) inDistrict++;
     }
     cannibal /= 1 + cfg.SATURATION_K * Math.max(0, inDistrict - 1);
@@ -815,6 +864,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   function tick(S) {
+    cfgFastOnce();
     if (S.phase !== 'play' || S.ev.pending || S.chef.pending || S.lost) return false;
     S.day += 1;
     const t = dateOf(S.day);
@@ -1436,7 +1486,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     storeOpenCost, prodOpenCost, chooseProduction, rentStore, refreshOffers, repairCost, startRepair, train, trainAll, trainCost, hire, hireCost, hireDays,
     fire, setStaffTarget, closeStore, buyEquipment, setPrice, setAllPrices, chefConfirm, setAlloc, reserveMove, loanLimit, takeLoan, repayLoan,
     setPay, buyCulture, buyOffice, resolveEvent, applyEffects, rolling12, currentTaxRate, salaryOf, vacancies, eqUnlocked, offersWanted, storeRentMonth, prodRentMonth, // applyEffects — для сюжетных сцен (story.js): те же эффекты, что у событий
-    allStaff, bakersTotal, refreshCandidates, proposeChef, dist, byId, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
+    allStaff, bakersTotal, refreshCandidates, proposeChef, dist, near, byId, deliveryCostFn, clamp, recStaff, hrCount, ownerHireLeft, trainersCount, ownerTrainLeft,
     holidaysOfYear, upcomingHolidays, holidayEffectText, holidayMult, kmPerUnit,
   };
 
@@ -1538,7 +1588,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function rivalNear(S, obj) { // для карточек точки и помещения: сколько точек соперника рядом и какая доля гостей уходит
     const R = S.rival; if (!R || !R.enabled) return { n: 0, loss: 0 };
-    let n = 0; for (const o of R.stores) if (dist(o, obj) < C().RIVAL_RADIUS) n++;
+    let n = 0; const rR = C().RIVAL_RADIUS; for (const o of R.stores) if (near(o, obj, rR)) n++;
     return { n, loss: n ? 1 - rivalMult(S, obj) : 0 };
   }
   function rivalDaily(S, t) {
@@ -1609,7 +1659,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
      Агрегаторы: S.agg = { on } — переключатель на сеть (новые точки подключаются сами), st.agg — точка подключена, st.aggDay — с какого дня,
        st.aggPaid — подключение оплачено. Старые сохранения: полей нет → всё выключено. Числа — AGG_* в config.js. ГСЧ не используется. */
   const dpCache = {};
+  // быстрый путь (производительность, 0.9.18): у точки 0–2 соседа — профиль ищется по району и соседям без сборки строки-ключа;
+  // профиль тот же, что по ключу (зависит только от района, соседей и карты)
+  const dpTree = new Map(), DP_NONE = {};
   function daypartOf(o) {
+    const lm = o.landmarks, n = lm ? lm.length : 0;
+    if (n > 2) return daypartKey(o);
+    let a = dpTree.get(o.district); if (!a) dpTree.set(o.district, (a = new Map()));
+    const k0 = n > 0 ? lm[0] : DP_NONE, k1 = n > 1 ? lm[1] : DP_NONE;
+    let b = a.get(k0); if (!b) a.set(k0, (b = new Map()));
+    const r = b.get(k1);
+    if (r && r.map === BK.DISTRICTS) return r;
+    const x = daypartKey(o); b.set(k1, x); return x;
+  }
+  function daypartKey(o) {
     const key = o.district + '|' + (o.landmarks || []).join(',');
     if (dpCache[key] && dpCache[key].map === BK.DISTRICTS) return dpCache[key];
     const cfg = C(), d = byId(BK.DISTRICTS, o.district) || {};

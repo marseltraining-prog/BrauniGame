@@ -1,11 +1,15 @@
 /* Большая сеть второго акта: 800–1000 точек. Берёт сохранение sim/perf.js (--save) или играет сам (--make) и размножает упакованные
    точки городов до нужного числа (копии с новыми id), затем меряет размер сохранения и время месяца.
-   Запуск: node sim/perf.js 30 7919 --save=/tmp/p.json && node sim/perf-big.js /tmp/p.json [точек=1000] */
+   Запуск: node sim/perf.js 30 7919 --save=/tmp/p.json && node sim/perf-big.js /tmp/p.json [точек=1000] [--runs=8]
+   Первые прогоны в процессе идут на холодном коде (JIT ещё не оптимизировал функции месяца), поэтому медиана 8 прогонов
+   заметно выше установившегося времени; вторая строка — медиана второй половины прогонов. */
 'use strict';
 const fs = require('fs');
 const BK = require('./load'), E = BK.Engine;
 // node sim/perf-big.js --make <выход.json> [точек] — сам играет бот good --corp 30 лет (сид 7919) и пишет большое состояние
-const argv = process.argv.slice(2), make = argv[0] === '--make';
+// --runs=N — сколько раз мерить (по умолчанию 8); вторая строка — медиана второй половины прогонов (код уже прогрет JIT)
+const runsArg = process.argv.find((a) => a.startsWith('--runs=')), RUNS = runsArg ? Math.max(2, +runsArg.slice(7) || 8) : 8;
+const argv = process.argv.slice(2).filter((a) => !a.startsWith('--runs=')), make = argv[0] === '--make';
 let S0, want;
 if (make) {
   want = +(argv[2] || 1000);
@@ -33,7 +37,7 @@ if (out) { fs.mkdirSync(require('path').dirname(out), { recursive: true }); fs.w
 console.log(`точек ${count(S0)} в ${Object.keys(S0.corp.cities).length} городах · сохранение ${(json.length / 1024).toFixed(0)} КБ`);
 const nextFirst = (st) => { let d = st.day + 1; while (E.dateOf(d).d !== 1) d++; return d; };
 const agg = [], full = [], day = [];
-for (let i = 0; i < 8; i++) {
+for (let i = 0; i < RUNS; i++) {
   const A = JSON.parse(json); BK.Corp.ensure(A); A.notify = [];
   const d1 = nextFirst(A);
   while (A.day < d1 - 1) { const t = process.hrtime.bigint(); E.tick(A); day.push(Number(process.hrtime.bigint() - t) / 1e6); A.notify = []; if (A.ev.pending) A.ev.pending = null; if (A.chef.pending) A.chef.pending = null; }
@@ -43,3 +47,5 @@ for (let i = 0; i < 8; i++) {
 }
 const med = (a) => a.slice().sort((x, y) => x - y)[a.length >> 1], f = (x) => x.toFixed(2);
 console.log(`месяц агрегата: медиана ${f(med(agg))} мс · 1-е число целиком: ${f(med(full))} мс · обычный день: ${f(med(day))} мс`);
+const half = (a) => a.slice(a.length >> 1);
+console.log(`после прогрева (вторая половина из ${RUNS}): месяц агрегата ${f(med(half(agg)))} мс · 1-е число целиком ${f(med(half(full)))} мс`);

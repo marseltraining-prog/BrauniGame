@@ -98,7 +98,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // закупки и логистика — множители для движка (engine.js читает S.corp.hqFcK / hqDelK; без отделов — ровно 1)
   function refreshK(S) {
     const cr = S.corp, k = K();
-    if (cr.hq.purchasing) { let n = 0; for (const id in cr.cities) n += BK.Corp.cityStats(S, id).stores; cr.hqFcK = 1 - Math.min(k.PURCH_MAX, k.PURCH_PER100 * n / 100); } else cr.hqFcK = 1;
+    if (cr.hq.purchasing) { let n = 0; for (const id in cr.cities) n += BK.Corp.cityStoreCount(S, id); cr.hqFcK = 1 - Math.min(k.PURCH_MAX, k.PURCH_PER100 * n / 100); } else cr.hqFcK = 1;
     cr.hqDelK = k.LOG_DEL[cr.hq.logistics | 0] || 1;
   }
   function rateAdd(S) { // казначейство финдепа и ковенанта банка (e213)
