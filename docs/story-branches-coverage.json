@@ -1,6 +1,6 @@
 {
   "complete": true,
-  "version": "0.9.15",
+  "version": "0.9.16",
   "balance": false,
   "scenes": 123,
   "successfulTargets": [
@@ -1087,15 +1087,16 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s22-0-7919.json",
-      "checks": 27,
+      "checks": 35,
       "declaredChecks": {
         "resolution": 6,
+        "deferOpen": 9,
         "money": 2,
         "relations": 1,
         "meters": 1,
         "perks": 3,
         "shares": 1,
-        "queue": 2,
+        "queue": 1,
         "threads": 3,
         "family": 2,
         "saveLoad": 6
@@ -6880,7 +6881,7 @@
     }
   ],
   "attempts": 331,
-  "checks": 8962,
+  "checks": 8970,
   "limitations": [
     "independent legal choice reachability; not every combination of preceding choices",
     "assisted financial fixtures are not a balance benchmark",

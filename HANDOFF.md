@@ -1,5 +1,9 @@
 # Передача проекта «Хлебная карта» (для следующей модели / разработчика)
 
+## Опубликовано — 0.9.16 (06.10.2026): без интернета и честный перенос открытия
+
+[Релиз](https://github.com/marseltraining-prog/BrauniGame/releases/tag/v0.9.16). Выпуск делался из облачной сессии (claude.ai/code): WebKit там нет — проверки `@webkit` нужно прогнать на Mac (`node tools/check-release.js --retry-failed`); рабочий стол Mac не обновлялся (на Mac: `node tools/update-desktop.js`). Artifact на аккаунте marseltraining@gmail.com обновлён: https://claude.ai/artifact/B34cjJvLrqSpYXVN73kKkM. Подробности проверок — docs/releases/0.9.16.md.
+
 ## Сделано в main — игра полностью без интернета (06.10.2026)
 
 Шрифты встроены в файл (`src/fonts/`, `build.js`), сетевых адресов в сборке нет; подробности — PLAN.md. `qa/full.js` с настоящими шрифтами: 3 прежних замечания CPU×4, 0 ошибок консоли. Версия не поднималась — войдёт в 0.9.16.
