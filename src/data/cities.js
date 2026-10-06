@@ -306,6 +306,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const UFA = { DISTRICTS: BK.DISTRICTS, MAP: BK.MAP, CENTER_POINT: BK.CENTER_POINT };
   BK.UFA = UFA;
   const byId = {}; for (const c of CITIES) byId[c.id] = c;
+  // Настоящая Уфа во втором акте у партии, начатой в другом городе. Ключ корпорации `ufa` исторически
+  // означает домашний город (на нём сохранения), поэтому настоящей Уфе — свой ключ-псевдоним. В список
+  // CITIES он не входит: показывает его только BK.Corp.mapCities, когда домашний город — не Уфа.
+  byId.ufaCity = Object.assign({}, byId.ufa, { id: 'ufaCity', alias: 'ufa' });
 
   /* ---------- проектные карты городов (PLAN.md, этап 8.3) ----------
      Районы, улицы, соседство и схема карты нарисованы руками — src/data/cities-big.js
@@ -365,6 +369,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const proj = (lon, lat) => ({ x: 60 + (lon - 27) * 24, y: 40 + (68 - lat) * 34 });
   // расстояние по дорогам между городами: от Уфы — из таблицы, между прочими — по дуге × 1,25
   function roadKm(a, b) {
+    if (byId[a] && byId[a].alias) a = byId[a].alias;
+    if (byId[b] && byId[b].alias) b = byId[b].alias;
     const A = byId[a], B = byId[b]; if (!A || !B || a === b) return 0;
     if (a === 'ufa') return B.km; if (b === 'ufa') return A.km;
     const r = Math.PI / 180, h = Math.sin((B.lat - A.lat) * r / 2) ** 2 + Math.cos(A.lat * r) * Math.cos(B.lat * r) * Math.sin((B.lon - A.lon) * r / 2) ** 2;

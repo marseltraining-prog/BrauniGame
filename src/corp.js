@@ -33,14 +33,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return def(real) || def('ufa') || {};
   }
   // Ключ ufa зарезервирован за домашним городом ради совместимости сохранений.
-  // Отдельный вход в настоящую Уфу из другого города пока недоступен.
+  // Настоящая Уфа у партии, начатой в другом городе, живёт под ключом ufaCity (псевдоним в BK.CITY_BY_ID).
   const homeCityId = (S) => startCityOf(S) || 'ufa';
-  const realCityId = (S, id) => id === 'ufa' ? homeCityId(S) : id;
+  const realCityId = (S, id) => id === 'ufa' ? homeCityId(S) : id === 'ufaCity' ? 'ufa' : id;
+  const realUfaOpen = (S) => homeCityId(S) !== 'ufa';
   const roadKm = (S, a, b) => BK.roadKm(realCityId(S, a), realCityId(S, b));
   function mapCities(S) {
     const home = homeCityId(S);
     if (home === 'ufa') return BK.CITIES;
-    return BK.CITIES.filter((d) => d.id !== home).map((d) => d.id === 'ufa' ? Object.assign({}, cityDef(S, 'ufa'), { id: 'ufa', geoId: home }) : d);
+    return BK.CITIES.filter((d) => d.id !== home).map((d) => d.id === 'ufa' ? Object.assign({}, cityDef(S, 'ufa'), { id: 'ufa', geoId: home }) : d)
+      .concat([Object.assign({}, def('ufaCity'), { geoId: 'ufa' })]);
   }
   function corpMarket(S) { if (!S.corp.active) return S.corp.market0; const w = cityDef(S, S.corp.active).wage || 1; return { seller: S.market.seller / w, baker: S.market.baker / w }; }
 
@@ -756,7 +758,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function enterLock(S, id) { // null — можно; иначе причина
     const d = def(id);
     if (!on(S)) return 'Выход в Россию ещё не открыт';
-    if (!d || d.builtin) return 'Город недоступен';
+    if (!d || (d.builtin && !(id === 'ufaCity' && realUfaOpen(S)))) return 'Город недоступен';
     if (S.corp.cities[id] || id === homeCityId(S)) return 'Уже ваш город';
     // Москва и Петербург — после 3 городов И финансового департамента (§12 п. 8)
     if (d.big) { const bl = BK.HQ ? BK.HQ.bigLock(S) : ownCount(S) < K().BIG_MIN_CITIES ? `Откроется, когда в сети будет ${K().BIG_MIN_CITIES} города` : null; if (bl) return bl; }
