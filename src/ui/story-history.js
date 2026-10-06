@@ -150,7 +150,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!HAS_DOM || !BK.Px || !BK.Px.portraitTag) return '';
     const cast = BK.Px.CAST || {};
     if (!cast[heroPx(id)]) return '';
-    return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp');
+    const C = BK.STORY_CAST, role = C && C.HERO_ROLE ? C.HERO_ROLE[id] : undefined;   // городское лицо (cast.js)
+    return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp', role);
   }
   // > = 10 — «сидит за столом», иначе — «стул пустой, но с деталью» (docs/story.md §7, Ф2)
   function epilogues(R, S) {

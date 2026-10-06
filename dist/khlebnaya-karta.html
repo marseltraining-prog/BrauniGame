@@ -4250,6 +4250,8 @@ BK.STORY = {
      2. hero(S, who) — герой по городу партии для подписи говорящего и роли.
      3. swap() — реестр нитей и «Вас помнят» получают уже местные имена (см. guests.js,
         src/story.js: attItems и строка отчёта месяца).
+     4. Лица: src/pixel/cast.js (Px.cityKey) спрашивает personOf(город, роль) и рисует героя
+        с местным именем своим вариантом пиксельного облика; для Уфы — прежние портреты.
 
    Записи людей: { name — полное имя (подпись), short — как зовут в тексте,
    role — кто он (берётся из шаблона MAIN_ROLE/GUEST_ROLE), f — формы short,
@@ -26267,6 +26269,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
    мама Фания, бабушка Сания, Семён Аркадьевич, Дамир, герой-бариста; гости очереди (GUESTS — 10 обликов, по индексу
    эмодзи-лица в «Смене»); продавцы и курьер «живой точки». Готовые спрайты — через Px.fig / Px.face (кэш).
    Проба и палитры — docs/mockups/pixel/cast.js, 4-portraits.html.
+   Городские портреты: вне Уфы у героя с местным именем (BK.STORY_CAST) — свой вариант облика
+   (Px.cityKey → ключ «город.роль» в data-pxp и в кэше, Px.castVariant); Уфа побайтно прежняя.
+   Подробно — блок «городские портреты» ниже, проверка — node qa/city-portraits.js.
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
@@ -26352,14 +26357,104 @@ var BK = globalThis.BK || (globalThis.BK = {});
     { skin: 0, hair: HAIR.auburn, hairStyle: 'bun', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
     { skin: 2, hair: HAIR.chest, hairStyle: 'neat', top: ['#f5efe3', '#d6ccb9'], apron: ['#c46f17', '#94500b'], pants: ['#3a3a48', '#282833'], shoes: ['#3a2a2a', '#241a1a'] },
   ];
+  /* ---------- городские портреты (PLAN.md «Городские портреты») ----------
+     Имена героев по городу партии даёт BK.STORY_CAST (src/data/story-cast.js); здесь им — свои лица.
+     Если в городе партии у роли другой человек (не уфимское имя), портрет и фигура героя строятся
+     из уфимского облика с другими чертами: тон кожи (три тона палитры), цвет и форма волос, глаза,
+     очки, усы/борода у мужчин, у женщин — причёска, цвет косынки или (в татарских городах, иногда)
+     однотонный платок. Одежда, фон и рабочие уборы (колпак наставника, косынка пекаря, кепка Дамира)
+     остаются — по ним узнаётся роль. Черты выбираются детерминированно: хэш «город|роль|полное имя».
+     Ключ варианта — «город.роль» (например kazan.mentor) — уходит третьим полем в data-pxp и в ключ
+     кэша; для Уфы и для героев без городской замены (семья, сам герой, врач) ключа нет, поэтому
+     разметка, кэш и пиксели побайтно прежние (проверка — node qa/city-portraits.js).
+     Роль по умолчанию — PX_ROLE[ключ Px.CAST]; окно сюжета передаёт свою (Инна рисуется из облика
+     Эльвиры, инспектор — из облика Семёна, но лица у них в городах свои). */
+  const PX_ROLE = { rashid: 'mentor', gulya: 'colleague', oleg: 'rival', elvira: 'banker', semyon: 'chronicler', damir: 'damir' };
+  // город партии: из открытой партии (как подписи сюжета — STORY_CAST.hero), без неё — как тексты пролога (cityIdNow)
+  function castCity() {
+    const C = BK.STORY_CAST; if (!C) return 'ufa';
+    try { const S = BK.App && BK.App.state; return (S ? C.cityOf(S) : C.cityIdNow()) || 'ufa'; } catch (e) { return 'ufa'; }
+  }
+  // ключ варианта «город.роль» или '' (Уфа, нет замены, то же имя, что в Уфе)
+  function cityKey(who, role) {
+    const C = BK.STORY_CAST, sp = CAST[who];
+    role = role || PX_ROLE[who];
+    if (!C || !role || !sp || !sp.p || !C.personOf) return '';
+    const city = castCity(); if (city === 'ufa') return '';
+    const pp = C.personOf(city, role), u = C.personOf('ufa', role);
+    if (!pp || (u && u.name === pp.name)) return '';
+    return city + '.' + role;
+  }
+  const hashStr = (t) => { let h = 0x811c9dc5; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
+  const prng = (seed) => { let x = seed >>> 0; return () => { x = (x + 0x6D2B79F5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  const LIGHT_BROWN = ['#9a6a42', '#6e4a2c', '#c08e5e'], PEPPER = ['#6e6660', '#4a4440', '#9a928a'];
+  const YOUNG_HAIR = [HAIR.dark, HAIR.black, HAIR.chest, HAIR.auburn, HAIR.blond, HAIR.hero, LIGHT_BROWN, HAIR.red];
+  const OLD_HAIR = [HAIR.grey, HAIR.white, HAIR.heroOld, PEPPER];
+  const EYES = ['#3a2418', '#4a2a18', '#2a1a14', '#3a4a5a', '#4a5a3a', '#5a4030'];
+  const GLASSES = ['#2a1a1c', '#6a5050', '#3a444e', '#8a6a3a'];
+  // косынка пекаря: [цвет, тень, блик, горошек]
+  const BANDANAS = [['#3b6fa0', '#2a5078', '#6a9ccc', '#f5efe3'], ['#e3b341', '#b88a24', '#f2d27a', '#8f2c20'], ['#7d5a8e', '#5c3f6d', '#a888b8', '#f5efe3'], ['#2f8a57', '#1f6a40', '#5ab884', '#f5efe3'], ['#c46f17', '#94500b', '#e59a3e', '#f5efe3']];
+  // однотонный платок: [ткань, тень, ткань, ткань, кайма] — цветы рисуются цветом ткани, т. е. не видны
+  const SCARVES = [['#3b6fa0', '#2a5078', '#3b6fa0', '#3b6fa0', '#24456a'], ['#8f4a5a', '#6a3040', '#8f4a5a', '#8f4a5a', '#e3b341'], ['#e8dcc4', '#c9b998', '#e8dcc4', '#e8dcc4', '#3f6b5a'], ['#3f6b5a', '#2d4e42', '#3f6b5a', '#3f6b5a', '#e3b341']];
+  const TATAR = { kazan: 1, chelny: 1, sterlitamak: 1 };
+  const pick = (r, list) => list[Math.floor(r() * list.length) % list.length];
+  const pickW = (r, pairs) => { let x = r() * pairs.reduce((a, q) => a + q[1], 0); for (const q of pairs) { x -= q[1]; if (x < 0) return q[0]; } return pairs[pairs.length - 1][0]; };
+  const VAR = {};
+  function variant(who, vk) {
+    const id = who + '@' + vk;
+    if (VAR[id]) return VAR[id];
+    const base = CAST[who], bp = base.p, dot = vk.indexOf('.');
+    const city = vk.slice(0, dot), role = vk.slice(dot + 1);
+    const pp = (BK.STORY_CAST && BK.STORY_CAST.personOf(city, role)) || { name: vk };
+    const r = prng(hashStr(city + '|' + role + '|' + pp.name));
+    const fem = !!bp.lashes, old = bp.hair === HAIR.grey || bp.hair === HAIR.white;
+    const hat = bp.hairStyle === 'baker' || bp.hairStyle === 'bandana';
+    const p = Object.assign({}, bp);
+    p.skin = pickW(r, [[0, 0.45], [1, 0.43], [2, 0.12]]);
+    const red = r() < 0.4;                                          // рыжие — реже остальных
+    p.hair = pick(r, (old ? OLD_HAIR : YOUNG_HAIR).filter((h) => h !== bp.hair && (h !== HAIR.red || red)));
+    p.eyec = pick(r, EYES);
+    if (bp.hairStyle === 'bandana') p.hat = pick(r, BANDANAS);
+    else if (!hat) {
+      if (fem) p.hairStyle = TATAR[city] && r() < 0.35 ? 'scarf' : pick(r, ['bob', 'long', 'bun', 'curly']);
+      else p.hairStyle = old ? pick(r, ['bald', 'short', 'neat']) : pick(r, ['short', 'neat', 'messy', 'curly']);
+      if (p.hairStyle === 'scarf') p.hat = pick(r, SCARVES); else delete p.hat;
+    }
+    p.glasses = r() < (old ? 0.45 : 0.25) ? pick(r, GLASSES) : undefined;
+    let facial = null;
+    if (!fem) {
+      facial = old ? pickW(r, [['none', 0.25], ['mustache', 0.3], ['beard', 0.3], ['both', 0.15]]) : pickW(r, [['none', 0.45], ['stubble', 0.3], ['beard', 0.15], ['mustache', 0.1]]);
+      const fc = old ? p.hair[0] : p.hair[1];
+      p.beard = facial === 'stubble' ? [fc, 0.22] : facial === 'beard' || facial === 'both' ? [fc, 0.85] : undefined;
+      p.mustache = facial === 'mustache' || facial === 'both' ? p.hair[1] : undefined;
+      p.brows = r() < 0.5;
+    }
+    if (old) p.browc = Px.mix ? Px.mix(p.hair[1], '#2a1a1c', 0.25) : p.hair[1];
+    // заметная разница: хотя бы два видимых отличия от уфимского лица
+    const seen = () => (p.skin !== (bp.skin || 0)) + (!hat && p.hairStyle !== bp.hairStyle) + (bp.hairStyle !== 'baker' && p.hair !== bp.hair) + (!!p.glasses !== !!bp.glasses) + (p.hat !== bp.hat) + (!fem && (!!p.beard !== !!bp.beard || !!p.mustache !== !!bp.mustache));
+    if (seen() < 2) p.glasses = p.glasses ? undefined : pick(r, GLASSES);
+    if (seen() < 2) p.skin = (bp.skin || 0) === 0 ? 1 : 0;
+    // фигура сцен: те же черты; рабочий убор фигуры (кепка Дамира, колпак) остаётся
+    const f = Object.assign({}, base, { p, skin: p.skin, hair: p.hair });
+    if (base.hairStyle === bp.hairStyle) { f.hairStyle = p.hairStyle; f.hat = p.hat; }
+    f.glasses = p.glasses ? (p.glasses === '#2a1a1c' ? '#6a5050' : p.glasses) : undefined;
+    f.beard = p.beard ? p.beard[0] : undefined;
+    f.mustache = p.mustache || undefined;
+    f.brows = !!p.brows;
+    f.__k = 'cv|' + id;
+    return (VAR[id] = { p, f });
+  }
   // кэшированные спрайты: в ключе — «поколение» облика героя (heroSet), иначе после смены пола
-  // Px.memo отдал бы готовый спрайт прежнего героя
+  // Px.memo отдал бы готовый спрайт прежнего героя. Городской вариант — отдельный ключ (cityKey).
   function fig(who, opt = {}) {
-    const sp = typeof who === 'string' ? CAST[who] : who;
-    const key = 'f|' + (typeof who === 'string' ? who : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + heroGen + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
+    const vk = typeof who === 'string' && PX_ROLE[who] ? cityKey(who) : '';
+    const sp = vk ? variant(who, vk).f : typeof who === 'string' ? CAST[who] : who;
+    const key = 'f|' + (typeof who === 'string' ? who + (vk ? '@' + vk : '') : (who.__k || (who.__k = Math.random().toString(36).slice(2)))) + '|' + heroGen + '|' + [opt.view, opt.emo, opt.pose, opt.step, opt.upper, opt.drop, opt.body].join(',');
     return Px.memo(key, () => Px.figure(sp, opt));
   }
-  function face(who, emo) { return Px.memo('p|' + who + '|' + heroGen + '|' + (emo || 'neutral'), () => Px.portrait(CAST[who].p, emo || 'neutral')); }
+  function face(who, emo, vk) {
+    return Px.memo('p|' + who + '|' + heroGen + '|' + (emo || 'neutral') + (vk ? '|' + vk : ''), () => Px.portrait(vk ? variant(who, vk).p : CAST[who].p, emo || 'neutral'));
+  }
   GUESTS.forEach((g, i) => { g.__k = 'g' + i; });
   STAFF.forEach((g, i) => { g.__k = 's' + i; });
   CAST.courier.__k = 'courier';
@@ -26370,17 +26465,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     root.querySelectorAll('canvas[data-pxp]').forEach((cv) => {
       const tag = heroGen + ':' + cv.dataset.pxp;
       if (cv.dataset.pxDone === tag) return;
-      const [who, emo] = cv.dataset.pxp.split(':'); if (!CAST[who]) return;
-      face(who, emo).toCanvas(cv); done(cv, cv.dataset.pxp);
+      const [who, emo, vk] = cv.dataset.pxp.split(':'); if (!CAST[who]) return;
+      face(who, emo, vk && vk.indexOf('.') > 0 ? vk : '').toCanvas(cv); done(cv, cv.dataset.pxp);
     });
     root.querySelectorAll('canvas[data-pxi]').forEach((cv) => {
       if (cv.dataset.pxDone === cv.dataset.pxi) return;
       const n = cv.dataset.pxi; Px.memo('ii|' + n, () => { const b = new Px.Buf(9, 9); Px.icon(b, 1, 1, n); return b; }).toCanvas(cv); cv.dataset.pxDone = n;
     });
   }
-  const portraitTag = (who, emo, cls) => `<canvas class="pxp ${cls || ''}" data-pxp="${who}:${emo || 'neutral'}" width="48" height="48" aria-hidden="true"></canvas>`;
+  // role — роль BK.STORY_CAST, если портрет говорящего взят из чужого облика (Инна → elvira); без неё — PX_ROLE[who]
+  const portraitTag = (who, emo, cls, role) => { const vk = cityKey(who, role); return `<canvas class="pxp ${cls || ''}" data-pxp="${who}:${emo || 'neutral'}${vk ? ':' + vk : ''}" width="48" height="48" aria-hidden="true"></canvas>`; };
   const iconTag = (name, cls) => `<canvas class="pxi ${cls || ''}" data-pxi="${name}" width="9" height="9" aria-hidden="true"></canvas>`;
-  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag, heroSet, heroG });
+  Object.assign(Px, { CAST, GUESTS, STAFF, HAIR, fig, face, hydrate, portraitTag, iconTag, heroSet, heroG, cityKey, castVariant: variant, PX_ROLE });
 })();
 
 /* pixel/stage.js */
@@ -32443,7 +32539,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
    В app.js / panels.js — только хуки (BK.StoryUI.*, ACT.story / storyLog / storyNext / storyPick / storyRead).
 
    Портреты — пиксельные, кодом (Px.portraitTag + Px.hydrate): ключ берётся из BK.STORY.heroes[...].px,
-   если такого героя в Px.CAST нет — ближайший существующий (см. PX_ALIAS и PX_NOTE).
+   если такого героя в Px.CAST нет — ближайший существующий (см. PX_ALIAS и PX_NOTE). Вне Уфы лицо
+   героя с другим именем — городской вариант облика (Px.portraitTag с ролью BK.STORY_CAST, см. cast.js).
    Своей игровой логики здесь нет: сцену показывает и закрывает только BK.Story.resolve. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
@@ -32543,10 +32640,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (alt && CAST[alt]) return alt;
     return CAST.hero ? 'hero' : null;
   }
+  // городской портрет (src/pixel/cast.js, cityKey): роль говорящего по BK.STORY_CAST — так Инна,
+  // нарисованная из облика Эльвиры, получает в городе своё лицо. Для Уфы портрет прежний.
+  function pxRole(who, key) { const C = BK.STORY_CAST; return key !== 'hero' && C && C.HERO_ROLE ? C.HERO_ROLE[who] : undefined; }
   function portrait(who, emo, cls) {
     const h = hero(who), key = pxKey(who), name = esc(h.name || who);
     const e = EMO[emo] ? emo : 'neutral';
-    if (key && BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px${cls ? ' ' + cls : ''}" title="${name}">${BK.Px.portraitTag(key, e)}</span>`;
+    if (key && BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px${cls ? ' ' + cls : ''}" title="${name}">${BK.Px.portraitTag(key, e, '', pxRole(who, key))}</span>`;
     return `<span class="st-av${cls ? ' ' + cls : ''}" title="${name}" aria-hidden="true">${esc((h.name || '?').slice(0, 1))}</span>`;
   }
   function hydrate(root) { if (BK.Px && BK.Px.hydrate) { try { BK.Px.hydrate(root); } catch (e) { /* без портрета, но окно работает */ } } }
@@ -33105,7 +33205,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!HAS_DOM || !BK.Px || !BK.Px.portraitTag) return '';
     const cast = BK.Px.CAST || {};
     if (!cast[heroPx(id)]) return '';
-    return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp');
+    const C = BK.STORY_CAST, role = C && C.HERO_ROLE ? C.HERO_ROLE[id] : undefined;   // городское лицо (cast.js)
+    return BK.Px.portraitTag(heroPx(id), 'calm', 'sh-pxp', role);
   }
   // > = 10 — «сидит за столом», иначе — «стул пустой, но с деталью» (docs/story.md §7, Ф2)
   function epilogues(R, S) {
