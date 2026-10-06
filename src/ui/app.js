@@ -59,18 +59,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--crust)"/><path d="M7 19c0-5 4-9 9-9s9 4 9 9v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z" fill="#fff"/><path d="M12 13.5l1.5 4M16 12.5v5M20 13.5l-1.5 4" stroke="var(--crust)" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
   /* ---------------- сохранения ---------------- */
+  let saveWarned = false; // предупреждение «не сохранилось» — один раз, пока снова не получится
   function save() {
     if (BK.StartCity) BK.StartCity.complete(S);
     if (!S) return;
     const data = (BK.Rewind && BK.Rewind.freshJson(S)) || JSON.stringify(stripState(S)); // 1-го числа — строка снимка «Переиграть»
-    try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e) {
-      // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются)
-      if (BK.Rewind && BK.Rewind.freeStorage()) try { localStorage.setItem(BK.Slots.key(), data); lastSave = performance.now(); } catch (e2) { /* без сохранений */ }
-    }
+    const put = (v) => { try { localStorage.setItem(BK.Slots.key(), v); lastSave = performance.now(); return true; } catch (e) { return false; } };
+    // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются);
+    // не хватило и так (большая сеть второго акта) — пишем сжатое сохранение (BK.SaveCodec, в ~6 раз меньше)
+    let ok = put(data) || (BK.Rewind && BK.Rewind.freeStorage() && put(data)) || (BK.SaveCodec && put(BK.SaveCodec.pack(data)));
+    if (!ok && !saveWarned) { saveWarned = true; toast('Игра не сохранилась', 'В браузере кончилось место. Удалите ненужный слот на стартовом экране или сохраните код игры («Меню игры» → «Код сохранения»).', 'bad'); }
+    if (ok) saveWarned = false;
     if (BK.Rewind) BK.Rewind.flush(); // снимки «Переиграть» — после сохранения игры
   }
   function stripState(st) { const c = Object.assign({}, st); delete c.cache; c.notify = []; return c; }
-  function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+  function loadSave() { try { const raw = localStorage.getItem(BK.Slots.key()); return raw ? (BK.SaveCodec ? BK.SaveCodec.parse(raw) : JSON.parse(raw)) : null; } catch (e) { return null; } }
   function exportCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(stripState(S))))); }
   function importCode(code) { const st = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if (!st || !st.stores || !st.v) throw new Error('bad'); return st; }
   function migrate(st) {

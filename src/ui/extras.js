@@ -31,11 +31,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function key(n) { return keyOf(n || active); }
   function setActive(n) { active = n; try { localStorage.setItem(ACTIVE_KEY, String(n)); } catch (e) {} }
   function raw(n) { try { return localStorage.getItem(keyOf(n)); } catch (e) { return null; } }
-  function read(n) { const r = raw(n); if (!r) return null; try { return JSON.parse(r); } catch (e) { return null; } }
+  const parse = (r) => (BK.SaveCodec ? BK.SaveCodec.parse(r) : JSON.parse(r)); // сохранение может быть сжатым (большая сеть)
+  function read(n) { const r = raw(n); if (!r) return null; try { return parse(r); } catch (e) { return null; } }
   function remove(n) { try { localStorage.removeItem(keyOf(n)); } catch (e) {} }
   function info(n) {
     const r = raw(n); if (!r) return null;
-    let st; try { st = JSON.parse(r); } catch (e) { return { broken: true }; }
+    let st; try { st = parse(r); } catch (e) { return { broken: true }; }
     if (!st || !Array.isArray(st.stores) || st.day == null) return { broken: true };
     let rev12 = 0; for (const h of (st.history || []).slice(-12)) rev12 += h.rev || 0;
     let ach = 0; if (st.achievements && A()) for (const a of A().LIST) if (st.achievements[a.id] != null) ach++;

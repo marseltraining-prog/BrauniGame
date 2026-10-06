@@ -17,3 +17,4 @@ tmp/samara-draft/
 
 # Samara local baseline/probe logs
 tmp/samara/
+tmp/big1000.json

@@ -7,6 +7,8 @@ const root = path.join(__dirname, '..');
 const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
   ['sim/chelyabinsk.js'], ['qa/chelyabinsk.js'], ['qa/chelyabinsk.js', '@webkit'],
+  ['sim/real-ufa.js'], ['qa/real-ufa.js'],
+  ['sim/perf-big.js', '--make', 'tmp/big1000.json', '1000'], ['qa/bigsave.js', 'tmp/big1000.json'],
   ['sim/samara.js'], ['qa/samara.js'], ['qa/samara.js', '@webkit'],
   ['sim/story.js', '--all-branches', '1', '22', '--snapshots'],
   ['sim/story-choice-guard.js'], ['sim/defer-open.js'], ['sim/story-queue.js'],
