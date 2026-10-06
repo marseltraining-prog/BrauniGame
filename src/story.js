@@ -232,6 +232,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   /* ---------------- условия триггера ---------------- */
   function cond(S, R, c) {
+    if (c.openingStoreNum != null) return c.openingStoreNum === 5 && !!fifthOpening(S, null);
     if (c.stores != null) return openStores(S).length >= c.stores;
     if (c.months != null) return months(S) >= c.months;
     if (c.year != null) return year(S) >= c.year;
@@ -483,6 +484,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Уже прочитанную одноразовую сцену не открываем второй раз, в том числе из старой очереди.
     if (sc.once !== false && R.seen[sc.id] != null) return null;
     R.pending = Object.assign({ id: sc.id, day: S.day }, { origin: origin || { kind: 'explicit' } });
+    // s22: запоминаем, какую именно точку обещали перенести, чтобы окно не «переключилось» на другую.
+    if (sc.id === 's22') { const st = fifthOpening(S, null); R.pending.deferOpening = { city: openingCity(S), storeId: st ? st.id : null }; }
     R.ch = chapter(S, R);
     if (S.notify) S.notify.push({ type: 'story', phase: 'scene', id: sc.id });
     return R.pending;
@@ -501,7 +504,49 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const alternate = select(l.views);
       return alternate ? Object.assign({}, l, alternate) : l;
     });
-    return Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
+    const view = Object.assign({}, sc, { lines }, v && v.title ? { title: v.title } : null);
+    return sc.id === 's22' ? deferView(S, R, view) : view;
+  }
+
+  /* ---------------- s22: перенос открытия пятой точки ---------------- */
+  function openingCity(S) { return (S.corp && S.corp.active) || 'ufa'; }
+  // Пятая точка (по номеру аренды), которая ещё не открылась. ref — цель, запомненная при показе сцены.
+  function fifthOpening(S, ref) {
+    if (!S) return null;
+    const city = openingCity(S);
+    if (ref && (ref.city !== city || !ref.storeId)) return null;
+    const list = (S.stores || []).filter((st) => st.num === 5 && st.status === 'opening' &&
+      Number.isFinite(st.openDay) && st.openDay > S.day && (!ref || st.id === ref.storeId));
+    return list.length === 1 ? list[0] : null;      // не угадываем цель в нестандартном сохранении
+  }
+  function pendingOpening(S, R) {
+    const p = R && R.pending;
+    const ref = p && p.id === 's22' && p.deferOpening;
+    return fifthOpening(S, ref || null);
+  }
+  // Сдвигает открытие только этой точки; деньги, аренда и прочие сроки не меняются.
+  function deferOpening(S, R, days) {
+    const st = pendingOpening(S, R);
+    const n = Math.max(0, Math.round(Number(days) || 0));
+    if (!st || !n) return null;
+    const next = st.openDay + n;
+    st.openDay = next;
+    for (const h of st.incoming || []) if (Number.isFinite(h.day)) h.day = Math.max(h.day, next);
+    if (st.agg || st.aggDay != null) st.aggDay = Math.max(Number.isFinite(st.aggDay) ? st.aggDay : next, next);
+    return `открытие точки №${st.num} — ${E().fmtDate(next)} (на ${n} дн. позже)`;
+  }
+  // Текст сцены по реальному календарю: даты из игры, а без открывающейся пятой — честный семейный ужин.
+  function deferView(S, R, view) {
+    const st = pendingOpening(S, R);
+    const choices = (view.choices || []).map((ch, i) => Object.assign({}, ch, i === 0 ? {
+      label: st ? 'Сдвину открытие пятой точки на три дня.' : 'Приеду на семейный ужин.',
+      desc: st ? 'Открытие №5 на три дня позже, зато семья рядом: отношения +15.' : 'Семья рядом: отношения +15. График открытий не меняется.',
+      cost: st ? 'открытие №5 на 3 дня позже' : null,
+    } : i === 1 ? { label: st ? 'Открою по плану. Потом отпразднуем.' : 'Сегодня останусь с делами. Потом отпразднуем.' } : null));
+    const lines = (view.lines || []).map((l) => l.who !== 'gulya' ? l : Object.assign({}, l, { text: st
+      ? `Открытие пятой — ${E().fmtDate(st.openDay)}. Если сдвинуть на три дня — ${E().fmtDate(st.openDay + 3)}. Я не настаиваю. Просто говорю, как есть.`
+      : 'Пекарни работают, а семья всё ждёт тебя за столом.' }));
+    return Object.assign({}, view, { lines, choices });
   }
   // Один чистый предикат для API, интерфейса и CLI. Не создаёт состояние и не тратит ГСЧ.
   function canChoose(S, need) {
@@ -573,7 +618,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         if (!def) return null;
         const t = famStart(S, Object.assign({}, def, fx.days ? { days: fx.days } : null));
         return t ? `свои люди: ${def.ask || famName(def)}` : null;      }
-      case 'deferOpen': R.queue.push({ kind: 'deferOpen', days: fx.days || 3, day: S.day }); return null;
+      case 'deferOpen': return deferOpening(S, R, fx.days || 3);
       case 'schedule': {
         const a = fx.after;
         const d = Array.isArray(a) ? Math.round(a[0] + (a[1] - a[0]) * rnd(R)) : (a || 30);   // в сценах after бывает диапазоном

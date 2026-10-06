@@ -63,7 +63,7 @@ BK.STORY = {
     {
       id: 's22', ch: 'city', form: 'scene', title: 'Воскресный ужин',
       who: ['family', 'gulya'],
-      trigger: { after: ['s21'], any: [{ stores: 5 }, { months: 24 }] },
+      trigger: { after: ['s21'], any: [{ openingStoreNum: 5 }, { stores: 5 }, { months: 24 }] },
       fallback: { months: 8 },
       lines: [
         { who: 'family', emo: 'smile', text: 'В воскресенье собираемся. Бабушка печёт, Ильдар приедет. Тебя ждать?' },

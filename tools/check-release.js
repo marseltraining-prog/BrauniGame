@@ -8,7 +8,7 @@ const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
   ['sim/samara.js'], ['qa/samara.js'], ['qa/samara.js', '@webkit'],
   ['sim/story.js', '--all-branches', '1', '22', '--snapshots'],
-  ['sim/story-choice-guard.js'], ['sim/story-queue.js'],
+  ['sim/story-choice-guard.js'], ['sim/defer-open.js'], ['sim/story-queue.js'],
   ['qa/story-branches.js'], ['qa/story-branches.js', '@webkit'],
   ['sim/story-depth.js'], ['qa/story-depth.js'], ['qa/story-depth.js', '@webkit'],
   ['qa/start-preview.js'], ['qa/start-preview.js', '@webkit'],

@@ -93,7 +93,18 @@ function check(BK,S,sc,idx,before,result) {
           max:B.day+(range?Math.round(Math.max(a[0],a[1])):(a||30))});
         break;
       }
-      case 'deferOpen': queue.push({exact:{kind:'deferOpen',days:fx.days||3,day:B.day}});break;
+      case 'deferOpen': {
+        // Переносится только запомненная при показе пятая точка, которая ещё не открылась; очередь не трогается.
+        const ref=R.pending.deferOpening, city=(B.corp&&B.corp.active)||'ufa', n=Math.max(0,Math.round(Number(fx.days||3)||0));
+        const pick=(B.stores||[]).filter(st=>st.num===5&&st.status==='opening'&&Number.isFinite(st.openDay)&&st.openDay>B.day&&(!ref||(ref.city===city&&ref.storeId&&st.id===ref.storeId)));
+        const target=(!ref||(ref.city===city&&ref.storeId))&&pick.length===1?pick[0]:null;
+        for (const st0 of B.stores||[]) {
+          const st=(S.stores||[]).find(x=>x.id===st0.id);
+          const shift=target&&st0.id===target.id?n:0;
+          expect(!!st && st.openDay===st0.openDay+shift,'deferOpen: store '+st0.id+' openDay '+(shift?'+'+shift:'unchanged'),'deferOpen');
+        }
+        break;
+      }
       case 'unthread': {
         threads=threads.filter(x=>{
           const t=x.exact||x.fields;
