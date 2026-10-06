@@ -1,8 +1,8 @@
 {
   "complete": true,
-  "version": "0.9.16",
+  "version": "0.9.17",
   "balance": false,
-  "scenes": 123,
+  "scenes": 130,
   "successfulTargets": [
     {
       "scene": "kc1",
@@ -4866,6 +4866,52 @@
       ]
     },
     {
+      "scene": "b4j",
+      "choice": 0,
+      "fixture": "patient-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4j-0-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4k",
+      "choice": 0,
+      "fixture": "patient-deep",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4k-0-7919.json",
+      "checks": 36,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 13,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
       "scene": "b31",
       "choice": 0,
       "fixture": "warm-russia",
@@ -5081,6 +5127,121 @@
       },
       "unsupported": [
         "traffic"
+      ]
+    },
+    {
+      "scene": "b4r1",
+      "choice": 0,
+      "fixture": "patient-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4r1-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4r2",
+      "choice": 0,
+      "fixture": "patient-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4r2-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4r3",
+      "choice": 0,
+      "fixture": "patient-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4r3-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4r4",
+      "choice": 0,
+      "fixture": "patient-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4r4-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
+      ]
+    },
+    {
+      "scene": "b4r5",
+      "choice": 0,
+      "fixture": "patient-russia",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/b4r5-0-7919.json",
+      "checks": 37,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 14,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "journal"
       ]
     },
     {
@@ -6880,8 +7041,8 @@
       ]
     }
   ],
-  "attempts": 331,
-  "checks": 8970,
+  "attempts": 338,
+  "checks": 9227,
   "limitations": [
     "independent legal choice reachability; not every combination of preceding choices",
     "assisted financial fixtures are not a balance benchmark",
