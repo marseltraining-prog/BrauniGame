@@ -151,6 +151,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 /* Длинные суммы и версия 0.9.x должны помещаться на небольшом ноутбуке. */
 @media (min-width: 821px) and (max-width: 1500px) {
   .hud { gap: 8px; padding-inline: 10px; }
+  .brand-name { font-size: 12.5px; }   /* настоящий шрифт Unbounded шире запасного: «Пекарня «Каравай»» влезает в 1280 px */
   .clock { gap: 6px; }
   .stats { gap: 10px; }
   .hud .goal { width: 170px; }
