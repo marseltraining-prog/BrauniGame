@@ -8,7 +8,7 @@ const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
   ['sim/perm.js'], ['qa/perm.js'], ['qa/perm.js', '@webkit'],
   ['sim/chelyabinsk.js'], ['qa/chelyabinsk.js'], ['qa/chelyabinsk.js', '@webkit'],
-  ['sim/real-ufa.js'], ['qa/real-ufa.js'],
+  ['sim/real-ufa.js'], ['qa/real-ufa.js'], ['qa/city-portraits.js'],
   ['sim/perf-big.js', '--make', 'tmp/big1000.json', '1000'], ['qa/bigsave.js', 'tmp/big1000.json'],
   ['sim/samara.js'], ['qa/samara.js'], ['qa/samara.js', '@webkit'],
   ['sim/story.js', '--all-branches', '1', '22', '--snapshots'],
