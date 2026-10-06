@@ -1,5 +1,13 @@
 # Передача проекта «Хлебная карта» (для следующей модели / разработчика)
 
+## 0.9.17 (06.10.2026): Челябинск, настоящая Уфа, большая сеть, паузы сюжета
+
+- **Челябинск** — подробная карта (`src/data/city-chelyabinsk.js`), старые сохранения — `docs/releases/0.9.17-legacy-chelyabinsk.json` (снято `tools/capture-legacy-city.js` ДО подключения — так же делать для следующих городов), `sim/chelyabinsk.js` 562, `qa/chelyabinsk.js` 212. В соседство 4 районов добавлен ТЦ; контрольные партии `tools/city-control.js chelyabinsk 3 24`: было 14,9/14,8/17,3 → стало 16,6/16,1/19,3. Подписи районов сдвинуты после просмотра снимка.
+- **Настоящая Уфа** при старте в другом городе — ключ `ufaCity` (псевдоним в `BK.CITY_BY_ID`, не в `BK.CITIES`), `sim/real-ufa.js` 77, `qa/real-ufa.js`.
+- **Большая сеть** — `src/savecodec.js` (сжатое сохранение только при нехватке места), `sim/perf-big.js`, `qa/bigsave.js`; подробности — PLAN.
+- **Сюжет без долгих пауз** — `b4j`/`b4k` в конце «Глубины», `b4r1`…`b4r5` в поздней России; `BK_GAPS=1 node sim/story.js avg 12 22` показывает самую длинную паузу (сейчас 20,8 мин у good и avg).
+- **Вопрос владельцу** (docs/waiting-owner.md): сцен в первом акте ~20 в час при замысле 3–6 — оставить, реже или настройка.
+
 ## Опубликовано — 0.9.16 (06.10.2026): без интернета и честный перенос открытия
 
 Код выпуска — коммит `99c1863` в main. **Страница релиза на GitHub и тег `v0.9.16` НЕ созданы**: облачной сессии GitHub запрещает создавать релизы (HTTP 403), тег через прокси не проходит — на Mac: `git tag -a v0.9.16 99c1863 -m '0.9.16 бета' && git push origin v0.9.16`, затем релиз с файлом `dist/khlebnaya-karta-0.9.16.html` (тело — docs/releases/0.9.16.md) и `node tools/gh-desc.js`. Выпуск делался из облачной сессии (claude.ai/code): WebKit там нет — проверки `@webkit` нужно прогнать на Mac (`node tools/check-release.js --retry-failed`); рабочий стол Mac не обновлялся (на Mac: `node tools/update-desktop.js`). Artifact на аккаунте marseltraining@gmail.com обновлён: https://claude.ai/artifact/B34cjJvLrqSpYXVN73kKkM. Подробности проверок — docs/releases/0.9.16.md.
