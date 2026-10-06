@@ -25,7 +25,10 @@ for (const d of BK.CITIES) {
   ok(E.enterLock(S, d.id), d.id + ': повторный вход закрыт');
   const map = C.mapCities(S), home = map.find((x) => x.id === 'ufa');
   eq([home.lon, home.lat, home.name], [d.lon, d.lat, d.name], d.id + ': метка на настоящем месте');
-  eq(map.length, d.id === 'ufa' ? 19 : 18, d.id + ': нет дубликата домашнего города');
+  // 19 кружков всегда: вне Уфы домашний город стоит под ключом ufa, а настоящая Уфа — под ufaCity (0.9.17)
+  eq(map.length, 19, d.id + ': городов на карте России');
+  eq(map.filter((x) => x.id === d.id).length, d.id === 'ufa' ? 1 : 0, d.id + ': нет дубликата домашнего города');
+  eq(map.some((x) => x.id === 'ufaCity'), d.id !== 'ufa', d.id + ': настоящая Уфа — только при старте вне Уфы');
   ok(BK.Russia.tipFor(S, 'ufa').includes(d.name), d.id + ': подсказка');
   ok(BK.Russia.cityCard(S, 'ufa').includes(d.name), d.id + ': карточка');
   S.productions[0].status = 'open';
