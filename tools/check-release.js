@@ -6,6 +6,7 @@ const fs = require('fs'), path = require('path'), { spawnSync } = require('child
 const root = path.join(__dirname, '..');
 const version = require('../sim/load').CFG.VERSION.num;
 const commands = [
+  ['sim/perm.js'], ['qa/perm.js'], ['qa/perm.js', '@webkit'],
   ['sim/chelyabinsk.js'], ['qa/chelyabinsk.js'], ['qa/chelyabinsk.js', '@webkit'],
   ['sim/real-ufa.js'], ['qa/real-ufa.js'],
   ['sim/perf-big.js', '--make', 'tmp/big1000.json', '1000'], ['qa/bigsave.js', 'tmp/big1000.json'],
