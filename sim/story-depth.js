@@ -181,7 +181,7 @@ for (const [id, idx, delta] of [['kf1', 0, 2], ['kf2', 2, -2]]) {
   S = reload(S); truth(!ST.resolve(S, 0).ok, 'resolved council cannot grant a third reward');
 }
 // Elapsed triggers use the saved scene date.
-for (const [id,anchor,delay] of [['b4g','b46',240],['b4h','b4f',450],['b4i','b4f',900]]) {
+for (const [id,anchor,delay] of [['b4g','b46',240],['b4h','b4f',450],['b4i','b4f',900],['b4j','b4i',300],['b4k','b4j',300]]) {
  let S=fresh(), R=ST.state(S);R.f.ufa='deep';R.seen[anchor]=1;
  if(id==='b4i')R.seen.b4h=100;
  S.day=delay;truth(!ST.fits(S,R,ST.scene(id)),id+' waits until its saved deadline');

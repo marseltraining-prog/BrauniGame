@@ -312,6 +312,10 @@ function statsOf(run) {
   const pauses = items.filter((x) => x.form !== 'post').length;
   const between = [];
   for (let i = 1; i < items.length; i++) between.push(min(items[i].day) - min(items[i - 1].day));
+  if (process.env.BK_GAPS && between.length) { // BK_GAPS=1 — где самая длинная пауза между сценами
+    const i = between.indexOf(Math.max.apply(null, between)), y = (d) => (d / 365).toFixed(1);
+    console.log(`  пауза ${between[i].toFixed(1)} мин: ${items[i].id} (год ${y(items[i].day)}, ${items[i].ch}) → ${items[i + 1].id} (год ${y(items[i + 1].day)})`);
+  }
   const head = items.length ? min(items[0].day) : min(run.r.S.day);
   const tail = items.length ? min(run.r.S.day) - min(items[items.length - 1].day) : min(run.r.S.day);
   // 1-й акт (Уфа): до открытия России (S.corp). Боты пролог и стадию 1 не играют.
@@ -569,7 +573,8 @@ function branchEffectCheck(S, sc, idx, before, result) {
   return out;
 }
 function branchProfilesFor(sc, idx) {
-  if (sc.id === 'b4i') return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 1, ko1: 0, ko2: 0 } }];
+  if (/^b4r\d$/.test(sc.id)) return [{ id: 'patient-russia', route: 'russia', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } }];
+  if (['b4i', 'b4j', 'b4k'].includes(sc.id)) return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 1, ko1: 0, ko2: 0 } }];
   const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : null;
   const walks = {
     ls7: { ls1: 0, ls6: 0 }, ls8: { ls1: 0, ls6: 1 },
