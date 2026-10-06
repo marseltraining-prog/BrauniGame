@@ -7,7 +7,8 @@
    В app.js / panels.js — только хуки (BK.StoryUI.*, ACT.story / storyLog / storyNext / storyPick / storyRead).
 
    Портреты — пиксельные, кодом (Px.portraitTag + Px.hydrate): ключ берётся из BK.STORY.heroes[...].px,
-   если такого героя в Px.CAST нет — ближайший существующий (см. PX_ALIAS и PX_NOTE).
+   если такого героя в Px.CAST нет — ближайший существующий (см. PX_ALIAS и PX_NOTE). Вне Уфы лицо
+   героя с другим именем — городской вариант облика (Px.portraitTag с ролью BK.STORY_CAST, см. cast.js).
    Своей игровой логики здесь нет: сцену показывает и закрывает только BK.Story.resolve. */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
@@ -107,10 +108,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (alt && CAST[alt]) return alt;
     return CAST.hero ? 'hero' : null;
   }
+  // городской портрет (src/pixel/cast.js, cityKey): роль говорящего по BK.STORY_CAST — так Инна,
+  // нарисованная из облика Эльвиры, получает в городе своё лицо. Для Уфы портрет прежний.
+  function pxRole(who, key) { const C = BK.STORY_CAST; return key !== 'hero' && C && C.HERO_ROLE ? C.HERO_ROLE[who] : undefined; }
   function portrait(who, emo, cls) {
     const h = hero(who), key = pxKey(who), name = esc(h.name || who);
     const e = EMO[emo] ? emo : 'neutral';
-    if (key && BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px${cls ? ' ' + cls : ''}" title="${name}">${BK.Px.portraitTag(key, e)}</span>`;
+    if (key && BK.Px && BK.Px.portraitTag) return `<span class="pxframe st-px${cls ? ' ' + cls : ''}" title="${name}">${BK.Px.portraitTag(key, e, '', pxRole(who, key))}</span>`;
     return `<span class="st-av${cls ? ' ' + cls : ''}" title="${name}" aria-hidden="true">${esc((h.name || '?').slice(0, 1))}</span>`;
   }
   function hydrate(root) { if (BK.Px && BK.Px.hydrate) { try { BK.Px.hydrate(root); } catch (e) { /* без портрета, но окно работает */ } } }
