@@ -1,0 +1,18 @@
+{
+  "city": "perm",
+  "command": "node tools/city-control.js perm 3 24",
+  "before_mapGen1": [{"seed":7919,"won":19.1,"wSt":39,"lost":null},{"seed":15838,"won":14.9,"wSt":35,"lost":null},{"seed":23757,"won":16,"wSt":44,"lost":null}],
+  "after_mapGen2": [{"seed":7919,"won":18.1,"wSt":34,"lost":null},{"seed":15838,"won":20.7,"wSt":36,"lost":null},{"seed":23757,"won":18.8,"wSt":36,"lost":null}],
+  "extra_seeds_4_9": {
+    "note": "Тот же бот good, 24 года, сиды 4·7919…9·7919; old — без CITY_BIG.perm (mapGen 1), new — подробная карта. Скрипт-эксперимент вне репозитория.",
+    "old": [17.6, 19.3, 20.4, 18.0, 16.1, "банкрот 2.1"],
+    "new": [18.1, 18.9, 17.2, 18.4, 17.9, 15.3]
+  },
+  "variants_first_3_seeds": {
+    "note": "Проверка причин после медианы 16.0 → 18.8: ни одна правка не возвращает прежние 14.9 на сиде 15838 устойчиво.",
+    "lm_unrestricted": [19.3, 16.8, 16.3],
+    "mall_in_all_districts": [18.1, 17.8, 16.5],
+    "old_district_coordinates": [17.5, 17.2, 21.2],
+    "no_sizeW": [18.7, 17.2, 16.9]
+  }
+}
