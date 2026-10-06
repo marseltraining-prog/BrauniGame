@@ -573,6 +573,139 @@
         "mob errors: none",
         "mob horizontal scroll: false"
       ]
+    },
+    {
+      "command": "node qa/full.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 290,
+      "log": "tmp/release-checks/0.9.17/38-full.log",
+      "lastLines": [
+        "",
+        "# Проблемы (2)",
+        "[перф 60 точек m390 CPU×4] dash: долгие задачи 2246 мс за 5 с",
+        "[перф 60 точек m390 CPU×4] stores: долгие задачи 1267 мс за 5 с",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 290 с, скриншоты: qa/shots/full"
+      ]
+    },
+    {
+      "command": "node qa/extras.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 69,
+      "log": "tmp/release-checks/0.9.17/39-extras.log",
+      "lastLines": [
+        "слоты: без localStorage — подсказка на старте, игра идёт: true",
+        "итоги победы: верно 5, лучше 3, графиков 4, решений 12",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 68 с, скриншоты: qa/shots/extras"
+      ]
+    },
+    {
+      "command": "node qa/menu.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 34,
+      "log": "tmp/release-checks/0.9.17/40-menu.log",
+      "lastLines": [
+        "экраны d1440 dark",
+        "экраны m390 light",
+        "экраны m390 dark",
+        "экраны m360 light",
+        "экраны m360 dark",
+        "шеф (история 12+ мес.): новинок 5, меню 13, кандидатов на вывод 1, пометок 10, ширина окна 820 px",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли (33 с) → qa/shots/menu/issues.txt"
+      ]
+    },
+    {
+      "command": "node qa/russia.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 161,
+      "log": "tmp/release-checks/0.9.17/41-russia.log",
+      "lastLines": [
+        "сохранение с двумя городами: 351 КБ",
+        "Уфа под директором: 35 точек, рейтинг 4.71, отчёт во входящих — да",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 160 с, скриншоты: qa/shots/russia"
+      ]
+    },
+    {
+      "command": "node qa/tutorial.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 92,
+      "log": "tmp/release-checks/0.9.17/42-tutorial.log",
+      "lastLines": [
+        "m390-light: пройдено шагов 12 из 12",
+        "m390-dark: цех — советуем inors, ближе всех к центру center",
+        "m390-dark: кредит взят ещё на шаге «первая точка» — шаг 5 пропущен",
+        "m390-dark: пройдено шагов 12 из 12",
+        "m360-light: цех — советуем inors, ближе всех к центру center",
+        "m360-light: кредит взят ещё на шаге «первая точка» — шаг 5 пропущен",
+        "m360-light: пройдено шагов 12 из 12",
+        "настройки: выбор запоминается, старое сохранение — без обучения, есть сохранения — по умолчанию выкл"
+      ]
+    },
+    {
+      "command": "node qa/growth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 45,
+      "log": "tmp/release-checks/0.9.17/43-growth.log",
+      "lastLines": [
+        "d1440",
+        "d1440 тёмная",
+        "m390",
+        "m390 тёмная",
+        "m360",
+        "m360 тёмная",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/managers.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 33,
+      "log": "tmp/release-checks/0.9.17/44-managers.log",
+      "lastLines": [
+        "m390 тёмная",
+        "  m390-dark: за неделю после найма предложений 2",
+        "m360",
+        "  m360: за неделю после найма предложений 2",
+        "m360 тёмная",
+        "  m360-dark: за неделю после найма предложений 2",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
     }
   ]
 }
