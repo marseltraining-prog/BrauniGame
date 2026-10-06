@@ -1,0 +1,18 @@
+{
+  "version": "0.9.18",
+  "complete": false,
+  "results": [
+    {
+      "command": "node sim/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.18/01-perm.log",
+      "lastLines": [
+        "ПЕРМЬ: 558 проверок, 0 проблем"
+      ]
+    }
+  ]
+}
