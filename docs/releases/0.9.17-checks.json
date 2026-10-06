@@ -204,6 +204,375 @@
       "lastLines": [
         "Story queue: 111 assertions passed"
       ]
+    },
+    {
+      "command": "node qa/story-branches.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 1102,
+      "log": "tmp/release-checks/0.9.17/15-story-branches.log",
+      "lastLines": [
+        "chromium-d1440-light-m: all 123 scenes have actual snapshots",
+        "chromium-d1440-light-f: all 123 scenes have actual snapshots",
+        "chromium-d1440-dark-m: all 123 scenes have actual snapshots",
+        "chromium-d1440-dark-f: all 123 scenes have actual snapshots",
+        "chromium-m360-light-m: all 123 scenes have actual snapshots",
+        "chromium-m360-light-f: all 123 scenes have actual snapshots",
+        "chromium-m360-dark-m: all 123 scenes have actual snapshots",
+        "chromium-m360-dark-f: all 123 scenes have actual snapshots"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/story-branches.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 3,
+      "log": "tmp/release-checks/0.9.17/16-story-branches.log",
+      "lastLines": [
+        "║ Please run the following command to download new browsers:              ║",
+        "║                                                                         ║",
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/story-branches.js:121:30",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/story-branches.js:163:3)"
+      ]
+    },
+    {
+      "command": "node sim/story-depth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/17-story-depth.log",
+      "lastLines": [
+        "{",
+        "  \"ok\": true,",
+        "  \"checks\": 362,",
+        "  \"method\": \"real Story/Engine/Threads and renderer; no bot\",",
+        "  \"scope\": \"targeted integration; full branch coverage and browser QA still required\"",
+        "}"
+      ]
+    },
+    {
+      "command": "node qa/story-depth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 58,
+      "log": "tmp/release-checks/0.9.17/18-story-depth.log",
+      "lastLines": [
+        "chromium-m390-light-f",
+        "chromium-m390-dark-m",
+        "chromium-m390-dark-f",
+        "chromium-m360-light-m",
+        "chromium-m360-light-f",
+        "chromium-m360-dark-m",
+        "chromium-m360-dark-f",
+        "ГЛУБИНА UI chromium: 1546 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/story-depth.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/19-story-depth.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/story-depth.js:205:86",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/story-depth.js:224:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node qa/start-preview.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 28,
+      "log": "tmp/release-checks/0.9.17/20-start-preview.log",
+      "lastLines": [
+        "ПРЕДПРОСМОТР/ПОДСКАЗКИ chromium: 680 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/start-preview.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/21-start-preview.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/start-preview.js:5:69",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/start-preview.js:57:29) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/nsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/22-nsk.log",
+      "lastLines": [
+        "НОВОСИБИРСК: 485 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/nsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 15,
+      "log": "tmp/release-checks/0.9.17/23-nsk.log",
+      "lastLines": [
+        "НОВОСИБИРСК UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/nsk.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/24-nsk.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/nsk.js:9:64",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/nsk.js:66:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/ekb.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/25-ekb.log",
+      "lastLines": [
+        "ЕКАТЕРИНБУРГ: 484 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/ekb.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.17/26-ekb.log",
+      "lastLines": [
+        "ЕКАТЕРИНБУРГ UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/ekb.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/27-ekb.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/ekb.js:9:64",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/ekb.js:66:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/kazan.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/28-kazan.log",
+      "lastLines": [
+        "КАЗАНЬ: 443 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/kazan.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 15,
+      "log": "tmp/release-checks/0.9.17/29-kazan.log",
+      "lastLines": [
+        "КАЗАНЬ UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/kazan.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/30-kazan.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/kazan.js:9:64",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/kazan.js:66:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/city-coefficients.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/31-city-coefficients.log",
+      "lastLines": [
+        "✓ Москва публикует коэффициенты из CITIES — 1.8/3/1.7",
+        "✓ одинаковый район получает московский inc — 775,1150 против 430,640",
+        "✓ одинаковый район получает московский rent — 7800,13800 против 2600,4600",
+        "✓ первый акт применяет московский wage к обеим профессиям — 93500/115600",
+        "✓ второй акт восстанавливает базовый рынок без двойного wage — 55000/68000",
+        "✓ домашний ключ второго акта сохраняет экономику стартового города",
+        "✓ агрегированная модель использует тот же московский wage, что первый акт",
+        "✓ city coefficients: ok"
+      ]
+    },
+    {
+      "command": "node qa/start-city.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 19,
+      "log": "tmp/release-checks/0.9.17/32-start-city.log",
+      "lastLines": [
+        "ГОРОД СТАРТА (chromium): 51 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/start-city.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/33-start-city.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/start-city.js:18:22",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/start-city.js:88:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/start-city.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/34-start-city.log",
+      "lastLines": [
+        "СВОЯ КОФЕЙНЯ: 114 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/start-city-corp.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/35-start-city-corp.log",
+      "lastLines": [
+        "  code: 'ERR_ASSERTION',",
+        "  actual: 19,",
+        "  expected: 18,",
+        "  operator: 'deepStrictEqual',",
+        "  diff: 'simple'",
+        "}",
+        "",
+        "Node.js v22.22.2"
+      ]
+    },
+    {
+      "command": "node sim/pro2-hooks.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.17/36-pro2-hooks.log",
+      "lastLines": [
+        "✓ сборка (v2 → пролог), как build.js: вызовов 10, не хватает 0",
+        "✓ симуляторы (пролог → v2), как sim/load.js: вызовов 10, не хватает 0",
+        "✓ дилеммы: вариантов проверено 42 (18 дилемм), исключений 0",
+        "✓ ход времени: разобрано карточек 12, ошибок нет (лента 18, летопись 10, нити 1)",
+        "✓ надёжность: странных вызовов 150, исключений 0; границы ок, деньги ок, длины ок, нить ок",
+        "",
+        "Все функции BK.Prologue.* из src/data/prolog-v2.js на месте в обоих порядках загрузки, дилеммы играются."
+      ]
+    },
+    {
+      "command": "node qa/smoke.js qa/shots",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 41,
+      "log": "tmp/release-checks/0.9.17/37-smoke.log",
+      "lastLines": [
+        "desk {\"day\":181,\"stores\":1,\"cash\":-1184512,\"phase\":\"lost\",\"log\":[\"Достижение «Первый миллион»: выручка за месяц — 1 млн ₽.\",\"Итоги месяца (июнь 2027): выручка 1,0 млн ₽, прибыль −379 тыс ₽.\",\"Банкротство: счёт в минусе 3-й месяц подряд, а резерв пуст.\",\"Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.\",\"Веха: Подушка побольше — Довести резервный фонд до 700 тыс ₽ — запас прочности на спокойный месяц (до 6 августа 2027)\"]}",
+        "desk errors: none",
+        "desk horizontal scroll: false",
+        "mob {\"day\":166,\"stores\":1,\"cash\":-436976,\"phase\":\"play\",\"log\":[\"Событие: Кофе с собой — новый ритуал. Студенты и офисные работники больше не выходят из дома без стаканчика. Кофе и завтрак на бегу стали нормой.\",\"Точка №1 (ул. Дмитрия Донского, 41): Дарья Байбурина недовольна — зарплату выдали с задержкой — нужны премии или корпоративная культура. Может уволиться через ~32 дн.\",\"Сабантуй через 7 дн. (19 июня 2027 — 20 июня 2027): выручка +3%, в парках +60%.\",\"Итоги месяца (май 2027): выручка 999 тыс ₽, прибыль −408 тыс ₽.\",\"Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.\"]}",
+        "mob errors: none",
+        "mob horizontal scroll: false"
+      ]
     }
   ]
 }
