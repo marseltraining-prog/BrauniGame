@@ -36,6 +36,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- выбор и модификаторы ---------------- */
   function set(S, id) {
     const st = ensure(S); if (!st) return null;
+    if (st.lock) return st.id;                                   // путь задан историей (lock) — не меняется
     if (id && !K().PATHS[id]) return null;
     st.id = id || null; st.chosen = !!id; st.random = false; st.since = S.day;
     syncMods(S);
@@ -54,6 +55,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   // поэтому одна и та же партия воспроизводится; сменить можно в первые месяцы, как и выбранный).
   function setRandom(S) {
     const st = ensure(S); if (!st) return null;
+    if (st.lock) return st.id;
     const ids = list();
     let t = ((S.seed | 0) ^ 0x2c1b3) | 0;
     t = (Math.imul(t ^ (t >>> 15), 1 | t) + 0x6D2B79F5) | 0;
@@ -63,13 +65,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.notify) S.notify.push({ type: 'strat', phase: 'random', id });
     return id;
   }
+  // История может задать путь с самого начала («Только кофейни» → «Кофейни», src/scenario.js):
+  // путь выбран, сменить его нельзя (st.lock — id истории). Без истории поле не появляется.
+  function lock(S, id, by) {
+    const st = ensure(S); if (!st || !K().PATHS[id]) return null;
+    st.lock = null;
+    set(S, id);
+    st.lock = by || 'scen';
+    return st.id;
+  }
   const path = (id) => K().PATHS[id] || null;
   function info(S) {
     const st = state(S); if (!st) return null;
     const p = st.id ? K().PATHS[st.id] : null;
     const d = detect(S);
     return {
-      id: st.id, chosen: st.chosen, random: !!st.random, name: p ? p.name : null, icon: p ? p.icon : null,
+      id: st.id, chosen: st.chosen, random: !!st.random, locked: st.lock || null, name: p ? p.name : null, icon: p ? p.icon : null,
       text: p ? p.text : null, plus: p ? p.plus : null, minus: p ? p.minus : null,
       detect: d, since: st.since, day: S.day - st.since,
     };
@@ -157,5 +168,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (BK.Engine) wrap();
 
-  BK.Strat = { ensure, state, set, setRandom, list, path, info, metrics, detect, maybeDetect, syncMods, openMult, attItems, day };
+  BK.Strat = { ensure, state, set, setRandom, lock, list, path, info, metrics, detect, maybeDetect, syncMods, openMult, attItems, day };
 })();

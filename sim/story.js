@@ -486,7 +486,7 @@ const BRANCH_PROFILES = [
   { id: 'cold-russia', route: 'russia', character: 'cold', policy: 'cold', walk: { s37: 0, ko1: 1, ko2: 2, kd1: 2, kd2: 2, kd3: 1, kf3: 1, kf4: 2 } },
   { id: 'warm-deep', route: 'deep', character: 'warm', policy: 'care', walk: { s37: 1, ko1: 0, ko2: 0 } },
   { id: 'cold-deep', route: 'deep', character: 'cold', policy: 'cold', walk: { s37: 1, ko1: 1, ko2: 2 } },
-  ...['legacy', 'rescue', 'crisis', 'moscow'].map(scenario => ({ id: scenario, scenario, character: scenario === 'rescue' ? 'warm' : null, route: 'russia', policy: 'good', walk: { s37: 0 } })),
+  ...['legacy', 'rescue', 'crisis', 'moscow', 'coffee'].map(scenario => ({ id: scenario, scenario, character: scenario === 'rescue' ? 'warm' : null, route: 'russia', policy: 'good', walk: { s37: 0 } })),
 ];
 function branchFixture(profile, seed) {
   const S = profile.character
@@ -575,12 +575,13 @@ function branchEffectCheck(S, sc, idx, before, result) {
 function branchProfilesFor(sc, idx) {
   if (/^b4r\d$/.test(sc.id)) return [{ id: 'patient-russia', route: 'russia', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } }];
   if (['b4i', 'b4j', 'b4k'].includes(sc.id)) return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 1, ko1: 0, ko2: 0 } }];
-  const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : null;
+  const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : /^cf/.test(sc.id) ? 'coffee' : null;
   const walks = {
     ls7: { ls1: 0, ls6: 0 }, ls8: { ls1: 0, ls6: 1 },
     'kc3:2': { kc2: 0 }, kc6a: { kc4: 0 }, kc6c: { kc4: 2 },
     'sr3:2': { sr1: 0 }, 'sr5:2': { sr1: 0, sr3: 2 }, 'sr6:2': { sr2: 1 },
     'mos6:3': { mos1: 1 }, mosBank: { mos1: 1 },
+    cf7a: { cf1: 0 }, cf7b: { cf1: 1 }, cf8: { cf1: 0 },
     s31b: { s25: 2, s31: 0 }, s32b: { s32: 1 },
     'kb2:1': { kb1: 2 }, 'kg2:0': { kg1: 0 }, 'kg2:1': { kg1: 2 },
     'ke2:1': { ke1: 0 }, 'ke2:0': { ke1: 1 },

@@ -119,3 +119,6 @@ html.scs-on .toasts.bottom { bottom: calc(12px + env(safe-area-inset-bottom, 0px
   .scs-n { font-size: 15px; }
   .scs-t, .scs-g { font-size: 12px; }
 }
+
+/* цель истории в окнах «сложилась / не сложилась»: длинная цель переносится, а не обрезается */
+.kpi .v.scen-goal-v { white-space: normal; overflow: visible; text-overflow: clip; font-size: 15px; line-height: 1.35; }

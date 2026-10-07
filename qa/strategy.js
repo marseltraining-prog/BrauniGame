@@ -19,7 +19,7 @@ const PATHS = { premium: 'Премиум', folk: 'Народная', coffee: 'К
 async function check(p, label, root, mobile) { for (const x of await layoutCheck(p, label, { root, mobile })) issues.push(x); }
 async function shot(p, name) { await p.screenshot({ path: path.join(OUT, name + '.png') }); }
 // истории партии в этом тесте не нужны: помечаем все пройденными до нажатия «Новая игра» (выбор живой, без перезагрузки)
-const noStories = (p) => p.evaluate(() => { try { localStorage.setItem('bk-ufa-scen-done', JSON.stringify(['legacy', 'rescue', 'crisis', 'moscow'])); } catch (e) {} });
+const noStories = (p) => p.evaluate(() => { try { localStorage.setItem('bk-ufa-scen-done', JSON.stringify(['legacy', 'rescue', 'crisis', 'moscow', 'coffee'])); } catch (e) {} });
 
 async function startScreen(p, tag, mobile) {
   await p.waitForSelector('#startForm .stratpick');

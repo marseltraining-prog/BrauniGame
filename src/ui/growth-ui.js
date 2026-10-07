@@ -69,6 +69,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!GR.anyUnlocked(S)) return `<div class="empty">Рост вглубь откроется, когда сеть вырастет.</div>`;
     let s = head(S);
     for (const k of GR.KEYS) if (GR.unlocked(S, k)) s += ({ cater: catSec, flag: flagSec, factory: facSec, retail: retSec, fran: frSec })[k](S, ui);
+    if (BK.Scenario && BK.Scenario.blocks && BK.Scenario.blocks(S, 'flag')) s += `<div class="sec gr-next"><h3><span class="gr-h">${ICON.flag}${esc(GR.NAMES.flag)}</span></h3><p class="hint" style="margin:0">В этой истории флагмана нет: сеть растёт только маленькими кофейнями.</p></div>`;
     const nx = GR.nextUnlock(S);
     if (nx) s += `<div class="sec gr-next"><h3><span class="gr-h">${ICON[nx.key]}Дальше: ${esc(nx.name)}</span></h3><p class="hint" style="margin:0">${esc(WHY[nx.key].lead)} Откроется при <b>${nx.stores}</b> открытых точках (сейчас ${nx.have}) или обороте <b>${fm(nx.rev)}</b> за 12 мес. (сейчас ${fm(nx.rolling)}).</p></div>`;
     return s;

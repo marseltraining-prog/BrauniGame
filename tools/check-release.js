@@ -32,7 +32,7 @@ const commands = [
   ['qa/minified.js', 'chromium', 'min', `dist/khlebnaya-karta-${version}.html`],
   ['sim/newbie.js', '8', '2'], ['sim/bot.js', 'good', '3', '18', '--summary'],
   ['sim/bot.js', 'avg', '2', '25', '--summary'], ['sim/bot.js', 'bad', '2', '5', '--summary'],
-  ['sim/scencity.js', '20', '3'], ['sim/corp.js', '2', '16'], ['sim/corp-calib.js', '3'],
+  ['sim/scencity.js', '20', '3'], ['sim/scencoffee.js'], ['sim/scenfail.js'], ['sim/corp.js', '2', '16'], ['sim/corp-calib.js', '3'],
   ['sim/miles.js', 'good', '8', '20'], ['sim/collateral.js'], ['sim/collateral.js', 'good', '6', '22'],
   ['sim/investors.js'], ['sim/investors.js', 'good', '6', '22'],
   ['sim/story.js', 'good,avg', '12', '22', '@diagnostic'], ['sim/story.js', '--check'],

@@ -1,17 +1,17 @@
 /* Сценарии — интерфейс (логика — src/scenario.js, BK.Scenario).
    Где видно:
-     1) стартовый экран — блок «Истории»: карточки четырёх историй (значок, название, замысел,
+     1) стартовый экран — блок «Истории»: карточки пяти историй (значок, название, замысел,
         цель), у пройденных заметная отметка «пройдено ✓» и приглушённый вид, у остальных —
-        «ещё не пройдена»; прогресс строкой «Пройдено N из 4 · следующая история выпадет из
+        «ещё не пройдена»; прогресс строкой «Пройдено N из 5 · следующая история выпадет из
         оставшихся», мелкая ссылка «Сбросить пройденные» с подтверждением;
      2) начало партии — карточка-объявление «Новая история» внизу экрана (значок, название,
         одна строка замысла, «Что делать» и что с самого начала не как обычно). Не окно:
         игровой цикл не останавливается, обучение новичка не перекрывается (BK.Tutorial);
-     3) экран конца партии — блок «Пройдено N из 4» крупно, сыгранная история, что осталось
+     3) экран конца партии — блок «Пройдено N из 5» крупно, сыгранная история, что осталось
         и кнопка «Начать заново — пройти другую историю» (forSummary зовёт src/ui/extras.js);
      4) срок истории вышел, а цель не выполнена — отдельное окно «История не сложилась»
         (notify → app.js.handleNotify), плюс строка в «Требует внимания» до конца партии:
-        игра продолжается, но история не засчитана и «Пройдено N из 4» не растёт.
+        игра продолжается, но история не засчитана и «Пройдено N из 5» не растёт.
    В app.js / extras.js — только хуки: startOpt() в форме старта, ACT.scenAgain, forSummary(S).
    Своя разметка — только через data-scen-act: ничего чужого не связываем. */
 var BK = globalThis.BK || (globalThis.BK = {});
@@ -56,6 +56,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${gl ? `<span class="scen-g">Цель: ${esc(gl)}</span>` : ''}
         <span class="scen-s${was ? ' on' : ''}">${was ? 'пройдено ✓' : 'ещё не пройдена'}</span>
         ${!was && cityHint ? `<span class="scen-g">${cityHint}</span>` : ''}
+        ${!was && d.start && d.start.strat ? '<span class="scen-g">Не выпадает, если на старте выбран другой путь.</span>' : ''}
       </span></li>`;
   }
   function startOpt() {
@@ -72,7 +73,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="scen-head">${pips(p)}<span class="scen-sum">${sum}</span></div>
       <ul class="scen-cards">${SC().all().map((id) => card(id, p)).join('')}</ul>
       <div class="scen-foot">
-        <span class="hint">История выпадает из непройденных для выбранного города. «Старт в Москве» — только в Москве. Если подходящих историй нет, начнётся обычная партия.</span>
+        <span class="hint">История выпадает из непройденных для выбранного города. «Старт в Москве» — только в Москве, «Только кофейни» — если путь не выбран или выбраны «Кофейни». Если подходящих историй нет, начнётся обычная партия.</span>
         ${n ? `<span class="scen-reset"><button type="button" class="linkbtn" data-scen-act="ask">Сбросить пройденные</button></span>` : ''}
       </div></fieldset>`;
   }
@@ -86,7 +87,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (f) f.outerHTML = startOpt();
   }
 
-  /* ---------------- 2. экран конца партии: «Пройдено N из 4» ---------------- */
+  /* ---------------- 2. экран конца партии: «Пройдено N из 5» ---------------- */
   function miniCard(id) {
     const d = SC().info(id) || {}, gl = goal(d);
     return `<li><span class="scen-ic sm" aria-hidden="true">${ic(d)}</span><span class="scen-b">
@@ -132,7 +133,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
      провал («Наследство»: полгода прошли, пекарня не спасена) игрок не видел — партия
      просто продолжалась. Теперь app.js зовёт notify(n) и ставит вернувшееся окно в очередь,
      а пока история провалена, в «Требует внимания» висит строка со ссылкой на это окно.
-     Прогресс «Пройдено N из 4» не трогаем: засчитывается по-прежнему только выполненная
+     Прогресс «Пройдено N из 5» не трогаем: засчитывается по-прежнему только выполненная
      цель (BK.Scenario.finish → markDone), провал ничего не отмечает. */
   const dnw = (n, a, b, c) => `${n} ${plural(n, a, b, c)}`;
   function failHtml(S, n) {
@@ -144,9 +145,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="modal-h"><span class="eyebrow neg">История не сложилась</span><h2>«${nm(d, cur)}»: срок вышел</h2></div>
       <div class="modal-b">
         <p style="margin:0">Прошло ${held != null ? dnw(held, 'день', 'дня', 'дней') : was || 'отведённое время'}, а цель истории так и не выполнена. <b>История проиграна</b> — в зачёт она не идёт.</p>
-        ${goal(d) ? `<div class="kpis"><div class="kpi wide"><span class="k">Что было нужно</span><span class="v">${esc(goal(d))}</span></div></div>` : ''}
+        ${goal(d) ? `<div class="kpis"><div class="kpi wide"><span class="k">Что было нужно</span><span class="v scen-goal-v">${esc(goal(d))}</span></div></div>` : ''}
         <p style="margin:0">Что дальше: <b>игра продолжается</b> обычным ходом — цель сети 5 млрд ₽ и второй акт «Россия» никуда не делись. Просто эта история останется непройденной: при новой игре она снова выпадет из оставшихся, а на экране итогов будет видно «Пройдено ${p.played.length} из ${p.total}».</p>
-        <p class="hint" style="margin:0">Правила истории (спрос, мука, срок) закончились вместе с её сроком — штрафов «за провал» в игре нет.</p>
+        <p class="hint" style="margin:0">${esc(d.failNote || 'Правила истории (спрос, мука, срок) закончились вместе с её сроком — штрафов «за провал» в игре нет.')}</p>
+      </div>
+      <div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button></div>`;
+  }
+  // цель истории выполнена раньше срока: засчитана сразу (scenario.js, d.reached → markDone)
+  function reachedHtml(S, d, n) {
+    const p = SC().progress(), st = SC().state(S) || {};
+    const held = (n && n.day != null && st.at != null) ? n.day - st.at : null;
+    const yrs = held != null ? Math.max(1, Math.round(held / 36.5) / 10) : null;
+    return `<div class="modal-h"><span class="eyebrow pos">История сложилась</span><h2>«${nm(d, n.id)}»: цель выполнена</h2></div>
+      <div class="modal-b">
+        ${goal(d) ? `<div class="kpis"><div class="kpi wide"><span class="k">Цель</span><span class="v scen-goal-v">${esc(goal(d))}</span>${yrs ? `<span class="d">выполнено за ${String(yrs).replace('.', ',')} ${plural(Math.floor(yrs), 'год', 'года', 'лет')}</span>` : ''}</div></div>` : ''}
+        <p style="margin:0">История засчитана: <b>пройдено ${p.played.length} из ${p.total}</b>. Игра продолжается — цель сети 5 млрд ₽ и второй акт «Россия» впереди, правила истории остаются до конца партии.</p>
       </div>
       <div class="modal-f"><button class="btn primary block" data-act="closeModal">Играть дальше</button></div>`;
   }
@@ -160,6 +173,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n.phase === 'expired') {
       if (BK.Sound) BK.Sound.play('warn');
       return () => APP().openModal(failHtml(S, n), { closable: true });
+    }
+    if (n.phase === 'reached') {                       // цель выполнена раньше срока («Только кофейни»)
+      if (BK.Sound) BK.Sound.play('fanfare');
+      return () => APP().openModal(reachedHtml(S, d, n), { closable: true });
     }
     if (n.phase === 'saved') {
       if (BK.Sound) BK.Sound.play('fanfare');
@@ -292,7 +309,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.Slots && BK.Slots.beforeNew && !BK.Slots.beforeNew()) return; // все слоты заняты — тост уже показан, окно итогов не закрываем
     A.closeModal();
     A.newGame(name, diff, { scen: 'random', strat: strat, rival: rival });
-    if (BK.Scenario && !BK.Scenario.current(A.state)) A.toast('Истории', 'Все четыре истории пройдены — играем обычную Уфу. Сбросить прогресс можно на стартовом экране.', 'warn');
+    if (BK.Scenario && !BK.Scenario.current(A.state)) A.toast('Истории', 'Все истории пройдены — играем обычную Уфу. Сбросить прогресс можно на стартовом экране.', 'warn');
   }
   function onClick(e) {
     const t = e.target && e.target.closest ? e.target.closest('[data-scen-act]') : null; if (!t) return;
@@ -302,7 +319,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (a === 'no') { redraw(); return; }
     if (a === 'yes') {
       SC().resetDone(); redraw();
-      APP().toast('Истории', 'Прогресс историй сброшен — снова выпадают все четыре.', 'warn');
+      APP().toast('Истории', `Прогресс историй сброшен — снова выпадают ${allTxt(SC().all().length)}.`, 'warn');
     }
   }
   function bindStart() {                              // одна привязка на документ: блок перерисовывается — обработчик остаётся
@@ -319,5 +336,5 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);
 
-  BK.ScenarioUI = { startOpt, bindStart, redrawStart: redraw, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
+  BK.ScenarioUI = { reachedHtml, startOpt, bindStart, redrawStart: redraw, endingHtml, forSummary, pips, ICON, notify, attItems, failHtml, openFail };
 })();

@@ -7,7 +7,7 @@
         BK.Scenario.failed(S) истинно и в S.notify лежит уведомление phase 'expired'
         с целью истории (его показывает src/ui/scenario-ui.js — окно «История не сложилась»);
      3. повторный вызов дня не дублирует уведомление;
-     4. провал НЕ засчитывается в «Пройдено N из 4»: BK.Scenario.finish(S) → ok=false;
+     4. провал НЕ засчитывается в «Пройдено N из 5»: BK.Scenario.finish(S) → ok=false;
      5. спасённая история (цель выполнена к сроку) провалом не считается;
      6. у «Старта в Москве» срока нет — провала истории там не бывает;
      7. обычная игра без истории провала не знает (failed=false).
@@ -54,10 +54,10 @@ ok(!!(note && note.goal), 'в уведомлении есть цель исто�
 const n0 = S.notify.length; SC.day(S);
 ok(S.notify.length === n0, 'повторный day не повторяет «срок вышел»', `${n0}`);
 
-/* 4. провал не засчитывается в «Пройдено N из 4» */
+/* 4. провал не засчитывается в «Пройдено N из 5» */
 const fin = SC.finish(S);
 ok(fin && fin.ok === false, 'BK.Scenario.finish — история не засчитана', fin ? `ok=${fin.ok}` : 'нет ответа');
-ok(fin && fin.progress.played.indexOf('legacy') < 0, 'в прогрессе «Пройдено N из 4» провала нет',
+ok(fin && fin.progress.played.indexOf('legacy') < 0, 'в прогрессе «Пройдено N из 5» провала нет',
   fin ? `пройдено: ${fin.progress.played.length} из ${fin.progress.total}` : '');
 
 /* 5. цель выполнена к сроку — провала нет */
@@ -78,6 +78,14 @@ ok(!SC.state(S3).expired && !SC.failed(S3), 'у «Старта в Москве»
 /* 7. обычная игра без истории */
 const S4 = E.newGame({ seed: 7919 }); S4.phase = 'play';
 ok(SC.failed(S4) === false, 'обычная игра без истории провала не знает');
+
+/* 8. «Только кофейни»: срок 8 лет, провал как у остальных (подробно — sim/scencoffee.js) */
+const S5 = fresh('coffee');
+S5.day = 2000; SC.day(S5);
+ok(!SC.failed(S5), '«Только кофейни»: пока срок идёт — провала нет');
+S5.day = 2921; SC.day(S5);
+ok(SC.failed(S5) && S5.notify.some((n) => n.type === 'scen' && n.phase === 'expired'), '«Только кофейни»: 8 лет прошли без цели — «История не сложилась»');
+ok(SC.progress().total === 5, 'историй пять', String(SC.progress().total));
 
 console.log(bad ? `✗ сценарный провал: ошибок ${bad}` : '✓ сценарный провал: ok');
 process.exit(bad ? 1 : 0);
