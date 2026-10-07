@@ -1028,6 +1028,94 @@
         "",
         "Итог: 0 проблем, 0 ошибок консоли"
       ]
+    },
+    {
+      "command": "node qa/investors.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 22,
+      "log": "tmp/release-checks/0.9.20/64-investors.log",
+      "lastLines": [
+        "m360-light: Ильдар Сафин — 172 млн за 12.9 % (profit), польза brand",
+        "m360-light: торг — раундов 3 → 2",
+        "m360-light: сделка на 192 млн, выплаты 4 млн/мес (13 % прибыли)",
+        "m360-dark: Ильдар Сафин — 172 млн за 12.9 % (profit), польза brand",
+        "m360-dark: торг — раундов 3 → 2",
+        "m360-dark: сделка на 192 млн, выплаты 4 млн/мес (13 % прибыли)",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/story.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 21,
+      "log": "tmp/release-checks/0.9.20/65-story.log",
+      "lastLines": [
+        "d1440 light",
+        "d1440 dark",
+        "m390 light",
+        "m390 dark",
+        "m360 light",
+        "m360 dark",
+        "бот 5 лет: точек 8",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/strategy.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 11,
+      "log": "tmp/release-checks/0.9.20/66-strategy.log",
+      "lastLines": [
+        "m360-light: готово",
+        "m360-dark: готово",
+        "Проблем не найдено",
+        "· d1440-light: путь «Премиум», цена открытия ×1.1, модификаторы check:1.12, conv:0.98, traffic:0.85",
+        "· d1440-light: в прологе путь выпал случайно — «premium»",
+        "· m390-dark: путь «Премиум», цена открытия ×1.1, модификаторы check:1.12, conv:0.98, traffic:0.85",
+        "· m390-dark: в прологе путь выпал случайно — «premium»",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /home/user/braunigame/qa/shots/strategy"
+      ]
+    },
+    {
+      "command": "node qa/music.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 40,
+      "log": "tmp/release-checks/0.9.20/67-music.log",
+      "lastLines": [
+        "C. музыка выключена в localStorage — узлов нет",
+        "  ок   при выключенной музыке не создано ни одного узла → {\"oscs\":0,\"level\":0}",
+        "  ок   звуки игры при этом работают",
+        "D. общий звук выключен — музыки нет",
+        "  ок   общий выключатель глушит и музыку → {\"oscs\":0,\"sounding\":0}",
+        "  ок   и звуки не играют",
+        "",
+        "МУЗЫКА: всё в порядке"
+      ]
+    },
+    {
+      "command": "node qa/s4-sound.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 11,
+      "log": "tmp/release-checks/0.9.20/68-s4-sound.log",
+      "lastLines": [
+        "озвучка пролога и стадии 1: 0 проблем, 0 ошибок консоли"
+      ]
     }
   ]
 }
