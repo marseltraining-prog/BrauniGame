@@ -30,9 +30,9 @@
 .hd-steps li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); padding: 6px 7px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
 .hd-steps i { font-style: normal; width: 18px; height: 18px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--line); color: var(--ink-2); }
 .hd-steps li.done { color: var(--good-t); }
-.hd-steps li.done i { background: var(--good); color: #fff; }
+.hd-steps li.done i { background: var(--good-soft); color: var(--good-t); }
 .hd-steps li.on { color: var(--ink); border-color: var(--crust); font-weight: 600; }
-.hd-steps li.on i { background: var(--crust); color: #fff; }
+.hd-steps li.on i { background: var(--ink); color: var(--surface); }
 
 .hd-goalbox { display: flex; flex-direction: column; gap: 6px; }
 .hd-gl { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -68,7 +68,7 @@
 .hd-say b { font-size: 13px; }
 .hd-say small { font-size: 11px; color: var(--ink-3); }
 .hd-say p { margin: 3px 0 0; font-size: 14px; line-height: 1.45; }
-.hd-choice .cc { white-space: normal; }
+.hd-scene .st-chq h4 { margin: 0; }
 .hd-epi { display: flex; flex-direction: column; gap: 4px; }
 .hd-log { margin-top: 8px; }
 

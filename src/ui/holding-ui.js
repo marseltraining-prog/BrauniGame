@@ -55,9 +55,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lines = sc.lines.map((l) => `<div class="hd-line">${portrait(l.who, l.emo)}<div class="hd-say"><b>${esc(sub(S, heroName(l.who)))}</b><small>${esc(sub(S, heroRole(l.who)))}</small><p>${esc(sub(S, l.text))}</p></div></div>`).join('');
     const L = ['А', 'Б', 'В', 'Г', 'Д'];
     const chs = sc.choices.map((c, i) => `<button type="button" class="choice st-choice hd-choice" data-act="holdAns" data-arg="${i}"${c.ok ? '' : ' disabled'}>
-      <span class="cl" aria-hidden="true">${L[i]}</span><b>${esc(sub(S, c.label))}</b><span class="cc">${esc(sub(S, c.desc || ''))}</span>${c.ok ? '' : `<span class="cwhy">${esc(c.why)}</span>`}</button>`).join('');
+      <span class="cl" aria-hidden="true">${L[i]}</span><b>${esc(sub(S, c.label))}</b><span class="cd">${esc(sub(S, c.desc || ''))}</span>${c.ok ? '' : `<span class="cwhy">${esc(c.why)}</span>`}</button>`).join('');
     return `<div class="modal-h st-h${sc.final ? ' climax' : ''}"><span class="eyebrow st-ey">Глава 5 · Холдинг</span><h2>${esc(sub(S, sc.title))}</h2></div>
-      <div class="modal-b hd-m hd-scene"><div class="hd-lines">${lines}</div>
+      <div class="modal-b story-m hd-m hd-scene"><div class="hd-lines">${lines}</div>
       <div class="st-choices"><div class="st-chq"><h4>Что решаем?</h4><span>Выбор останется в летописи</span></div>${chs}</div></div>`;
   }
   function openScene() {
@@ -103,7 +103,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const capV = inf.cap, goal = inf.goal, pub = P.stage === 'public';
     let s = `<div class="modal-h"><span class="eyebrow pos">Третий акт · Холдинг</span><h2>Выход на биржу</h2></div><div class="modal-b hd-m">`;
     s += stepper(P);
-    s += `<div class="hd-goalbox"><div class="hd-gl"><span>${pub ? 'Капитализация' : 'Оценка компании (до биржи)'}</span><b>${bn(capV)}</b><small>цель — ${bn(goal)}</small></div>${BK.UIH ? BK.UIH.goalBar(capV / goal) : ''}</div>`;
+    s += `<div class="hd-goalbox"><div class="hd-gl"><span>${pub ? 'Капитализация' : 'Оценка компании (до биржи)'}</span><b>${bn(capV)}</b><small>цель — ${bn(goal)} и ${KI().GOAL_Q} квартальных отчёта${pub ? ` (сдано ${P.q.length})` : ''}</small></div>${BK.UIH ? BK.UIH.goalBar(capV / goal) : ''}</div>`;
     const fg = inf.val.fg;
     s += `<div class="inv-nums big">
       <span><small>Прибыль за 12 мес.</small><b>${fm(fg.prof12)}</b></span>
@@ -172,13 +172,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (H.ipo) {
       const P = H.ipo, capV = HD().cap(P);
       s += `<div class="kpis sumk">
-        <div class="kpi"><span class="k">Путь</span><span class="v">Выход на биржу</span></div>
-        <div class="kpi"><span class="k">На бирже с</span><span class="v">${P.listDay != null ? E().fmtDate(P.listDay) : '—'}</span></div>
+        <div class="kpi"><span class="k">Путь</span><span class="v">Биржа</span></div>
+        <div class="kpi"><span class="k">Лет на бирже</span><span class="v">${P.listDay != null ? String(Math.round(((H.endDay || S.day) - P.listDay) / 36.5) / 10).replace('.', ',') : '—'}</span></div>
         <div class="kpi"><span class="k">Привлекли</span><span class="v">${P.raised ? fm(P.raised) : '—'}</span></div>
         <div class="kpi"><span class="k">Капитализация</span><span class="v">${capV ? bn(capV) : '—'}</span></div>
         <div class="kpi"><span class="k">Отчёты</span><span class="v">${P.beats} / ${P.inline} / ${P.misses}</span></div>
         <div class="kpi"><span class="k">Ваша доля</span><span class="v">${pct(P.own)}</span></div></div>`;
-      s += `<p class="hint" style="margin:0">Отчёты: выполнили / чуть ниже / промах. ${P.book ? 'Размещение: ' + esc(D.book[P.book]) + '.' : ''}${P.goalDay ? ` Цель «${bn(KI().GOAL_CAP)}» взята ${E().fmtDate(P.goalDay)}.` : ''}</p>`;
+      s += `<p class="hint" style="margin:0">Отчёты: выполнили / чуть ниже / промах. ${P.listDay != null ? `На бирже с ${E().fmtDate(P.listDay)}, размещение — ${esc(D.book[P.book] || '')}.` : ''}${P.goalDay ? ` Цель «${bn(KI().GOAL_CAP)}» взята ${E().fmtDate(P.goalDay)}.` : ''}</p>`;
       if (H.ending === 'ipo') {
         const e = (BK.STORY && BK.STORY.endings || {}).ipo || {};
         s += `<div class="sh-end hd-epi"><b>${esc(e.name || 'Публичная компания')}</b><span>${esc(sub(S, e.text || ''))}</span>${H.f.bell && D.bell[H.f.bell] ? `<span>${esc(sub(S, D.bell[H.f.bell]))}</span>` : ''}</div>`;
