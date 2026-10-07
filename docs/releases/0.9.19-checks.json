@@ -13,6 +13,153 @@
       "lastLines": [
         "НИЖНИЙ НОВГОРОД: 571 проверок, 0 проблем"
       ]
+    },
+    {
+      "command": "node qa/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.19/02-nnov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "НИЖНИЙ НОВГОРОД UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/nnov.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/03-nnov.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/nnov.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/nnov.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/04-perm.log",
+      "lastLines": [
+        "ПЕРМЬ: 558 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.19/05-perm.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ПЕРМЬ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/perm.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/06-perm.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/perm.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/perm.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/07-rostov.log",
+      "lastLines": [
+        "РОСТОВ: 545 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.19/08-rostov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "РОСТОВ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/rostov.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/09-rostov.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/rostov.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/rostov.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/10-chelyabinsk.log",
+      "lastLines": [
+        "ЧЕЛЯБИНСК: 562 проверок, 0 проблем"
+      ]
     }
   ]
 }
