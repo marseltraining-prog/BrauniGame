@@ -314,7 +314,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // Выбор истории детерминирован от зерна (BK.Scenario.pick), поэтому Scenario.set ниже даст тот же id.
     const seed = (opts && opts.seed) || Math.floor(Math.random() * 1e9);
     const pickedCity = opts && opts.city ? (opts.keepCity && BK.CITY_BY_ID[opts.city] ? opts.city : BK.StartCity.resolve(opts.city)) : null;
-    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed, pickedCity ? { city: pickedCity } : null) : opts.scen) : null;
+    const pickedStrat = opts && opts.strat && opts.strat !== 'random' ? opts.strat : null;   // явный путь со старта
+    const scenId = (BK.Scenario && opts && opts.scen) ? (opts.scen === 'random' ? BK.Scenario.pick(seed, (pickedCity || pickedStrat) ? { city: pickedCity, strat: pickedStrat } : null) : opts.scen) : null;
     const scDef = (scenId && BK.Scenario && BK.Scenario.info(scenId)) || null;
     const city = pickedCity || (scDef && scDef.start && scDef.start.city) || null;
     S = E.newGame({ company: name, difficulty, seed, city: city === 'ufa' ? null : city, rival: opts && opts.rival != null ? opts.rival : rivalPicked() });

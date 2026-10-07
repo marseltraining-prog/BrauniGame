@@ -78,6 +78,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const c = S.corp.cities && S.corp.cities.ufa, pk = c && c.packed;
     return pk && pk.stores ? pk.stores.filter((s) => s.status !== 'opening').length : 0;
   }
+  // история может закрыть направление (src/scenario.js, d.noGrowth): «Только кофейни» — без флагмана
+  const offByScen = (S, k) => !!(S && S.scen && BK.Scenario && BK.Scenario.blocks && BK.Scenario.blocks(S, k));
   const unlocked = (S, k) => !!(S && S.growth && S.growth.un && S.growth.un[k] != null);
   const anyUnlocked = (S) => KEYS.some((k) => unlocked(S, k));
   const pl = (S) => S.macro.priceLevel;
@@ -145,6 +147,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let rev = null; const got = [];
     for (const k of KEYS) {
       if (G.un[k] != null) continue;
+      if (offByScen(S, k)) continue;
       const u = U[k]; if (!u) continue;
       if (n < u.stores) { if (rev == null) rev = E().rolling12(S); if (rev < u.rev) continue; }
       G.un[k] = day; got.push(k);
@@ -645,7 +648,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function nextUnlock(S) { // ближайшее закрытое направление и условие
     const G = ensure(S), U = K().UNLOCK;
-    for (const k of KEYS) if (G.un[k] == null) return { key: k, name: NAMES[k], stores: U[k].stores, rev: U[k].rev, have: ufaStores(S), rolling: E().rolling12(S) };
+    for (const k of KEYS) if (G.un[k] == null && !offByScen(S, k)) return { key: k, name: NAMES[k], stores: U[k].stores, rev: U[k].rev, have: ufaStores(S), rolling: E().rolling12(S) };
     return null;
   }
 

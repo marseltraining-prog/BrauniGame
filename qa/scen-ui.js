@@ -1,13 +1,15 @@
 /* Истории (сценарии, этап 4 плана) в интерфейсе: node qa/scen-ui.js [папка=qa/shots/scen-ui]   (BR=webkit — WebKit)
    Смотрим то, что видит игрок:
-     1) стартовый экран с 0 пройденными: четыре карточки, «ещё не пройдена», прогресс «Пройдено 0 из 4»,
+     1) стартовый экран с 0 пройденными: пять карточек, «ещё не пройдена», прогресс «Пройдено 0 из 5»,
         ссылки сброса нет;
      2) стартовый экран с 2 пройденными (localStorage['bk-ufa-scen-done']), сброс — только с подтверждением;
-     3) начало партии: карточка «Новая история»; в итогах игры — блок «Пройдено N из 4» и кнопка
+     3) начало партии: карточка «Новая история»; в итогах игры — блок «Пройдено N из 5» и кнопка
         «Начать заново — пройти другую историю»;
      4) «Начать заново» запускает новую партию с другой непройденной историей, обучение новичка при этом цело;
-     5) все четыре пройдены: стартовый экран и итоги говорят об этом честно;
-     6) пролог «Бариста»: карточка истории не лезет в пролог, появляется в своей сети.
+     5) все пять пройдены: стартовый экран и итоги говорят об этом честно;
+     6) пролог «Бариста»: карточка истории не лезет в пролог, появляется в своей сети;
+     7) «Только кофейни»: карточка с правилами, только маленькие помещения, путь «Кофейни» закреплён,
+        окно «История сложилась» (цель раньше срока) и окно провала с пометкой, что правила остаются.
    Экраны 1440 / 390 / 360, светлая и тёмная тема. Итог — список проблем и ошибок консоли; код выхода 1, если они есть. */
 const fs = require('fs'), path = require('path');
 const { chromium, webkit } = require('playwright');
@@ -64,8 +66,8 @@ async function touchTargets(p, label) {
           sum: document.querySelector('.scen-sum').textContent.replace(/\s+/g, ' ').trim(),
           reset: !!document.querySelector('.scenpick [data-scen-act=ask]'),
         }));
-        if (!(s.cards === 4 && s.done === 0 && s.notDone === 4)) issues.push(`[${tag}] карточки: ${JSON.stringify(s)}`);
-        if (!sumRe(0, 4).test(s.sum)) issues.push(`[${tag}] прогресс: «${s.sum}»`);
+        if (!(s.cards === 5 && s.done === 0 && s.notDone === 5)) issues.push(`[${tag}] карточки: ${JSON.stringify(s)}`);
+        if (!sumRe(0, 5).test(s.sum)) issues.push(`[${tag}] прогресс: «${s.sum}»`);
         if (s.reset) issues.push(`[${tag}] «Сбросить пройденные» видно, хотя пройденных нет`);
         await check(p, tag, { mobile });
         if (mobile) await touchTargets(p, tag);
@@ -85,9 +87,9 @@ async function touchTargets(p, label) {
         todo: [...document.querySelectorAll('.scenpick .scen-card:not(.done) .scen-s')].map((x) => x.textContent.trim()),
         sum: document.querySelector('.scen-sum').textContent.replace(/\s+/g, ' ').trim(),
       }));
-      if (!(s.done.length === 2 && s.todo.length === 2)) issues.push(`[${tag}] карточки: ${JSON.stringify(s)}`);
+      if (!(s.done.length === 2 && s.todo.length === 3)) issues.push(`[${tag}] карточки: ${JSON.stringify(s)}`);
       if (!s.done.every((x) => x === 'пройдено ✓')) issues.push(`[${tag}] отметка пройденных: ${JSON.stringify(s.done)}`);
-      if (!(sumRe(2, 4).test(s.sum) && /выпадет из оставшихся/.test(s.sum))) issues.push(`[${tag}] прогресс: «${s.sum}»`);
+      if (!(sumRe(2, 5).test(s.sum) && /выпадет из оставшихся/.test(s.sum))) issues.push(`[${tag}] прогресс: «${s.sum}»`);
       await check(p, tag, { mobile });
       if (mobile) await touchTargets(p, tag);
       await shot(p, `start2-${vp}`);
@@ -99,12 +101,12 @@ async function touchTargets(p, label) {
       await check(p, `${tag}/подтверждение`, { mobile });
       if (mobile) await shot(p, 'confirm-390');
       await p.click('.scenpick [data-scen-act=no]');
-      const cancelled = await p.evaluate(() => !!document.querySelector('.scen-sum') && /Пройдено 2 из 4/.test(document.querySelector('.scen-sum').textContent));
+      const cancelled = await p.evaluate(() => !!document.querySelector('.scen-sum') && /Пройдено 2 из 5/.test(document.querySelector('.scen-sum').textContent));
       if (!cancelled) issues.push(`[${tag}] после «Отмены» прогресс поехал`);
       await p.click('.scenpick [data-scen-act=ask]');
       await p.click('.scenpick [data-scen-act=yes]');
       const after = await p.evaluate(() => ({ sum: (document.querySelector('.scen-sum') || {}).textContent || '', raw: localStorage.getItem('bk-ufa-scen-done'), done: document.querySelectorAll('.scenpick .scen-card.done').length }));
-      if (!(sumRe(0, 4).test(after.sum) && after.raw === null && after.done === 0)) issues.push(`[${tag}] после сброса: ${JSON.stringify(after)}`);
+      if (!(sumRe(0, 5).test(after.sum) && after.raw === null && after.done === 0)) issues.push(`[${tag}] после сброса: ${JSON.stringify(after)}`);
       // новая партия: карточка «Новая история»
       await p.fill('#companyName', 'Проверка историй');
       await p.click('#startForm button[type=submit]');
@@ -115,7 +117,7 @@ async function touchTargets(p, label) {
           const b = document.querySelector('#scenStart .scs-card'), S = BK.App.state;
           return { id: S && S.scen && S.scen.id, text: b.textContent.replace(/\s+/g, ' ').trim(), x: document.querySelector('#scenStart .scs-x').getBoundingClientRect().height, w: b.getBoundingClientRect() };
         });
-        if (!(/Новая история/.test(sc.text) && /Что делать:/.test(sc.text) && /пройдено 0 из 4/i.test(sc.text))) issues.push(`[${tag}] карточка: «${sc.text}»`);
+        if (!(/Новая история/.test(sc.text) && /Что делать:/.test(sc.text) && /пройдено 0 из 5/i.test(sc.text))) issues.push(`[${tag}] карточка: «${sc.text}»`);
         if (sc.x < 34) issues.push(`[${tag}] крестик карточки ${Math.round(sc.x)} px`);
         if (!(sc.w.left >= 0 && sc.w.right <= VIEW[vp])) issues.push(`[${tag}] карточка за краем экрана: ${JSON.stringify(sc.w)}`);
         await check(p, `${tag}/карточка истории`, { root: '#scenStart .scs-card', mobile });
@@ -124,7 +126,7 @@ async function touchTargets(p, label) {
         await p.click('#scenStart .scs-x');
         const closed = await p.evaluate(() => document.querySelector('#scenStart').hidden);
         if (!closed) issues.push(`[${tag}] карточка не закрылась крестиком`);
-        // блок «Пройдено N из 4» в итогах игры
+        // блок «Пройдено N из 5» в итогах игры
         const res = await p.evaluate(() => {
           try { BK.Scenario.markDone(BK.App.state.scen.id); BK.App.state.lost = true; BK.Extras.openSummary(); } catch (e) { return 'ошибка: ' + e.message; }
           return { n: BK.Scenario.progress().played.length, total: BK.Scenario.progress().total };
@@ -132,7 +134,7 @@ async function touchTargets(p, label) {
         if (typeof res !== 'object') issues.push(`[${tag}] итоги игры не открылись (${res})`);
         else {
           const has = await p.waitForSelector('#scenEnd', { timeout: 4000 }).then(() => true, () => false);
-          if (!has) issues.push(`[${tag}] блока «Пройдено N из 4» в итогах нет`);
+          if (!has) issues.push(`[${tag}] блока «Пройдено N из 5» в итогах нет`);
           else {
             await p.evaluate(() => { document.querySelector('#scenEnd').scrollIntoView({ block: 'center' }); });
             await p.waitForTimeout(150);
@@ -233,30 +235,30 @@ async function touchTargets(p, label) {
       await p.context().close();
     }
 
-    /* --- 5. все четыре пройдены: итоги и стартовый экран говорят об этом честно --- */
+    /* --- 5. все пять пройдены: итоги и стартовый экран говорят об этом честно --- */
     {
-      const tag = 'все 4/м360/тёмная';
-      const all = ['legacy', 'rescue', 'crisis', 'moscow'];
+      const tag = 'все 5/м360/тёмная';
+      const all = ['legacy', 'rescue', 'crisis', 'moscow', 'coffee'];
       const p = await open(browser, 'm360', { dark: true, done: all });
       if (await p.evaluate(() => !!document.querySelector('.scenpick .scen-card:not(.done)'))) issues.push(`[${tag}] остались непройденные карточки`);
       const sum0 = await p.evaluate(() => document.querySelector('.scen-sum').textContent.replace(/\s+/g, ' ').trim());
-      if (!(sumRe(4, 4).test(sum0) && /заново/.test(sum0))) issues.push(`[${tag}] прогресс на старте: «${sum0}»`);
-      if (!(await p.evaluate(() => !!document.querySelector('.scenpick [data-scen-act=ask]')))) issues.push(`[${tag}] нет ссылки сброса при 4 из 4`);
+      if (!(sumRe(5, 5).test(sum0) && /заново/.test(sum0))) issues.push(`[${tag}] прогресс на старте: «${sum0}»`);
+      if (!(await p.evaluate(() => !!document.querySelector('.scenpick [data-scen-act=ask]')))) issues.push(`[${tag}] нет ссылки сброса при 5 из 5`);
       await check(p, tag, { mobile: true });
       await touchTargets(p, tag);
       await p.fill('#companyName', 'Всё пройдено');
       await p.click('#startForm button[type=submit]');
       await p.waitForTimeout(1500);
-      if (!(await p.evaluate(() => !BK.App.state.scen.id))) issues.push(`[${tag}] при 4 из 4 выпал сценарий`);
+      if (!(await p.evaluate(() => !BK.App.state.scen.id))) issues.push(`[${tag}] при 5 из 5 выпал сценарий`);
       const sm = await p.evaluate(() => {
-        BK.App.state.scen = { v: 1, id: 'moscow', at: 0, flags: {} };   // как будто играли «Старт в Москве» — последнюю из четырёх
+        BK.App.state.scen = { v: 1, id: 'coffee', at: 0, flags: {} };   // как будто играли «Только кофейни» — последнюю из пяти
         BK.App.state.lost = true; BK.Extras.openSummary();
         const b = document.querySelector('#scenEnd'); if (!b) return null;
         return { text: b.textContent.replace(/\s+/g, ' ').trim(), again: (b.querySelector('[data-act=scenAgain]') || {}).textContent || '', h: b.querySelector('.scen-end-h').textContent.replace(/\s+/g, ' ').trim(), left: !!b.querySelector('.scen-end-left') };
       });
       if (!sm) issues.push(`[${tag}] блока в итогах нет`);
       else {
-        if (!sumRe(4, 4).test(sm.h)) issues.push(`[${tag}] крупный прогресс: «${sm.h}»`);
+        if (!sumRe(5, 5).test(sm.h)) issues.push(`[${tag}] крупный прогресс: «${sm.h}»`);
         if (sm.left) issues.push(`[${tag}] показан список «осталось пройти», хотя пройдено всё`);
         if (!/Начать заново/.test(sm.again)) issues.push(`[${tag}] кнопка: «${sm.again}»`);
         if (!/легенда|заново/.test(sm.text)) issues.push(`[${tag}] текст: «${sm.text.slice(0, 100)}»`);
@@ -266,6 +268,51 @@ async function touchTargets(p, label) {
         await touchTargets(p, `${tag}/итоги`);
         await shot(p, 'sum-all-360-dark');
       }
+      for (const e of p.errs) issues.push(`[${tag}] ${e}`);
+      await p.context().close();
+    }
+
+    /* --- 7. «Только кофейни»: правила видны, путь закреплён, окна цели и провала --- */
+    for (const [vp, dark] of [['d1440', false], ['m390', true]]) {
+      const tag = `кофейни/${vp}/${dark ? 'тёмная' : 'светлая'}`, mobile = vp[0] === 'm';
+      const p = await open(browser, vp, { dark, done: ['legacy', 'rescue', 'crisis', 'moscow'] });
+      const card = await p.evaluate(() => [...document.querySelectorAll('.scenpick .scen-card:not(.done) .scen-n')].map((x) => x.textContent.trim()));
+      if (card.join() !== 'Только кофейни') issues.push(`[${tag}] непройденная карточка: ${JSON.stringify(card)}`);
+      await p.fill('#companyName', 'Кофейни');
+      await p.click('#startForm button[type=submit]');
+      const shown = await p.waitForSelector('#scenStart:not([hidden]) .scs-card', { timeout: 9000 }).then(() => true, () => false);
+      const st = await p.evaluate(() => {
+        const S = BK.App.state;
+        return { id: S.scen && S.scen.id, sizes: [...new Set((S.offers || []).map((o) => o.size))], strat: BK.Strat.info(S),
+          card: (document.querySelector('#scenStart .scs-card') || {}).textContent || '' };
+      });
+      if (st.id !== 'coffee') issues.push(`[${tag}] выпала не та история: ${st.id}`);
+      if (st.sizes.join() !== 'small') issues.push(`[${tag}] помещения не только маленькие: ${st.sizes}`);
+      if (!(st.strat && st.strat.id === 'coffee' && st.strat.locked)) issues.push(`[${tag}] путь не закреплён: ${JSON.stringify(st.strat && { id: st.strat.id, locked: st.strat.locked })}`);
+      const ct = st.card.replace(/\s+/g, ' ');
+      if (!shown || !/Только кофейни/.test(ct) || !/только маленькие точки/.test(ct) || !/без флагмана/.test(ct)) issues.push(`[${tag}] карточка истории: «${ct}»`);
+      if (shown) { await check(p, `${tag}/карточка`, { root: '#scenStart .scs-card', mobile }); await shot(p, `coffee-card-${vp}`); await p.click('#scenStart .scs-x'); }
+      // окно стратегии: путь задан историей, сменить нельзя
+      await p.evaluate(() => BK.StratUI.openInfo());
+      await p.waitForSelector('#modal .strat-modal');
+      const sm = await p.evaluate(() => ({ text: document.querySelector('#modal .strat-modal').textContent.replace(/\s+/g, ' '), enabled: [...document.querySelectorAll('#modal .spath')].filter((b) => !b.disabled).length }));
+      if (!/задан историей «Только кофейни»/.test(sm.text) || sm.enabled) issues.push(`[${tag}] окно стратегии: кнопок ${sm.enabled}, «${sm.text.slice(-160)}»`);
+      await check(p, `${tag}/стратегия`, { root: '#modal .modal', mobile });
+      if (mobile) await shot(p, 'coffee-strat-390');
+      await p.evaluate(() => BK.App.closeModal());
+      // цель раньше срока → «История сложилась»
+      await p.evaluate(() => { const S = BK.App.state, f = BK.ScenarioUI.notify({ type: 'scen', phase: 'reached', id: 'coffee', day: S.day + 1800, at: 0 }); if (f) f(); });
+      const ok7 = await p.waitForSelector('#modal .modal', { timeout: 3000 }).then(() => true, () => false);
+      const rt = ok7 ? await p.evaluate(() => document.querySelector('#modal .modal').textContent.replace(/\s+/g, ' ')) : '';
+      if (!/История сложилась/.test(rt) || !/30 кофеен/.test(rt) || !/пройдено \d из 5/.test(rt)) issues.push(`[${tag}] окно «История сложилась»: «${rt.slice(0, 200)}»`);
+      if (ok7) { await check(p, `${tag}/сложилась`, { root: '#modal .modal', mobile }); await touchTargets(p, `${tag}/сложилась`); await shot(p, `coffee-reached-${vp}`); }
+      await p.evaluate(() => BK.App.closeModal());
+      // провал: срок вышел — правила остаются (своя пометка истории)
+      await p.evaluate(() => { const st = BK.Scenario.state(BK.App.state); st.expired = true; st.flags = { expired: true, saved: false }; BK.ScenarioUI.openFail(); });
+      const ft = await p.evaluate(() => (document.querySelector('#modal .modal') || {}).textContent || '');
+      if (!/История не сложилась/.test(ft) || !/Правила истории остаются/.test(ft)) issues.push(`[${tag}] окно провала: «${ft.replace(/\s+/g, ' ').slice(0, 200)}»`);
+      await check(p, `${tag}/провал`, { root: '#modal .modal', mobile });
+      if (!mobile) await shot(p, 'coffee-fail-1440');
       for (const e of p.errs) issues.push(`[${tag}] ${e}`);
       await p.context().close();
     }

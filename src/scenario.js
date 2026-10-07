@@ -5,18 +5,21 @@
      legacy   — «Наследство»: бабушкина пекарня в долгах, спасти за полгода;
      rescue   — «Спаси сеть»: сеть в кризисе (точки, долги, недовольные люди) — вытащить;
      crisis   — «Кризис»: старт перед кризисом — спрос падает, мука дорожает;
-     moscow   — «Старт в Москве»: дорогая аренда, высокий чек, сильные конкуренты.
+     moscow   — «Старт в Москве»: дорогая аренда, высокий чек, сильные конкуренты;
+     coffee   — «Только кофейни»: только маленькие кофейни, путь «Кофейни», без флагмана.
    Сценарий пишется в S.story.scenario (поле уже было в схеме docs/story.md §4.5).
 
    Правило владельца: сценарий **выпадает случайно, но только из непройденных**;
    пройденные запоминаются в браузере (localStorage['bk-ufa-scen-done']) и больше не выпадают;
-   в конце партии игрок видит «Пройдено N из 4» и может начать заново за другой историей.
+   в конце партии игрок видит «Пройдено N из 5» и может начать заново за другой историей.
 
    Срок и провал: когда срок истории вышел, day() считает вердикт (d.done) и кладёт
    уведомление { type:'scen', phase:'expired'|'saved' }; провал истории — failed(S)
    (срок вышел, цель не выполнена, или партия проиграна). Показывает это интерфейс
    (src/ui/scenario-ui.js: окно «История не сложилась» + строка в «Требует внимания»).
-   Выполненная цель по-прежнему единственное, что засчитывается в «Пройдено N из 4».
+   Выполненная цель по-прежнему единственное, что засчитывается в «Пройдено N из 5».
+   Если у истории есть d.reached(S) — цель проверяется каждый день и засчитывается сразу,
+   как только выполнена (phase 'reached'), не дожидаясь срока или конца партии.
 
    Состояние сценария внутри партии: S.scen = { v, id, at (день старта), flags }.
    Пока сценарий не выбран — состояния нет (обычная игра и боты не меняются).
@@ -51,9 +54,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function pick(seed, opts) {
     // При свободном выборе города история не может перенести игрока в другой город.
     // Без opts сохраняется прежний выбор (боты и старые интеграции).
+    // История с заданным путём («Только кофейни» → «Кофейни») не выпадает, если игрок сам выбрал
+    // на старте другой путь: его выбор важнее. opts.strat — только явный выбор (не «случайный»).
     const pool = left().filter((id) => {
-      const city = info(id) && info(id).start && info(id).start.city;
-      return !opts || !opts.city || !city || city === opts.city;
+      const st = (info(id) && info(id).start) || {};
+      if (opts && opts.strat && st.strat && st.strat !== opts.strat) return false;
+      return !opts || !opts.city || !st.city || st.city === opts.city;
     });
     if (!pool.length) return null;
     let t = ((seed | 0) ^ 0x7ac31) | 0;
@@ -129,8 +135,39 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (s.trafficK) { S.mods.push({ t: 'traffic', m: s.trafficK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('спрос'); }
     if (s.foodcostK) { S.mods.push({ t: 'foodcost', m: s.foodcostK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('мука'); }
     if (s.rentK) { S.mods.push({ t: 'rent', m: s.rentK, until: (S.day || 0) + (s.days || 3650), scope: 'global', src: 'scen' }); out.push('аренда'); }
+    if (s.checkK) { S.mods.push({ t: 'check', m: s.checkK, until: (S.day || 0) + (s.days || 180), scope: 'global', src: 'scen' }); out.push('чек'); }
+    // путь (src/strategy.js) задан историей: выбор на старте и «сложится сама» его не меняют
+    if (s.strat && BK.Strat && BK.Strat.lock) { BK.Strat.lock(S, s.strat, st.id); const sp = BK.Strat.path(s.strat); out.push(sp ? `путь «${sp.name}»` : 'путь'); }
+    // своё правило помещений (например, «Только кофейни»: любое помещение — маленькая кофейня)
+    if (typeof d.offer === 'function') { fitOffers(S); out.push(d.offerText || 'помещения'); }
+    if (Array.isArray(d.noGrowth) && d.noGrowth.indexOf('flag') >= 0) out.push('без флагмана');
     if (S.notify) S.notify.push({ type: 'scen', phase: 'applied', id: st.id, what: out.join(', ') });
     return out;
+  }
+
+  /* ---------------- правило помещений истории ----------------
+     d.offer(S, o) — функция истории, которая приводит предложение помещения к её формату
+     (src/data/scen-coffee.js: всё — маленькая кофейня). Вызывается для каждого нового
+     предложения: на старте, каждый день, после «риелтора» и прямо перед арендой —
+     поэтому другой формат арендовать нельзя ни из интерфейса, ни ботом.
+     Без истории с этим полем ничего не происходит (обычная игра и боты побайтно прежние). */
+  function offerRule(S) {
+    const st = state(S); if (!st || !st.id) return null;
+    const d = info(st.id);
+    return d && typeof d.offer === 'function' ? d : null;
+  }
+  function fitOffers(S) {
+    const d = offerRule(S); if (!d || !S || !Array.isArray(S.offers)) return 0;
+    let n = 0;
+    for (const o of S.offers) { if (o && !o.scenFit) { try { d.offer(S, o); } catch (e) { /* правило не ломает игру */ } o.scenFit = 1; n++; } }
+    return n;
+  }
+  // Запрет направления роста (src/growth.js спрашивает при открытии направлений):
+  // d.noGrowth = ['flag'] — флагмана в истории нет.
+  function blocks(S, key) {
+    const st = state(S); if (!st || !st.id) return false;
+    const d = info(st.id);
+    return !!(d && Array.isArray(d.noGrowth) && d.noGrowth.indexOf(key) >= 0);
   }
 
   /* ---------------- день ---------------- */
@@ -149,6 +186,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const st = state(S);
     if (!st || !st.id) return;
     const d = info(st.id); if (!d) return;
+    if (typeof d.offer === 'function') fitOffers(S);
+    // цель достигнута раньше срока — отмечаем один раз (интерфейс покажет «История сложилась»)
+    if (typeof d.reached === 'function' && !(st.flags && st.flags.reached) && !st.expired) {
+      let got = false; try { got = !!d.reached(S, st); } catch (e) { got = false; }
+      if (got) {
+        st.flags = st.flags || {}; st.flags.reached = S.day;
+        markDone(st.id);                                   // цель выполнена — история засчитана сразу
+        if (S.notify) S.notify.push({ type: 'scen', phase: 'reached', id: st.id, goal: d.goal || '', at: st.at, day: S.day });
+      }
+    }
     // срок сценария (например, «Наследство» — спасти за 6 месяцев)
     if (d.days && !st.expired && S.day - st.at > d.days) {
       st.expired = true;
@@ -156,7 +203,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       st.flags.expired = true;
       // срок вышел: сразу считаем, спасена история или нет — вердикт не зависит от того, когда вызван finish()
       try { st.flags.saved = !!(d.done && d.done(S, st)); } catch (e) { st.flags.saved = false; }
-      if (S.notify) S.notify.push({ type: 'scen', phase: st.flags.saved ? 'saved' : 'expired', id: st.id, days: d.days, goal: d.goal || '', at: st.at, day: S.day });
+      // цель уже отмечена раньше срока (phase 'reached') — второй раз «сложилась» не говорим
+      if (S.notify && !st.flags.reached) S.notify.push({ type: 'scen', phase: st.flags.saved ? 'saved' : 'expired', id: st.id, days: d.days, goal: d.goal || '', at: st.at, day: S.day });
     }
   }
   // Провал истории: срок вышел, а цель к сроку не выполнена (или партия уже проиграна).
@@ -194,11 +242,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (S && S.day !== pre) { try { day(S); } catch (e) { /* сценарий не должен ломать игру */ } }
       return r;
     };
+    // правило помещений истории действует и вне дня: подборка риелтора и сама аренда
+    const orf = Eng.refreshOffers;
+    if (orf) Eng.refreshOffers = function (S) { const r = orf.apply(this, arguments); if (offerRule(S)) fitOffers(S); return r; };
+    const ors = Eng.rentStore;
+    if (ors) Eng.rentStore = function (S) { if (offerRule(S)) fitOffers(S); return ors.apply(this, arguments); };
   }
   if (BK.Engine) wrap();
 
   BK.Scenario = {
     all, info, left, played, done, markDone, resetDone, pick, progress, progressHtml,
-    state, ensure, set, current, applyStart, day, failed, finish,
+    state, ensure, set, current, applyStart, day, failed, finish, fitOffers, blocks,
   };
 })();

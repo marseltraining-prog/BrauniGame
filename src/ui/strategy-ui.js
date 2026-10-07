@@ -96,11 +96,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec stratb"><h3><span class="st-h">${ICON}Стратегия</span><button class="linkbtn" data-act="strat">Подробнее →</button></h3>`;
     if (n) {
       const auto = !info.chosen, de = info.detect;
-      const bot = !auto && info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
+      const bot = !auto && !info.locked && info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
       s += `<div class="st-card${auto ? ' auto' : ''}">
         <span class="st-ic" aria-hidden="true">${esc(n.icon)}</span>
         <span class="st-b">
-          <span class="st-n">${esc(n.name)}<span class="st-tag">${auto ? 'сложилась сама' : 'выбрана вами'}</span></span>
+          <span class="st-n">${esc(n.name)}<span class="st-tag">${info.locked ? 'задана историей' : auto ? 'сложилась сама' : 'выбрана вами'}</span></span>
           <span class="st-m">идёте этим путём ${esc(lasted(info.day))}${bot ? ' · можно сменить' : ''}</span>
         </span></div>
         ${pline(n)}
@@ -126,7 +126,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function infoHtml(S) {
     const info = ST.info(S); if (!info) return '';
-    const m = ST.metrics(S), cur = info.id, can = !info.chosen || info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180);
+    const m = ST.metrics(S), cur = info.id, can = !info.locked && (!info.chosen || info.day <= (BK.CFG.STRAT.CHANGE_DAYS || 180));
+    const lockName = info.locked && BK.Scenario && BK.Scenario.info(info.locked) ? BK.Scenario.info(info.locked).name : null;
     const cards = ST.list().map((id) => {
       const p = ST.path(id), on = cur === id;
       return `<button type="button" class="spath${on ? ' on' : ''}" data-act="stratPick" data-arg="${id}"${can ? '' : ' disabled'} aria-pressed="${on}">
@@ -142,12 +143,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="st-foot">
         <div class="st-now">
           <span><small>Ваш путь</small><b>${cur ? esc(ST.path(cur).icon) + ' ' + esc(ST.path(cur).name) : 'ещё не определился'}</b></span>
-          <span><small>Так решено</small><b>${cur ? (info.chosen ? 'вами' : 'сложилось само') : '—'}</b></span>
+          <span><small>Так решено</small><b>${cur ? (info.locked ? 'историей' : info.chosen ? 'вами' : 'сложилось само') : '—'}</b></span>
           <span><small>Идёте этим путём</small><b>${cur ? esc(lasted(info.day)) : '—'}</b></span>
         </div>
         ${metricsHtml(m)}
       </div>
-      <p class="hint" style="margin:0">${can
+      <p class="hint" style="margin:0">${info.locked
+        ? `Путь задан историей${lockName ? ' «' + esc(lockName) + '»' : ''} — сменить его в этой партии нельзя.`
+        : can
         ? 'Сменить путь или снять выбор («Пусть сложится сама») можно в первые полгода игры.'
         : 'Полгода прошло — стратегия стала вашей историей. Сменить её больше нельзя.'}</p>
       ${can && cur ? `<button type="button" class="btn block st-reset" data-act="stratPick" data-arg="none">Пусть сложится сама — снять выбор</button>` : ''}
@@ -164,7 +167,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function settingsHtml(S) {
     const i = S ? ST.info(S) : null;
     return `<div class="row sp strat-set"><span>Стратегия<small class="hint">${
-      i && i.id ? (i.chosen ? 'выбрана вами' : 'сложилась сама') : 'путь определится по вашим решениям'
+      i && i.id ? (i.locked ? 'задана историей' : i.chosen ? 'выбрана вами' : 'сложилась сама') : 'путь определится по вашим решениям'
     }</small></span><button type="button" class="btn" data-act="strat">${i && i.id ? `${esc(ST.path(i.id).icon)} ${esc(ST.path(i.id).name)}` : 'Стратегия не выбрана'}</button></div>`;
   }
 
