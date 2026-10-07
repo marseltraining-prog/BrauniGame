@@ -13,6 +13,357 @@
       "lastLines": [
         "НИЖНИЙ НОВГОРОД: 571 проверок, 0 проблем"
       ]
+    },
+    {
+      "command": "node qa/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 37,
+      "log": "tmp/release-checks/0.9.20/02-nnov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "НИЖНИЙ НОВГОРОД UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/nnov.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/03-nnov.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/nnov.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/nnov.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/04-perm.log",
+      "lastLines": [
+        "ПЕРМЬ: 558 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 37,
+      "log": "tmp/release-checks/0.9.20/05-perm.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ПЕРМЬ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/perm.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/06-perm.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/perm.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/perm.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/07-rostov.log",
+      "lastLines": [
+        "РОСТОВ: 545 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 34,
+      "log": "tmp/release-checks/0.9.20/08-rostov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "РОСТОВ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/rostov.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/09-rostov.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/rostov.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/rostov.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/volgograd.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/10-volgograd.log",
+      "lastLines": [
+        "ВОЛГОГРАД: 554 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/volgograd.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 33,
+      "log": "tmp/release-checks/0.9.20/11-volgograd.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ВОЛГОГРАД UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/volgograd.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/12-volgograd.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/volgograd.js:58:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/volgograd.js:136:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/13-chelyabinsk.log",
+      "lastLines": [
+        "ЧЕЛЯБИНСК: 562 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 33,
+      "log": "tmp/release-checks/0.9.20/14-chelyabinsk.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ЧЕЛЯБИНСК UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/chelyabinsk.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/15-chelyabinsk.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/chelyabinsk.js:55:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/chelyabinsk.js:133:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/real-ufa.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/16-real-ufa.log",
+      "lastLines": [
+        "real-ufa: 77 проверок — OK"
+      ]
+    },
+    {
+      "command": "node qa/real-ufa.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.20/17-real-ufa.log",
+      "lastLines": [
+        "НАСТОЯЩАЯ УФА UI: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/city-portraits.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 3,
+      "log": "tmp/release-checks/0.9.20/18-city-portraits.log",
+      "lastLines": [
+        "Уфа: 183 из 183 картинок побайтно как в эталоне",
+        "kazan: 88 портретов отличаются от уфимских",
+        "moscow: 88 портретов отличаются от уфимских",
+        "nsk: 88 портретов отличаются от уфимских",
+        "контактный лист: qa/shots/city-portraits/contact-sheet.png",
+        "",
+        "OK: городские портреты в порядке"
+      ]
+    },
+    {
+      "command": "node sim/perf-big.js --make tmp/big1000.json 1000",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.20/19-perf-big.log",
+      "lastLines": [
+        "точек 1000 в 12 городах · сохранение 1328 КБ",
+        "месяц агрегата: медиана 15.26 мс · 1-е число целиком: 23.67 мс · обычный день: 1.39 мс",
+        "после прогрева (вторая половина из 8): месяц агрегата 9.70 мс · 1-е число целиком 17.28 мс"
+      ]
+    },
+    {
+      "command": "node qa/bigsave.js tmp/big1000.json",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 6,
+      "log": "tmp/release-checks/0.9.20/20-bigsave.log",
+      "lastLines": [
+        "{\"r1\":{\"len\":1359715,\"packed\":false},\"r2\":{\"saved\":true,\"packed\":true,\"kb\":222,\"freed\":523776},\"r3\":{\"stores\":51,\"broken\":false,\"company\":\"Пекарня «Каравай»\"},\"r4\":{\"day\":10952,\"cities\":12,\"packedStores\":949},\"r5\":{\"saved\":false,\"toasts\":1}}",
+        "БОЛЬШОЕ СОХРАНЕНИЕ: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node sim/samara.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/21-samara.log",
+      "lastLines": [
+        "САМАРА: 513 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/samara.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 32,
+      "log": "tmp/release-checks/0.9.20/22-samara.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "САМАРА UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/samara.js",
+      "exit": 1,
+      "blocking": true,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.20/23-samara.log",
+      "lastLines": [
+        "║     npx playwright install                                              ║",
+        "║                                                                         ║",
+        "║ <3 Playwright Team                                                      ║",
+        "╚═════════════════════════════════════════════════════════════════════════╝",
+        "    at /home/user/braunigame/qa/samara.js:54:59",
+        "    at Object.<anonymous> (/home/user/braunigame/qa/samara.js:132:3) {",
+        "  name: 'Error'",
+        "}"
+      ]
     }
   ]
 }
