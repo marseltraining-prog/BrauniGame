@@ -1,0 +1,18 @@
+{
+  "version": "0.9.19",
+  "complete": false,
+  "results": [
+    {
+      "command": "node sim/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/01-nnov.log",
+      "lastLines": [
+        "НИЖНИЙ НОВГОРОД: 571 проверок, 0 проблем"
+      ]
+    }
+  ]
+}
