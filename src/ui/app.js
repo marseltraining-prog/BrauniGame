@@ -425,6 +425,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);
       else if (n.type === 'coll' && BK.CollUI) BK.CollUI.notify(n);
       else if (n.type === 'inv' && BK.InvUI) BK.InvUI.notify(n);
+      else if (n.type === 'holding' && BK.HoldingUI) { const m = BK.HoldingUI.notify(n); if (m) ui.modalQueue.push(m); } // третий акт «Холдинг» (holding-ui.js)
         else if (n.type === 'story' && BK.StoryUI) BK.StoryUI.notify(n);
         else if (n.type === 'strat' && BK.StratUI) BK.StratUI.notify(n);
         else if (n.type === 'scen' && BK.ScenarioUI) { const m = BK.ScenarioUI.notify(n); if (m) ui.modalQueue.push(m); } // истории: «срок вышел — не сложилась» / «сложилась» (scenario-ui.js)

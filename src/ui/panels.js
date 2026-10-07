@@ -207,7 +207,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (BK.GrowthUI) for (const x of BK.GrowthUI.attItems(S)) add(x); // рост вглубь: заказы, контракты, франчайзи, фабрика
     if (BK.LivelyUI) for (const x of BK.LivelyUI.attItems(S)) add(x); // живость: веха подходит к сроку
     if (BK.Coll && BK.Coll.attItems) for (const x of BK.Coll.attItems(S)) add(x); // залог: платёж 1-го числа и просрочка
-    if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x); // инвесторы: ждёт ответа / много уходит партнёрам
+    if (BK.Inv && BK.Inv.attItems) for (const x of BK.Inv.attItems(S)) add(x);
+    if (BK.Holding && BK.Holding.attItems) for (const x of BK.Holding.attItems(S)) add(x); // третий акт: выбор пути, сцена, отчёт квартала // инвесторы: ждёт ответа / много уходит партнёрам
       if (BK.Story && BK.Story.attItems) for (const x of BK.Story.attItems(S)) add(x); // сюжет: ждёт решения
       if (BK.Strat && BK.Strat.attItems) for (const x of BK.Strat.attItems(S)) add(x); // стратегия сложилась сама
       if (BK.Threads && BK.Threads.attItems) for (const x of BK.Threads.attItems(S)) add(x); // нити истории: «вас помнит инспектор» — открытие в городе дольше
@@ -385,6 +386,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('Налоги', '−' + fm(p.tax || 0));
       if (p.interest) s += row('Проценты по кредиту', '−' + fm(p.interest));
       if (p.inv) s += row('Партнёрам (инвесторы)', '−' + fm(p.inv));
+      if (p.hold) s += row('Биржа и холдинг (аудит, совет, роадшоу)', '−' + fm(p.hold));
       if (p.other) s += row('Прочие расходы (события)', '−' + fm(p.other));
       if (p.income) s += row('Прочие доходы', '+' + fm(p.income));
     } else if (p.profit != null) s += row('Налог (оценка)', '−' + fm(p.rev * (taxRate != null ? taxRate : 0.06)));
@@ -394,6 +396,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s += row('→ премии персоналу', fm(p.bonus || 0), 'subr');
       s += row('→ маркетинг', fm(p.marketing || 0), 'subr');
     }
+    if (full && p.hdiv) s += row('→ дивиденды акционерам', fm(p.hdiv), 'subr');
     s += `</table>`;
     if (full && p.lostBake != null) s += `<div class="kv lostrow" title="Гости, которым к вечеру не хватило выпечки. Это не расход, а недополученная выручка — в прибыль не входит."><span>Упущенные продажи — выручка (оценка)</span><span>~${fm(p.lostBake)}</span></div>`;
     return s;
@@ -488,6 +491,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s += `<div class="strip"><span>Точки <b>${open}</b>${soon ? ` <span class="delta up" title="открываются">+${soon}</span>` : ''}</span><span class="sep"></span><span>Команда <b>${E_.allStaff(S) + E_.bakersTotal(S)}</b></span><span class="faces" title="Настроение продавцов: довольны / терпят / недовольны">${BK.faceIcon('happy')}${mc.happy} ${BK.faceIcon('mid')}${mc.mid} ${BK.faceIcon('sad')}${mc.sad}</span></div>`;
     s += `<div class="sec"><h3>Выручка и прибыль <small>${h.length >= 12 ? '12 мес.' : nw(h.length, 'месяц', 'месяца', 'месяцев')}</small></h3>${revChart12(S)}</div>`;
     if (BK.LivelyUI) s += BK.LivelyUI.milesBlock(S); // живость: короткая веха (одна за раз)
+    if (BK.HoldingUI) s += BK.HoldingUI.dashBlock(S); // третий акт «Холдинг»
     if (BK.StoryUI) s += BK.StoryUI.block(S); // сюжет: последнее решение и ожидающая сцена
     if (BK.Story && BK.Story.famDash) s += BK.Story.famDash(S); // свои люди: личное дело со сроком («Мама болеет — 4 дня, чтобы решить»)
     if (BK.STORY && BK.STORY.lineHtml) s += BK.STORY.lineHtml(S); // сюжет: реплика героя о самой острой проблеме месяца (одной строкой под «Историей»)

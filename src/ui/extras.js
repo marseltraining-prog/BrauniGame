@@ -289,6 +289,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const rw = S.lost && BK.Rewind && BK.Rewind.can(S); // банкротство: можно вернуться к окну «Переиграть»
     if (BK.Scenario) { try { BK.Scenario.finish(S); } catch (e) {} }   // партия закончилась — отметить историю пройденной
     s += (BK.ScenarioUI ? BK.ScenarioUI.forSummary(S) : '');
+    s += (BK.HoldingUI ? BK.HoldingUI.summaryHtml(S) : ''); // третий акт «Холдинг»
     s += (BK.StoryHistory ? BK.StoryHistory.summarySection(S) : '');
     s += `</div><div class="modal-f">${S.lost ? (rw ? '<button class="btn primary block" type="button" data-act="rewindLost">Переиграть…</button>' : '') : `<button class="btn primary block" data-act="closeModal">Продолжить игру</button>`}<button class="btn block${S.lost && !rw ? ' primary' : ''}" type="button" id="sumNew">Новая игра</button></div>`;
     return s;

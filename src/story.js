@@ -255,8 +255,11 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (c.flag) return Object.keys(c.flag).every((k) => R.f[k] === c.flag[k]);
     return false;
   }
+  // Третий акт «Холдинг» (src/holding.js): пока путь не выбран или идёт, «Последний ужин» ждёт — концовку даст путь.
+  function held(S, sc) { return !!(sc && sc.id === 'sf2' && BK.Holding && BK.Holding.holdsFinale && BK.Holding.holdsFinale(S)); }
   function fits(S, R, sc) {
     if (!sc) return false;
+    if (held(S, sc)) return false;
     if (R.seen[sc.id] != null && sc.once !== false) return false;   // once:false — сцену можно показать снова (мостики)
     if (sc.once === false) { /* повторяемые сцены разрешены */ }
     const t = sc.trigger || {};
@@ -290,7 +293,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const sc of list) { if (sc.queueOnly) continue; if (fits(S, R, sc)) return sc; }   // queueOnly — только по очереди
     // запасной вариант: срок вышел — приходим в мягкой версии
     for (const sc of list) {
-      if (sc.queueOnly || !sc.fallback || R.seen[sc.id] != null) continue;
+      if (sc.queueOnly || !sc.fallback || R.seen[sc.id] != null || held(S, sc)) continue;
       const t = sc.trigger || {};
       if (t.after && !t.after.every((id) => R.seen[id] != null)) continue;
       if (t.afterAny && t.afterAny.length && !t.afterAny.some((id) => R.seen[id] != null)) continue;   // запасной вариант не обходит ветвление
@@ -625,19 +628,22 @@ var BK = globalThis.BK || (globalThis.BK = {});
         R.queue.push({ kind: 'scene', id: fx.id, day: S.day + d, p: fx.p, source: R.pending && R.pending.id || null });
         return null;
       }
-      case 'ending': {
-        R.ending = fx.id;
-        const e = (D().endings || {})[fx.id] || {};
-        R.log.push({ day: S.day, id: 'end_' + fx.id, title: 'Финал: ' + (e.name || fx.id), choice: '', chapter: 'final', fx: ['ending'] });
-        if (S.notify) S.notify.push({ type: 'story', phase: 'ending', id: fx.id, name: e.name, text: e.text });
-        S.lost = true; S.storyEnding = fx.id;   // игра останавливается, итоги показывают концовку
-        return `концовка «${e.name || fx.id}»`;
-      }
+      case 'ending': return endWith(S, fx.id, R);
       default:
         // всё остальное — обычные эффекты событий, применяет движок той же функцией
         if (fx.t) { try { S.__storyFx = [fx]; E().applyEffects(S, [fx], { scope: 'global', target: null }); return null; } catch (e) { return null; } }
         return null;
     }
+  }
+  // Концовка: игра останавливается, итоги показывают её. Её же зовёт третий акт (src/holding.js).
+  function endWith(S, id, R0, chapter) {
+    const R = R0 || state(S); if (!R) return null;
+    R.ending = id;
+    const e = (D().endings || {})[id] || {};
+    R.log.push({ day: S.day, id: 'end_' + id, title: 'Финал: ' + (e.name || id), choice: '', chapter: chapter || 'final', fx: ['ending'] });
+    if (S.notify) S.notify.push({ type: 'story', phase: 'ending', id, name: e.name, text: e.text });
+    S.lost = true; S.storyEnding = id;   // игра останавливается, итоги показывают концовку
+    return `концовка «${e.name || id}»`;
   }
   function hero(id) { return (D().heroes || {})[id] || { name: id }; }
   // Герой по городу партии (src/data/story-cast.js): для Уфы — прежняя запись без изменений.
@@ -684,6 +690,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
           const sc = scene(q.id); if (!sc) return false;
           // Просроченная копия одноразовой сцены больше не нужна; once:false остаётся повторяемой.
           if (sc.once !== false && R.seen[sc.id] != null) return false;
+          if (held(S, sc)) { q.day = S.day + 30; return true; }   // финал ждёт третий акт
           // Решение игрока не перезаписываем. После первого start следующие due-сцены
           // остаются в очереди с исходным сроком и откроются после ответа в следующем tick.
           if (R.pending) return true;
@@ -936,6 +943,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     chapter, hero, chapterName, defaults, fits, cond, cityHero, sceneView,
     wire, mateKind, mateScore, closeLine,   // сквозные линии: пролог → нити, кто рядом, счёт для концовки
     // личные (семейные) линии: живут в реестре нитей (BK.Threads), но решает их сюжет
-    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft, heroOf, heroSet, heroName, heroNameDat, heroG, isFemale, applyHero, g, heroText, heroHtml, patchHistory,
+    famDay, famStart, famPick, famOpts, famDash, famKey, famList: famThreads, famDefs, famName, famLeft, heroOf, heroSet, heroName, heroNameDat, heroG, isFemale, applyHero, g, heroText, heroHtml, patchHistory, endWith, held,
   };
 })();
