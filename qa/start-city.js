@@ -56,7 +56,7 @@ async function fresh(b, vp, dark) {
     check(await p.locator('[name=startCity][value=moscow]').isEnabled(), 'разблокировка переживает перезагрузку');
     await p.check('[name=startCity][value=moscow]');
     await p.evaluate(() => BK.Scenario.markDone('legacy'));
-    await p.evaluate(() => { BK.Scenario.markDone('rescue'); BK.Scenario.markDone('crisis'); });
+    await p.evaluate(() => { BK.Scenario.markDone('rescue'); BK.Scenario.markDone('crisis'); BK.Scenario.markDone('coffee'); }); // 0.9.19: пятая история
     await p.click('#startForm button[type=submit]');
     check(await p.evaluate(() => BK.CITY.id === 'moscow' && BK.App.state.scen.id === 'moscow'), 'московский сценарий только в выбранной Москве');
     await p.context().close();
