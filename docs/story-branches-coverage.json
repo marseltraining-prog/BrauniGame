@@ -1,9 +1,501 @@
 {
   "complete": true,
-  "version": "0.9.18",
+  "version": "0.9.19",
   "balance": false,
-  "scenes": 130,
+  "scenes": 139,
   "successfulTargets": [
+    {
+      "scene": "cf1",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf1-0-7919.json",
+      "checks": 32,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 5,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check"
+      ]
+    },
+    {
+      "scene": "cf1",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf1-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "foodcost"
+      ]
+    },
+    {
+      "scene": "cf2",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf2-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "offer"
+      ]
+    },
+    {
+      "scene": "cf2",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf2-1-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf3",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf3-0-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "capacity"
+      ]
+    },
+    {
+      "scene": "cf3",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf3-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "conv",
+        "delivery"
+      ]
+    },
+    {
+      "scene": "cf3",
+      "choice": 2,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf3-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "cf4",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf4-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "rivalMod",
+        "traffic"
+      ]
+    },
+    {
+      "scene": "cf4",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf4-1-7919.json",
+      "checks": 28,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "flags": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "cf4",
+      "choice": 2,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf4-2-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "traffic"
+      ]
+    },
+    {
+      "scene": "cf5",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf5-0-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "foodcost",
+        "trend"
+      ]
+    },
+    {
+      "scene": "cf5",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf5-1-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf5",
+      "choice": 2,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf5-2-7919.json",
+      "checks": 25,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 4,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf6",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf6-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "keyRate"
+      ]
+    },
+    {
+      "scene": "cf6",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf6-1-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf7a",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf7a-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf7a",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf7a-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "trend"
+      ]
+    },
+    {
+      "scene": "cf7b",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf7b-0-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf7b",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf7b-1-7919.json",
+      "checks": 27,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "trend"
+      ]
+    },
+    {
+      "scene": "cf8",
+      "choice": 0,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf8-0-7919.json",
+      "checks": 24,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": []
+    },
+    {
+      "scene": "cf8",
+      "choice": 1,
+      "fixture": "coffee",
+      "actualSeed": 7919,
+      "stateFile": "tmp/story-branches/states/cf8-1-7919.json",
+      "checks": 30,
+      "declaredChecks": {
+        "resolution": 6,
+        "money": 2,
+        "relations": 1,
+        "meters": 1,
+        "perks": 3,
+        "expiry": 6,
+        "shares": 1,
+        "queue": 1,
+        "threads": 1,
+        "family": 2,
+        "saveLoad": 6
+      },
+      "unsupported": [
+        "check",
+        "foodcost"
+      ]
+    },
     {
       "scene": "kc1",
       "choice": 0,
@@ -7041,8 +7533,8 @@
       ]
     }
   ],
-  "attempts": 338,
-  "checks": 9227,
+  "attempts": 359,
+  "checks": 9795,
   "limitations": [
     "independent legal choice reachability; not every combination of preceding choices",
     "assisted financial fixtures are not a balance benchmark",

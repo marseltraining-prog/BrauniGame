@@ -315,6 +315,61 @@
         "  name: 'Error'",
         "}"
       ]
+    },
+    {
+      "command": "node sim/story.js --all-branches 1 22 --snapshots",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 461,
+      "log": "tmp/release-checks/0.9.19/21-story.log",
+      "lastLines": [
+        "  \"limitations\": [",
+        "    \"fixtures are assisted, not balance\",",
+        "    \"no global all-afterDeps claim: alternative scene gates are mutually exclusive\",",
+        "    \"not full economic effect/time/load coverage\",",
+        "    \"scenario initialization is a deferred coverage fixture\",",
+        "    \"profiles do not yet construct every rare premise\"",
+        "  ]",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/story-choice-guard.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/22-story-choice-guard.log",
+      "lastLines": [
+        "Story choice guard: 2128 checks passed"
+      ]
+    },
+    {
+      "command": "node sim/defer-open.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/23-defer-open.log",
+      "lastLines": [
+        "defer-open: 24 проверок — OK"
+      ]
+    },
+    {
+      "command": "node sim/story-queue.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.19/24-story-queue.log",
+      "lastLines": [
+        "Story queue: 111 assertions passed"
+      ]
     }
   ]
 }
