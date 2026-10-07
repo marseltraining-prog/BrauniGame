@@ -221,6 +221,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let D = K().DIR_D0 + K().DIR_D_K * sk.ops / 100;
     D *= st === 'service' ? 1.02 : st === 'growth' ? 0.99 : st === 'economy' && late ? 0.98 : 1;
     if (d.adaptUntil > S.day) D *= 0.97;
+    if (BK.CityGrowth) D *= BK.CityGrowth.demandK(S, c); // флагман директора (§19): гости точек города +2 %
     const has = (t) => d.traits.indexOf(t) >= 0;
     const W = cfg.RATING_W, fresh = cfg.BAKE_LEVELS[clamp(Math.round(E.wasteState(S).bake), -3, 3) + 3].fresh;
     const rAdd0 = 0.1 * (sk.ops - 60) / 40 + (st === 'service' ? 0.2 : 0) - (st === 'economy' && late ? 0.2 : 0) + (c.priority === 'quality' ? 0.1 : 0);
@@ -640,6 +641,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       prev: prev ? { rev: prev[2], profit: prev[3], stores: prev[4], rating: prev[5] } : null,
       plan: c.plan ? { rev: c.plan.monthRev, stores: c.plan.stores, margin: c.plan.margin } : null,
       left: c.budget.left, capex: c.budget.capex, missing, mood: Math.round(mood), phrase, reqs, due: reqs.length ? S.day + 30 : null, opened, closed, dev: row[7] > 0 ? row[2] / row[7] - 1 : null,
+      grow: BK.CityGrowth ? (() => { const x = BK.CityGrowth.lines(S, c.id), ev = c.gd && c.gd.last ? c.gd.last.ev : []; return x.length || ev.length ? { lines: x.map((l) => ({ name: l.name, text: l.text, tone: l.tone })), ev: ev.slice() } : undefined; })() : undefined, // направления роста (§19)
       leak: (() => { const ls = leakStatus(S, c.id); return ls ? { pct: +ls.leak.toFixed(3), lossM: ls.lossM, why: ls.why, fix: ls.fix, skill: ls.skill, need: ls.need } : undefined; })() });
     void it; void cfg; void h;
   }

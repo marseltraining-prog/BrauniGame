@@ -571,7 +571,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       I.spend(S, hq, 'upkeep'); I.spend(S, hire, 'hire'); if (trainCost) I.spend(S, trainCost, 'train');
       I.spend(S, pRent, 'rent'); I.spend(S, pPay, 'payroll'); I.spend(S, pUtil, 'util');
       // прибыль города — как у подробного города: точки минус цеха, без управляющей компании, найма и обучения (они — расходы сети)
-      out.rev = rev; out.profit = rev * (1 - tax) - fc - aggRev * aggK - rent - pay - util - del - prod;
+      out.rev = rev; out.profit = rev * (1 - tax) - fc - aggRev * aggK - rent - pay - util - del - prod; out.fcCost = fc; // фудкост точек — для фабрики полуфабрикатов (§19)
       if (frac >= 0.5) pk.delM = Math.round(del / frac); // доставка из цехов за месяц — директору для решения об автопарке (§17)
       if (BK.Corp.onCityMonth) BK.Corp.onCityMonth(S, c, { rev, aggRev, fc, waste, agg: aggRev * aggK, chk: chkN, rent, pay, util, del, prod, hq, frac }); // для sim/corp-calib.js --diag
       return out;
@@ -585,6 +585,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const r = cityMonth(S, c, frac, hb);
     c.mAcc.rev += r.rev; c.mAcc.profit += r.profit; c.mAcc.agg += r.rev; cr.aggRevP += r.rev;
     c.mAcc.fc = (c.mAcc.fc || 0) + r.fc; c.mAcc.quits = (c.mAcc.quits || 0) + r.quits;
+    if (BK.CityGrowth) BK.CityGrowth.month(S, c, r, frac); // направления роста директора (§19): выручка и расходы за ту же часть месяца
   }
 
   /* ---------------- логистика между городами (Р4, §7.2) ----------------
@@ -717,6 +718,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const r = cityMonth(S, c, frac, hb);
       c.mAcc.rev += r.rev; c.mAcc.profit += r.profit; c.mAcc.agg += r.rev; cr.aggRevP += r.rev;
       c.mAcc.fc = (c.mAcc.fc || 0) + r.fc; c.mAcc.quits = (c.mAcc.quits || 0) + r.quits;
+      if (BK.CityGrowth) BK.CityGrowth.month(S, c, r, frac); // направления роста директора (§19, src/citygrowth.js)
       out.emp += r.emp; out.stores += r.stores;
     }
     supplyCheck(S); // Р4: снабжение из других городов ещё возможно?

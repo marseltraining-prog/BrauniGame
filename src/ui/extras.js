@@ -231,7 +231,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const rev = hs.reduce((a, x) => a + (x[2] || 0), 0), prof = hs.reduce((a, x) => a + (x[3] || 0), 0);
       const d = BK.Dir ? BK.Dir.dirOf(S, c) : null;
       let lossMax = 0, run = 0; for (const x of hs) { if (x[3] < 0) { run++; lossMax = Math.max(lossMax, run); } else run = 0; }
-      return { id, name: (BK.CITY_BY_ID[id] || {}).name || id, st, rev, prof, m: hs.length, d, day: c.enteredDay, bought: !!c.bought, lossMax };
+      const gn = BK.CityGrowth ? BK.CityGrowth.names(S, id) : []; // направления роста директора (§19)
+      return { id, name: (BK.CITY_BY_ID[id] || {}).name || id, st, rev, prof, m: hs.length, d, day: c.enteredDay, bought: !!c.bought, lossMax, gd: gn.length ? gn.join(', ').toLowerCase() : '', gpr: c.gd && c.gd.tot ? c.gd.tot.pr : 0, grev: c.gd && c.gd.tot ? c.gd.tot.rev : 0 };
     });
     const withHist = rows.filter((r) => r.m >= 6), byP = withHist.slice().sort((a, b) => b.prof - a.prof);
     const best = byP[0], worst = byP.length > 1 ? byP[byP.length - 1] : null;
@@ -244,12 +245,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       <div class="kpi"><span class="k">Директоров сейчас</span><span class="v">${dirs}</span><span class="d">${st.left ? `ушли ${st.left}${st.poached ? `, переманили ${st.poached}` : ''}` : 'никто не ушёл'}${st.caught ? ` · поймано ${st.caught}` : ''}</span></div>
       <div class="kpi"><span class="k">«Федеральная сеть»</span><span class="v">${cr.fed && cr.fed.goalDay != null ? E().fmtDate(cr.fed.goalDay) : f ? `${f.cities}/${f.need}` : '—'}</span><span class="d">${cr.fed && cr.fed.goalDay != null ? 'цель акта взята' : 'городов с 10+ точками'}</span></div>
       ${hl ? `<div class="kpi"><span class="k">Штаб: нагрузка / мощность</span><span class="v${hl.over > 0 ? ' negc' : ''}">${String(hl.load).replace('.', ',')} / ${String(hl.cap).replace('.', ',')}</span><span class="d">${hl.over > 0 ? 'перегружен' : 'справляется'}</span></div>` : ''}
+      ${rows.some((r) => r.grev) ? `<div class="kpi"><span class="k">Направления директоров</span><span class="v${rows.reduce((a, r) => a + r.gpr, 0) < 0 ? ' negc' : ''}">${fm(rows.reduce((a, r) => a + r.gpr, 0))}</span><span class="d">прибыль за всё время · выручка ${fm(rows.reduce((a, r) => a + r.grev, 0))}</span></div>` : ''}
       ${st.stolen ? `<div class="kpi"><span class="k">Украли директора</span><span class="v negc">${fm(st.stolen)}</span></div>` : ''}</div>`;
     const card = (r, kind) => `<div class="card sumstore ${kind}"><div class="card-h"><div><div class="card-t">${kind === 'best' ? 'Лучший город' : 'Худший город'} · ${esc(r.name)}</div><div class="card-s">${r.id === 'ufa' ? 'родной город' : `${r.bought ? 'куплен' : 'вход'} ${E().fmtDate(r.day)}`} · ${r.d ? 'директор ' + esc(r.d.name) : r.st.active ? 'ведёте сами' : 'без директора'}</div></div><span class="chip ${r.prof >= 0 ? 'good' : 'bad'}">${fm(r.prof)}</span></div>
       <div class="grid2">${h.kv('Прибыль за всё время', fm(r.prof))}${h.kv('Выручка за всё время', fm(r.rev))}${h.kv('Точек', r.st.stores)}${h.kv('Худшая серия', r.lossMax ? r.lossMax + ' мес. в минусе' : 'без убыточных месяцев')}</div></div>`;
     if (best) s += `<div class="sumstores">${card(best, 'best')}${worst ? card(worst, 'worst') : ''}</div>`;
     const list = rows.slice().sort((a, b) => b.rev - a.rev);
-    s += `<div class="sumctwrap"><table class="sumctbl"><thead><tr><th>Город</th><th class="n">Точки</th><th class="n">Выручка</th><th class="n">Прибыль</th><th class="c-dir">Директор</th></tr></thead><tbody>${list.map((r) => `<tr><td class="cn">${esc(r.name)}<small>${r.id === 'ufa' ? 'с начала игры' : E().fmtDate(r.day)}</small></td><td class="n">${r.st.stores}</td><td class="n">${fm(r.rev)}</td><td class="n ${r.prof < 0 ? 'negc' : ''}">${fm(r.prof)}</td><td class="c-dir">${r.d ? esc(r.d.name) : r.st.active ? '<span class="muted">вы</span>' : '<span class="negc">нет</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+    s += `<div class="sumctwrap"><table class="sumctbl"><thead><tr><th>Город</th><th class="n">Точки</th><th class="n">Выручка</th><th class="n">Прибыль</th><th class="c-dir">Директор</th></tr></thead><tbody>${list.map((r) => `<tr><td class="cn">${esc(r.name)}<small>${r.id === 'ufa' ? 'с начала игры' : E().fmtDate(r.day)}${r.gd ? ' · ' + esc(r.gd) : ''}</small></td><td class="n">${r.st.stores}</td><td class="n">${fm(r.rev)}</td><td class="n ${r.prof < 0 ? 'negc' : ''}">${fm(r.prof)}</td><td class="c-dir">${r.d ? esc(r.d.name) : r.st.active ? '<span class="muted">вы</span>' : '<span class="negc">нет</span>'}</td></tr>`).join('')}</tbody></table></div>`;
     return s + `</div>`;
   }
   function storeCard(r, kind) {
