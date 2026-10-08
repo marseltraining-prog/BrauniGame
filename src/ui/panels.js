@@ -25,7 +25,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const statusChip = (S, st) => {
     if (st.status === 'opening') return `<span class="chip">Открытие через ${st.openDay - S.day} дн.</span>`;
     if (st.status === 'repair') return `<span class="chip warn">Ремонт, ещё ${st.repairUntil - S.day} дн.</span>`;
-    if (st.closedUntil > S.day) return `<span class="chip bad">Закрыта на ${st.closedUntil - S.day} дн.</span>`;
+    if (st.closedUntil > S.day) { const n = st.closedUntil - S.day - 1; return `<span class="chip bad">${n > 0 ? `Закрыта ещё ${n} дн.` : 'Закрыта, откроется завтра'}</span>`; } // closedUntil — первый день работы
     if (!st.staff.length) return `<span class="chip bad">Нет персонала</span>`;
     return `<span class="chip good">Работает</span>`;
   };

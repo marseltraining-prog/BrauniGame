@@ -81,7 +81,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (any && cd.lab) { const [y, m] = cd.lab.split('-').map(Number); cd.hist.push({ y, m, d: cd.days || 1, p }); if (cd.hist.length > HIST_MAX) cd.hist.splice(0, cd.hist.length - HIST_MAX); }
     cd.cur = {}; cd.days = 0;
   }
-  function day(S, dayRev, dayFc, dayChecks, dayWaste) {
+  function day(S, dayRev, dayFc, dayChecks, dayWaste, dayUnits) { // dayUnits — изделий за день (зал + доставка); без него — по чекам зала
     const key = cityKey(S); if (!key) return;
     const cd = ensure(S, key), t = E().dateOf(S.day), ml = monthLabel(t), lab = ml.y + '-' + ml.m;
     if (cd.lab !== lab) { push(cd); cd.lab = lab; } // город простаивал (был неактивным) — закрыть старый месяц
@@ -93,7 +93,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       // складываются по профилю дня точки (вечерняя скидка), а не по среднему по сети.
       const est = dayFc * Math.max(0, wz.waste) / (M + Math.max(0, wz.waste)); // dayFc = выручка × фудкост/M × (M + доля остатков)
       const waste = dayWaste != null && isFinite(dayWaste) ? Math.max(0, Math.min(dayFc, dayWaste)) : est;
-      const parts = split(S, S.menu, { units: dayChecks * cfg.ITEMS_PER_CHECK, rev: dayRev, fc: dayFc - waste, waste }, holCat(S, S.day));
+      const parts = split(S, S.menu, { units: dayUnits != null && isFinite(dayUnits) ? dayUnits : dayChecks * cfg.ITEMS_PER_CHECK, rev: dayRev, fc: dayFc - waste, waste }, holCat(S, S.day));
       for (const id in parts) { const a = cd.cur[id] || (cd.cur[id] = [0, 0, 0, 0]), b = parts[id]; a[0] += b[0]; a[1] += b[1]; a[2] += b[2]; a[3] += b[3]; }
     }
     if (t.d === 1) { push(cd); cd.lab = ''; } // отчёт месяца — в историю сразу, чтобы шеф в январе видел декабрь
