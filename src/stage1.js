@@ -139,6 +139,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function hoursCover(dp, h) { const c = (C().HOURS[h] || C().HOURS.day).cover; return c[0] * dp.m + c[1] * dp.d + c[2] * dp.e; }
 
+  // время пролога: у пролога свой счёт месяцев (с февраля, герою 21), кофейня открывается по календарю игры (1 января 2027).
+  // Календарь не двигаем — честно говорим о скачке: «Прошло 2 года 3 мес. Январь 2027, вам 23».
+  function timeLine(S) {
+    const P = pro(S); if (!P || !(P.m >= 0) || !BK.Prologue || !BK.Prologue.age) return '';
+    const y = Math.floor(P.m / 12), m = P.m % 12, n10 = y % 10, n100 = y % 100;
+    const yw = n10 === 1 && n100 !== 11 ? 'год' : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? 'года' : 'лет';
+    const gone = [y ? `${y} ${yw}` : '', m ? `${m} мес.` : ''].filter(Boolean).join(' ') || 'меньше месяца';
+    const d = E().dateOf(S.day), mon = E().MONTHS[d.m];
+    return `Прошло ${gone}${gone.endsWith('.') ? '' : '.'} ${mon.charAt(0).toUpperCase() + mon.slice(1)} ${d.y}, вам ${BK.Prologue.age(P)}.`;
+  }
   // начало стадии 1: S — новая игра движка (фаза 'setup_prod'), пролог пройден. Деньги стадии — накопления пролога.
   function start(S) {
     const P = pro(S), c = C();
@@ -168,6 +178,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.alloc = { reserve: 0, bonus: 0.03, marketing: 0.04 };
     if (S.tutorial) { T.flags.tutOn = !!S.tutorial.on || !!(P && P.tutOn); S.tutorial.on = false; }
     T.spots = genSpots(S, T);
+    // сюжет на входе в главу (только факты пролога): «Открыть кофейню заново» вернёт его, а не решения проваленной попытки
+    if (S.story) T.story0 = JSON.parse(JSON.stringify(S.story));
+    T.timeLine = timeLine(S);
+    if (T.timeLine) feed(T, T.timeLine, 'info');
     feed(T, `Своя кофейня! В кармане ${fm(S.cash)}${credit ? ` (из них ${fm(credit)} — кредит «Семь рек»)` : ''}${f.mentor === 'partner' ? ` (из них ${fm(T.flags.rashidIn)} — доля Рашида)` : ''}. Осталось выбрать место.`, 'good');
     return T;
   }
@@ -224,7 +238,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (add) {
       if (n >= c.MENU_MAX) return `На островке помещается ${c.MENU_MAX} позиций`;
       const p = E().byId(BK.PRODUCTS, id);
-      if (T0(S).flags.pact && p && (p.cat === 'bread' || p.cat === 'pies')) return sub(S, 'Договор с Олегом: хлеб и пироги — у «Двора»');
+      // flags.pact — день окончания договора с Олегом (12 мес.): после него хлеб и пироги снова можно
+      if (T0(S).flags.pact > S.day && p && (p.cat === 'bread' || p.cat === 'pies')) return sub(S, 'Договор с Олегом: хлеб и пироги — у «Двора»');
       return null;
     }
     if (n <= c.MENU_MIN) return `Нужно хотя бы ${c.MENU_MIN} позиций`;
@@ -277,6 +292,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     log(S, `Кредит «Семь рек» на кофейню: ${fm(v)} под ${(E().loanRate(S) * 100).toFixed(1).replace('.', ',')}% годовых.`, 'warn');
     feed(T0(S), `Эльвира: «Поздравляю с кредитом. Теперь у нас с вами отношения». +${fm(v)}`, 'info');
     return { ok: true, v };
+  }
+
+  /* ---------- поломки: кофемашина и поставка ----------
+     «3 дня только чай и выпечка» — это правда: на эти дни кофе убирается из меню дня (продажи и статистика продуктов
+     его не видят), сорванная поставка так же убирает выпечку (остаются напитки). Меню игрока не меняется: в обёртке
+     tick на время дневного шага ставится урезанное меню, после шага — прежнее. Срок — как у модификатора события
+     (until > дня шага). Если урезать нечего оставить — меню дня полное. */
+  const COFFEE = ['americano', 'cappuccino', 'raf'];
+  function outage(S, kind, days) { const T = T0(S); if (!T) return; T.out = T.out || {}; T.out[kind] = Math.max(T.out[kind] || 0, S.day + days); }
+  function outageMenu(S, day) {
+    const o = T0(S) && T0(S).out; if (!o) return null;
+    const coffee = (o.coffee || 0) > day, pastry = (o.pastry || 0) > day;
+    if (!coffee && !pastry) { delete T0(S).out; return null; }
+    const L = S.menu.filter((m) => { const p = E().byId(BK.PRODUCTS, m.id); if (coffee && COFFEE.includes(m.id)) return false; if (pastry && p && p.cat !== 'drinks') return false; return true; });
+    return L.length && L.length < S.menu.length ? L : null;
   }
 
   /* ---------------- день ---------------- */
@@ -356,12 +386,36 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function avg7(T) { const L = T.days.slice(-7); let c = 0, r = 0, l = 0; for (const x of L) { c += x[0]; r += x[1]; l += x[2]; } const n = L.length || 1; return { n: L.length, checks: c / n, rev: r / n, load: l / n }; }
 
+  /* ---------- обязательства главы, которые живут дольше неё: доли партнёров и помощь «Калачу» ----------
+     Доли (S.story.shares — Рашид 30 %, Гуля 10 % от точки №1) платит BK.Story.sharesMonthly 1-го числа: её зовёт
+     обёртка сюжета (src/story.js, Story.day). Если сюжет в партии не идёт (выключен, прогоны ботов), ту же выплату
+     делает обёртка стадии 1 — один раз за 1-е число (Story ставит lastShare = день выплаты). Работает и в главе,
+     и после перехода в сеть, пока доли есть. */
+  function sharesFallback(S) {
+    const R = S.story; if (!R || !R.v || !R.shares || !R.shares.length || !BK.Story || !BK.Story.sharesMonthly) return 0;
+    if (R.lastShare === S.day) return 0; // сюжет уже заплатил сегодня
+    return BK.Story.sharesMonthly(S);
+  }
+  // сколько ушло партнёрам сегодня (1-го числа): выплата — первая запись статьи «Партнёрам» нового месяца
+  function sharesPaidToday(S) { return S.story && S.story.lastShare === S.day ? Math.round(S.month.inv || 0) : 0; }
+  // «Не продавайте. Я помогу» (сцена 1.7): KALACH_MONTHS выплат 1-го числа, в главе и после неё — пока не кончатся.
+  // В главе — вложение в «Калач», не расход кофейни (серию прибыльных месяцев не ломает), в сети — статья «Партнёрам».
+  function kalachMonthly(S) {
+    const T = T0(S); if (!T || !T.flags || !(T.flags.kalachHelp > 0) || T.flags.kalachPaid === S.day || T.status === 'failed') return 0;
+    const v = r1000(C().KALACH_HELP * S.macro.priceLevel);
+    I().spend(S, v, T.status === 'done' ? 'inv' : 'capex');
+    T.flags.kalachHelp--; T.flags.kalachPaid = S.day;
+    if (T.status === 'done') log(S, `Помощь «Калачу»: −${fm(v)} (статья «Партнёрам»)${T.flags.kalachHelp ? `, осталось ${T.flags.kalachHelp} мес.` : ' — последняя, обещание выполнено'}.`, 'info');
+    else feed(T, `Помощь «Калачу»: −${fm(v)}. Рашид: «Печь горит. Спасибо, балам».`, 'info');
+    return v;
+  }
   function monthEnd(S) {
     const T = T0(S), c = C(), st = store(S), h = S.history[S.history.length - 1];
     if (!h || T.months.some((x) => x.y === h.y && x.m === h.m)) return;
-    // доли партнёров (Рашид 30 %, Гуля 10 %) — от прибыли месяца
-    let share = 0;
-    if (T.share > 0 && h.profit > 0) { share = Math.round(h.profit * T.share); S.cash -= share; h.profit -= share; if (h.pnl) h.pnl.other = (h.pnl.other || 0) + share; }
+    // доли партнёров (Рашид 30 %, Гуля 10 %) платит общий механизм сюжета (BK.Story.sharesMonthly, статья «Партнёрам»):
+    // 1-го числа от прибыли точки №1 за прошлый месяц, расходом нового месяца — так же, как после перехода в сеть.
+    // Закрытый месяц (h.profit, h.pnl, h.cash) не трогаем: все отчёты показывают одну и ту же прибыль.
+    const share = sharesPaidToday(S);
     const full = T.openDay != null && S.day - T.openDay >= 26;
     const L = T.days.slice(-30); let g = 0; for (const x of L) g += x[0];
     const row = { y: h.y, m: h.m, rev: Math.round(h.rev), profit: Math.round(h.profit), guests: L.length ? Math.round(g / L.length) : 0, rating: +E().storeRating(S, st).toFixed(2), share, full, cash: Math.round(S.cash) };
@@ -369,8 +423,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (full) T.streak = h.profit > 0 ? T.streak + 1 : 0;
     if (full && h.profit > 0) { if (!T.ms.plus) { milestone(S, 'plus'); queue(S, 's16', { profit: row.profit }); } }
     if (T.streak >= c.READY_STREAK) milestone(S, 'streak');
-    // помощь «Калачу» (сцена 1.7, вариант А)
-    if (T.flags.kalachHelp > 0) { const v = r1000(c.KALACH_HELP * S.macro.priceLevel); I().spend(S, v, 'capex'); T.flags.kalachHelp--; /* вложение в «Калач» — не расход кофейни: серию прибыльных месяцев не ломает, деньги уходят */ feed(T, `Помощь «Калачу»: −${fm(v)}. Рашид: «Печь горит. Спасибо, балам».`, 'info'); }
+    kalachMonthly(S); // помощь «Калачу» (сцена 1.7, вариант А)
     // совет наставника после плохого месяца (сцена 1.2 вводит)
     T.advice = full && h.profit < 0 ? advice(S) : null;
     fx(T, 'month', row.profit, { row });
@@ -414,18 +467,28 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function nextGoal(S) {
     const T = T0(S), c = C(), st = store(S);
     if (!T || !st || T.openDay == null) return { id: 'open', name: 'Открыться', p: st ? clamp(1 - (st.openDay - S.day) / c.OPEN_DAYS, 0, 1) : 0, v: st ? `через ${Math.max(0, st.openDay - S.day)} дн.` : '' };
+    if (T.status === 'ready' || T.status === 'done') return { id: 'second', name: 'Вторая вывеска', p: 1, v: 'можно открывать' }; // переход уже открыт — других целей не требуем
     if (T.ms.plus == null) { const p = S.month.rev ? clamp((S.month.rev - (S.month.fc || 0)) / Math.max(1, S.month.rev), 0, 1) : 0; return { id: 'plus', name: 'Первый месяц в плюсе', p, v: `${T.streak ? '' : 'итог 1-го числа'}` }; }
-    if (T.ms.g100 == null) { const g = T.days.slice(-7).reduce((a, x) => Math.max(a, x[0]), 0); return { id: 'g100', name: `${c.G100} гостей за день`, p: clamp(g / c.G100, 0, 1), v: `лучший день недели — ${g}` }; }
-    if (T.ms.r45 == null) { const r = E().storeRating(S, st); return { id: 'r45', name: 'Рейтинг 4,5★', p: clamp((r - 3.5) / 1, 0, 1), v: r.toFixed(2).replace('.', ',') + '★' }; }
-    if (T.ms.streak == null) return { id: 'streak', name: 'Три месяца в плюсе подряд', p: T.streak / c.READY_STREAK, v: `${T.streak} из ${c.READY_STREAK}` };
-    return { id: 'second', name: 'Вторая вывеска', p: T.status === 'ready' ? 1 : 0.9, v: T.status === 'ready' ? 'можно открывать' : 'скоро' };
+    // условие перехода — «100 гостей ИЛИ 4,5★» (readyCheck): хватает одного из двух, показываем то, что ближе
+    if (T.ms.g100 == null && T.ms.r45 == null) {
+      const g = T.days.slice(-7).reduce((a, x) => Math.max(a, x[0]), 0), r = E().storeRating(S, st);
+      const pg = clamp(g / c.G100, 0, 1), pr = clamp((r - 3.5) / 1, 0, 1);
+      return { id: pg >= pr ? 'g100' : 'r45', name: `${c.G100} гостей за день или рейтинг 4,5★`, p: Math.max(pg, pr), v: `лучший день недели — ${g} · ${r.toFixed(2).replace('.', ',')}★` };
+    }
+    if (T.streak < c.READY_STREAK) return { id: 'streak', name: 'Три месяца в плюсе подряд', p: T.streak / c.READY_STREAK, v: `${T.streak} из ${c.READY_STREAK}` };
+    const own = S.cash + S.reserve - S.loan, need = c.READY_CASH * S.macro.priceLevel;
+    if (own < need) return { id: 'cash', name: `Свои деньги ${fm(r1000(need))}`, p: clamp(own / need, 0, 1), v: `сейчас ${fm(r1000(Math.max(0, own)))}` };
+    return { id: 'second', name: 'Вторая вывеска', p: 0.9, v: 'скоро' };
   }
   function readyCheck(S) {
     const T = T0(S), c = C(); if (T.status !== 'run' || T.openDay == null) return;
     const od = S.day - T.openDay;
     const s17done = !!T.seen.s17 || storyF(S).mentor === 'enemy';
     const own = S.cash + S.reserve - S.loan;
-    const ok = (T.streak >= c.READY_STREAK && od >= c.READY_MIN_DAYS && s17done && own >= c.READY_CASH * S.macro.priceLevel && (T.ms.g100 != null || T.ms.r45 != null)) || (od >= c.READY_FALLBACK_DAYS && T.months.some((m) => m.full && m.profit > 0)) || T.flags.kalachMine;
+    const ok = (T.streak >= c.READY_STREAK && od >= c.READY_MIN_DAYS && s17done && own >= c.READY_CASH * S.macro.priceLevel && (T.ms.g100 != null || T.ms.r45 != null));
+    // Переход — только по заявленной цели главы (три месяца в плюсе, 100 гостей или 4,5★, свои деньги). Запасного пути
+    // «через 15 мес. хватит одного плюса» больше нет, покупка «Калача» цель тоже не обходит: «Калач» войдёт в сеть
+    // вместе с кофейней, когда цель взята.
     if (!ok) return;
     T.status = 'ready';
     feed(T, 'Эльвира: «С такими цифрами можно говорить о второй точке». Кнопка «Вторая вывеска» — в «Точке».', 'good');
@@ -472,7 +535,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     s15: { kind: 'hero', who: (S) => (gulyaAvail(S) ? 'gulya' : 'aidar'), title: () => 'Первый наём',
       text: (S) => (gulyaAvail(S) ? 'Вечер, закрытие. Гуля стоит у витрины с булочкой из «Калача»: «Видела твою очередь с трамвайной остановки. Одному тебе её не вытянуть — ты к восьми уже зелёный. Рашид-абый отпускает. Ворчит, но отпускает. Ну? Будешь звать или мне самой напрашиваться?» На объявление откликнулись ещё двое: Айдар (19, «сдачу считаю два раза») и Лариса (32, пять лет в «Дворе»).' : 'На объявление откликнулись двое. Айдар Галиев, 19: «Я… я быстро учусь. Сдачу считаю два раза. Это плохо?» Лариса Кузнецова, 32: «Пять лет в „Дворе“. Кассу, выкладку, санкнижки — всё знаю. Хочу на пятнадцать процентов больше, чем там».'),
       choices: (S) => { const full = hireWhy(S), out = [];
-        if (gulyaAvail(S)) out.push({ label: '«Гуля, выходи завтра»', desc: `Гуля — уровень ${gulyaLvl(S)}, своя: не уйдёт`, dis: full, fx: { team: 2, rel: 1, rub: -1 }, do(S) { inviteGulya(S); } });
+        if (gulyaAvail(S)) out.push({ label: '«Гуля, выходи завтра»', desc: `Гуля — уровень ${gulyaLvl(S)}, своя: вряд ли уйдёт`, dis: full, fx: { team: 2, rel: 1, rub: -1 }, do(S) { inviteGulya(S); } });
         out.push({ label: 'Айдар', desc: 'Уровень 1, недорогой, учится быстро', cost: E().hireCost(S, 1), dis: full, fx: { team: 1, rub: -1 }, do(S) { I().spend(S, E().hireCost(S, 1), 'hire'); addPerson(S, 'Айдар Галиев', 1, 4, { aidar: 1, trait: 5, patience: 8 }); hired(S, 'Айдар'); flag(S, 'hire1', 'aidar'); } });
         out.push({ label: 'Лариса', desc: 'Уровень 3 сразу: сильная, но из «Двора»…', cost: E().hireCost(S, 3), dis: full, fx: { team: 2, rub: -2 }, risk: true, do(S) { I().spend(S, E().hireCost(S, 3), 'hire'); addPerson(S, 'Лариса Кузнецова', 3, 4, { lara: 1 }); hired(S, 'Лариса'); flag(S, 'hire1', 'lara'); if (S.story) S.story.f.laraSpy = rnd(T0(S)) < 0.4; } });
         out.push({ label: (S) => 'Пока справлюсь ' + sex(S, 'сам', 'сама'), desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
@@ -489,13 +552,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       choices: (S) => { const c = C(), buy = r1000(1500000 * S.macro.priceLevel); return [
         { label: '«Не продавайте. Я помогу»', desc: `${fm(r1000(c.KALACH_HELP * S.macro.priceLevel))} в месяц полгода — «Калач» жив`, fx: { rub: -2, rel: 2 }, do(S) { T0(S).flags.kalachHelp = c.KALACH_MONTHS; flag(S, 'kalach', 'alive'); rel(S, { rashid: 20 }); } },
         { label: '«Продавайте. Вы заслужили отдых»', desc: 'У «Двора» появится сильная точка в Центре', fx: { rel: 1 }, do(S) { flag(S, 'kalach', 'dvor'); rel(S, { rashid: 5, oleg: 10 }); } },
-        { label: '«Продайте мне»', desc: `«Калач» станет точкой №2 — сразу в сеть. Задаток ${fm(buy)}`, cost: buy, fx: { rub: -3, guests: 2, rel: 1 }, risk: true, do(S) { I().spend(S, buy, 'capex'); const T = T0(S); T.flags.kalachMine = buy; flag(S, 'kalach', 'mine'); rel(S, { rashid: 15, oleg: -15 }); } },
+        { label: '«Продайте мне»', desc: `${fm(buy)} — вся цена: печи, команда, аренда. Когда кофейня выйдет в сеть, «Калач» сразу станет точкой №2`, cost: buy, fx: { rub: -3, guests: 2, rel: 1 }, risk: true, do(S) { I().spend(S, buy, 'capex'); const T = T0(S); T.flags.kalachMine = buy; flag(S, 'kalach', 'mine'); rel(S, { rashid: 15, oleg: -15 }); } },
       ]; } },
     s18: { kind: 'climax', who: 'semyon', title: () => 'Вторая вывеска',
-      text: (S) => `Ленточка, «дзынь», фото с командой. Семён Аркадьевич — пост в «Уфа жуёт»: «${T0(S).flags.kalachMine ? '„Калач“ на Пушкина переходит в новые руки. Рашид доволен — впервые за двадцать лет' : 'Две точки. Город становится тесным — и это хорошо'}». Камера отдаляется: впервые видна вся Уфа — реки, районы и сиреневые ромбы «Двора». СМС от Олега: «Две точки. Мило. У меня двенадцать. Увидимся на карте».`,
-      choices: () => [{ label: 'На карту Уфы', desc: 'Кофейня станет точкой №1 сети. Дальше — цех и вторая точка', fx: { rub: 3 }, do(S) { finish(S); } }] },
+      text: (S) => { const k = T0(S).flags.kalachMine; return `${k ? 'Ленточка на двери «Калача», «дзынь», фото с командой.' : 'Последняя смена за стойкой, фото с командой.'} Семён Аркадьевич — пост в «Уфа жуёт»: «${k ? '„Калач“ на Пушкина переходит в новые руки. Рашид доволен — впервые за двадцать лет' : 'Кофейня с одной стойкой становится сетью. Город становится тесным — и это хорошо'}». Камера отдаляется: впервые видна вся Уфа — реки, районы и сиреневые ромбы «Двора». СМС от Олега: «${k ? 'Две точки. Мило' : 'Слышал, ты собираешься в сеть. Мило'}. У меня двенадцать. Увидимся на карте».`; },
+      choices: (S) => { const k = T0(S).flags.kalachMine, h = helpLine(S); return [{ label: 'На карту Уфы', desc: `${k ? 'Кофейня — точка №1, «Калач» — точка №2. Дальше — цех' : 'Кофейня станет точкой №1 сети. Дальше — цех и вторая точка'}${h ? '. ' + h : ''}`, fx: { rub: 3 }, do(S) { finish(S); } }]; } },
     ready: { kind: 'hero', who: 'elvira', title: () => 'Пора расти',
-      text: (S) => `Эльвира: «${T0(S).streak >= C().READY_STREAK ? `${T0(S).streak} месяца в плюсе подряд` : 'Год работы и прибыль'}. Люблю, когда цифры сходятся. У нас есть программа для тех, кто уже доказал, что умеет: деньги на цех и вторую точку. Приходите, когда будете готовы».`,
+      text: (S) => `Эльвира: «${T0(S).streak} ${T0(S).streak >= 5 ? 'месяцев' : 'месяца'} в плюсе подряд. Люблю, когда цифры сходятся. У нас есть программа для тех, кто уже доказал, что умеет: деньги на цех и вторую точку. Приходите, когда будете готовы».`,
       choices: () => [ok1('Понятно', 'Кнопка «Вторая вывеска» — во вкладке «Точка». Можно ещё поработать одной кофейней')] },
     sick: { kind: 'neg', who: 'life', title: () => 'Вы заболели',
       text: (S, v) => `Температура, ломит всё тело. Организм напомнил, что силы не бесконечны. ${v.alone ? `Точка закрыта на ${v.days} дн. — за стойкой больше никого.` : `${v.days} дн. за стойкой без вас — команда справится, но медленнее.`}`,
@@ -505,13 +568,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
       text: () => 'Утром кофемашина зашипела и выдала вместо капучино облако пара. Гости уже в очереди.',
       choices: (S) => [
         { label: 'Срочный мастер', desc: 'Сегодня же починят', cost: r1000(45000 * S.macro.priceLevel), fx: { rub: -2 }, do(S) { I().spend(S, r1000(45000 * S.macro.priceLevel), 'other'); } },
-        { label: 'Ждать сервис по гарантии', desc: 'Бесплатно, но 3 дня только чай и выпечка', fx: { guests: -2 }, do(S) { addMod(S, 'conv', 0.55, 3, store(S)); } },
+        { label: 'Ждать сервис по гарантии', desc: 'Бесплатно, но 3 дня только чай и выпечка', fx: { guests: -2 }, do(S) { addMod(S, 'conv', 0.55, 3, store(S)); outage(S, 'coffee', 3); } },
       ] },
     e_supply: { kind: 'neg', who: 'life', title: () => 'Поставщик сорвал поставку',
       text: () => 'Полуфабрикаты не привезли: «машина сломалась на Шакше». Витрина к обеду опустеет.',
       choices: (S) => [
         { label: 'Купить в розницу', desc: 'Дорого, но витрина полная', cost: r1000(18000 * S.macro.priceLevel), fx: { rub: -1 }, do(S) { I().spend(S, r1000(18000 * S.macro.priceLevel), 'fc'); } },
-        { label: 'Два дня с пустой витриной', desc: 'Гости уйдут без выпечки', fx: { guests: -2 }, do(S) { addMod(S, 'conv', 0.8, 2, store(S)); } },
+        { label: 'Два дня с пустой витриной', desc: 'Гости уйдут без выпечки', fx: { guests: -2 }, do(S) { addMod(S, 'conv', 0.8, 2, store(S)); outage(S, 'pastry', 2); } },
       ] },
     e_check: { kind: 'neg', who: 'life', title: () => 'Санитарная проверка',
       text: (S) => (E().storeRating(S, store(S)) >= 4.2 ? 'Пришла проверка. У стойки идеальный порядок, санкнижки на месте. Проверяющая даже взяла визитку.' : 'Пришла проверка. Нашли просроченные сливки и одну санкнижку без печати.'),
@@ -641,7 +704,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
     }
     if (cv.choices.length > 1) feed(T, `${cv.title}: ${/^«/.test(c.label) ? c.label : '«' + c.label + '»'}.`, (c.fx && c.fx.k) || (cv.kind === 'pos' ? 'good' : cv.kind === 'neg' ? 'bad' : 'hero'));
     if (cv.id === 's12') T.flags.advisor = 1;
-    if (cv.id === 's17' && T.flags.kalachMine) readyCheck(S);
     if (S.stage1) { // звук карточки читает интерфейс (src/ui/stage1.js): тон — по значкам последствий варианта
       const F = c.fx || {}; let sc = 0;
       for (const k of Object.keys(F)) { const v = F[k] || 0; sc += k === 'rub' ? v * 1.2 : v; }
@@ -662,10 +724,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const T = T0(S), c = C(), st = store(S);
     const start = BK.CFG.START_CASH * E().diffK(S, 'cash');
     const target = Math.round(start * (c.NEXT_K[0] + (c.NEXT_K[1] - c.NEXT_K[0]) * perfK(S)));
-    const value = Math.round(st.capex);
+    const kalach = T.flags.kalachMine ? kalachPrice(S, T) : 0; // «Калач» куплен в главе — входит в «точки» по цене покупки
+    const value = Math.round(st.capex) + kalach;
     const own = Math.round(S.cash + S.reserve - S.loan);
     const cash = r1000(clamp(own, target - value, start * c.NEXT_MAX - value));
-    return { start, target, value, own, cash, fund: Math.max(0, cash - own), loanPaid: S.loan, total: cash + value, reg: Math.round(T.reg), rating: E().storeRating(S, st), staff: st.staff.filter((e) => !e.hero).length + st.incoming.length };
+    return { start, target, value, kalach, own, cash, fund: Math.max(0, cash - own), loanPaid: S.loan, help: Math.max(0, cash - Math.round(S.cash + S.reserve)), total: cash + value, reg: Math.round(T.reg), rating: E().storeRating(S, st), staff: st.staff.filter((e) => !e.hero).length + st.incoming.length };
+  }
+  // честная строка о помощи при переходе (окно 1.8, тост, журнал): сколько добавил банк и что стало с кредитом
+  function helpLine(S, nx) {
+    nx = nx || nextPreview(S);
+    const parts = [];
+    if (nx.help > 0) parts.push(`+${fm(nx.help)}`);
+    if (nx.loanPaid > 0) parts.push(`кредит ${fm(nx.loanPaid)} закрыт`);
+    return parts.length ? sub(S, `Банк «Семь рек» помог с переходом: ${parts.join(', ')}.`) : '';
   }
   function finish(S) {
     const T = T0(S), st = store(S), In = I(), c = C(); if (!T || !st) return null;
@@ -693,23 +764,50 @@ var BK = globalThis.BK || (globalThis.BK = {});
     S.alloc = { reserve: 0.15, bonus: 0.03, marketing: 0.05 };
     if (!S.productions.length) { In.genProdOffers(S, 3); S.phase = 'setup_prod'; }
     if (S.offers.length < 3) In.genStoreOffers(S, true);
-    if (T.flags.kalachMine) { // сцена 1.7 «Продайте мне»: «Калач» — точка №2 (особое помещение)
-      const d = E().byId(BK.DISTRICTS, 'center') || BK.DISTRICTS.find((x) => x.arch === 'center') || BK.DISTRICTS[0];
-      const o = In.makeStoreOffer(S, { district: d.id, size: 'standard' });
-      Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), x: d.x - 12, y: d.y + 6 });
-      S.offers.push(o);
-    }
+    if (T.flags.kalachMine) kalachStore(S, T); // сцена 1.7 «Продайте мне»: «Калач» — точка №2 сразу, уже оплачен
     if (S.tutorial) S.tutorial.on = !!T.flags.tutOn;
-    T.status = 'done'; T.cards = [];
+    T.status = 'done'; T.cards = []; delete T.story0; // снимок сюжета для перезапуска главы больше не нужен
     if (S.story) { S.story.ch = 'city'; S.story.f.seed = nx.fund; }
     if (pro(S) && pro(S).carry) pro(S).carry.bakerDone = pro(S).carry.bakerDone || st.id;
-    log(S, `Стадия «Своя кофейня» пройдена за ${Math.round((S.day - T.openDay) / 30.4)} мес. Кофейня — точка №1 сети. Деньги на сеть: ${fm(nx.cash)}${nx.fund ? ` (из них ${fm(nx.fund)} — программа «Семь рек» для малого бизнеса)` : ''}.`, 'good');
+    const hl = helpLine(S, nx); nx.helpText = hl;
+    log(S, `Стадия «Своя кофейня» пройдена за ${Math.round((S.day - T.openDay) / 30.4)} мес. Кофейня — точка №1 сети${T.flags.kalachStore ? ', «Калач» — точка №2' : ''}. Деньги на сеть: ${fm(nx.cash)}.${hl ? ' ' + hl : ''}`, 'good');
     return nx;
+  }
+  /* «Калач» Рашида (сцена 1.7 «Продайте мне»): при переходе в сеть он — точка №2 сразу, без новой сметы. Цена покупки
+     (T.flags.kalachMine) уже заплачена в главе: в ней печи, отделка, команда Рашида и депозит аренды. Точку открывает
+     обычный rentStore (все обёртки: «Калач» — 4,5★ и старые гости +15 %, летопись), но деньги и статьи месяца после
+     него возвращаются как были — сметы нет. Команда выходит на следующий день, точка работает со следующего дня. */
+  function kalachPrice(S, T) { const v = T.flags.kalachMine; return typeof v === 'number' && v > 1 ? v : r1000(1500000 * S.macro.priceLevel); }
+  function kalachStore(S, T) {
+    if (S.stores.some((x) => x.kalach)) return null;
+    const In = I(), d = E().byId(BK.DISTRICTS, 'center') || BK.DISTRICTS.find((x) => x.arch === 'center') || BK.DISTRICTS[0];
+    const o = In.makeStoreOffer(S, { district: d.id, size: 'standard' });
+    Object.assign(o, { address: sub(S, 'ул. Пушкина, 14 · «Калач»'), special: true, kalach: 1, expires: S.day + 365, rentM2: Math.round(o.rentM2 * 0.8), payMode: 'month', x: d.x - 12, y: d.y + 6 });
+    S.offers.push(o);
+    const cash0 = S.cash, month0 = Object.assign({}, S.month), phase0 = S.phase, ev0 = S.ev.next;
+    S.cash += 1e12; // смета покрыта покупкой: на время вызова денег «хватает» (правило истории может поменять помещение)
+    const r = E().rentStore(S, o.id);
+    S.cash = cash0; S.month = month0; S.phase = phase0; S.ev.next = ev0;
+    S.offers = S.offers.filter((x) => x.id !== o.id);
+    if (!r || !r.ok || !r.store) return null;
+    const st = r.store;
+    st.capex = kalachPrice(S, T); st.openDay = S.day + 1;
+    for (const x of st.incoming) x.day = S.day + 1;
+    T.flags.kalachStore = st.id;
+    return st;
   }
   // мягкий финал: перезапуск кофейни с теми же накоплениями или пропуск в сеть — делает интерфейс (новая игра + copyCarry)
   function copyCarry(from, to) { // пролог, сюжет, навыки и перки — в новое состояние (переиграть кофейню / пропустить в сеть)
     if (from.prologue) to.prologue = JSON.parse(JSON.stringify(from.prologue));
-    if (from.story) to.story = JSON.parse(JSON.stringify(from.story));
+    // сюжет — только факты пролога: решения, сцены и летопись проваленной попытки кофейни не переносятся.
+    // Снимок главы (stage1.story0) — сюжет в момент входа в неё; старые сохранения без снимка — сюжет заново из пролога.
+    const T = from.stage1;
+    if (T && T.story0) to.story = JSON.parse(JSON.stringify(T.story0));
+    else if (from.story && T && from.prologue && from.prologue.rel && BK.Prologue) {
+      to.story = BK.Prologue.storyDefaults(to.seed || 1);
+      to.story.hero = JSON.parse(JSON.stringify(from.story.hero || to.story.hero));
+      BK.Prologue.syncStory(to);
+    } else if (from.story) to.story = JSON.parse(JSON.stringify(from.story));
     if (from.player) to.player = JSON.parse(JSON.stringify(from.player));
     for (const m of from.mods || []) if (m.src === 'prologue') to.mods.push(Object.assign({}, m));
     return to;
@@ -724,8 +822,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
     w('tick', (o) => function (S) {
       const T = S && S.stage1;
       if (T && running(S)) preTick(S);
-      const r = o.apply(this, arguments);
+      const menu0 = T && running(S) ? S.menu : null, cut = menu0 ? outageMenu(S, S.day + 1) : null; // поломка: меню дня без кофе / без выпечки
+      if (cut) S.menu = cut;
+      let r;
+      try { r = o.apply(this, arguments); } finally { if (cut) S.menu = menu0; }
       if (!T) return r;
+      if (r && T.status !== 'failed' && E().dateOf(S.day).d === 1 && S.history.length) { // 1-е число: обязательства главы
+        sharesFallback(S);
+        if (T.status === 'done') kalachMonthly(S); // в главе помощь платит monthEnd
+      }
       if (r && running(S)) postTick(S);
       else if (T.offHero) { const st = store(S); if (st) st.staff.push(T.offHero); T.offHero = null; }
       if (T.selfBake && T.status === 'done' && S.productions.some((p) => p.status === 'open')) { T.selfBake = false; log(S, 'Цех заработал — кофейня больше не печёт из закупки.', 'good'); }
@@ -751,6 +856,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     HEROES, CARDS, MS, EV, start, pick, spotCost, spotPreview, hoursCover, on, running, store, hero, card, choose, queue,
     setHours, setDayOff, menuAdd, menuRemove, menuWhy, inviteGulya, gulyaAvail, gulyaLvl, hire, hireWhy, takeLoan, loanRoom, loanWhy,
     avg7, msList, nextGoal, advice, advisor, secondWhy, openSecond, finish, nextPreview, perfK, fail, skip, copyCarry, milestone, wrap,
-    hname, sex, hword,                                          // имя и родовые формы героя (PLAN.md §8.1) daySig, _rnd: rnd,
+    hname, sex, hword,                                          // имя и родовые формы героя (PLAN.md §8.1)
+    timeLine, helpLine, outage, sharesFallback, kalachMonthly,
+    daySig, _rnd: rnd,
   };
 })();

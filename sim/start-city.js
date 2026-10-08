@@ -15,8 +15,9 @@ for (const city of BK.CITIES) {
   T.flags.kalachMine = true;
   BK.Stage1.store(S).status = 'open';
   BK.Stage1.finish(S);
-  const kalach = S.offers.find(x => x.kalach);
+  const kalach = S.stores.find(x => x.kalach); // «Продайте мне»: «Калач» — точка №2 сразу (не предложение аренды)
   ok(kalach && BK.DISTRICTS.some(d => d.id === kalach.district), `${city.id}: пекарня наставника на местной карте`);
+  ok(S.stores.length === 2 && !S.offers.some(x => x.kalach), `${city.id}: «Калач» — своя точка №2`);
   const raw = JSON.parse(JSON.stringify(S));
   BK.Corp.ensure(raw);
   ok(BK.CITY.id === city.id, `${city.id}: сохранение после кофейни`);

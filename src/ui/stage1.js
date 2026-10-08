@@ -338,7 +338,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <button type="button" class="btn primary block" data-s1="pick" data-v="${i}" ${c.left < 0 ? `disabled title="Не хватает ${fm(-c.left)}"` : ''}>${c.left < 0 ? `Не хватает ${fm(-c.left)}` : 'Открыть здесь'}</button></article>`;
     }).join('');
     const f = (s.story && s.story.f) || {};
-    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2><p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — ${esc0(SW('кредит «Семь рек»'))})` : ''}${t.flags.rashidIn ? ` — ${esc0(SW('с долей Рашида'))} ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', ' + esc0(SW('Гуля ждёт звонка')) : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
+    return `<section class="s1-pick"><div class="s1-ph"><span class="eyebrow">Глава 1 · Своя точка</span><h2>Где открываемся?</h2>${t.timeLine ? `<p class="s1-time">${esc(t.timeLine)}</p>` : ''}<p>В кармане <b>${fm(s.cash)}</b>${t.flags.credit0 ? ` (из них ${fm(t.flags.credit0)} — ${esc0(SW('кредит «Семь рек»'))})` : ''}${t.flags.rashidIn ? ` — ${esc0(SW('с долей Рашида'))} ${fm(t.flags.rashidIn)}` : ''}. Островок собирают за ${C().OPEN_DAYS} дней. За стойкой — вы${f.gulya === 'with' || f.gulya === 'share' ? ', ' + esc0(SW('Гуля ждёт звонка')) : ''}. Первые месяцы о вас мало знают — оставьте запас на аренду и зарплаты.</p></div><div class="s1-spots">${cards}</div></section>`;
   }
 
   /* ---- основной экран ---- */
@@ -416,12 +416,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function tabMoney(s) {
     const t = s.stage1, h = s.history[s.history.length - 1], p = h && h.pnl;
     const row = (n, v, cls) => `<div class="${cls || ''}"><span>${n}</span><b>${v}</b></div>`;
-    const pnl = p ? `<div class="s1-pnl">${row('Выручка', fm(p.rev), 'up')}${row('Закупка и списания', '−' + fm(p.fc))}${row('Аренда', '−' + fm(p.rent))}${row('Зарплаты (с «зарплатой себе»)', '−' + fm(p.payroll))}${row('Коммуналка', '−' + fm(p.util))}${row('Налог УСН', '−' + fm(p.tax))}${p.interest ? row('Проценты', '−' + fm(p.interest)) : ''}${(p.hire || 0) + (p.train || 0) + (p.other || 0) > 0 ? row('Найм, учёба, прочее', '−' + fm((p.hire || 0) + (p.train || 0) + (p.other || 0))) : ''}${row('Прибыль', fmS(h.profit), h.profit >= 0 ? 'tot up' : 'tot dn')}</div>` : '<p class="s1-hint">Отчёт — 1-го числа.</p>';
+    const pnl = p ? `<div class="s1-pnl">${row('Выручка', fm(p.rev), 'up')}${row('Закупка и списания', '−' + fm(p.fc))}${row('Аренда', '−' + fm(p.rent))}${row('Зарплаты (с «зарплатой себе»)', '−' + fm(p.payroll))}${row('Коммуналка', '−' + fm(p.util))}${row('Налог УСН', '−' + fm(p.tax))}${p.interest ? row('Проценты', '−' + fm(p.interest)) : ''}${p.inv ? row('Партнёрам', '−' + fm(p.inv)) : ''}${(p.hire || 0) + (p.train || 0) + (p.other || 0) > 0 ? row('Найм, учёба, прочее', '−' + fm((p.hire || 0) + (p.train || 0) + (p.other || 0))) : ''}${row('Прибыль', fmS(h.profit), h.profit >= 0 ? 'tot up' : 'tot dn')}</div>` : '<p class="s1-hint">Отчёт — 1-го числа.</p>';
     const mon = t.months.slice(-6).map((m) => `<li><span>${cap(E().MONTHS[m.m]).slice(0, 3)}</span><span class="mb"><i class="${m.profit >= 0 ? 'up' : 'dn'}" style="width:${Math.min(100, Math.abs(m.profit) / 4000).toFixed(0)}%"></i></span><b class="${m.profit >= 0 ? 'up' : 'dn'}">${fmS(m.profit)}</b></li>`).join('');
     const lw = S1().loanWhy(s);
     return `<section class="s1-sec s1-kv"><div><span>Счёт</span><b class="${s.cash < 0 ? 'dn' : ''}">${fm(s.cash)}</b></div><div><span>Резерв</span><b>${fm(s.reserve)}</b></div><div><span>Кредит</span><b>${fm(s.loan)}</b></div><div><span>Ставка</span><b>${(E().loanRate(s) * 100).toFixed(1).replace('.', ',')} %</b></div></section>
       <section class="s1-sec"><h4>${esc0(SW('Кредит «Семь рек»'))} <small>лимит для одной кофейни ${fm(t.loanMax)}</small></h4><div class="s1-row"><button type="button" class="btn" data-s1="loan" ${lw ? `disabled title="${esc(lw)}"` : ''}>Взять ${fm(Math.min(200000, S1().loanRoom(s)) || 0)}</button><button type="button" class="btn" data-s1="repay" ${s.loan > 0 && s.cash > 0 ? '' : 'disabled'}>Погасить ${fm(Math.min(200000, s.loan))}</button></div>${lw ? `<p class="s1-hint">${esc(lw)}</p>` : ''}</section>
-      <section class="s1-sec"><h4>Прошлый месяц</h4>${pnl}${t.share ? `<p class="s1-hint">Доли партнёров (${Math.round(t.share * 100)} % прибыли) списываются 1-го числа.</p>` : ''}</section>
+      <section class="s1-sec"><h4>Прошлый месяц</h4>${pnl}${t.share ? `<p class="s1-hint">Доли партнёров (${Math.round(t.share * 100)} % прибыли кофейни за месяц) уходят 1-го числа — строка «Партнёрам» в следующем отчёте.</p>` : ''}</section>
       ${mon ? `<section class="s1-sec"><h4>По месяцам</h4><ul class="s1-mon">${mon}</ul></section>` : ''}`;
   }
   function adviceHtml(s) {
@@ -550,7 +550,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (snd.fin !== 'main') { snd.fin = 'main'; play('fanfare'); } // глава пройдена — фанфары, дальше своя сеть
     close();
     APP().refresh(); APP().save();
-    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1. На счёте ${fm(nx.cash)}${nx.fund ? ` (${SW('программа «Семь рек»')} ${fm(nx.fund)})` : ''}. Выберите помещение под цех.`, 'good');
+    if (nx) APP().toast('Своя сеть!', `Кофейня — точка №1${s.stage1.flags && s.stage1.flags.kalachStore ? SW(', «Калач» — точка №2') : ''}. На счёте ${fm(nx.cash)}.${nx.helpText ? ' ' + nx.helpText : ''} Выберите помещение под цех.`, 'good');
   }
   function restart(skipNet) {
     const s = S(); if (!s) return;
@@ -569,6 +569,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const h = `<div class="s1-ovbg" data-s1="menuClose"><div class="s1-card" role="dialog" aria-modal="true" aria-labelledby="s1MenuT" tabindex="-1">
       <h2 id="s1MenuT">Своя кофейня</h2><p class="s1-ct">Одна точка, всё руками: место, часы, меню и цены, сколько печь, кто за стойкой. Время идёт само — пауза пробелом. Цель главы — вторая вывеска: три месяца в плюсе, 100 гостей за день или 4,5★ и деньги на вторую точку.</p>
       ${BK.RewindUI && S().phase === 'play' ? BK.RewindUI.blockHtml(S(), false) : ''}
+      <div class="s1-code"><button type="button" class="btn block" data-s1="saveCode">Код сохранения</button>${ui.code ? `<textarea class="input" rows="3" readonly aria-label="Код сохранения">${esc0(ui.code)}</textarea><p class="s1-hint">Код скопирован. Вставьте его в «Меню игры» → «Загрузить из кода» в этом или другом браузере.</p>` : '<p class="s1-hint">Игра сохраняется в браузере сама. Если места не хватило — возьмите код и сохраните его отдельно.</p>'}</div>
       ${ui.ask === 'skip' ? '<div class="confirm">Кофейня станет точкой №1, но без итогов главы: деньги на сеть — как в обычном старте. <button type="button" class="btn sm danger" data-s1="skipYes">Перейти</button><button type="button" class="btn sm" data-s1="askNo">Отмена</button></div>' : ''}
       <div class="s1-fb"><button type="button" class="btn primary block" data-s1="menuClose">Вернуться</button>${ui.ask === 'skip' || S().stage1.status === 'pick' ? '' : '<button type="button" class="btn block" data-s1="skipAsk">Хватит одной кофейни — сразу в сеть</button>'}<button type="button" class="btn block" data-s1="toStart">К списку игр</button></div></div></div>`;
     if (!o) { $('#s1Ov').insertAdjacentHTML('beforeend', '<div id="s1Menu"></div>'); o = $('#s1Menu'); }
@@ -590,7 +591,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     switch (a) {
       case 'speed': ui.speed = +v; ui.dirty = true; render(true); break;
       case 'theme': if (APP().ACT && APP().ACT.theme) APP().ACT.theme({}); break;
-      case 'menu': ui.menu = true; ui.ask = null; menuHtml(); break;
+      case 'menu': ui.menu = true; ui.ask = null; ui.code = null; menuHtml(); break;
+      case 'saveCode': { // код сохранения прямо из слоя кофейни: «Игра не сохранилась» отсылает к нему
+        ui.code = APP().exportCode ? APP().exportCode() : ''; menuHtml();
+        const ta = $('#s1Menu textarea'); if (ta) ta.select();
+        try { if (navigator.clipboard) navigator.clipboard.writeText(ui.code).catch(() => {}); } catch (e) { /* без буфера — код выделен в поле */ }
+        break; }
       case 'menuClose': ui.menu = false; ui.ask = null; { const m = $('#s1Menu'); if (m) m.remove(); } break;
       case 'skipAsk': ui.ask = 'skip'; menuHtml(); break;
       case 'askNo': ui.ask = null; menuHtml(); break;

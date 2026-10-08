@@ -68,7 +68,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // не хватило места — снимки «Переиграть» уступают его сохранению игры (в памяти они остаются);
     // не хватило и так (большая сеть второго акта) — пишем сжатое сохранение (BK.SaveCodec, в ~6 раз меньше)
     let ok = put(data) || (BK.Rewind && BK.Rewind.freeStorage() && put(data)) || (BK.SaveCodec && put(BK.SaveCodec.pack(data)));
-    if (!ok && !saveWarned) { saveWarned = true; toast('Игра не сохранилась', 'В браузере кончилось место. Удалите ненужный слот на стартовом экране или сохраните код игры («Меню игры» → «Код сохранения»).', 'bad'); }
+    if (!ok && !saveWarned) { saveWarned = true; toast('Игра не сохранилась', 'В браузере кончилось место. Удалите ненужный слот на стартовом экране или возьмите код игры в меню («Код сохранения»).', 'bad'); }
     if (ok) saveWarned = false;
     if (BK.Rewind) BK.Rewind.flush(); // снимки «Переиграть» — после сохранения игры
   }
@@ -1080,7 +1080,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       try { globalThis.claude.hot.snapshot(() => (S ? { state: stripState(S), speed: ui.speed } : {})); } catch (e) {}
     }
   }
-  BK.App = { boot, get state() { return S; }, ui, ACT, save, setSpeed, openModal, closeModal, toast, newGame, startNew, continueGame, toStart, openRussia, cityView, refresh };
+  BK.App = { boot, get state() { return S; }, ui, ACT, save, exportCode, setSpeed, openModal, closeModal, toast, newGame, startNew, continueGame, toStart, openRussia, cityView, refresh };
   attachStratData(); // события и достижения стратегий — до первой отрисовки (strat-events.js)
   const h = globalThis.claude && globalThis.claude.hot;
   if (h && h.ready) h.ready(boot); else boot(h && h.data ? h.data : null);

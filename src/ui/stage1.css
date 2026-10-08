@@ -210,3 +210,7 @@ html.s1-on, html.s1-on body { overflow: hidden; }
   .s1-ph h2 { font-size: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { .s1 *, .s1-conf, .s1-coin { animation: none !important; transition: none !important; } }
+/* тосты основной игры («Игра не сохранилась», «Не получится») — поверх слоя кофейни, а не под ним */
+html.s1-on .toasts { z-index: 59; right: 16px; }
+.s1-code { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.s1-code textarea { font-family: var(--f-mono); font-size: 11px; resize: vertical; width: 100%; }
