@@ -374,6 +374,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const r = buildProd(S, c, false); if (r) c.budget.left = Math.max(0, c.budget.left - r.cost);
       }
       repairs(S, c, d);
+      capacity(S, c);
       equip(S, c);
       // открытия: не больше годового лимита директора, в пределах бюджета
       const lim = openLimit(S, c, d);
@@ -415,8 +416,31 @@ var BK = globalThis.BK || (globalThis.BK = {});
       s.agg = true; s.aggPaid = true; s.aggDay = S.day;
     }
   }
+  /* мощность цехов (аудит 06), внутри withCity: агрегат ограничивает продажи настоящей мощностью цехов города (pk.capU — загрузка
+     прошлого месяца), поэтому директор, как бот good, докупает печи с лучшим «изделий за рубль», пока загрузка выше DIR_CAP_AT
+     (до 4 покупок в месяц). Это работа цеха, а не развитие: из бюджета капвложений, но и сверх него, если на счёте есть запас */
+  function capacity(S, c) {
+    const pk = c.packed, at = K().DIR_CAP_AT, pl = S.macro.priceLevel;
+    if (!at || pk.capU == null || pk.capU <= at) return;
+    let cap = 0; for (const p of pk.productions) cap += E.prodCapacity(S, p);
+    if (cap <= 0) return; // цех ещё строится
+    let use = pk.capU;
+    for (let k = 0; k < 4 && use > at; k++) {
+      let best = null;
+      for (const p of pk.productions) {
+        if (p.status !== 'open') continue;
+        for (const e of BK.EQUIPMENT) { if (e.cap <= 0 || (p.equip[e.id] || 0) >= e.max) continue; const sc = e.cap / e.price; if (!best || sc > best.sc) best = { p, e, sc }; }
+      }
+      const price = best ? best.e.price * pl : 0;
+      if (!best || S.cash < price + 5e6 * pl) break;
+      I.spend(S, price, 'capex'); c.budget.left = Math.max(0, c.budget.left - price);
+      best.p.equip[best.e.id] = (best.p.equip[best.e.id] || 0) + 1; best.p.capex = (best.p.capex || 0) + price;
+      use = use * cap / (cap + best.e.cap); cap += best.e.cap;
+    }
+    pk.capU = Math.round(use * 1000) / 1000;
+  }
   /* оборудование цехов (§17), внутри withCity: то, что снижает фудкост и расходы на доставку, — по окупаемости до DIR_EQ_PAYBACK мес.
-     (как бот good), по одной позиции на цех в квартал, из бюджета капвложений. Мощность в агрегате не считается — печи не покупаются. */
+     (как бот good), по одной позиции на цех в квартал, из бюджета капвложений. Мощность — в capacity выше. */
   function equip(S, c) {
     const cfg = C(), pk = c.packed, b = c.budget, pl = S.macro.priceLevel, lim = K().DIR_EQ_PAYBACK;
     if (!lim || !pk.productions.length || E.dateOf(S.day).m % 3) return; // раз в квартал

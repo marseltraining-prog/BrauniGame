@@ -73,6 +73,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       for (const id in cr.cities) { const c = cr.cities[id]; if (!c.mAcc) c.mAcc = { rev: 0, profit: 0, agg: 0 }; if (!c.hist) c.hist = []; if (c.packed && c.packed.stores) c.packed.stores = c.packed.stores.map(canonStore); }
       if (cr.lastMonthly == null) cr.lastMonthly = S.day - (E.dateOf(S.day).d - 1);
       if (cr.aggRevP == null) cr.aggRevP = 0;
+      for (const x of S.mods || []) if (x.c0 == null) x.c0 = 0; // события сохранения до правки (аудит 05): начались «давно» — весь период, как раньше
       if (BK.Dir) BK.Dir.ensure(S); // директора, входящие, цель акта — значения по умолчанию для сохранений Р1
     }
     applyGlobals(S);
@@ -135,6 +136,55 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return n;
   }
 
+  /* ---------------- события по дням периода (аудит 05) ----------------
+     Упакованный город считается раз в месяц, а события (S.mods) живут по дням: кончившееся до 1-го числа событие движок уже
+     удалил, а начавшееся в последний день действовало бы на весь месяц. Поэтому у события есть день начала c0 (ставится перед
+     днём движка — событие действует со следующего дня), а кончившиеся события, задевшие текущий период, до месячного расчёта
+     лежат копией в S.corp.mlog. Агрегат берёт каждое событие с долей дней, когда оно действовало: m → 1 + (m − 1) × доля.
+     Первый акт не задет: без S.corp обёртка ничего не делает. */
+  const MOD_T = { traffic: 1, conv: 1, competitor: 1, check: 1, aggOrders: 1, foodcost: 1, capacity: 1 };
+  let modsPre = null; // события на начало текущего дня движка (внутри tick): кончившиеся сегодня ещё нужны месячному расчёту
+  function anyPacked(S) { const cr = S.corp; for (const id in cr.cities) if (id !== cr.active && cr.cities[id].packed) return true; return false; }
+  function wrapTick() {
+    const tick0 = E.tick;
+    E.tick = function (S) {
+      if (!S || !S.corp) return tick0.apply(this, arguments);
+      for (const x of S.mods) if (x.c0 == null) x.c0 = S.day; // день движка ещё не начался: событие действует с завтрашнего дня
+      const pre = modsPre = S.mods.slice();
+      let r;
+      try { r = tick0.apply(this, arguments); } finally { modsPre = null; }
+      if (pre.length && anyPacked(S)) logEnded(S, pre);
+      return r;
+    };
+  }
+  // кончившиеся за день события — в S.corp.mlog, если хоть один их день попал в текущий период агрегата
+  function logEnded(S, pre) {
+    const cr = S.corp, L = cr.lastMonthly != null ? cr.lastMonthly : S.day;
+    for (const x of pre) {
+      if (!MOD_T[x.t] || S.mods.includes(x)) continue;
+      const until = Math.min(x.until, S.day + 1); // снято раньше срока — последний день действия сегодня
+      if (until - 1 <= Math.max(L, x.c0 || 0)) continue;
+      (cr.mlog || (cr.mlog = [])).push({ t: x.t, m: x.m, scope: x.scope, target: x.target, c0: x.c0, until });
+    }
+  }
+  // события периода (d0, d1] с долей дней действия; у события без c0 (сохранение до правки) — весь период, как раньше
+  function periodMods(S, d0, d1) {
+    const cr = S.corp, days = Math.max(1, d1 - d0), out = [];
+    const add = (x, c0) => {
+      if (!MOD_T[x.t]) return;
+      const a = Math.max(d0, c0 != null ? c0 : d0), b = Math.min(d1, x.until - 1); // действует в дни c0+1 … until−1
+      if (b <= a) return;
+      const w = (b - a) / days;
+      out.push({ t: x.t, m: w >= 1 ? x.m : 1 + (x.m - 1) * w, scope: x.scope, target: x.target });
+    };
+    if (cr.mlog) for (const x of cr.mlog) add(x, x.c0);
+    if (modsPre) { for (const x of modsPre) add(x, x.c0); for (const x of S.mods) if (!modsPre.includes(x)) add(x, x.c0 != null ? x.c0 : S.day); } // новое за сегодняшний день — с завтрашнего
+    else for (const x of S.mods) add(x, x.c0);
+    return out;
+  }
+  // произведение множителей вида t по сети и городу id (как modScope global × city, modMult без точки)
+  function pmCity(PM, t, id) { let m = 1; for (const x of PM) if (x.t === t && (x.scope === 'global' || (x.scope === 'city' && x.target === id))) m *= x.m; return m; }
+
   /* ---------------- withCity: временно «смонтировать» данные упакованного города (ссылки, не копии) ---------------- */
   function withCity(S, id, fn) {
     const cr = S.corp, c = cr.cities[id];
@@ -181,12 +231,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const lv = [0, 0, 0, 0, 0]; let md = 0, ls = 0;
     for (const e of staff) { lv[clamp(e.lvl, 1, 5) - 1]++; md += e.mood; ls += e.lvl; }
     const n = staff.length;
+    /* аудит 07: нанятые, но ещё не вышедшие (у работающей точки) не становятся работающими при упаковке — ждут своего дня
+       (inc: [[уровень, день выхода]]); снимок потенциала, как раньше, — со всеми. Усталость и недовольство работающих — средними
+       (fat, unh): при распаковке люди получают их обратно, а не нули */
+    const wait = st.status !== 'opening' && st.incoming && st.incoming.length ? st.incoming : null;
+    const lvP = wait ? [0, 0, 0, 0, 0] : lv; let ft = 0, uh = 0;
+    for (const e of st.staff) { if (wait) lvP[clamp(e.lvl, 1, 5) - 1]++; ft += e.fatigue || 0; uh += e.unhappy || 0; }
+    const nP = wait ? st.staff.length : n, nS = st.staff.length;
     // поправка настроения: усталость, характеры и застой, которых нет в агрегированной модели, — разница «факт − формула» при упаковке
     const tgt = moodTarget(S, S.pay.seller / S.market.seller, S.pay.seller, n ? ls / n : 1, Math.max(0, Math.min(st.staffTarget, cfg.SIZES[st.size].staffBase) - n), cfg.SIZES[st.size].staffBase);
     const p = Object.assign({}, st);
     delete p.staff; delete p.incoming; delete p.m; delete p.today; delete p._bot; delete p.mountFrom; delete p.mountK;
     Object.assign(p, {
-      staff: { n, lv, mood: n ? md / n : 60 }, base: rev / pl / aw, chk0: (chk || cfg.RENT_REF_BASKET) / pl, dem7, thr0: thr,
+      staff: { n: nP, lv: lvP, mood: n ? md / n : 60, fat: nS && ft ? +(ft / nS).toFixed(1) : undefined, unh: nS && uh ? Math.round(uh / nS) : undefined },
+      inc: wait ? wait.map((x) => [x.p.lvl, x.day]) : undefined, base: rev / pl / aw, chk0: (chk || cfg.RENT_REF_BASKET) / pl, dem7, thr0: thr,
       mn0: [+ms.appeal.toFixed(4), +(ms.avgPrice / pl).toFixed(2), +ms.priceIdx.toFixed(4)], lvl0: n ? ls / n : 1, mood0: n ? md / n : 60, moodOff: n ? clamp(md / n - tgt, -40, 10) : 0, r0: st.rating != null ? st.rating : cfg.RATING_START, rep0: st.repair || 0, n0: Math.max(1, n),
     });
     if (BK.CITY && BK.CITY.grow) p.g0 = +growthK(S).toFixed(4); // рост города: спрос в снимке — при населении на момент упаковки
@@ -203,18 +261,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
      агрегата работает через медленный полиморфный доступ к полям. Неизвестные поля — в конце, как были. */
   const PK_KEYS = ['id', 'address', 'district', 'x', 'y', 'area', 'size', 'rentM2', 'payMode', 'rentPaidUntil', 'traffic', 'solv', 'landmarks', 'comp', 'status', 'openDay', 'openedDay',
     'repair', 'repairUntil', 'closedUntil', 'staffTarget', 'capex', 'hist', 'num', 'rating', 'staff', 'base', 'chk0', 'dem7', 'thr0', 'mn0', 'lvl0', 'mood0', 'moodOff', 'r0', 'rep0', 'n0',
-    'byDir', 'bought', 'g0', 'pr0', 'ld', 'cpd', 'last', 'agg', 'aggPaid', 'aggDay', 'lossStreak', 'lostDays'];
+    'byDir', 'bought', 'g0', 'pr0', 'ld', 'cpd', 'last', 'agg', 'aggPaid', 'aggDay', 'lossStreak', 'lostDays', 'inc'];
   /* Объект — литералом с именованными полями (тот же порядок, что PK_KEYS): если собирать его присваиванием o[k] = … по списку,
      V8 после ~16 полей переводит объект в «словарный» режим, и каждое чтение поля в месячном цикле — поиск по хэшу (производительность, 0.9.18) */
   function canonStore(p) {
     const o = { id: p.id, address: p.address, district: p.district, x: p.x, y: p.y, area: p.area, size: p.size, rentM2: p.rentM2, payMode: p.payMode, rentPaidUntil: p.rentPaidUntil,
       traffic: p.traffic, solv: p.solv, landmarks: p.landmarks, comp: p.comp, status: p.status, openDay: p.openDay, openedDay: p.openedDay,
-      repair: p.repair, repairUntil: p.repairUntil, closedUntil: p.closedUntil, staffTarget: p.staffTarget, capex: p.capex, hist: p.hist, num: p.num, rating: p.rating, staff: p.staff,
+      repair: p.repair, repairUntil: p.repairUntil, closedUntil: p.closedUntil, staffTarget: p.staffTarget, capex: p.capex, hist: p.hist, num: p.num, rating: p.rating, staff: canonStaff(p.staff),
       base: p.base, chk0: p.chk0, dem7: p.dem7, thr0: p.thr0, mn0: p.mn0, lvl0: p.lvl0, mood0: p.mood0, moodOff: p.moodOff, r0: p.r0, rep0: p.rep0, n0: p.n0,
-      byDir: p.byDir, bought: p.bought, g0: p.g0, pr0: p.pr0, ld: p.ld, cpd: p.cpd, last: p.last, agg: p.agg, aggPaid: p.aggPaid, aggDay: p.aggDay, lossStreak: p.lossStreak, lostDays: p.lostDays };
+      byDir: p.byDir, bought: p.bought, g0: p.g0, pr0: p.pr0, ld: p.ld, cpd: p.cpd, last: p.last, agg: p.agg, aggPaid: p.aggPaid, aggDay: p.aggDay, lossStreak: p.lossStreak, lostDays: p.lostDays, inc: p.inc };
     for (const k in p) if (!(k in o)) o[k] = p[k];
     return o;
   }
+  // команда упакованной точки — тоже одной формы (у сохранений до аудита 07 нет fat/unh)
+  function canonStaff(sd) { return sd ? { n: sd.n, lv: sd.lv, mood: sd.mood, fat: sd.fat, unh: sd.unh } : sd; }
   // нулевые служебные поля упакованной точки не храним (expandStore вернёт их при распаковке)
   function packZeros(p) { for (const k of ['repairUntil', 'closedUntil', 'lossStreak', 'lostDays']) if (p[k] === 0) delete p[k]; if (p.rentPaidUntil === 0 && p.payMode !== 'year') delete p.rentPaidUntil; if (p.moodOff === 0) delete p.moodOff; if (p.agg === false) delete p.agg; if (!p.agg && p.aggDay != null) delete p.aggDay; }
   // оборудование цехов (взвешено по мощности, как в dailyStores): множитель фудкоста и доля мощности с ERP
@@ -285,16 +345,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   function expandStore(S, p) {
     const cfg = C(), st = Object.assign({}, p), sd = p.staff;
-    for (const k of ['base', 'chk0', 'lvl0', 'mood0', 'r0', 'rep0', 'n0', 'mn0', 'dem7', 'thr0', 'moodOff', 'byDir', 'g0', 'ld']) delete st[k];
+    for (const k of ['base', 'chk0', 'lvl0', 'mood0', 'r0', 'rep0', 'n0', 'mn0', 'dem7', 'thr0', 'moodOff', 'byDir', 'g0', 'ld', 'inc']) delete st[k];
     const people = [];
     for (let l = 1; l <= 5; l++) for (let k = 0; k < (sd.lv[l - 1] || 0); k++) { // люди по распределению уровней: новые имена, настроение около среднего
-      const e = I.makePerson(S, l); e.mood = clamp(sd.mood + I.rr(S, -6, 6), 0, 100); e.since = S.day - 90; e.lvlDay = S.day - 60; people.push(e);
+      const e = I.makePerson(S, l); e.mood = clamp(sd.mood + I.rr(S, -6, 6), 0, 100); e.since = S.day - 90; e.lvlDay = S.day - 60;
+      e.fatigue = sd.fat || 0; e.unhappy = sd.unh || 0; // аудит 07: усталость и недовольство — средние команды, а не нули
+      people.push(e);
     }
+    const wait = []; // аудит 07: нанятые, но ещё не вышедшие — ждут своего дня (вышли, пока город был упакован, — уже в команде)
+    if (p.inc) for (const [l, day] of p.inc) { const e = I.makePerson(S, l); if (day > S.day) wait.push({ p: e, day }); else { e.since = day; e.lvlDay = day; people.push(e); } }
     st.m = { rev: 0, checks: 0, fc: 0, rent: 0, lost: 0 };
     st.today = null;
     for (const k of ['repairUntil', 'closedUntil', 'rentPaidUntil']) if (st[k] == null) st[k] = 0; // компактное сохранение — нули не хранятся
     if (st.status === 'opening' && S.day < st.openDay) { st.staff = []; st.incoming = people.map((e) => ({ p: e, day: st.openDay })); }
-    else { if (st.status === 'opening') { st.status = 'open'; st.openedDay = st.openDay; } st.staff = people; st.incoming = []; }
+    else { if (st.status === 'opening') { st.status = 'open'; st.openedDay = st.openDay; } st.staff = people; st.incoming = wait; }
     if (st.status === 'repair' && S.day >= st.repairUntil) { st.status = 'open'; st.repair += 1; }
     if (st.staffTarget < cfg.SIZES[st.size].staffMin) st.staffTarget = cfg.SIZES[st.size].staffMin;
     st.mountFrom = S.day;
@@ -383,10 +447,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
     TD.h = h / n; TD.o = o / n; TD.ld = ld / n; return TD; // общий объект: без выделения памяти на каждую точку (производительность)
   }
   const TD = { h: 0, o: 0, ld: 0 };
-  // события по точке, как engine modMult(S, t, s), но по заранее отобранному списку (вид t, ещё действуют, порядок S.mods тот же)
-  function modLists(S) {
+  // события по точке, как engine modMult(S, t, s), но по заранее отобранному списку (вид t; PM — события периода с долей дней, аудит 05)
+  function modLists(PM) {
     const L = { traffic: [], conv: [], competitor: [], check: [], aggOrders: [] };
-    for (const x of S.mods) if (x.until > S.day && Object.prototype.hasOwnProperty.call(L, x.t)) L[x.t].push(x);
+    for (const x of PM) if (Object.prototype.hasOwnProperty.call(L, x.t)) L[x.t].push(x);
     return L;
   }
   function modOf(S, list, store) {
@@ -411,6 +475,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return WS; // общий объект, как TD у teamDay: читается сразу, до следующего вызова
   }
   const WS = { revMult: 1, waste: 0 };
+  // доля дней периода (d0, d1], когда точка закрыта до дня u (закрыта в день d, если d < u — как в dailyStores), аудит 04
+  function shutK(u, d0, d1, dI) { return u > d0 + 1 ? clamp(Math.min(u - 1, d1) - d0, 0, dI) / dI : 0; }
+  // множитель событий «мощность» цеха pid в городе id (как modMult(S, 'capacity', null, pid)) по событиям периода
+  function pmProd(PM, pid, id) { let m = 1; for (const x of PM) if (x.t === 'capacity' && (x.scope === 'global' || (x.scope === 'production' && x.target === pid) || (x.scope === 'city' && x.target === id))) m *= x.m; return m; }
+  const NO_MODS = [];
+  // промежуточные значения точек между проходами А и Б (общие массивы: без выделения памяти каждый месяц)
+  const TA = { i: [], cpd: [], ocpd: [], nf: [], cl: [], chk: [], rm: [], ws: [], f0: [] };
   // один агрегированный расчёт города за долю периода frac (0…1); деньги — в общий S.month по обычным статьям
   function cityMonth(S, c, frac, hireBudget) {
     const cfg = C(), K_ = K(), pl = S.macro.priceLevel, pk = c.packed, dc = cityDef(S, c.id);
@@ -421,7 +492,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return withCity(S, c.id, () => {
       const seas = I.SEASON[m] * (BK.CITY.season ? BK.CITY.season[m] : 1) / I.SEASON[4];
       const hol = holidayAvg(S, d0, S.day);
-      const cm = (t) => I.modScope(S, t, 'global') * I.modScope(S, t, 'city', c.id); // события сети и корпоративные события города (Р3)
+      const PM = periodMods(S, d0, S.day); // события периода с долей дней, когда действовали (аудит 05)
+      const cm = (t) => pmCity(PM, t, c.id); // события сети и корпоративные события города (Р3)
       // оборудование цехов города (§17): фудкост и ERP (остатки) — к тому, что было при упаковке; сохранения до §17 — с этого месяца
       const pq = prodFcNow(S); if (pk.pf0 == null) { pk.pf0 = +pq.fc.toFixed(4); pk.erp0 = +pq.erp.toFixed(3); }
       const fcm = cm('foodcost') * (cr.hqFcK || 1) / (pk.fcK0 || 1) * pq.fc / (pk.pf0 || 1); // отдел закупок штаба (в снимке — то, что было при упаковке)
@@ -440,25 +512,36 @@ var BK = globalThis.BK || (globalThis.BK = {});
       let rev = 0, fc = 0, rent = 0, pay = 0, util = 0, del = 0, hire = 0, hq = 0, units = 0, aggRev = 0, aggOrd = 0, waste = 0, chkN = 0;
       // доставка через агрегаторы (§17): комиссия — по числу подключённых точек города (как у подробного города), + упаковка
       const aggK = cfg.AGG_PACK != null ? cfg.AGG_PACK + E.aggCommission(S) : 0, fMult = cfg.FOODCOST_MULT || 1;
-      const fill = pk.fill != null ? pk.fill : 1, sales = pk.sales != null ? pk.sales : 1, fracR = +frac.toFixed(4);
+      const sales = pk.sales != null ? pk.sales : 1, fracR = +frac.toFixed(4), dI = Math.max(1, S.day - d0);
       const SAL = [0, 1, 2, 3, 4, 5].map((l) => (l ? salaryCity(S, c, l) : 0)); // оклады по уровням — один раз на город (производительность)
       // события по точке (как modMult в storeDemand): если нет событий района или точки — одни множители на весь город
       const MT = { traffic: 1, conv: 1, competitor: 1, check: 1, aggOrders: 1 };
-      const modLocal = S.mods.some((x) => MT[x.t] && x.until > S.day && (x.scope === 'district' || x.scope === 'store'));
-      const gmD0 = I.modMult(S, 'traffic', null) * I.modMult(S, 'conv', null) * I.modMult(S, 'competitor', null), gmC0 = I.modMult(S, 'check', null), aoM0 = I.modMult(S, 'aggOrders', null);
+      const modLocal = PM.some((x) => MT[x.t] && (x.scope === 'district' || x.scope === 'store'));
+      const gmD0 = cm('traffic') * cm('conv') * cm('competitor'), gmC0 = cm('check'), aoM0 = cm('aggOrders');
       const hireOk = (pk.office && pk.office.hr) || !!dm;
       const mB = moodBase(S, (c.payK || 1) * (dm ? dm.payK : 1), SAL[1]); // общая часть цели настроения (moodTarget) — раз на город
       // события района и точки: заранее — только действующие события нужного вида, в прежнем порядке (как modMult, без прохода по всем S.mods на каждую точку)
-      const ML = modLocal ? modLists(S) : null;
+      const ML = modLocal ? modLists(PM) : null;
       const delCost = E.deliveryCostFn(S); // доставка из цехов: множители цехов — раз на город
       const powD = new Map(), powC = new Map(); // Math.pow от цен меню «сейчас против снимка»: у многих точек города mn0 общий
       let trainCost = 0;
-      for (const s of pk.stores) {
+      /* два прохода (аудит 06): А — люди, рейтинг и спрос каждой точки (все случайные числа — здесь, в прежнем порядке); затем доля
+         спроса, которую успевают испечь цеха города сейчас; Б — деньги точек с этой долей */
+      let nA = 0, uD = 0;
+      for (let si = 0; si < pk.stores.length; si++) {
+        const s = pk.stores[si];
         if (s.status === 'opening' && S.day >= s.openDay) { s.status = 'open'; s.openedDay = s.openDay; }
-        if (s.status === 'repair' && S.day >= s.repairUntil) { s.status = 'open'; s.repair = (s.repair || 0) + 1; }
+        let off = 0; // аудит 04: доля дней периода на ремонте (закончился в периоде — точка работала только после него)
+        if (s.status === 'repair') { off = shutK(s.repairUntil, d0, S.day, dI); if (S.day >= s.repairUntil) { s.status = 'open'; s.repair = (s.repair || 0) + 1; } }
         if (s.status === 'opening') continue;
         out.stores++;
         const sd = s.staff, sz = cfg.SIZES[s.size];
+        let nInc = 0;
+        if (s.inc) { // аудит 07: нанятые до упаковки выходят в свой день, до него — не работают и не занимают вакансию дважды
+          let keep;
+          for (const x of s.inc) { if (x[1] <= S.day) { const l = clamp(x[0], 1, 5) - 1; sd.lv[l] = (sd.lv[l] || 0) + 1; sd.n++; } else (keep || (keep = [])).push(x); }
+          s.inc = keep; nInc = keep ? keep.length : 0;
+        }
         // люди: настроение тянется к цели, часть уходит, владелец заочно нанимает из общего лимита
         let n = sd.n, lsum = 0; for (let l = 1; l <= 5; l++) lsum += l * (sd.lv[l - 1] || 0);
         let avgL = n ? lsum / n : 1;
@@ -474,7 +557,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
           l = Math.min(4, l); if (!sd.lv[l]) l = sd.lv.findIndex((x) => x > 0);
           sd.lv[l]--; n--; S.stats.quits++; out.quits++;
         }
-        let vac = Math.max(0, s.staffTarget - n);
+        let vac = Math.max(0, s.staffTarget - n - nInc);
         while (vac-- > 0 && (hireOk || hireBudget.left > 0)) {
           const lvl = I.rnd(S) < 0.28 ? 2 : 1; sd.lv[lvl - 1]++; n++; if (!hireOk) hireBudget.left--; out.hired++; S.stats.hires++;
           hire += cfg.HIRE_COST_SALARIES * SAL[lvl];
@@ -482,6 +565,10 @@ var BK = globalThis.BK || (globalThis.BK = {});
         }
         if (dm) { const tr = BK.Dir.train(S, sd, dm, frac); trainCost += tr.cost; out.trained += tr.n; } // директор учит команду до цели обучения города
         sd.n = n; lsum = 0; for (let l = 1; l <= 5; l++) lsum += l * (sd.lv[l - 1] || 0); avgL = n ? lsum / n : 1;
+        if (sd.fat || sd.unh) { // аудит 07: усталость тянется к загрузке, недовольство уходит у довольной команды (как в dailyStaff)
+          if (sd.fat) { const fT = clamp(((s.ld || 0) - cfg.FATIGUE_START) * cfg.FATIGUE_SLOPE, 0, 100), v = fT + (sd.fat - fT) * Math.pow(0.9, days); sd.fat = v >= 0.05 ? Math.round(v * 10) / 10 : undefined; }
+          if (sd.unh && sd.mood >= cfg.MOOD_UNHAPPY) { const v = Math.round(sd.unh - 2 * days); sd.unh = v > 0 ? v : undefined; }
+        }
         // рейтинг: заочно сползает к 3,5★, при директоре тянется к цели из тех же составляющих, что у подробной точки
         const late = s.agg && s.ld ? clamp((s.ld - cfg.AGG_LATE_LOAD) * cfg.AGG_LATE_K, 0, cfg.AGG_LATE_MAX) : 0; // перегруз доставкой — опоздания (как aggLatePen)
         const rTarget = (dm ? dm.rating(s, avgL, sd.mood, n) : K_.ABSENT_RATING) - rAdj - late;
@@ -512,25 +599,45 @@ var BK = globalThis.BK || (globalThis.BK = {});
         const dp = s.dem7 && (s.agg || pk.wz0) ? E.daypartOf(s) : null; // профиль дня (кэш движка по району и соседству)
         const ag = s.agg && dp ? aggPerDemand(S, s, days, dp, modLocal ? modOf(S, ML.aggOrders, s) : aoM0) : 0;
         const ws = pk.wz0 && dp ? storeWasteDp(pk.wz0, dp) : null, rm = ws ? ws.revMult : 1; // вечерняя скидка и остатки точки по профилю дня (§17)
-        let cpd = 0, ocpd = 0;
-        if (s.dem7 && s.dem7.length) { const x = teamDay(s.dem7, F, (s.thr0 || 1e9) * G, ag); cpd = x.h * fill * sales; ocpd = x.o * fill * Math.min(1, sales); s.ld = Math.round(x.ld * 100) / 100; }
-        else cpd = s.base / (s.chk0 || 200) * F * Math.min(1, G);
-        let closed = s.status === 'repair' || n === 0 || sup === false ? 0 : 1; // снабжение прервано — выпечки нет
-        if (s.lostDays && closed) { closed = clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = undefined; } // ремонт директора: точка закрыта несколько дней
+        let cpd = 0, ocpd = 0, nf = 0, h0 = 0, o0 = 0;
+        if (s.dem7 && s.dem7.length) { const x = teamDay(s.dem7, F, (s.thr0 || 1e9) * G, ag); h0 = x.h; o0 = x.o; cpd = x.h * sales; ocpd = x.o * Math.min(1, sales); s.ld = Math.round(x.ld * 100) / 100; }
+        else { cpd = s.base / (s.chk0 || 200) * F * Math.min(1, G); nf = 1; } // сохранение до §17: без доли мощности, как раньше
+        // аудит 04: закрыта — ремонт, проверка или авария (closedUntil), только за свои дни периода; снабжение прервано — выпечки нет
+        let closed = n === 0 || sup === false || s.status === 'repair' ? 0 : (1 - off) * (1 - shutK(s.closedUntil, d0, S.day, dI));
+        if (s.lostDays && closed) { closed = closed * clamp(1 - s.lostDays / Math.max(1, days), 0, 1); s.lostDays = undefined; } // ремонт директора: точка закрыта несколько дней
         const chk = (s.chk0 || 200) * pl * hol.chk * Qc * gmC * pr * (1 - lkR); // Р4: утечка слабого директора — выручка отстаёт
+        // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню, ценами сети и доставкой (для «На точку к прогнозу»); × доля мощности — в проходе Б
+        let f0 = 0;
+        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * grow * Math.max(0.3, ramp) * gmD * prD, x0 = teamDay(s.dem7, F0, s.thr0 || 1e9, ag); f0 = closed * days * (x0.h * sales + x0.o * Math.min(1, sales) * cfg.AGG_CHECK / rm) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
+        if (!nf) uD += closed * (h0 + o0) * cfg.ITEMS_PER_CHECK; // спрос на выпечку в день (как totalUnits в dailyStores: до доли мощности и остатков)
+        const k = nA++;
+        TA.i[k] = si; TA.cpd[k] = cpd; TA.ocpd[k] = ocpd; TA.nf[k] = nf; TA.cl[k] = closed; TA.chk[k] = chk; TA.rm[k] = rm; TA.ws[k] = ws ? ws.waste : -1; TA.f0[k] = f0;
+      }
+      // аудит 06: мощность цехов города сейчас — оборудование, пекари, настрой и события «мощность» (поломки) по доле дней периода,
+      // а не доля из снимка при упаковке; снабжение из другого города — хватает на всё (как в dailyStores)
+      let fill = 1;
+      if (sup !== true && uD > 0) {
+        let cap = 0; const keepM = S.mods; S.mods = NO_MODS; // события — из PM по доле дней, а не из действующих сегодня
+        try { for (const p of pk.productions) { if (p.status === 'opening' && S.day >= p.openDay) p.status = 'open'; const c1 = E.prodCapacity(S, p); if (c1) cap += c1 * pmProd(PM, p.id, c.id); } } finally { S.mods = keepM; }
+        fill = Math.min(1, cap / uD);
+        pk.capU = cap > 0 ? Math.round(uD / cap * 1000) / 1000 : 9; // загрузка цехов — директору для покупки печей (directors.js capacity)
+      } else if (pk.capU != null) pk.capU = undefined;
+      for (let k = 0; k < nA; k++) {
+        const s = pk.stores[TA.i[k]], sd = s.staff, fl = TA.nf[k] ? 1 : fill;
+        const cpd = TA.cpd[k] * fl, ocpd = TA.ocpd[k] * fl, closed = TA.cl[k], chk = TA.chk[k], rm = TA.rm[k], wsW = TA.ws[k];
         let rH = closed * days * cpd * chk, rA = ocpd ? closed * days * ocpd * chk / rm * cfg.AGG_CHECK : 0; // зал (с вечерней скидкой) и доставка (без неё, чек ×1,3)
         if (dm && dm.theft) { const lost = (rH + rA) * dm.theft; rH *= 1 - dm.theft; rA *= 1 - dm.theft; dm.d.stolen = (dm.d.stolen || 0) + lost; cr.stat.stolen += lost; } // «Нечист на руку»: касса честно показывает меньше
         const r = rH + rA;
-        // прогноз: та же точка «как при снимке» — без директора, шума и изменений команды и рейтинга, но с сезоном, меню, ценами сети и доставкой (для «На точку к прогнозу»)
-        if (s.dem7 && s.dem7.length) { const F0 = seas * sum * hol.dem * aw * grow * Math.max(0.3, ramp) * gmD * prD, x0 = teamDay(s.dem7, F0, s.thr0 || 1e9, ag); out.fc += closed * days * (x0.h * fill * sales + x0.o * fill * Math.min(1, sales) * cfg.AGG_CHECK / rm) * (s.chk0 || 200) * pl * hol.chk * gmC * pr; }
+        out.fc += TA.f0[k] * fl;
         // фудкост: зал — чистый фудкост + остатки точки по профилю дня (÷ вечерняя скидка), доставка — без списаний; до §17 — общий фудкост сети
         const fk = fcMenu * fcm * (dm ? dm.fcK : 1) * (1 + lkF);
         let f1;
-        if (pk.fcB != null && ws) { const wst = rH / rm * pk.fcB * fk / fMult * ws.waste * wsK; f1 = rH * (pk.fcB * fk / rm + fzFc) + wst + rA * (pk.fcB * fk + fzFc); waste += wst; }
+        if (pk.fcB != null && wsW >= 0) { const wst = rH / rm * pk.fcB * fk / fMult * wsW * wsK; f1 = rH * (pk.fcB * fk / rm + fzFc) + wst + rA * (pk.fcB * fk + fzFc); waste += wst; }
         else f1 = r * (pk.fcPct * fk + fzFc); // заморозка: фудкост +3 п. п.; утечка — перерасход
         const a1 = rA * aggK;
         const rn = s.payMode === 'month' ? E.storeRentMonth(s) * frac * (dm ? dm.rentK : 1) * (1 + lkA) : 0;
-        if (s.payMode === 'year' && S.day >= (s.rentPaidUntil || 0)) { const y = E.storeRentMonth(s) * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT); rent += y; s.rentPaidUntil = S.day + 365; }
+        let ry = 0; // аудит 16: продление годовой аренды — расход и сети, и самой точки (как st.m.rent у подробной точки)
+        if (s.payMode === 'year' && S.day >= (s.rentPaidUntil || 0)) { ry = E.storeRentMonth(s) * 12 * (1 - cfg.YEARLY_RENT_DISCOUNT); rent += ry; s.rentPaidUntil = S.day + 365; }
         let py = 0; for (let l = 1; l <= 5; l++) py += (sd.lv[l - 1] || 0) * SAL[l]; py *= (1 + cfg.PAYROLL_TAX) * frac * (dm ? dm.payK : 1) * (1 + lkP); // утечка — лишний ФОТ
         const ut = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * s.area) * pl * frac;
         s.cpd = closed * cpd;
@@ -539,7 +646,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         units += (s.cpd + closed * ocpd) * cfg.ITEMS_PER_CHECK;
         rev += r; fc += f1; rent += rn; pay += py; util += ut; del += dv; hq += h1; aggRev += rA; aggOrd += closed * days * ocpd; chkN += s.cpd * days;
         // отчёт точки (для карточки города и «Требует внимания»)
-        s.last = { rev: Math.round(r), profit: Math.round(r - f1 - a1 - rn - py - ut - dv - r * tax), checks: Math.round(s.cpd * days), frac: fracR, // как у подробной точки: без управляющей компании
+        s.last = { rev: Math.round(r), profit: Math.round(r - f1 - a1 - rn - ry - py - ut - dv - r * tax), checks: Math.round(s.cpd * days), frac: fracR, // как у подробной точки: без управляющей компании
           aggRev: rA ? Math.round(rA) : undefined, agg: rA ? Math.round(a1) : undefined }; // доставка (нет — поля не сохраняются)
         if (s.aggDay != null && S.day - s.aggDay > cfg.AGG_RAMP_DAYS + 31) s.aggDay = undefined; // разгон доставки закончился — день подключения больше не нужен
         s.cpd = Math.round(s.cpd * 10) / 10; s.rating = Math.round(s.rating * 1e4) / 1e4; sd.mood = Math.round(sd.mood * 100) / 100; // без toFixed — быстрее
@@ -719,6 +826,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       c.mAcc.fc = (c.mAcc.fc || 0) + r.fc; c.mAcc.quits = (c.mAcc.quits || 0) + r.quits;
       out.emp += r.emp; out.stores += r.stores;
     }
+    if (cr.mlog) cr.mlog = undefined; // аудит 05: кончившиеся события прошлого периода учтены всеми городами
     supplyCheck(S); // Р4: снабжение из других городов ещё возможно?
     // директора (directors.js): оклады, развитие городов (открытия и закрытия), лояльность
     if (BK.Dir) BK.Dir.monthly(S, t);
@@ -869,5 +977,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
 
   BK.Corp = { _int: { packStore, fcBase, teamDay, prodFcNow, salaryCity, moodTarget, moodF, withRng, cityIn, def, cityDef, ratingMultOf, daysInMonthOf, REP }, check, ensure, applyGlobals, demandMult, otherStores, monthly, afterMonth, yearly, withCity, mount, unmount, switchCity, enterCity, enterCost, enterGrowK, enterLock, awStart, citySetup, cityStats, cityStoreCount, summary, rollingAll, corpMarket, on, awMult, cityMonth,
     cityDef, homeCityId, realCityId, roadKm, mapCities, supplyHubs, remoteOf, remoteDel, remoteFill, remoteFc, ratingAdj, supplyName, setSupply, supplyCheck, supplyLinks, growthK, prod2Stores, gateK, prodsOf };
+  wrapTick(); // аудит 05: день начала событий и кончившиеся события периода (только во втором акте)
   Object.assign(BK.Engine, { mountCity: mount, unmountCity: unmount, withCity, switchCity, enterCity, enterCost, enterLock, citySetup, corpSummary: summary, corpMonthly: monthly, corpOn: on, citySupply: setSupply });
 })();
