@@ -85,7 +85,7 @@ function run(profile, seed, verbose) {
   if (pf.overstaff) for (let k = 0; k < pf.overstaff && S.candidates.length && !S1.hireWhy(S); k++) set(S1.hire(S, S.candidates[0].id));
   let guard = 0, readyDay = null, loanTaken = false;
   while (guard++ < 800) {
-    while (T.cards.length) { const cv = S1.card(S); const i = sceneChoice(S, cv, pf, R); S1.choose(S, i); cards++; sec += cv.choices.length > 1 ? c().BOT_CARD_SEC : c().BOT_INFO_SEC; }
+    while (T.cards.length) { const cv = S1.card(S); if (cv.id === 'stuck' && process.env.BK_TALK) console.log('   [' + Math.round((S.day - T.openDay) / 30.4) + ' мес.] ' + cv.hero.name + ': ' + cv.text + (process.env.BK_TALK === '2' ? ' {' + JSON.stringify(S1.nextGoal(S)) + ' s17=' + T.seen.s17 + ' od=' + (S.day - T.openDay) + '}' : '')); const i = sceneChoice(S, cv, pf, R); S1.choose(S, i); cards++; sec += cv.choices.length > 1 ? c().BOT_CARD_SEC : c().BOT_INFO_SEC; }
     if (T.status === 'done' || T.status === 'failed') break;
     if (T.status === 'ready') {
       if (readyDay == null) readyDay = S.day;

@@ -43,6 +43,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     aidar: { name: 'Айдар и Лариса', role: 'кандидаты на работу', ini: 'А', hue: 260 },
     life: { name: 'Кофейня', role: 'так бывает', ini: '•', hue: 45 },
     hero: { name: 'Вы', role: 'за стойкой', ini: 'Я', hue: 30 },
+    babushka: { name: 'Бабушка Сания', role: 'ваша бабушка', ini: 'Б', hue: 15 },
   };
   const MS = [ // вехи главы (порядок — как в списке)
     { id: 'open', name: 'Открыться' },
@@ -480,6 +481,34 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (own < need) return { id: 'cash', name: `Свои деньги ${fm(r1000(need))}`, p: clamp(own / need, 0, 1), v: `сейчас ${fm(r1000(Math.max(0, own)))}` };
     return { id: 'second', name: 'Вторая вывеска', p: 0.9, v: 'скоро' };
   }
+  // разговор «Что мешает»: какая часть цели не взята, почему и что сделать
+  function stuckTalk(S) {
+    const T = T0(S), c = C(), g = nextGoal(S), n = T.flags.stuckN = (T.flags.stuckN || 0) + 1;
+    const who = n === 1 ? 'babushka' : n % 2 === 0 ? advisor(S) : (T.flags.gulyaIn ? 'gulya' : 'semyon');
+    const vy = who === 'elvira'; // Эльвира — на «вы», свои люди — на «ты»
+    const a = advice(S), mo = Math.round((S.day - T.openDay) / 30.4), st = store(S);
+    const best = T.days.slice(-7).reduce((m, x) => Math.max(m, x[0]), 0), rt = E().storeRating(S, st).toFixed(1).replace('.', ',');
+    const TIP = {
+      hire: vy ? 'Вы один за стойкой — очередь уходит. Возьмите помощника.' : 'Ты один не вытянешь, очередь уходит. Возьми помощника.',
+      price: vy ? 'Цены выше кошелька района — люди смотрят на доску и уходят. Снизьте на 5–10 %.' : 'Цены у тебя выше, чем люди тут могут платить. Посмотри на доску их глазами и сбавь немного.',
+      bakeLess: vy ? 'Списания съедают прибыль. Пеките меньше или включите вечернюю скидку.' : 'Много выпечки уходит в мусор. Пеки меньше или делай вечером скидку.',
+      hours: vy ? 'Вы открыты, когда людей нет. Работайте в часы, когда они идут мимо.' : 'Ты открыт, когда людей нет. Работай в часы, когда они идут мимо.',
+      none: vy ? 'Держите витрину свежей, а команду — отдохнувшей: рейтинг растёт от мелочей.' : 'Следи, чтобы витрина была свежей, а люди за стойкой — не уставшими. Гости это видят.',
+      loss: vy ? 'Откройте отчёт месяца: что съедает больше всего — аренда, зарплаты или списания? С этого и начните.' : 'Открой отчёт месяца и посмотри, что съедает больше всего — аренда, зарплаты или списания. С этого и начни.',
+      cash: vy ? 'Не тратьте лишнего и гасите кредит — тогда банк заговорит о второй точке.' : 'Не трать лишнего и гаси кредит — тогда и банк заговорит о второй точке.',
+    };
+    const loss = g.id === 'plus' || g.id === 'streak', act = g.id === 'cash' ? null : a.act, tip = g.id === 'cash' ? TIP.cash : TIP[act || (loss ? 'loss' : 'none')];
+    const gst = (k) => k + ' ' + (k % 10 === 1 && k % 100 !== 11 ? 'гость' : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? 'гостя' : 'гостей');
+    const you = (t, v) => vy ? v : t;
+    let why;
+    if (g.id === 'cash') why = you(`В плюсе ты уже держишься, а своих денег мало: надо ${fm(r1000(c.READY_CASH * S.macro.priceLevel))}, у тебя ${g.v.replace('сейчас ', '')}.`, `В плюсе вы держитесь, а своих денег мало: нужно ${fm(r1000(c.READY_CASH * S.macro.priceLevel))}, у вас ${g.v.replace('сейчас ', '')}.`);
+    else if (g.id === 'g100' || g.id === 'r45') why = you(`Людей мало. Надо 100 гостей за день или рейтинг 4,5★, а у тебя лучший день — ${gst(best)}, рейтинг ${rt}★.`, `Гостей мало. Нужно 100 за день или рейтинг 4,5★, а у вас лучший день — ${gst(best)}, рейтинг ${rt}★.`);
+    else why = you(`Плюс не держится: нужно три месяца в плюсе подряд, а у тебя ${g.id === 'streak' ? g.v : 'ещё ни одного'}.`, `Плюс не держится: нужно три месяца в плюсе подряд, а у вас ${g.id === 'streak' ? g.v : 'ещё ни одного'}.`);
+    const open = who === 'babushka' ? `Бабушка Сания приходит с банкой варенья и долго смотрит на зал. «${mo} месяцев ты тут, балам. Я считать не умею, но вижу.`
+      : who === 'gulya' ? 'Гуля после смены садится напротив: «{boss}, давай честно.' : who === 'semyon' ? 'Семён Аркадьевич допивает кофе: «Скажу как старый гость.'
+      : who === 'elvira' ? 'Эльвира заходит под вечер: «Давайте посмотрим, что мешает.' : `${HEROES[who] ? HEROES[who].name.split(' ')[0] : 'Наставник'} заходит под вечер: «Давай посмотрим, что не так.`;
+    return { who, act, tip: `«${tip}»`, text: `${open} ${why} ${tip}»` };
+  }
   function readyCheck(S) {
     const T = T0(S), c = C(); if (T.status !== 'run' || T.openDay == null) return;
     const od = S.day - T.openDay;
@@ -540,6 +569,14 @@ var BK = globalThis.BK || (globalThis.BK = {});
         out.push({ label: 'Лариса', desc: 'Уровень 3 сразу: сильная, но из «Двора»…', cost: E().hireCost(S, 3), dis: full, fx: { team: 2, rub: -2 }, risk: true, do(S) { I().spend(S, E().hireCost(S, 3), 'hire'); addPerson(S, 'Лариса Кузнецова', 3, 4, { lara: 1 }); hired(S, 'Лариса'); flag(S, 'hire1', 'lara'); if (S.story) S.story.f.laraSpy = rnd(T0(S)) < 0.4; } });
         out.push({ label: (S) => 'Пока справлюсь ' + sex(S, 'сам', 'сама'), desc: 'Кандидаты уйдут; нанять можно во вкладке «Команда»', fx: { hp: -1 }, do() {} });
         return out; } },
+    // «Что мешает»: 18 мес. без цели главы — близкий человек говорит, что не так и что сделать (решение владельца 08.10.2026).
+    // Первый раз — бабушка, потом наставник, потом Гуля или Семён. «Так и сделаю» включает обычный совет с кнопкой.
+    stuck: { kind: 'hero', who: (S, v) => v.who, title: () => 'Что мешает',
+      text: (S, v) => v.text,
+      choices: (S, v) => [
+        { label: '«Так и сделаю»', desc: v.act ? 'Совет появится в «Точке» с кнопкой' : 'Совет — в журнале', fx: { hp: 1 }, do(S) { const T = T0(S); T.flags.advisor = 1; T.advice = { who: v.who, act: v.act, text: v.tip }; } },
+        { label: '«Сам разберусь»', desc: 'Без подсказки', fx: {}, do() {} },
+      ] },
     s16: { kind: 'hero', who: 'gulya', title: () => 'Первый плюс',
       text: (S, v) => `${T0(S).flags.gulyaIn ? 'Гуля' : 'За стойкой'}: «{boss}, мы в плюсе! На ${fm(v.profit)}, но в плюсе!» СМС от мамы: «Я видела, у вас очередь была. Горжусь. Покушай».`,
       choices: (S) => [
@@ -637,7 +674,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // сцены главы 1 — по состоянию точки; не чаще GAP_DAYS (кроме кульминаций)
   function queue(S, id, v, force) {
-    const T = T0(S); if (T.seen[id] && id !== 'sick') return;
+    const T = T0(S); if (T.seen[id] && id !== 'sick' && id !== 'stuck') return;
     if (T.cards.some((c) => c.id === id)) return;
     if (id !== 'sick' && CARDS[id].kind === 'hero') { T.seen[id] = S.day; T.lastScene = S.day; }
     T.cards.push({ id, v: v || {} });
@@ -648,11 +685,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const od = S.day - T.openDay, gap = S.day - T.lastScene >= c.GAP_DAYS;
     const a7 = avg7(T), m1 = T.months.find((m) => m.full);
     if (!T.seen.s13 && T.flags.dvorOpen && S.day >= T.flags.dvorOpen + 10 && S.day - T.lastScene >= 8) return queue(S, 's13'); // кульминация
+    if (T.status === 'run' && od >= c.STUCK_DAYS && S.day >= (T.flags.stuckNext || 0) && nextGoal(S).id !== 'second') { T.flags.stuckNext = S.day + c.STUCK_REPEAT; return queue(S, 'stuck', stuckTalk(S)); }
     if (!gap) return;
     if (!T.seen.s12 && ((od >= 10 && od <= 20 && a7.load < 0.5) || (m1 && m1.profit < 0) || od >= 50)) return queue(S, 's12');
     if (!T.seen.s15 && !T.hired && ((a7.n >= 7 && a7.load >= 0.85) || od >= 75 || T.hp < 45)) return queue(S, 's15');
     if (!T.seen.s14 && f.ildar === 'smm' && od >= 60 && od <= 140) return queue(S, 's14');
-    if (!T.seen.s17 && od >= 120 && od <= 190) {
+    if (!T.seen.s17 && od >= 120) { // без верхней границы: сцена 1.7 нужна для перехода (readyCheck), пропущенная в окне 120–190 дн. запирала главу
       if (f.mentor === 'enemy') { T.seen.s17 = S.day; flag(S, 'kalach', 'dvor'); fx(T, 'sms', 0, { who: 'Семён Аркадьевич · пост', text: '«Калач» на Пушкина продан «Хлебному двору». Рашид Хайруллин на вопросы не отвечает. Эпоха.' }); feed(T, 'Семён: «„Калач“ на Пушкина продан „Хлебному двору“. Эпоха».', 'bad'); return; }
       return queue(S, 's17');
     }
@@ -660,7 +698,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function card(S) {
     const T = T0(S); if (!T || !T.cards.length) return null;
     const q = T.cards[0], d = CARDS[q.id]; if (!d) { T.cards.shift(); return card(S); }
-    const who = typeof d.who === 'function' ? d.who(S) : d.who;
+    const who = typeof d.who === 'function' ? d.who(S, q.v) : d.who;
     const ch = d.choices(S, q.v).map((c) => {
       const o = Object.assign({}, c);
       if (typeof o.label === 'function') o.label = o.label(S);   // вариант с родовой формой героя (PLAN.md §8.1)
