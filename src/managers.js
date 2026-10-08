@@ -450,9 +450,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (st.today && !st.today.closed && st.staff.length) { const v = R.ld[st.id]; R.ld[st.id] = v == null ? st.today.load : v * 0.9 + st.today.load * 0.1; }
       const vk = 'v' + st.id; if (E().vacancies(st) > 0) { if (R.ld[vk] == null) R.ld[vk] = S.day; } else if (R.ld[vk] != null) delete R.ld[vk];
     }
-    // оклады — 1-го числа; журнал увольнений по месяцам (для совета о культуре)
+    // журнал увольнений по месяцам (для совета о культуре); оклады 1-го числа — в payDay, до шага движка
     if (t.d === 1) {
-      for (const m of R.list) { const s = salary(S, m); I.spend(S, s, 'upkeep'); R.spent += s; }
       if (!Array.isArray(R.qlog)) R.qlog = [];
       R.qlog.push(S.stats.quits | 0); if (R.qlog.length > 13) R.qlog.shift();
     }
@@ -483,12 +482,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     });
   }
 
+  // оклады 1-го числа — ДО дневного шага движка: попадают в закрываемый месяц (отчёт, «Итоги», проверка кассового разрыва)
+  function payDay(S) {
+    const R = S.managers; if (!R || !R.list || !R.list.length) return;
+    if (E().dateOf(S.day + 1).d !== 1) return;
+    const I = E()._int;
+    for (const m of R.list) { const s = salary(S, m); I.spend(S, s, 'upkeep'); R.spent += s; }
+  }
+
   /* ---------------- подключение к движку (как trainers.js: обёртка, движок не меняется) ---------------- */
   function wrap() {
     const Eng = BK.Engine; if (!Eng || Eng.__mgr) return;
     Eng.__mgr = true;
     const orig = Eng.tick;
-    Eng.tick = function (S) { const r = orig.apply(this, arguments); if (r) daily(S); return r; };
+    Eng.tick = function (S) {
+      if (S && S.phase === 'play' && !S.ev.pending && !S.chef.pending && !S.lost) payDay(S); // те же условия, при которых движок делает шаг
+      const r = orig.apply(this, arguments); if (r) daily(S); return r;
+    };
   }
   wrap();
 

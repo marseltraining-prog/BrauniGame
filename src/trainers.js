@@ -86,11 +86,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // сколько уйдёт тренерам 1-го числа (для прогноза «К 1-му числу не хватит»)
   function monthFee(S) { let s = 0; for (const x of (S && S.player && S.player.study) || []) s += x.month; return s; }
-  // день: прогресс обучения, 1-го числа — оплата
+  // оплата 1-го числа — ДО дневного шага движка (обёртка tick): платёж попадает в закрываемый месяц, в его отчёт,
+  // снимок «Итоги» и проверку кассового разрыва (раньше списывался уже после них — отчёт и счёт расходились)
+  function payDay(S) {
+    const P = S.player; if (!P || !P.study || !P.study.length) return;
+    if (E().dateOf(S.day + 1).d !== 1) return;
+    const I = E()._int;
+    for (const x of P.study) { I.spend(S, x.month, 'other'); P.spent += x.month; }
+  }
+  // день: прогресс обучения
   function daily(S) {
     const P = S.player; if (!P || !P.study || !P.study.length) return;
-    const I = E()._int, t = E().dateOf(S.day);
-    if (t.d === 1) for (const x of P.study) { I.spend(S, x.month, 'other'); P.spent += x.month; }
+    const I = E()._int;
     for (const x of P.study.slice()) {
       x.done++;
       if (x.done < x.days) continue;
@@ -388,7 +395,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     Eng.__trn = true;
     const w = (name, fn) => { const orig = Eng[name]; if (orig) Eng[name] = fn(orig); };
     w('newGame', (o) => function () { const S = o.apply(this, arguments); ensure(S); return S; });
-    w('tick', (o) => function (S) { const r = o.apply(this, arguments); if (r && S.player) daily(S); return r; });
+    w('tick', (o) => function (S) {
+      const go = S && S.player && S.phase === 'play' && !S.ev.pending && !S.chef.pending && !S.lost; // те же условия, при которых движок делает шаг
+      if (go) payDay(S);
+      const r = o.apply(this, arguments);
+      if (r && S.player) daily(S);
+      return r;
+    });
     Object.assign(Eng, { trainerHire: hire, trainerCancel: cancel });
   }
   wrap();

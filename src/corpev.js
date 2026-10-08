@@ -223,7 +223,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         case 'close': {
           for (const id of ids) {
             const c = cr.cities[id];
-            if (id === cr.active) { const open = S.stores.filter((s) => s.status === 'open'); const pick = f.n ? shuffle(S, open).slice(0, f.n) : open; for (const s of pick) s.closedUntil = Math.max(s.closedUntil || 0, S.day + f.d); }
+            if (id === cr.active) { const open = S.stores.filter((s) => s.status === 'open'); const pick = f.n ? shuffle(S, open).slice(0, f.n) : open; for (const s of pick) s.closedUntil = Math.max(s.closedUntil || 0, S.day + f.d + 1); } // +1: событие после продаж дня — закрыты следующие d дней (как lostDays у городов на автопилоте)
             else if (c && c.packed) { const open = c.packed.stores.filter((s) => s.status !== 'opening'); const pick = f.n ? shuffle(S, open).slice(0, f.n) : open; for (const s of pick) s.lostDays = (s.lostDays || 0) + f.d; }
           }
           out.push(`${f.n ? f.n + ' ' + (f.n === 1 ? 'точка закрыта' : 'точки закрыты') : 'точки закрыты'} на ${f.d} дн. (${names})`); break;
@@ -232,7 +232,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
           const days = Math.max(1, Math.round(f.days * (f.skip === 'frozen' && HQ().lvlOf(S, 'logistics') >= 2 ? 0.5 : 1)));
           for (const id of ids) {
             const c = cr.cities[id];
-            if (id === cr.active) for (const s of S.stores) { if (s.status === 'open') s.closedUntil = Math.max(s.closedUntil || 0, S.day + days); }
+            if (id === cr.active) for (const s of S.stores) { if (s.status === 'open') s.closedUntil = Math.max(s.closedUntil || 0, S.day + days + 1); }
             else if (c && c.packed) for (const s of c.packed.stores) if (s.status !== 'opening') s.lostDays = (s.lostDays || 0) + days;
           }
           out.push(`потеря ≈ ${days} ${days === 1 ? 'дня' : 'дней'} продаж (${all ? 'все города' : names})`); break;

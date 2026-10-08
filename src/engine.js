@@ -553,6 +553,50 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { demand, thr, check, traffic, avgLvl };
   }
 
+  // начало дня — до продаж: точка открывается, ремонт заканчивается, выходят сотрудники и запускаются цеха,
+  // назначенные на сегодня. Раньше это шло после расчёта продаж, и день выхода/запуска проходил без них.
+  function dailyStart(S) {
+    const cfg = C();
+    for (const st of S.stores) {
+      if (st.status === 'opening') { if (S.day >= st.openDay) { st.status = 'open'; st.openedDay = S.day; log(S, `Открылась пекарня: ${st.address}`, 'good'); toast(S, 'Новая точка открыта', st.address, 'good'); } else continue; }
+      if (st.status === 'repair' && S.day >= st.repairUntil) {
+        st.status = 'open'; st.repair += 1;
+        log(S, `Ремонт завершён: ${st.address} — «${cfg.REPAIRS[st.repair].name}»`, 'good');
+        toast(S, 'Ремонт завершён', `${st.address}: ${cfg.REPAIRS[st.repair].name}`, 'good');
+      }
+      // прибытие новых сотрудников
+      for (let i = st.incoming.length - 1; i >= 0; i--) {
+        if (st.incoming[i].day <= S.day) { const e = st.incoming[i].p; e.since = S.day; e.lvlDay = S.day; st.staff.push(e); st.incoming.splice(i, 1); }
+      }
+    }
+    // производства открываются
+    for (const p of S.productions) if (p.status === 'opening' && S.day >= p.openDay) { p.status = 'open'; log(S, `Производство запущено: ${p.address}`, 'good'); toast(S, 'Цех запущен', p.address, 'good'); }
+  }
+
+  // начисление дня (п. 09 и 11 аудита): ФОТ — по сегодняшнему составу и ставке, дни работы точки — для коммуналки и доставки.
+  // Месяц отчёта — со 2-го по 1-е число (1-е закрывает прошлый месяц), в нём столько дней, сколько в прошлом календарном,
+  // поэтому доля дня = 1 / дней в месяце даты (S.day − 1): за полный месяц с прежним штатом выходит ровно прежний ФОТ.
+  // Снизить ставку накануне 1-го числа или уволить людей перед расчётом — уже не «переписывает» прошедший месяц.
+  function periodDays(day) { const t = dateOf(day - 1); return new Date(Date.UTC(t.y, t.m + 1, 0)).getUTCDate(); }
+  function dailyAccrual(S) {
+    const cfg = C(), k = 1 / periodDays(S.day), tx = 1 + cfg.PAYROLL_TAX;
+    S.month.payK = (S.month.payK || 0) + k; // доля месяца, за которую идёт начисление (у старого сохранения — с момента загрузки)
+    const T = S.stage1, away = T && T.storeId ? [T.offHero, T.hero].filter(Boolean) : []; // стадия 1: герой на выходном/болеет — в штате остаётся
+    for (const st of S.stores) {
+      if (st.status === 'opening') continue;
+      let pay = 0; for (const e of st.staff) pay += salaryOf(S, e.lvl);
+      if (away.length && st.id === T.storeId) for (const e of away) pay += salaryOf(S, e.lvl);
+      st.m.payAcc = (st.m.payAcc || 0) + pay * tx * k;
+      st.m.openK = (st.m.openK || 0) + k;
+    }
+    const pk = periodKey(S.day);
+    for (const p of S.productions) {
+      if (!p.payAcc || p.payAcc.k !== pk) p.payAcc = { k: pk, v: 0 }; // метка месяца: начисление прошлых месяцев (город на автопилоте) не переносится
+      p.payAcc.v += p.staff * S.pay.baker * tx * k;
+    }
+  }
+  function periodKey(day) { const t = dateOf(day - 1); return t.y * 12 + t.m; }
+
   function dailyStores(S, t) {
     const cfg = C();
     const ms = menuStats(S);
@@ -561,12 +605,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let totalUnits = 0;
     const rows = [];
     for (const st of S.stores) {
-      if (st.status === 'opening') { if (S.day >= st.openDay) { st.status = 'open'; st.openedDay = S.day; log(S, `Открылась пекарня: ${st.address}`, 'good'); toast(S, 'Новая точка открыта', st.address, 'good'); } else continue; }
-      if (st.status === 'repair' && S.day >= st.repairUntil) {
-        st.status = 'open'; st.repair += 1;
-        log(S, `Ремонт завершён: ${st.address} — «${cfg.REPAIRS[st.repair].name}»`, 'good');
-        toast(S, 'Ремонт завершён', `${st.address}: ${cfg.REPAIRS[st.repair].name}`, 'good');
-      }
+      if (st.status === 'opening') continue; // открытие — в dailyStart (до продаж)
       const closed = st.status === 'repair' || (st.closedUntil && st.closedUntil > S.day) || st.staff.length === 0;
       if (closed) { st.today = { checks: 0, rev: 0, load: 0, closed: true, lost: 0 }; rows.push(null); continue; }
       const d = storeDemand(S, st, t, ms);
@@ -604,7 +643,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const r of rows) {
       if (!r) continue;
       const { st, d } = r;
-      const checks = bakeChecks(r.checks * fill, d, wz);
+      let checks = bakeChecks(r.checks * fill, d, wz);
+      if (fill < 1 && checks > r.checks * fill) checks = r.checks * fill; // мощность цехов уже исчерпана: «печь больше» не добавит изделий сверх неё
       const ws = storeWaste(wz, st); // время суток: у вечерних точек остатки раскупают, у утренних — залёживаются
       const revFull = checks * d.check, rev = revFull * ws.revMult;
       const lost = (r.hall - checks) * d.check;
@@ -620,12 +660,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       S.month.lost += Math.max(0, lost);
     }
     S.cash += dayRev; S.month.rev += dayRev; S.cumRevenue += dayRev; S.yearRev += dayRev;
-    let dayChecks = 0; for (const r of rows) if (r) dayChecks += r.st.today.checks;
+    let dayChecks = 0, dayAo = 0; for (const r of rows) if (r) { dayChecks += r.st.today.checks; dayAo += r.st.today.agg || 0; }
     S.month.checks += dayChecks;
     spend(S, dayFc, 'fc');
     if (dayAgg) { S.month.aggRev = (S.month.aggRev || 0) + dayAgg; spend(S, dayAgg * aggK, 'agg'); } // комиссия агрегатора и упаковка
     S.cache.dayRev = dayRev;
-    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks, (S.month.waste || 0) - waste0); // учёт продаж по продуктам (prodstats.js): только читает итоги дня
+    if (BK.ProdStats) BK.ProdStats.day(S, dayRev, dayFc, dayChecks, (S.month.waste || 0) - waste0, (dayChecks + dayAo) * cfg.ITEMS_PER_CHECK); // учёт продаж по продуктам (prodstats.js): только читает итоги дня; штуки — зал и доставка
     // производство: загрузка
     for (const p of S.productions) {
       p.load = S.cache.capUse;
@@ -729,11 +769,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const payTerm = clamp((S.pay.seller / S.market.seller - 1) * (cfg.PAY_MOOD_K || 120), -40, 30);
     const bonusTerm = clamp(S.lastBonusPerEmp / S.pay.seller * 100, 0, 15);
     for (const st of S.stores) {
-      if (st.status === 'opening') continue;
-      // прибытие новых сотрудников
-      for (let i = st.incoming.length - 1; i >= 0; i--) {
-        if (st.incoming[i].day <= S.day) { const e = st.incoming[i].p; e.since = S.day; e.lvlDay = S.day; st.staff.push(e); st.incoming.splice(i, 1); }
-      }
+      if (st.status === 'opening') continue; // новые сотрудники выходят в dailyStart (до продаж)
       const sz = cfg.SIZES[st.size];
       const missing = Math.max(0, Math.min(st.staffTarget, sz.staffBase) - st.staff.length);
       const under = missing > 0;
@@ -845,8 +881,6 @@ var BK = globalThis.BK || (globalThis.BK = {});
       spend(S, c, 'rent'); st.rentPaidUntil = S.day + 365; st.m.rent += c;
       log(S, `Оплачена аренда на год вперёд: ${st.address} (${BK.fmtMoney(c)})`);
     }
-    // производства открываются
-    for (const p of S.productions) if (p.status === 'opening' && S.day >= p.openDay) { p.status = 'open'; log(S, `Производство запущено: ${p.address}`, 'good'); toast(S, 'Цех запущен', p.address, 'good'); }
     if (!S.office.hr && S.stores.length > cfg.HR_REQUIRED_STORES && !S.flags.hrWarned) {
       S.flags.hrWarned = true;
       toast(S, 'Пора нанять HR-отдел', `В сети больше ${cfg.HR_REQUIRED_STORES} точек — владелец больше не успевает нанимать сам: не больше ${cfg.OWNER_HIRES_PER_WEEK} человек в неделю и по ${cfg.OWNER_HIRE_DAYS_BIG} дней. Откройте HR-отдел во вкладке «Команда».`, 'warn');
@@ -868,7 +902,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (S.phase !== 'play' || S.ev.pending || S.chef.pending || S.lost) return false;
     S.day += 1;
     const t = dateOf(S.day);
+    dailyStart(S);
     dailyStores(S, t);
+    dailyAccrual(S);
     dailyStaff(S);
     dailyMisc(S, t);
     holidayNotice(S);
@@ -895,15 +931,20 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const M = S.month;
     const agg = S.corp && BK.Corp ? BK.Corp.monthly(S, t) : null; // города на «автопилоте»: выручка и расходы — в общий месяц (corp.js)
     const nEmp = allStaff(S) + bakersTotal(S) + (agg ? agg.emp : 0);
+    // ФОТ, коммуналка и доставка — по начислению дня (dailyAccrual). gap — часть месяца без начисления (старое сохранение,
+    // загруженное посреди месяца): её доплачиваем по текущему составу, как раньше.
+    let gap = Math.max(0, 1 - (M.payK || 0)); if (gap < 1e-6) gap = 0;
     for (const st of S.stores) {
       if (st.status === 'opening') { st.last = null; continue; }
-      const mk = st.mountK != null ? st.mountK : 1; // город смонтирован посреди месяца — постоянные расходы за его часть (остальное — в агрегате)
-      if (st.mountK != null) delete st.mountK;
+      const mounted = st.mountK != null, mk = mounted ? st.mountK : 1; // город смонтирован посреди месяца — постоянные расходы за его часть (остальное — в агрегате)
+      if (mounted) delete st.mountK;
       const rent = st.payMode === 'month' ? storeRentMonth(st) * mk : 0;
       let pay = 0; for (const e of st.staff) pay += salaryOf(S, e.lvl) * (1 + cfg.PAYROLL_TAX);
-      pay *= mk;
-      const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * st.area) * S.macro.priceLevel * mk;
-      const del = deliveryCost(S, st) * mk;
+      // новая точка платит ФОТ, коммуналку и доставку только за дни работы (п. 11 аудита); смонтированный город — по mountK, как раньше
+      const kOpen = mounted ? mk : Math.min(1, (st.m.openK || 0) + gap);
+      pay = mounted ? pay * mk : (st.m.payAcc || 0) + pay * gap;
+      const util = (cfg.UTIL_BASE + cfg.UTIL_PER_M2 * st.area) * S.macro.priceLevel * kOpen;
+      const del = deliveryCost(S, st) * kOpen;
       spend(S, rent, 'rent'); spend(S, pay, 'payroll'); spend(S, util, 'util'); spend(S, del, 'delivery');
       st.m.rent += rent; st.m.payroll = pay; st.m.util = util; st.m.delivery = del;
       st.m.profit = st.m.rev - st.m.fc - st.m.rent - pay - util - del - (st.m.agg || 0) - st.m.rev * currentTaxRate(S);
@@ -916,7 +957,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       const mk = p.mountK != null ? p.mountK : 1;
       if (p.mountK != null) delete p.mountK;
       const rent = prodRentMonth(p) * mk;
-      const pay = p.staff * S.pay.baker * (1 + cfg.PAYROLL_TAX) * mk;
+      const acc = p.payAcc && p.payAcc.k === periodKey(S.day) ? p.payAcc.v : 0; delete p.payAcc;
+      const pay = mk !== 1 ? p.staff * S.pay.baker * (1 + cfg.PAYROLL_TAX) * mk : acc + p.staff * S.pay.baker * (1 + cfg.PAYROLL_TAX) * gap; // пекари — тоже по начислению
       const util = (cfg.PROD_UTIL_BASE + cfg.PROD_UTIL_PER_M2 * p.area) * S.macro.priceLevel * mk;
       spend(S, rent, 'rent'); spend(S, pay, 'payroll'); spend(S, util, 'util');
       p.lastCost = rent + pay + util;
@@ -1209,7 +1251,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         case 'foodcost': S.mods.push({ t: 'foodcost', m: f.m, until: S.day + (f.d || 60), scope: tg.scope === 'production' ? 'production' : 'global', target: tg.target }); out.push(`себестоимость ${pct(f.m)} на ${f.d} дн.`); break;
         case 'delivery': S.mods.push({ t: 'delivery', m: f.m, until: S.day + (f.d || 30), scope: tg.scope === 'production' ? 'global' : tg.scope, target: tg.target }); out.push(`доставка ${pct(f.m)} на ${f.d} дн.`); break;
         case 'capacity': S.mods.push({ t: 'capacity', m: f.m, until: S.day + (f.d || 14), scope: tg.scope === 'production' ? 'production' : 'global', target: tg.target }); out.push(`мощность цеха ${pct(f.m)} на ${f.d} дн.`); break;
-        case 'close': for (const st of storesInScope(S, tg)) st.closedUntil = Math.max(st.closedUntil || 0, S.day + f.d); out.push(`закрытие на ${f.d} дн.`); break;
+        case 'close': for (const st of storesInScope(S, tg)) st.closedUntil = Math.max(st.closedUntil || 0, S.day + f.d + 1); /* событие приходит после продаж дня: закрыты следующие d торговых дней (точка закрыта, пока closedUntil > S.day) */ out.push(`закрытие на ${f.d} дн.`); break;
         case 'rent': {
           const list = tg.scope === 'global' ? S.stores : storesInScope(S, tg);
           for (const st of list) st.rentM2 = Math.round(st.rentM2 * f.m);
@@ -1404,6 +1446,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const st = byId(S.stores, storeId); if (!st) return { ok: false };
     const refund = Math.round(st.capex * C().CLOSE_REFUND);
     S.cash += refund; S.month.income += refund;
+    if (st.m && st.m.payAcc > 0) spend(S, st.m.payAcc, 'payroll'); // зарплата за отработанные в этом месяце дни (начисление — dailyAccrual)
     S.stores = S.stores.filter((x) => x.id !== storeId);
     log(S, `Точка закрыта: ${st.address}. Продано оборудование на ${BK.fmtMoney(refund)}.`, 'warn');
     return { ok: true, refund };
