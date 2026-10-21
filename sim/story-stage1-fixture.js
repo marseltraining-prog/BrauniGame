@@ -1,4 +1,6 @@
-/* Assisted Stage1 branch fixture. Natural card triggers; this revision has not been runtime-tested.
+/* Assisted Stage1 branch fixture. Natural card triggers; the fixture plays the shop legally:
+   it opens full hours if the island allows, keeps every day open, repairs to level 2 and trains
+   staff to level 3. No flags or scenes are written by hand — only real Stage1/Engine calls.
    prepareStage1(BK, stateAfterRealPrologue, {hire:'aidar'|'lara'|'gulya', assistance:[]})
    Plays actual choices, progresses the coffee shop using Engine.tick, and finishes
    through openSecond -> s18:0 -> finish -> chooseProduction. No story flags/seen writes. */
@@ -33,9 +35,11 @@ function prepareStage1(BK, S, options = {}) {
     if (!choices.length) fail('No affordable coffee island; request explicit cashFloor coverage assistance');
     want(S1.pick(S, choices[0].i), 'Stage1.pick');
     const spot = S.stage1.spot, st = S1.store(S), dp = E.daypartOf(st);
-    const hours = spot.hours.slice().sort((a, b) => S1.hoursCover(dp, b) / Math.sqrt(BK.CFG.STAGE1.HOURS[b].hp) - S1.hoursCover(dp, a) / Math.sqrt(BK.CFG.STAGE1.HOURS[a].hp));
+    // Полный день даёт больше гостей, чем один дневной кусок: глава требует 100 гостей за день или 4,5★,
+    // поэтому фикстура играет как живой игрок — открыта каждый день и берёт лучшие часы.
+    const hours = spot.hours.includes('full') ? ['full'] : spot.hours.slice().sort((a, b) => S1.hoursCover(dp, b) / Math.sqrt(BK.CFG.STAGE1.HOURS[b].hp) - S1.hoursCover(dp, a) / Math.sqrt(BK.CFG.STAGE1.HOURS[a].hp));
     want(S1.setHours(S, hours[0]), 'Stage1.setHours');
-    want(S1.setDayOff(S, true), 'Stage1.setDayOff');
+    want(S1.setDayOff(S, false), 'Stage1.setDayOff');
     const menu = E.menuStats(S), base = menu.avgPrice * BK.CFG.ITEMS_PER_CHECK;
     const price = Math.max(0.85, Math.min(1.1, st.solv * S.macro.priceLevel / base * 0.97));
     for (const item of S.menu) E.setPrice(S, item.id, price);
@@ -87,6 +91,13 @@ function prepareStage1(BK, S, options = {}) {
         continue;
       }
       topUp('daily-cash-floor');
+      // Легальные улучшения, без которых цель главы (100 гостей или 4,5★) не берётся:
+      // ремонт до 2-й ступени и обучение команды до 3-го уровня. Деньги — из той же помощи фикстуры.
+      if (S.day % 30 === 0) {
+        const shop = S1.store(S);
+        if (shop && shop.status === 'open' && shop.repair < 2 && S.cash > 5e6) want(E.startRepair(S, shop.id), 'Stage1 repair');
+        if (shop && shop.status === 'open') for (const e of shop.staff) if (e.lvl < 3 && S.cash > 5e6) { try { E.train(S, shop.id, e.id); } catch (_) {} }
+      }
       const before = S.day;
       E.tick(S);
       if (S.day <= before) fail('Real Engine.tick did not advance Stage1');

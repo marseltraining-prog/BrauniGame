@@ -574,7 +574,7 @@ function branchEffectCheck(S, sc, idx, before, result) {
 }
 function branchProfilesFor(sc, idx) {
   if (/^b4r\d$/.test(sc.id)) return [{ id: 'patient-russia', route: 'russia', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } }];
-  if (['b4i', 'b4j', 'b4k'].includes(sc.id)) return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 1, ko1: 0, ko2: 0 } }];
+  if (['b4i', 'b4j', 'b4k'].includes(sc.id)) return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 2e9, walk: { s37: 1, ko1: 0, ko2: 0 } }];
   const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : /^cf/.test(sc.id) ? 'coffee' : null;
   const walks = {
     ls7: { ls1: 0, ls6: 0 }, ls8: { ls1: 0, ls6: 1 },

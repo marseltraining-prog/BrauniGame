@@ -84,6 +84,7 @@ async function flow(b, sv) {
     issues.push(...await textProblems(p, `${tag} ${n}`), ...await svgText(p, `${tag} ${n}`));
   };
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   // старое сохранение с оборотом > 10 млрд: выход открывается при загрузке, окно — на следующем тике
   const st0 = await p.evaluate(() => { const S = BK.App.state; return { corp: !!S.corp, cum: S.cumRevenue, stores: S.stores.length, active: S.corp && S.corp.active }; });
   if (!st0.corp) issues.push(`[${tag}] выход в Россию не открылся (оборот ${Math.round(st0.cum / 1e9)} млрд)`);
@@ -164,6 +165,7 @@ async function flow(b, sv) {
   notes.push(`сохранение с двумя городами: ${Math.round(before.size / 1024)} КБ`);
   await p.reload(); await p.waitForTimeout(200);
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   const after = await p.evaluate(() => { const S = BK.App.state; return { day: S.day, cash: Math.round(S.cash), cities: Object.keys(S.corp.cities).join(), active: S.corp.active, city: BK.CITY.name }; });
   if (after.day !== before.day || after.cash !== before.cash || after.cities !== before.cities || after.active !== 'ufa' || after.city !== 'Уфа') issues.push(`[${tag}] загрузка: было ${JSON.stringify(before)}, стало ${JSON.stringify(after)}`);
   await realTicks(p, 5);
@@ -172,6 +174,7 @@ async function flow(b, sv) {
   const kzGeo = await p.evaluate(() => JSON.stringify(BK.DISTRICTS.map((d) => [d.id, d.x, d.y])));
   await p.reload(); await p.waitForTimeout(200);
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(300);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   const kz3 = await p.evaluate(() => ({ city: BK.CITY.name, geo: JSON.stringify(BK.DISTRICTS.map((d) => [d.id, d.x, d.y])), stores: BK.App.state.stores.length, ok: BK.App.state.stores.every((s) => BK.DISTRICTS.some((d) => d.id === s.district)) }));
   if (kz3.city !== 'Казань' || kz3.geo !== kzGeo || !kz3.ok) issues.push(`[${tag}] загрузка с активной Казанью: город ${kz3.city}, карта ${kz3.geo === kzGeo ? 'та же' : 'ДРУГАЯ'}, районы точек ${kz3.ok}`);
   await realTicks(p, 3); await clear(p); await shot('13-kazan-loaded');
@@ -333,7 +336,7 @@ async function corpR3(p, tag, shot) {
   const ev2 = await p.evaluate(() => ({ pending: !!BK.App.state.ev.pending, log: BK.App.state.log.slice(0, 5).map((x) => x.text || x).join(' | ') }));
   if (ev2.pending || !/Анонимное письмо: выбрано/.test(ev2.log)) issues.push(`[${tag}] выбор в e211: ${JSON.stringify(ev2)}`);
   // переманивание: e202 из очереди, «Отпустить» — директор уходит через месяц
-  const pd = await p.evaluate(() => { const S = BK.App.state, d = BK.Dir.dirOf(S, S.corp.cities.ekb); BK.CorpEv.queue(S, { id: 'e202', day: S.day, dir: d.id, offerPct: 45, poacher: '«Хлебный двор»' }); return d.id; });
+  const pd = await p.evaluate(() => { const S = BK.App.state, d = BK.Dir.dirOf(S, S.corp.cities.ekb); S.ev.pending = null; S.ev.queue = []; S.ev.nextCrisis = S.day + 365; if (S.corp.ev) S.corp.ev.queue = []; BK.CorpEv.queue(S, { id: 'e202', day: S.day, dir: d.id, offerPct: 45, poacher: '«Хлебный двор»' }); return d.id; });
   await realTicks(p, 2); await p.waitForTimeout(300);
   const pz = await p.evaluate(() => ({ id: BK.App.state.ev.pending && BK.App.state.ev.pending.id, text: (document.querySelector('#modal .modal-b') || {}).textContent || '' }));
   if (pz.id !== 'e202' || !/45%/.test(pz.text)) issues.push(`[${tag}] переманивание e202: ${JSON.stringify(pz).slice(0, 200)}`);
@@ -543,6 +546,7 @@ async function screens(b, vp, theme, st) {
     issues.push(...await textProblems(p, `${tag} ${n}`), ...await svgText(p, `${tag} ${n}`));
   };
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await realTicks(p, 2); await clear(p);
   await shot('01-city');
   if (mobile) { const vis = await p.evaluate(() => { const b = document.querySelector('.ml-crumb'); const r = b.getBoundingClientRect(); return !b.hidden && r.width > 30 && r.right <= innerWidth; }); if (!vis) issues.push(`[${tag}] кнопка «Россия» на карте не видна`); }
@@ -582,6 +586,7 @@ async function oldSave(b, sv) {
   const tag = 'старое сохранение';
   const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 2 });
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await realTicks(p, 20);
   const r = await p.evaluate(() => ({ corp: !!BK.App.state.corp, crumb: !document.querySelector('.ml-crumb').hidden, city: BK.CITY.name }));
   if (r.corp || r.crumb || r.city !== 'Уфа') issues.push(`[${tag}] ${JSON.stringify(r)}`);
@@ -599,6 +604,7 @@ async function r1Save(b, st) {
   for (const id in cr.cities) { const c = cr.cities[id]; for (const k of ['directorId', 'priority', 'budget', 'plan', 'dev', 'wantBudget', 'closeReq', 'budgetCutY', 'pressure', 'rp', 'rivalIn', 'spOffer', 'perk']) delete c[k]; c.hist = c.hist.map((x) => x.slice(0, 7)); if (c.packed) { delete c.packed.fcK0; for (const s of c.packed.stores) { delete s.mn0; delete s.byDir; delete s.pr0; } } }
   const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 3 });
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await live(p, 35, false); await realTicks(p, 1); await clear(p); // гарантированно через 1-е число: строка истории — новой длины
   const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { dirs: Array.isArray(cr.directors), cand: cr.dirCand.length, inbox: Array.isArray(cr.inbox), budgets: Object.values(cr.cities).every((c) => c.budget && c.dev), hist: Object.values(cr.cities).every((c) => c.hist.slice(-1)[0].length === 9) }; });
   if (!r.dirs || r.cand < 3 || !r.inbox || !r.budgets || !r.hist) issues.push(`[${tag}] ${JSON.stringify(r)}`);
@@ -617,6 +623,7 @@ async function r2Save(b, st) {
   for (const d of cr.directors.concat(cr.dirCand)) for (const k of ['known', 'kpi', 'opt', 'progs', 'region', 'study', 'board', 'regional', 'theta', 'emb', 'poachP', 'kpiLast', 'checked', 'lastAudit', 'stolen', 'caught', 'burnAt', 'agentAt']) delete d[k];
   const p = await openPage(b, 'd1440', { save: JSON.stringify(sv), seed: 4 });
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await realTicks(p, 40); await clear(p);
   const r = await p.evaluate(() => { const S = BK.App.state, cr = S.corp; return { hq: cr.hq && cr.hq.finance === 0, stat: !!cr.stat, kpi: cr.directors.every((d) => d.kpi && Array.isArray(d.known)), press: Object.values(cr.cities).every((c) => c.pressure != null) }; });
   if (!r.hq || !r.stat || !r.kpi || !r.press) issues.push(`[${tag}] ${JSON.stringify(r)}`);

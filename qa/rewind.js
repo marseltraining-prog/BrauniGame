@@ -91,6 +91,8 @@ async function openWith(b, vp, theme, save, opts = {}) {
     await p.evaluate(([k, raw]) => { localStorage.setItem(k, raw); localStorage.setItem('bk-ufa-slot', '1'); }, [KEY1, JSON.stringify(save)]);
     await p.reload(); await p.waitForTimeout(150);
     await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(150);
+    // сюжетные окна останавливают игровой цикл и мешают снимкам «Переиграть» — этот сценарий про них, не про сюжет
+    await p.evaluate(() => { if (BK.CFG.STORY) BK.CFG.STORY.ON = false; });
     await settle(p);
   }
   return p;
@@ -321,7 +323,7 @@ async function corp(b, vp, theme, sv) {
     normal: botSave({ level: 'good', seed: 7919, years: 1.5 }),
     easy: botSave({ level: 'good', seed: 7919, years: 1.5, difficulty: 'easy' }),
     hard: botSave({ level: 'good', seed: 7919, years: 1.5, difficulty: 'hard' }),
-    preLost: preLost(4),
+    preLost: preLost(7),
     corp: botSave({ level: 'good', seed: 7919, years: 11.5, corp: true, corpOpt: { level: 'good' } }),
   };
   if (!sv.preLost) issues.push('не нашлось банкротства у слабого бота');

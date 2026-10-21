@@ -134,8 +134,22 @@ async function scenario(b, sv, vp, dark) {
   if (!mp.fr) issues.push(`[${tag}] на карте нет франчайзи`);
   if (!/фабрика/i.test(mp.tip)) issues.push(`[${tag}] нет подсказки у фабрики на карте`);
   if (!mobile) {
-    const box = await p.evaluate(() => { const el = document.querySelector('#map .m-gfac'); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-    if (box) { await p.mouse.click(box.x, box.y); await p.waitForTimeout(150); if (!(await p.evaluate(() => BK.App.ui.tab === 'grow'))) issues.push(`[${tag}] клик по фабрике на карте не открыл «Рост»`); }
+    // Маркер фабрики может оказаться под кружком точки (маркеры рисуются в порядке слоёв).
+    // Ищем на прямоугольнике фабрики точку, где сверху именно она, и кликаем туда.
+    const spot = await p.evaluate(() => {
+      const el = document.querySelector('#map .m-gfac'); if (!el) return null;
+      const r = el.getBoundingClientRect();
+      const pts = [[0.5, 0.5], [0.2, 0.5], [0.8, 0.5], [0.5, 0.15], [0.5, 0.85], [0.15, 0.15], [0.85, 0.85]];
+      for (const [fx, fy] of pts) {
+        const x = r.x + r.width * fx, y = r.y + r.height * fy;
+        const top = document.elementFromPoint(x, y);
+        const k = top && top.closest && top.closest('[data-kind]');
+        if (k === el) return { x, y };
+      }
+      return null;
+    });
+    if (spot) { await p.mouse.click(spot.x, spot.y); await p.waitForTimeout(150); }
+    if (!(await p.evaluate(() => BK.App.ui.tab === 'grow'))) issues.push(`[${tag}] клик по фабрике на карте не открыл «Рост»`);
     await p.evaluate(() => { BK.App.ui.sel = null; BK.App.refresh(); });
     await shot('09-map');
   }

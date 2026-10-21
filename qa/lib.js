@@ -30,6 +30,10 @@ async function openPage(browser, vpName, opts = {}) {
   // его проверяет qa/tutorial.js (opts.tutorial: true — оставить выбор по умолчанию). Не через addInitScript: чтение
   // localStorage в самом начале загрузки страницы сразу после записи больших сохранений давало устаревшие данные.
   if (!opts.tutorial) await p.evaluate(() => { try { if (localStorage.getItem('bk-ufa-tutorial') == null) localStorage.setItem('bk-ufa-tutorial', '0'); } catch (e) {} document.querySelectorAll('#start [data-tutopt]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tutopt === '0'))); });
+  // Третий акт «Холдинг» по умолчанию выключен в общих сценариях (как в sim/load.js): на выигранной
+  // партии он открывает своё окно и перекрывает экраны, которые проверяет конкретный сценарий.
+  // qa/holding.js передаёт { holding: true } и проверяет его отдельно.
+  if (!opts.holding) await p.evaluate(() => { try { if (window.BK && BK.CFG && BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; } catch (e) {} });
   return p;
 }
 

@@ -82,6 +82,7 @@ async function screens(b, vp, theme, sv) {
   await p.click('#slots [data-sa="cancel"]');
   // игра: достижения, тост, меню, итоги победы
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(200);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await p.evaluate(() => { BK.App.setSpeed(0); const S = BK.App.state; S.notify.push({ type: 'ach', id: 'stores10' }, { type: 'ach', id: 'win' }); });
   await realTicks(p, 1); await p.waitForTimeout(300);
   await shot('10-toast-ach');
@@ -129,6 +130,7 @@ async function slots(b, sv) {
   if (s1[0] !== old.company) issues.push(`[${tag}] старое сохранение не стало слотом 1: ${JSON.stringify(s1)}`);
   if (s1.filter((x) => x === 'Свободный слот').length !== 2) issues.push(`[${tag}] ожидались 2 свободных слота: ${JSON.stringify(s1)}`);
   await p.click('[data-act="continue"][data-arg="1"]'); await p.waitForTimeout(200);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   await realTicks(p, 2); await p.waitForTimeout(200);
   const m = await p.evaluate(() => { const S = BK.App.state; const days = Object.values(S.achievements); return { n: days.length, same: days.filter((d) => d === days[0]).length, toasts: document.querySelectorAll('#toasts .achtoast').length, chron: Array.isArray(S.chron), x: !!S.achx }; });
   notes.push(`${tag}: старое сохранение (13 лет) → тихо начислено ${m.n} достижений, тостов о достижениях после загрузки: ${m.toasts}`);
@@ -156,6 +158,7 @@ async function slots(b, sv) {
   // перезагрузка: «Продолжить» слота 2 открывает вторую сеть
   await p.reload(); await p.waitForTimeout(200);
   await p.click('[data-act="continue"][data-arg="2"]'); await p.waitForTimeout(200);
+  await p.evaluate(() => { if (BK.CFG.HOLDING) BK.CFG.HOLDING.ON = false; }); // qa: третий акт проверяет qa/holding.js
   if ((await p.evaluate(() => BK.App.state.company)) !== 'Вторая сеть') issues.push(`[${tag}] «Продолжить» слота 2 открыл не ту игру`);
   // третий слот, затем все заняты → форма не затирает игры
   await p.evaluate(() => BK.App.toStart()); await p.waitForTimeout(100);

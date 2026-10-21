@@ -56,7 +56,7 @@ async function adv(p, n, opts = {}) {
   }, [n, opts]);
 }
 async function start(b, vp, theme, save) {
-  const p = await openPage(b, vp, { dark: theme === 'dark', seed: 5, save });
+  const p = await openPage(b, vp, { dark: theme === 'dark', seed: 5, save, holding: true });
   await p.evaluate((t) => { BK.App.ACT.theme({ arg: t }); BK.App.ACT.continue({ arg: '1' }); BK.App.setSpeed(0); }, theme);
   await p.waitForTimeout(300);
   await p.evaluate(() => { while (BK.App.ui.modal) BK.App.closeModal(); BK.App.ui.modalQueue.length = 0; });

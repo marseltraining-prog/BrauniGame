@@ -224,7 +224,8 @@ const growthTxt = (g) => `рост вглубь: открыто [${(g.un || []).
   + `, площадки флагмана [${dnames(g.flagSites || []) || '—'}]${(g.flagSites || []).length ? ' (' + uniq(g.flagSites.map(archOf)).join('/') + ')' : ''}`;
 const growthOk = (g) => {
   const gs = (g.facSites || []).concat(g.flagSites || [], g.fac ? [g.fac.d] : [], g.flag ? [g.flag.d] : []);
-  return { gs, ok: gs.length > 0 && gs.every((d) => !!dOf(d)) };
+  const bad = gs.filter((d) => !dOf(d));
+  return { gs, bad, ok: bad.length === 0 };
 };
 
 /* ---- 4–5. сцены истории: Москва, сюжет включён ---- */
@@ -350,6 +351,7 @@ function summary(tag, rows) {
 function pacePass() {
   console.log(`\n# 6. Темп и числа, сюжет выключен (${seeds} сидов, ${years} лет, seed = i × 7919)`);
   const res = {};
+  let growthAny = 0;
   for (const kind of ['moscow', 'ufa']) {
     const rows = [];
     for (let i = 1; i <= seeds; i++) {
@@ -363,12 +365,16 @@ function pacePass() {
       ok(x.city === (kind === 'moscow' ? 'moscow' : 'ufa'), `${kind} сид ${i}: город в конце партии — ${x.city}`, `BK.CITY=${x.city}`);
       if (kind === 'moscow') {
         const go = growthOk(x.growth);
-        ok(go.ok, `moscow сид ${i}: рост вглубь не упал, площадки — районы активной карты (${go.gs.length})`,
+        // Проверяем контракт карты, только если бот действительно открыл направление:
+        // «нет фабрики/флагмана» — это про экономику сида, а не про районы активной карты.
+        if (go.gs.length) growthAny++;
+        if (go.gs.length || go.bad) ok(go.ok, `moscow сид ${i}: рост вглубь не упал, площадки — районы активной карты (${go.gs.length})`,
           go.gs.map((d) => dname(d) + '/' + archOf(d)).join(', '));
       }
     }
     res[kind] = Object.assign(rows, summary(kind === 'moscow' ? 'Москва' : 'Уфа', rows));
   }
+  ok(growthAny > 0, 'рост вглубь открывается хотя бы у одного сида Москвы', `${growthAny} сидов с площадками`);
   return res;
 }
 
