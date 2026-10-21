@@ -202,6 +202,16 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return `<div class="sec"><h3>Требует внимания <em class="badge">${a.length}</em><button class="linkbtn" data-act="tab" data-arg="ruinbox">Отчёты →</button></h3><div class="ratt">${a.slice(0, max || 5).map((x) => `<div class="ra"><span class="dav ${x.cls || ''}">${esc(x.ico)}</span><div class="rt"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div><button class="btn sm ${x.prim ? 'primary' : ''}" data-act="${x.act}" data-arg="${esc(x.arg)}">${x.b}</button></div>`).join('')}</div></div>`;
   }
 
+  /* ---------------- направления роста директора (§19, src/citygrowth.js): без кнопок — только итог ---------------- */
+  const cgLines = (lines, ev) => `<div class="cgrow">${(lines || []).map((l) => `<div class="cgl ${l.tone === 'bad' ? 'bad' : ''}"><b>${esc(l.name)}:</b><span>${esc(l.text)}</span></div>`).join('')}${(ev || []).map((e) => `<div class="cgev ${/скандал|сорван|недопоставк|поломк|убытке/.test(e) ? 'bad' : ''}">${esc(e)}</div>`).join('')}</div>`;
+  function growBlock(S, id) {
+    const x = BK.CityGrowth && BK.CityGrowth.info(S, id); if (!x) return '';
+    let s = `<div class="rsub"><span class="caps">Направления роста</span><small>ведёт директор · за прошлый месяц</small></div>`;
+    if (x.lines.length || x.ev.length) s += cgLines(x.lines, x.ev);
+    const t = x.tot && (x.tot.rev || x.tot.pr) ? ` За всё время: выручка ${fm(x.tot.rev)}, прибыль ${fm(x.tot.pr)}.` : '';
+    return s + `<p class="hint" style="margin:0">${esc(x.hint + t)}</p>`;
+  }
+
   /* ---------------- блоки карточки города ---------------- */
   function cityBlocks(S, id) { // для своего города: директор, бюджет и цели, план/факт
     if (!on(S)) return '';
@@ -227,6 +237,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         <div class="row dbtns"><button class="btn sm primary" data-act="ruHireFor" data-arg="${id}">${res.length ? 'Назначить директора' : 'Нанять директора'}</button></div></div>`;
     }
     if (D().leakStatus) s += leakBox(S, id, D().leakStatus(S, id)); // Р4: денежный риск
+    s += growBlock(S, id); // направления роста, которые ведёт директор (§19)
     // конкуренты: местные сети и федеральный «Хлебный двор»
     if (id !== 'ufa') { const p = c.pressure || 0; s += `<div class="drow"><span>Давление конкурентов</span><b class="num">${n1(p)}${p ? ` · выручка ≈ −${n1(p * K().PRESS_K * 100)} %` : ''}</b></div><p class="hint" style="margin:0">Местные сети (конкуренция ${esc((BK.CITY_COMP[(BK.CITY_BY_ID[id] || {}).comp] || {}).name || '')})${c.rivalIn ? ` и «${esc(rivalName(S))}» — с ${esc(E().fmtDate(c.rivalIn))}` : ''}. Сильнее бьёт по точкам с низким рейтингом.</p>`; }
     // план / факт
@@ -445,6 +456,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${kpi('Бюджет', fm(it.left), 'остаток из ' + fm(it.capex), it.left > 0 ? 'good' : 'warn')}
       ${kpi('Персонал', it.staff + ' чел.', it.missing ? 'нехватка ' + it.missing : 'штат полный', it.missing ? 'warn' : 'good')}</div>
       <blockquote class="rq-q">«${esc(it.phrase)}»<small>${it.dev != null ? `Выручка на точку к прогнозу: ${pc1(it.dev)}` : 'Прогноз — со второго месяца'} · ${it.fin ? 'цифры сверены финансовым департаментом' : 'отчёт директора без проверки: точность ±5 %'}</small></blockquote>`;
+    if (it.grow) s += `<div class="rsub"><span class="caps">Направления роста</span><small>ведёт директор</small></div>${cgLines(it.grow.lines, it.grow.ev)}`; // §19
     if (it.leak) { const lk = it.leak; s += `<div class="leakbox"><b>${lk.lossM >= 2 ? `Город теряет деньги ${lk.lossM} мес. подряд` : `Утечка денег ≈ ${Math.round(lk.pct * 100)} % выручки`}</b><span>${esc((lk.why && lk.why.length ? lk.why.join('; ') : 'убыточные точки') + (lk.skill ? ` (навыки ${lk.skill} при нужных ${lk.need})` : '') + '. Что сделать: ' + lk.fix + '.')}</span></div>`; } // Р4: денежный риск
     s += (it.reqs || []).map((r, i) => reqBlock(S, it, r, i)).join('');
     const d = D().dirById(S, it.dir), canPraise = d && !it.praised && S.day - d.praiseDay >= 90;
