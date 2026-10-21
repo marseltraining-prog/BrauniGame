@@ -1,0 +1,79 @@
+/* Третий акт «Холдинг» (src/ui/holding-ui.js). Только интерфейс: логика — src/holding.js. */
+.hd-h svg { color: var(--crust); }
+.modal.hd-wide { max-width: min(980px, calc(100vw - 24px)); }
+.hd-m { display: flex; flex-direction: column; gap: 12px; }
+
+/* карточки путей */
+.hd-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hd-card { border: 1px solid var(--line); border-top: 3px solid var(--crust); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); min-width: 0; }
+.hd-card.soon { border-top-color: var(--line); opacity: .78; }
+.hd-card.soon .hd-ic { color: var(--ink-3); background: var(--line); }
+.hd-ct { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: center; }
+.hd-ct > span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
+.hd-ct b { font-size: 15px; }
+.hd-ct small { font-size: 12px; color: var(--ink-3); }
+.hd-ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--good-soft); color: var(--good-t); }
+.hd-ic svg { width: 18px; height: 18px; }
+.hd-soon { font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--ink-3); border: 1px solid var(--line); border-radius: 99px; padding: 2px 7px; }
+.hd-goal { display: flex; flex-direction: column; gap: 1px; background: var(--good-soft); border-radius: 6px; padding: 6px 8px; }
+.hd-goal small { font-size: 11px; color: var(--ink-3); }
+.hd-goal b { font-size: 13px; color: var(--good-t); }
+.hd-card.soon .hd-goal { background: transparent; border: 1px dashed var(--line); }
+.hd-card.soon .hd-goal b { color: var(--ink-2); }
+.hd-card ul { margin: 0; padding-left: 17px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--ink-2); }
+.hd-risk { margin: 0; font-size: 12px; color: var(--warn-t); }
+.hd-end { font-size: 12px; color: var(--ink-3); margin-top: auto; }
+.modal-f .hd-none { color: var(--ink-3); }
+
+/* шаги пути */
+.hd-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.hd-steps li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); padding: 6px 7px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.hd-steps i { font-style: normal; width: 18px; height: 18px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--line); color: var(--ink-2); }
+.hd-steps li.done { color: var(--good-t); }
+.hd-steps li.done i { background: var(--good-soft); color: var(--good-t); }
+.hd-steps li.on { color: var(--ink); border-color: var(--crust); font-weight: 600; }
+.hd-steps li.on i { background: var(--ink); color: var(--surface); }
+
+.hd-goalbox { display: flex; flex-direction: column; gap: 6px; }
+.hd-gl { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.hd-gl span { font-size: 12px; color: var(--ink-3); }
+.hd-gl b { font-family: var(--f-mono); font-size: 20px; }
+.hd-gl small { font-size: 12px; color: var(--ink-3); margin-left: auto; }
+
+.hd-track { border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.hd-th { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hd-track > small { font-size: 12px; color: var(--ink-3); }
+.hd-have { font-size: 12px; color: var(--good-t); }
+.hd-job { font-size: 12px; color: var(--warn-t); }
+.hd-job.ok { color: var(--good-t); }
+.hd-track .btn { white-space: normal; text-align: left; }
+.hd-dots { display: inline-flex; gap: 4px; }
+.hd-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.hd-dots i.on { background: var(--good); }
+.hd-seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.hd-blocks { margin: 4px 0 8px; padding-left: 17px; font-size: 12px; color: var(--warn-t); }
+.hd-spark { width: 100%; height: 70px; display: block; }
+.hd-spark polyline { fill: none; stroke: var(--river); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.hd-qwrap { overflow-x: auto; }
+.hd-q td, .hd-q th { white-space: nowrap; }
+.hd-mini { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+.hd-mini b { font-family: var(--f-mono); }
+
+/* сцена */
+.hd-lines { display: flex; flex-direction: column; gap: 10px; }
+.hd-line { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.hd-line .pxframe, .hd-line .st-av { width: 56px; height: 56px; }
+.hd-line .pxframe canvas { width: 56px; height: 56px; }
+.hd-say { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.hd-say b { font-size: 13px; }
+.hd-say small { font-size: 11px; color: var(--ink-3); }
+.hd-say p { margin: 3px 0 0; font-size: 14px; line-height: 1.45; }
+.hd-scene .st-chq h4 { margin: 0; }
+.hd-epi { display: flex; flex-direction: column; gap: 4px; }
+.hd-log { margin-top: 8px; }
+
+@media (max-width: 760px) {
+  .hd-cards { grid-template-columns: minmax(0, 1fr); }
+  .hd-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hd-seg .btn { flex: 1 1 100%; }
+}

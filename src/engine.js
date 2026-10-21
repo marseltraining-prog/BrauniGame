@@ -977,7 +977,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // налоги
     const taxRate = currentTaxRate(S);
     let tax = M.rev * taxRate;
-    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0) + (M.inv || 0); // + выплаты инвесторам (investors.js)
+    const opex = M.fc + M.rent + M.payroll + M.util + M.delivery + M.upkeep + M.hire + M.train + M.other + (M.agg || 0) + (M.inv || 0) + (M.hold || 0); // + выплаты инвесторам (investors.js), биржа и холдинг (holding.js)
     if (S.macro.regime === 'osno') tax += Math.max(0, M.rev - opex - M.rev * taxRate) * cfg.OSNO_PROFIT;
     spend(S, tax, 'tax');
     // кредит и резерв
