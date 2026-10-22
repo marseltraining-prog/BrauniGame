@@ -1,0 +1,51 @@
+{
+  "city": "chelny",
+  "version": "0.9.25",
+  "before": [
+    {
+      "seed": 7919,
+      "won": 20.5,
+      "wSt": 33,
+      "lost": null,
+      "city": "chelny"
+    },
+    {
+      "seed": 15838,
+      "won": 20.8,
+      "wSt": 34,
+      "lost": null,
+      "city": "chelny"
+    },
+    {
+      "seed": 23757,
+      "won": 21.3,
+      "wSt": 32,
+      "lost": null,
+      "city": "chelny"
+    }
+  ],
+  "after": [
+    {
+      "seed": 7919,
+      "won": 20.4,
+      "wSt": 35,
+      "lost": null,
+      "city": "chelny"
+    },
+    {
+      "seed": 15838,
+      "won": 16.9,
+      "wSt": 31,
+      "lost": null,
+      "city": "chelny"
+    },
+    {
+      "seed": 23757,
+      "won": 19.9,
+      "wSt": 36,
+      "lost": null,
+      "city": "chelny"
+    }
+  ],
+  "note": "до карты — генератор mapGen 1; после — подробная схема mapGen 2 (свои диапазоны: трафик схемы на 10–14 % выше, аренда на 4 %, платёжеспособность на 2 % ниже); CITIES.chelny не менялся. 3 сида × 24 года, бот good."
+}
