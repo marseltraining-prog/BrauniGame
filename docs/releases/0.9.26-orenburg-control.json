@@ -1,0 +1,51 @@
+{
+  "city": "orenburg",
+  "version": "0.9.26",
+  "before": [
+    {
+      "seed": 7919,
+      "won": 21.3,
+      "wSt": 34,
+      "lost": null,
+      "city": "orenburg"
+    },
+    {
+      "seed": 15838,
+      "won": null,
+      "wSt": null,
+      "lost": null,
+      "city": "orenburg"
+    },
+    {
+      "seed": 23757,
+      "won": 20.8,
+      "wSt": 35,
+      "lost": null,
+      "city": "orenburg"
+    }
+  ],
+  "after": [
+    {
+      "seed": 7919,
+      "won": 21.7,
+      "wSt": 30,
+      "lost": null,
+      "city": "orenburg"
+    },
+    {
+      "seed": 15838,
+      "won": 21.7,
+      "wSt": 29,
+      "lost": null,
+      "city": "orenburg"
+    },
+    {
+      "seed": 23757,
+      "won": null,
+      "wSt": null,
+      "lost": null,
+      "city": "orenburg"
+    }
+  ],
+  "note": "до карты — генератор mapGen 1; после — подробная схема mapGen 2 (трафик +8 %, платёжеспособность −8 %, аренда и производственная аренда почти прежние); CITIES.orenburg не менялся. 3 сида × 24 года, бот good."
+}

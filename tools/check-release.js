@@ -12,6 +12,7 @@ const commands = [
   ['sim/volgograd.js'], ['qa/volgograd.js'], ['qa/volgograd.js', '@webkit'],
   ['sim/sterlitamak.js'], ['qa/sterlitamak.js'], ['qa/sterlitamak.js', '@webkit'],
   ['sim/chelny.js'], ['qa/chelny.js'], ['qa/chelny.js', '@webkit'],
+  ['sim/orenburg.js'], ['qa/orenburg.js'], ['qa/orenburg.js', '@webkit'],
   ['sim/chelyabinsk.js'], ['qa/chelyabinsk.js'], ['qa/chelyabinsk.js', '@webkit'],
   ['sim/real-ufa.js'], ['qa/real-ufa.js'], ['qa/city-portraits.js'],
   ['sim/perf-big.js', '--make', 'tmp/big1000.json', '1000'], ['qa/bigsave.js', 'tmp/big1000.json'],
