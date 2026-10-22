@@ -288,6 +288,7 @@ function runOne(prof, seed, yrs, forceMap) {
     },
   };
   if (prof.reserve != null) opts.reserve = prof.reserve;
+  if (prof.fixture && prof.fixture.bot) opts.profile = prof.fixture.bot; // политика фикстуры (сильнее/агрессивнее бота уровня) — только покрытие
   let r;
   if (fixture) {
     const original = E.newGame; let supplied = false;
@@ -488,6 +489,19 @@ const BRANCH_PROFILES = [
   { id: 'cold-deep', route: 'deep', character: 'cold', policy: 'cold', walk: { s37: 1, ko1: 1, ko2: 2 } },
   ...['legacy', 'rescue', 'crisis', 'moscow', 'coffee'].map(scenario => ({ id: scenario, scenario, character: scenario === 'rescue' ? 'warm' : null, route: 'russia', policy: 'good', walk: { s37: 0 } })),
 ];
+// Поздняя «Глубина»: средний игрок, который не выигрывает первый акт и потому доживает до
+// b4h–b4k. Отдельный профиль нужен, потому что ранняя победа запускает финал и обрывает
+// поздние сцены ветки; cashFloor 2e9 — та же помощь покрытию, что и у остальных фикстур.
+const PATIENT_DEEP = { id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 2e9, walk: { s37: 1, ko1: 0, ko2: 0 } };
+// Финал российской ветки. warm-russia/cold-russia входят в Казань и остаются там: так они
+// показывают поздние российские сцены (s44, b42, b4r…), но первый акт в них не завершается —
+// цель после выхода в Россию движок считает только по обороту Уфы (rolling12 → c1), а Уфа
+// на автопилоте не растёт. Поэтому у финальной фикстуры после настоящего enterCity — настоящее
+// switchCity обратно в Уфу, и она играет «на оборот» (терпит окупаемость до 36 мес.): победа
+// на ~9,4 году, до тяжёлого момента s4m1 (10,5 года), иначе вариант «Привести Рашида» закрыт
+// флагом rashidGone. Это помощь покрытию, а не баланс: деньги — cashFixture 2e9.
+const WIN_RUSSIA = { id: 'win-russia', route: 'russia', home: true, character: 'warm', policy: 'care', bot: { maxPayback: 36 },
+  walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } };
 function branchFixture(profile, seed) {
   const S = profile.character
     ? prologueState(seed, Object.assign({}, profile.character === 'warm' ? WARM_PICKS : COLD_PICKS, profile.guestPicks || {}))
@@ -536,6 +550,14 @@ function branchFixture(profile, seed) {
     if (!offer || !E.chooseProduction(state, offer.id).ok) errors.push({ day: state.day, kind: 'second-act-production-failed' });
     const shop = state.offers[0];
     if (!shop || !E.rentStore(state, shop.id).ok) errors.push({ day: state.day, kind: 'second-act-first-store-failed' });
+    if (!profile.home) return;
+    // Цель первого акта — оборот Уфы (движок: rolling12 после выхода в Россию берёт c1).
+    // Возвращаем управление в Уфу (то же действие switchCity, что доступно игроку), иначе
+    // сеть Уфы замирает на автопилоте и 5 млрд за 12 месяцев не набираются никогда.
+    // Это не запись в состояние, а реальный переход; вход в Казань уже состоялся выше.
+    const home = E.switchCity(state, 'ufa');
+    if (!home || !home.ok || state.corp.active !== 'ufa') errors.push({ day: state.day, kind: 'return-home-failed', result: home });
+    else assistance.push({ day: state.day, kind: 'real-switchCity', city: 'ufa' });
   } };
 }
 function branchEffectSnapshot(S) {
@@ -574,7 +596,7 @@ function branchEffectCheck(S, sc, idx, before, result) {
 }
 function branchProfilesFor(sc, idx) {
   if (/^b4r\d$/.test(sc.id)) return [{ id: 'patient-russia', route: 'russia', character: 'warm', level: 'avg', policy: 'care', cashFloor: 1e6, walk: { s37: 0, ko1: 0, ko2: 0, kd1: 0, kd2: 0, kd3: 0, kf3: 0, kf4: 0 } }];
-  if (['b4i', 'b4j', 'b4k'].includes(sc.id)) return [{ id: 'patient-deep', route: 'deep', character: 'warm', level: 'avg', policy: 'care', cashFloor: 2e9, walk: { s37: 1, ko1: 0, ko2: 0 } }];
+  if (['b4h', 'b4i', 'b4j', 'b4k'].includes(sc.id)) return [PATIENT_DEEP]; // поздняя «Глубина» — до неё доживает только patient-deep
   const scenario = /^ls/.test(sc.id) ? 'legacy' : /^sr/.test(sc.id) ? 'rescue' : /^mos/.test(sc.id) ? 'moscow' : /^kc/.test(sc.id) ? 'crisis' : /^cf/.test(sc.id) ? 'coffee' : null;
   const walks = {
     ls7: { ls1: 0, ls6: 0 }, ls8: { ls1: 0, ls6: 1 },
@@ -588,7 +610,7 @@ function branchProfilesFor(sc, idx) {
     'sf1:2': { ko1: 0, ko2: 0 }, 'sf2:0': { ko1: 1, ko2: 2, sf1: 3 },
     's31:3': { s25: 2 },
   };
-  return BRANCH_PROFILES.filter(p => {
+  const out = BRANCH_PROFILES.filter(p => {
     if (scenario) return p.scenario === scenario;
     if (p.scenario) return false;
     if (sc.ch === 'deep' && p.route !== 'deep') return false;
@@ -603,6 +625,13 @@ function branchProfilesFor(sc, idx) {
     walk: Object.assign({}, p.walk, walks[sc.id + ':' + idx] || walks[sc.id] || {}),
     guestPicks: /^sg[1256]$/.test(sc.id) ? { g_rad1: 0, g_petr1: 0, g_petr2: 1, g_ali1: 1, g_zoya1: 0 } : null,
   }));
+  // Финал российской ветки: первым — профиль, который реально доводит первый акт до победы.
+  // Без него финал России достаётся только «Глубине», а варианты, доступные лишь до тяжёлого
+  // момента (s4m1 на 10,5 году ставит rashidGone), остаются непокрытыми.
+  if (sc.id === 'sf1' || sc.id === 'sf1b') out.unshift(Object.assign({}, WIN_RUSSIA, {
+    walk: Object.assign({}, WIN_RUSSIA.walk, walks[sc.id + ':' + idx] || walks[sc.id] || {}),
+  }));
+  return out;
 }
 
 function allBranches(branchSeeds, yrs) {

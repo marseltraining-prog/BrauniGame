@@ -1,6 +1,6 @@
 {
   "complete": true,
-  "version": "0.9.20",
+  "version": "0.9.21",
   "balance": false,
   "scenes": 139,
   "successfulTargets": [
@@ -2957,7 +2957,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s32b-0-7919.json",
-      "checks": 32,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -2968,7 +2968,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -2983,7 +2983,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s32b-1-7919.json",
-      "checks": 31,
+      "checks": 30,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -2994,7 +2994,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -3340,7 +3340,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s37-0-7919.json",
-      "checks": 27,
+      "checks": 28,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3350,7 +3350,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3364,7 +3364,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s37-1-7919.json",
-      "checks": 30,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3375,7 +3375,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3389,7 +3389,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s37-2-7919.json",
-      "checks": 26,
+      "checks": 27,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3398,7 +3398,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3437,7 +3437,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g1-0-7919.json",
-      "checks": 30,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3448,7 +3448,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3462,7 +3462,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g1-1-7919.json",
-      "checks": 30,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3473,7 +3473,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3485,7 +3485,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g1-2-7919.json",
-      "checks": 26,
+      "checks": 27,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3494,7 +3494,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3506,7 +3506,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g2-0-7919.json",
-      "checks": 33,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3517,7 +3517,7 @@
         "expiry": 6,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3531,7 +3531,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g2-1-7919.json",
-      "checks": 33,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3542,7 +3542,7 @@
         "expiry": 6,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -3556,7 +3556,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4g2-2-7919.json",
-      "checks": 26,
+      "checks": 27,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -3565,7 +3565,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 3,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -4060,7 +4060,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s44-0-7919.json",
-      "checks": 34,
+      "checks": 35,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4071,7 +4071,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -4085,7 +4085,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s44-1-7919.json",
-      "checks": 34,
+      "checks": 35,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4096,7 +4096,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -4110,7 +4110,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s44-2-7919.json",
-      "checks": 30,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4120,7 +4120,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -4135,7 +4135,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s44-3-7919.json",
-      "checks": 33,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4146,7 +4146,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -4392,7 +4392,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/s4m1-0-7919.json",
-      "checks": 30,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4402,7 +4402,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -4413,10 +4413,10 @@
     {
       "scene": "sf1",
       "choice": 0,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1-0-7919.json",
-      "checks": 38,
+      "checks": 36,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4427,7 +4427,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 5,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4438,10 +4438,10 @@
     {
       "scene": "sf1",
       "choice": 1,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1-1-7919.json",
-      "checks": 38,
+      "checks": 36,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4452,7 +4452,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 5,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4463,10 +4463,10 @@
     {
       "scene": "sf1",
       "choice": 2,
-      "fixture": "cold-deep",
+      "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1-2-7919.json",
-      "checks": 50,
+      "checks": 45,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4477,7 +4477,7 @@
         "expiry": 6,
         "shares": 1,
         "queue": 5,
-        "threads": 16,
+        "threads": 11,
         "family": 2,
         "saveLoad": 6
       },
@@ -4539,10 +4539,10 @@
     {
       "scene": "sf1",
       "choice": 5,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1-5-7919.json",
-      "checks": 30,
+      "checks": 28,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4551,7 +4551,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4562,10 +4562,10 @@
     {
       "scene": "sf1b",
       "choice": 0,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1b-0-7919.json",
-      "checks": 35,
+      "checks": 33,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4574,7 +4574,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 5,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4586,10 +4586,10 @@
     {
       "scene": "sf1b",
       "choice": 1,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1b-1-7919.json",
-      "checks": 37,
+      "checks": 35,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4599,7 +4599,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 5,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4611,10 +4611,10 @@
     {
       "scene": "sf1b",
       "choice": 2,
-      "fixture": "warm-deep",
+      "fixture": "win-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf1b-2-7919.json",
-      "checks": 37,
+      "checks": 35,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4624,7 +4624,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 5,
-        "threads": 7,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -4636,10 +4636,10 @@
     {
       "scene": "sf2",
       "choice": 0,
-      "fixture": "cold-deep",
+      "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf2-0-7919.json",
-      "checks": 37,
+      "checks": 32,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4648,7 +4648,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 14,
+        "threads": 9,
         "family": 2,
         "saveLoad": 6
       },
@@ -4662,7 +4662,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf2-1-7919.json",
-      "checks": 30,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4671,7 +4671,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 11,
         "family": 2,
         "saveLoad": 6
       },
@@ -4685,7 +4685,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf2-2-7919.json",
-      "checks": 30,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4694,7 +4694,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 11,
         "family": 2,
         "saveLoad": 6
       },
@@ -4708,7 +4708,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf2-3-7919.json",
-      "checks": 30,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4717,7 +4717,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 11,
         "family": 2,
         "saveLoad": 6
       },
@@ -4731,7 +4731,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/sf2-4-7919.json",
-      "checks": 30,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4740,7 +4740,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 11,
         "family": 2,
         "saveLoad": 6
       },
@@ -4825,7 +4825,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b23-0-7919.json",
-      "checks": 30,
+      "checks": 29,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4835,7 +4835,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4850,7 +4850,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b24-0-7919.json",
-      "checks": 33,
+      "checks": 32,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4860,7 +4860,7 @@
         "expiry": 6,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4876,7 +4876,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b25-0-7919.json",
-      "checks": 28,
+      "checks": 26,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4885,7 +4885,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4900,7 +4900,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b26-0-7919.json",
-      "checks": 34,
+      "checks": 32,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4910,7 +4910,7 @@
         "expiry": 6,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4925,7 +4925,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b27-0-7919.json",
-      "checks": 31,
+      "checks": 29,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4935,7 +4935,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4950,7 +4950,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b28-0-7919.json",
-      "checks": 29,
+      "checks": 27,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4959,7 +4959,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4973,7 +4973,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b29-0-7919.json",
-      "checks": 31,
+      "checks": 29,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -4983,7 +4983,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 3,
         "family": 2,
         "saveLoad": 6
       },
@@ -4998,7 +4998,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b2a-0-7919.json",
-      "checks": 29,
+      "checks": 28,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5007,7 +5007,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 1,
-        "threads": 5,
+        "threads": 4,
         "family": 2,
         "saveLoad": 6
       },
@@ -5197,7 +5197,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4d-0-7919.json",
-      "checks": 28,
+      "checks": 29,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5206,7 +5206,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -5220,7 +5220,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b49-0-7919.json",
-      "checks": 27,
+      "checks": 29,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5229,7 +5229,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 6,
         "family": 2,
         "saveLoad": 6
       },
@@ -5244,7 +5244,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4e-0-7919.json",
-      "checks": 30,
+      "checks": 33,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5254,7 +5254,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -5269,7 +5269,7 @@
       "fixture": "warm-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4f-0-7919.json",
-      "checks": 31,
+      "checks": 34,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5279,7 +5279,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 4,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -5314,10 +5314,10 @@
     {
       "scene": "b4h",
       "choice": 0,
-      "fixture": "warm-deep",
+      "fixture": "patient-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4h-0-7919.json",
-      "checks": 30,
+      "checks": 37,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5326,7 +5326,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 7,
+        "threads": 14,
         "family": 2,
         "saveLoad": 6
       },
@@ -5340,7 +5340,7 @@
       "fixture": "patient-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4i-0-7919.json",
-      "checks": 36,
+      "checks": 37,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5349,7 +5349,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 13,
+        "threads": 14,
         "family": 2,
         "saveLoad": 6
       },
@@ -5363,7 +5363,7 @@
       "fixture": "patient-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4j-0-7919.json",
-      "checks": 36,
+      "checks": 37,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5372,7 +5372,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 13,
+        "threads": 14,
         "family": 2,
         "saveLoad": 6
       },
@@ -5386,7 +5386,7 @@
       "fixture": "patient-deep",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b4k-0-7919.json",
-      "checks": 36,
+      "checks": 38,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5394,8 +5394,8 @@
         "meters": 1,
         "perks": 3,
         "shares": 1,
-        "queue": 1,
-        "threads": 13,
+        "queue": 2,
+        "threads": 14,
         "family": 2,
         "saveLoad": 6
       },
@@ -5554,7 +5554,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b41-0-7919.json",
-      "checks": 29,
+      "checks": 28,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5563,7 +5563,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -5578,7 +5578,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b42-0-7919.json",
-      "checks": 32,
+      "checks": 33,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5588,7 +5588,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 7,
         "family": 2,
         "saveLoad": 6
       },
@@ -5603,7 +5603,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/b43-0-7919.json",
-      "checks": 33,
+      "checks": 32,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5613,7 +5613,7 @@
         "expiry": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -5791,7 +5791,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd1-0-7919.json",
-      "checks": 32,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5801,7 +5801,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -5816,7 +5816,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd1-1-7919.json",
-      "checks": 32,
+      "checks": 31,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5826,7 +5826,7 @@
         "perks": 4,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -5840,7 +5840,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd1-2-7919.json",
-      "checks": 39,
+      "checks": 38,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5850,7 +5850,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 14,
+        "threads": 13,
         "family": 2,
         "saveLoad": 6
       },
@@ -5864,7 +5864,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd2-0-7919.json",
-      "checks": 39,
+      "checks": 38,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5874,7 +5874,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 14,
+        "threads": 13,
         "family": 2,
         "saveLoad": 6
       },
@@ -5888,7 +5888,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd2-1-7919.json",
-      "checks": 39,
+      "checks": 38,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5898,7 +5898,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 14,
+        "threads": 13,
         "family": 2,
         "saveLoad": 6
       },
@@ -5936,7 +5936,7 @@
       "fixture": "warm-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kd2-3-7919.json",
-      "checks": 29,
+      "checks": 28,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -5945,7 +5945,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 6,
+        "threads": 5,
         "family": 2,
         "saveLoad": 6
       },
@@ -6304,7 +6304,7 @@
       "fixture": "cold-russia",
       "actualSeed": 7919,
       "stateFile": "tmp/story-branches/states/kg2-0-7919.json",
-      "checks": 43,
+      "checks": 42,
       "declaredChecks": {
         "resolution": 6,
         "money": 2,
@@ -6313,7 +6313,7 @@
         "perks": 3,
         "shares": 1,
         "queue": 1,
-        "threads": 20,
+        "threads": 19,
         "family": 2,
         "saveLoad": 6
       },
@@ -7533,8 +7533,8 @@
       ]
     }
   ],
-  "attempts": 359,
-  "checks": 9795,
+  "attempts": 348,
+  "checks": 9800,
   "limitations": [
     "independent legal choice reachability; not every combination of preceding choices",
     "assisted financial fixtures are not a balance benchmark",

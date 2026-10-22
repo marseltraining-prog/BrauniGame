@@ -616,26 +616,41 @@
     },
     {
       "command": "node sim/story.js --all-branches 1 22 --snapshots",
-      "exit": 1,
+      "exit": 0,
       "blocking": false,
-      "diagnostic": true,
-      "warning": true,
-      "seconds": 250,
-      "log": "tmp/release-checks/0.9.21/24-story-retry1.log",
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 396,
+      "log": "tmp/release-checks/0.9.21/24-story-retry2.log",
       "lastLines": [
+        "  \"limitations\": [",
         "    \"fixtures are assisted, not balance\",",
         "    \"no global all-afterDeps claim: alternative scene gates are mutually exclusive\",",
         "    \"not full economic effect/time/load coverage\",",
         "    \"scenario initialization is a deferred coverage fixture\",",
         "    \"profiles do not yet construct every rare premise\"",
         "  ]",
-        "}",
-        "Код выхода 1. Непройденные варианты и сцены перечислены в отчёте."
+        "}"
       ],
       "attempts": [
         {
           "exit": 1,
           "seconds": 252,
+          "log": "tmp/release-checks/0.9.21/24-story-retry1.log",
+          "lastLines": [
+            "    \"fixtures are assisted, not balance\",",
+            "    \"no global all-afterDeps claim: alternative scene gates are mutually exclusive\",",
+            "    \"not full economic effect/time/load coverage\",",
+            "    \"scenario initialization is a deferred coverage fixture\",",
+            "    \"profiles do not yet construct every rare premise\"",
+            "  ]",
+            "}",
+            "Код выхода 1. Непройденные варианты и сцены перечислены в отчёте."
+          ]
+        },
+        {
+          "exit": 1,
+          "seconds": 250,
           "log": "tmp/release-checks/0.9.21/24-story-retry1.log",
           "lastLines": [
             "    \"fixtures are assisted, not balance\",",
@@ -1831,7 +1846,7 @@
       "blocking": false,
       "diagnostic": true,
       "warning": true,
-      "seconds": 10,
+      "seconds": 18,
       "log": "tmp/release-checks/0.9.21/95-story-retry1.log",
       "lastLines": [
         "  ✗ mos7 «Мама приезжает» (city)",
@@ -1842,6 +1857,23 @@
         "  ✗ s36b «Старая печь» (war)",
         "  ✗ b4k «Последняя глава» (deep)",
         "Код выхода 1."
+      ],
+      "attempts": [
+        {
+          "exit": 1,
+          "seconds": 10,
+          "log": "tmp/release-checks/0.9.21/95-story-retry1.log",
+          "lastLines": [
+            "  ✗ mos7 «Мама приезжает» (city)",
+            "  ✗ mos8 «Своя сеть в Москве» (war)",
+            "  ✗ mosBank «Банк напоминает» (city)",
+            "  ✗ s32b «Папка» (war)",
+            "  ✗ s35 «Лариса» (war)",
+            "  ✗ s36b «Старая печь» (war)",
+            "  ✗ b4k «Последняя глава» (deep)",
+            "Код выхода 1."
+          ]
+        }
       ]
     },
     {
@@ -1850,7 +1882,7 @@
       "blocking": false,
       "diagnostic": false,
       "warning": false,
-      "seconds": 2,
+      "seconds": 3,
       "log": "tmp/release-checks/0.9.21/96-story-retry1.log",
       "lastLines": [
         "  ✓ после прогона очередь сцен пуста",
@@ -1861,6 +1893,23 @@
         "",
         "# Итог",
         "Всё в порядке."
+      ],
+      "attempts": [
+        {
+          "exit": 0,
+          "seconds": 2,
+          "log": "tmp/release-checks/0.9.21/96-story-retry1.log",
+          "lastLines": [
+            "  ✓ после прогона очередь сцен пуста",
+            "  ✓ resolve без сцены — отказ",
+            "  ✓ сцена s25 достигнута",
+            "  ✓ зафиксированный выбор применён — idx 1",
+            "  ✓ последствие выбора записано во флаги (lenin = no)",
+            "",
+            "# Итог",
+            "Всё в порядке."
+          ]
+        }
       ]
     },
     {

@@ -14,7 +14,7 @@ const commands = [
   ['sim/real-ufa.js'], ['qa/real-ufa.js'], ['qa/city-portraits.js'],
   ['sim/perf-big.js', '--make', 'tmp/big1000.json', '1000'], ['qa/bigsave.js', 'tmp/big1000.json'],
   ['sim/samara.js'], ['qa/samara.js'], ['qa/samara.js', '@webkit'],
-  ['sim/story.js', '--all-branches', '1', '22', '--snapshots', '@diagnostic'],
+  ['sim/story.js', '--all-branches', '1', '22', '--snapshots'],
   ['sim/story-choice-guard.js'], ['sim/defer-open.js'], ['sim/story-queue.js'],
   ['qa/story-branches.js'], ['qa/story-branches.js', '@webkit'],
   ['sim/story-depth.js'], ['qa/story-depth.js'], ['qa/story-depth.js', '@webkit'],
