@@ -167,7 +167,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   /* ---------------- 3. КНИГА СЕМЁНА ---------------- */
   const BOOK_TITLES = {
     empire: 'Хлеб на миллиард', city: 'Хлеб нашего города', twocrusts: 'Две корки',
-    empty: 'Человек-калькулятор', deal: 'Продано', ipo: 'Хлеб на бирже', hired: 'Смена', bankrupt: 'Тесто и ещё раз тесто',
+    empty: 'Человек-калькулятор', deal: 'Продано', ipo: 'Хлеб на бирже', abroad: 'Хлеб без границ', hired: 'Смена', bankrupt: 'Тесто и ещё раз тесто',
   };
   function endingOf(S, R, h) {
     const id = (R && R.ending) || (S && S.storyEnding) || null;

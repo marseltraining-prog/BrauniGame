@@ -92,7 +92,7 @@ async function run(b, vp, theme, save, full) {
     const m = document.querySelector('#modal .modal');
     return { cards: m.querySelectorAll('.hd-card').length, soon: m.querySelectorAll('.hd-card.soon').length, picks: m.querySelectorAll('[data-act="holdPick"]').length, txt: m.innerText, days: BK.App.state.holding ? BK.App.state.holding.unlockDay - BK.App.state.wonDay : null };
   });
-  if (ch.cards !== 3 || ch.soon !== 2 || ch.picks !== 1) issues.push(`[${tag}] окно выбора: ${JSON.stringify({ cards: ch.cards, soon: ch.soon, picks: ch.picks })}`);
+  if (ch.cards !== 3 || ch.soon !== 1 || ch.picks !== 2) issues.push(`[${tag}] окно выбора: ${JSON.stringify({ cards: ch.cards, soon: ch.soon, picks: ch.picks })}`);
   for (const need of ['Выход на биржу', 'За рубеж', 'Франшиза-империя', 'скоро', 'Решить позже']) if (!ch.txt.toLowerCase().includes(need.toLowerCase())) issues.push(`[${tag}] в окне выбора нет «${need}»`);
   notes.push(`${tag}: третий акт открылся через ${ch.days} дн. после победы`);
   await shot(p, `${tag}-1-choose`);

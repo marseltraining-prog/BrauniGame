@@ -26,7 +26,7 @@
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
-  const E = () => BK.Engine, K = () => BK.CFG.HOLDING, KI = () => BK.CFG.HOLDING.IPO, D = () => BK.HOLDING_DATA || {};
+  const E = () => BK.Engine, K = () => BK.CFG.HOLDING, KI = () => BK.CFG.HOLDING.IPO, KA = () => BK.CFG.HOLDING.ABROAD, D = () => BK.HOLDING_DATA || {};
   const I = () => (BK.Engine && BK.Engine._int) || {};
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => (BK.fmtMoney ? BK.fmtMoney(v) : Math.round(v) + ' ₽');
@@ -39,7 +39,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return {
       v: 1, unlockDay: S.day, path: null, pathDay: null,
       rng: (((S.seed | 0) ^ 0x7a11d) | 0) || 7,
-      f: {}, seen: {}, queue: [], pending: null, log: [], ending: null, endDay: null, ipo: null,
+      f: {}, seen: {}, queue: [], pending: null, log: [], ending: null, endDay: null, ipo: null, abroad: null,
     };
   }
   function ipoDefaults() {
@@ -51,11 +51,27 @@ var BK = globalThis.BK || (globalThis.BK = {});
       peakCap: 0, goalDay: null, divPaid: 0, spent: 0,
     };
   }
+  function abroadDefaults() {
+    return {
+      stage: 'enter', defaultMode: 'local', menu: 'own', gulya: false, hedge: false, inspection: null,
+      jobs: {}, c: {}, hist: [], paidIn: 0, spent: 0, goalDay: null, deval: 0, demandK: 1, demandUntil: 0, priceK: 1,
+    };
+  }
+  function countryDefaults(id) {
+    const def = (KA().COUNTRIES || []).find((x) => x.id === id) || {};
+    return { id, name: def.name || id, city: def.city || '', open: false, day: null, stores: 0, mode: null, rate: 1, rev: 0, prof: 0, lastGrow: 0 };
+  }
   function fill(H) {
     const d = { f: {}, seen: {}, queue: [], log: [] };
     for (const k of Object.keys(d)) if (H[k] == null || typeof H[k] !== 'object') H[k] = d[k];
     if (H.pending === undefined) H.pending = null;
     if (H.ipo) { const id = ipoDefaults(); for (const k of Object.keys(id)) if (H.ipo[k] === undefined) H.ipo[k] = id[k]; }
+    if (H.abroad) {
+      const id = abroadDefaults();
+      for (const k of Object.keys(id)) if (H.abroad[k] === undefined) H.abroad[k] = id[k];
+      if (!H.abroad.c || typeof H.abroad.c !== 'object') H.abroad.c = {};
+      for (const def of (KA().COUNTRIES || [])) if (!H.abroad.c[def.id]) H.abroad.c[def.id] = countryDefaults(def.id);
+    }
     if (typeof H.rng !== 'number' || !H.rng) H.rng = 7;
     return H;
   }
@@ -105,6 +121,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (H.ending) return;
     flushQueue(S, H);
     if (H.path === 'ipo' && H.ipo) ipoDay(S, H);
+    if (H.path === 'abroad' && H.abroad) abroadDay(S, H);
   }
   function choose(S, path) {
     const H = state(S); if (!H) return { ok: false, msg: 'Третий акт ещё не открыт' };
@@ -114,10 +131,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!K().READY[path]) return { ok: false, msg: 'Этот путь пока в разработке' };
     H.path = path; H.pathDay = S.day;
     if (path === 'ipo') H.ipo = ipoDefaults();
+    if (path === 'abroad') H.abroad = abroadDefaults();
     const p = (D().paths || {})[path] || {};
     pushLog(S, H, 'h_path', 'Третий акт: ' + (p.name || path), p.goal || '');
     log(S, `Третий акт: выбран путь «${p.name || path}». Цель — ${(p.goal || '').toLowerCase()}.`, 'good');
     if (path === 'ipo') startScene(S, 'h_ipo1');
+    if (path === 'abroad') startScene(S, 'h_ab1');
     return { ok: true };
   }
   // Пока путь не выбран или идёт — финал сюжета ждёт (концовку даст путь). Отказ — история идёт как обычно.
@@ -196,6 +215,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
       case 'mod': if (Array.isArray(S.mods)) S.mods.push({ t: fx.mt, m: fx.m, until: S.day + (fx.d || 365), scope: 'global', src: 'hold' }); return;
       case 'loyalty': try { E().applyEffects(S, [{ t: 'loyalty', add: fx.add }], { scope: 'global', target: null }); } catch (e) { /* без лояльности */ } return;
       case 'journal': log(S, fx.text, 'info'); return;
+      case 'abDefault': if (H.abroad) H.abroad.defaultMode = fx.v === 'own' ? 'own' : 'local'; return;
+      case 'abMenu': if (H.abroad) H.abroad.menu = fx.v === 'local' ? 'local' : 'own'; return;
+      case 'abGulya': if (H.abroad) H.abroad.gulya = true; return;
+      case 'abHedge': if (H.abroad) H.abroad.hedge = true; return;
+      case 'abDemand': if (H.abroad) { H.abroad.demandK = fx.v; H.abroad.demandUntil = S.day + (fx.d || 365); } return;
+      case 'abPrice': if (H.abroad) H.abroad.priceK = fx.v; return;
+      case 'abSpend': spend(S, fx.v * pl(S), 'hold'); if (H.abroad) H.abroad.spent += fx.v * pl(S); return;
+      case 'abInspection': if (H.abroad) H.abroad.inspection = fx.v; return;
+      case 'abClose':
+        if (H.abroad && H.abroad.c[fx.id] && H.abroad.c[fx.id].open) {
+          const c = H.abroad.c[fx.id]; c.open = false; c.stores = 0; c.rev = 0; c.prof = 0;
+          log(S, `Холдинг: мы ушли из ${c.city || c.name}. Направление закрыто.`, 'bad');
+        }
+        return;
+      case 'abStores': if (H.abroad && H.abroad.c[fx.id]) H.abroad.c[fx.id].stores = Math.max(0, H.abroad.c[fx.id].stores + fx.add); return;
       default:
     }
   }
@@ -383,11 +417,123 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (res === 'miss') startScene(S, 'h_ipo6');
   }
 
+  /* ---------------- путь «За рубеж» ---------------- */
+  function abP(S) { const H = state(S); return H && H.path === 'abroad' ? H.abroad : null; }
+  function abDef(id) { return (KA().COUNTRIES || []).find((x) => x.id === id) || null; }
+  function abOpen(A) { return Object.keys(A.c || {}).filter((id) => A.c[id] && A.c[id].open); }
+  function abRev12(A) { return (A.hist || []).slice(-12).reduce((a, x) => a + (x.rev || 0), 0); }
+  function abEnter(S, id, mode) {
+    const A = abP(S), def = abDef(id), k = KA();
+    if (!A || !def) return { ok: false, msg: 'Нет такой страны' };
+    const c = A.c[id];
+    if (c && c.open) return { ok: false, msg: 'Страна уже открыта' };
+    if (A.jobs[id]) return { ok: false, msg: 'Вход уже идёт' };
+    mode = mode === 'own' ? 'own' : 'local';
+    const cost = Math.round(def.cost * pl(S) * (mode === 'local' ? k.PARTNER_ENTRY : 1));
+    if (S.cash < cost) return { ok: false, msg: `Нужно ${fm(cost)} на счёте` };
+    spend(S, cost, 'hold'); A.spent += cost;
+    const days = Math.round(def.days * (mode === 'local' ? k.PARTNER_DAYS : k.OWN_DAYS));
+    A.jobs[id] = { until: S.day + days, mode, cost };
+    log(S, `Холдинг: вход в ${def.name} (${def.city}) — ${mode === 'local' ? 'с местным партнёром 51 %' : 'со своим директором'}, ${fm(cost)}. Открытие ${E().fmtDate(S.day + days)}.`, 'info');
+    note(S, { phase: 'enter', country: id, name: def.name, days });
+    return { ok: true, cost, days };
+  }
+  function abOpenCountry(S, A, id) {
+    const def = abDef(id), k = KA(), job = A.jobs[id], c = A.c[id] || (A.c[id] = countryDefaults(id));
+    delete A.jobs[id];
+    c.open = true; c.day = S.day; c.mode = job ? job.mode : A.defaultMode; c.stores = k.OPEN_STORES; c.rate = 1; c.lastGrow = S.day;
+    A.stage = 'open';
+    const n = abOpen(A).length;
+    log(S, `Холдинг: открылись в ${def.name} — ${c.city}, сразу ${c.stores} ${c.stores === 1 ? 'точка' : 'точки'}. Всего стран: ${n}.`, 'good');
+    pushLog(S, state(S), 'h_ab_open_' + id, 'За рубежом: ' + def.name, `${c.city}, ${c.stores} точки`);
+    note(S, { phase: 'country', country: id, name: def.name, stores: c.stores, count: n });
+    if (n === 1) startScene(S, 'h_ab2');
+    if (n === 2 && !A.gulyaAsked) { A.gulyaAsked = true; startScene(S, 'h_ab5'); }
+    return c;
+  }
+  function abroadDay(S, H) {
+    const A = H.abroad, k = KA(); if (!A) return;
+    // вход в страну: срок вышел — открываем
+    for (const id of Object.keys(A.jobs || {})) if (S.day >= A.jobs[id].until) abOpenCountry(S, A, id);
+    const open = abOpen(A);
+    // директор страны открывает точки (каждые STORE_GROWTH_DAYS, если хватает денег)
+    for (const id of open) {
+      const c = A.c[id], def = abDef(id);
+      if (!def || c.stores >= def.max) continue;
+      if (S.day - (c.lastGrow || c.day || S.day) < k.STORE_GROWTH_DAYS) continue;
+      if (S.cash < k.RESERVE * pl(S)) continue;
+      c.stores++; c.lastGrow = S.day;
+    }
+    // проверка в Алматы: 8 точек в Казахстане
+    if (A.c.kz && A.c.kz.open && A.c.kz.stores >= k.INSPECT_STORES && !A.inspection) { A.inspection = 'pending'; startScene(S, 'h_ab4'); }
+    if (E().dateOf(S.day).d !== 1) return;
+    const dt = E().dateOf(S.day);
+    // раз в квартал — курс
+    if (dt.m % 3 === 0 && A.lastRate !== S.day) {
+      A.lastRate = S.day;
+      let deval = null;
+      for (const id of open) { const c = A.c[id]; c.rate = cl(c.rate * (1 + gauss(H) * k.RATE_SD), 0.4, 1.8); if (!deval && rnd(H) < k.DEVAL_P) deval = id; }
+      if (deval) {
+        const c = A.c[deval], def = abDef(deval);
+        c.rate = cl(c.rate * k.DEVAL, 0.3, 1.8); A.deval++;
+        log(S, `Холдинг: ${def.name} — курс упал за ночь. Выручка в рублях теперь ×${c.rate.toFixed(2).replace('.', ',')}.`, 'bad');
+        note(S, { phase: 'deval', country: deval, name: def.name, rate: c.rate });
+        startScene(S, 'h_ab3');
+      }
+    }
+    // месяц: выручка стран
+    let rev = 0, prof = 0;
+    for (const id of open) {
+      const c = A.c[id], def = abDef(id); if (!def) continue;
+      const menuK = A.menu === 'local' ? k.MENU_LOCAL_REV : A.menu === 'own' ? k.MENU_OWN_REV : 1;
+      const demK = A.demandUntil > S.day ? A.demandK : 1;
+      const r = c.stores * k.REV_STORE * def.rev * pl(S) * c.rate * menuK * (A.gulya ? 1.08 : 1) * demK * A.priceK;
+      const cost = r * k.COST * (A.menu === 'local' ? k.MENU_LOCAL_COST : 1) + k.LICENSE * pl(S);
+      const p = r - cost, ours = c.mode === 'local' ? p * (1 - k.PARTNER_SHARE) : p;
+      c.rev += r; c.prof += p;
+      S.cash += ours; A.paidIn += ours;
+      rev += r; prof += p;
+      if (dt.m === 0 || p < 0) log(S, `Холдинг: ${def.name} — ${c.stores} точек, выручка ${fm(r)} за месяц${p < 0 ? ', убыток ' + fm(-p) : ''}.`, p < 0 ? 'bad' : 'info');
+    }
+    A.hist.push({ day: S.day, rev: Math.round(rev), prof: Math.round(prof) });
+    while (A.hist.length > 36) A.hist.shift();
+    // цель: три страны и 10 млрд оборота за 12 месяцев
+    const rev12 = abRev12(A);
+    if (!A.goalDay && open.length >= k.GOAL_COUNTRIES && rev12 >= k.GOAL_REV) {
+      A.goalDay = S.day; A.stage = 'done';
+      log(S, `Холдинг: за рубежом ${fm(rev12)} оборота за 12 месяцев, сеть в ${open.length} странах — цель пути взята.`, 'good');
+      pushLog(S, H, 'h_ab_goal', 'Хлеб без границ', `оборот за рубежом ${fm(rev12)} за 12 мес.`);
+      note(S, { phase: 'goal', abroad: true, rev12, count: open.length });
+      startScene(S, 'h_ab6');
+    }
+  }
+  function abInfo(S) {
+    const A = abP(S); if (!A) return null;
+    const k = KA(), open = abOpen(A);
+    const countries = (k.COUNTRIES || []).map((def) => {
+      const c = A.c[def.id] || countryDefaults(def.id);
+      const job = A.jobs[def.id] || null;
+      return {
+        id: def.id, name: def.name, city: def.city, max: def.max, open: !!c.open, job,
+        stores: c.stores, rate: c.rate, rev: c.rev, prof: c.prof, mode: c.mode,
+        entryLocal: Math.round(def.cost * pl(S) * k.PARTNER_ENTRY), entryOwn: Math.round(def.cost * pl(S)),
+        daysLocal: Math.round(def.days * k.PARTNER_DAYS), daysOwn: Math.round(def.days * k.OWN_DAYS),
+      };
+    });
+    const last = (A.hist || [])[A.hist.length - 1] || { rev: 0, prof: 0 };
+    return { countries, open: open.length, rev12: abRev12(A), monthRev: last.rev, monthProf: last.prof, goal: k.GOAL_REV, goalDay: A.goalDay, spent: A.spent, paidIn: A.paidIn, menu: A.menu, gulya: A.gulya, deval: A.deval, defaultMode: A.defaultMode };
+  }
+
   /* ---------------- данные для интерфейса ---------------- */
   function info(S) {
     const H = state(S); if (!H) return null;
-    const P = H.ipo, v = valuation(S);
+    const P = H.ipo, A = abP(S), v = valuation(S);
     const out = { path: H.path, ending: H.ending, unlockDay: H.unlockDay, pending: H.pending, fair: v.fair, pe: v.pe, val: v, goal: KI().GOAL_CAP };
+    if (A) {
+      out.abroad = abInfo(S);
+      out.goal = KA().GOAL_REV;
+      out.cap = out.abroad.rev12;
+    }
     if (P) {
       out.ipo = P;
       out.cap = P.stage === 'public' || P.stage === 'done' ? cap(P) : v.fair * KI().PRIVATE_K * P.mood;
@@ -419,6 +565,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     if (H.pending) { const sc = sceneById(H.pending.id); out.push({ lvl: 'warn', ic: 'alert', t: `Холдинг ждёт решения: «${sc ? sc.title : 'сцена'}»`, d: 'Сцена третьего акта. Игра на паузе, пока не решите.', b: { act: 'holdScene', label: 'Решить', primary: true } }); }
     if (!H.path) out.push({ lvl: 'info', ic: 'alert', t: 'Третий акт: выберите путь холдинга', d: 'Биржа, за рубеж или франшиза-империя. Финал истории ждёт вашего выбора.', b: { act: 'holdChoose', label: 'Выбрать', primary: true } });
+    const A = abP(S);
+    if (A) {
+      const ai = abInfo(S);
+      if (!ai.open && !Object.keys(A.jobs || {}).length) out.push({ lvl: 'info', ic: 'globe', t: 'За рубеж: выберите первую страну', d: `Вход в Казахстан, Узбекистан или Кыргызстан. Цель — ${fm(ai.goal)} оборота за 12 месяцев.`, b: { act: 'hold', label: 'За рубеж' } });
+      for (const c of ai.countries) if (c.job) out.push({ lvl: 'info', ic: 'globe', t: `${c.name}: вход идёт`, d: `Открытие ${E().fmtDate(c.job.until)}.`, b: { act: 'hold', label: 'За рубеж' } });
+      if (ai.open && !ai.goalDay) out.push({ lvl: 'info', ic: 'globe', t: `За рубежом ${ai.open} из ${KA().GOAL_COUNTRIES} стран`, d: `Оборот за 12 мес. ${fm(ai.rev12)} из ${fm(ai.goal)}.`, b: { act: 'hold', label: 'За рубеж' } });
+    }
     const P = ipoP(S);
     if (P && P.stage === 'prep' && !P.auditJob && !P.boardJob && !listBlocks(S).length) out.push({ lvl: 'info', ic: 'rub', t: 'Можно выходить на биржу', d: 'Аудит и совет готовы. Осталось роадшоу — неделя встреч с фондами.', b: { act: 'hold', label: 'Биржа' } });
     if (P && P.stage === 'public') {
@@ -445,6 +598,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Holding = {
     state, unlocked, day, choose, holdsFinale, startScene, pendingScene, resolve, canChoose, sceneById, sceneView,
     valuation, figures, info, listBlocks, buyAudit, buyBoard, setFloat, startRoadshow, setGuide, setDiv, nextQuarter,
+    abInfo, abEnter, abP,
     attItems, endWith, PATHS, cap,
   };
 })();

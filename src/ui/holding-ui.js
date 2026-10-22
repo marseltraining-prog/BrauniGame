@@ -95,10 +95,50 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${lvl ? `<span class="hd-have">Есть: ${list.slice(0, lvl).map((x) => esc(x.name)).join(', ')}</span>` : ''}
       <div class="row">${act}</div></div>`;
   }
+  function abroadHtml(S, inf) {
+    const A = inf.abroad, k = BK.CFG.HOLDING.ABROAD, D = DATA();
+    const goalK = Math.min(1, inf.cap / A.goal);
+    let s = `<div class="modal-h"><span class="eyebrow pos">Третий акт · Холдинг</span><h2>За рубеж</h2></div><div class="modal-b hd-m">`;
+    s += `<div class="hd-goalbox"><div class="hd-gl"><span>Оборот за рубежом за 12 мес.</span><b>${bn(inf.cap)}</b><small>цель — ${bn(A.goal)} и ${k.GOAL_COUNTRIES} страны (открыто ${A.open})</small></div>${BK.UIH ? BK.UIH.goalBar(goalK) : ''}</div>`;
+    s += `<div class="inv-nums big">
+      <span><small>Стран</small><b>${A.open} из ${k.GOAL_COUNTRIES}</b></span>
+      <span><small>Выручка за месяц</small><b>${fm(A.monthRev)}</b></span>
+      <span><small>Прибыль за месяц</small><b>${fm(A.monthProf)}</b></span>
+      <span><small>Пришло на счёт</small><b>${fm(A.paidIn)}</b></span>
+      <span><small>Потрачено на вход</small><b>${fm(A.spent)}</b></span>
+      <span><small>Меню</small><b>${A.menu === 'local' ? 'местное' : 'своё'}</b></span>
+    </div>`;
+    s += `<p class="hint" style="margin:0">Партнёр берёт 51 % прибыли страны, но вход дешевле и быстрее. Свой директор — вся прибыль ваша, вход дороже и дольше. Курс валюты пересчитывается раз в квартал.</p>`;
+    s += `<div class="sec"><h3>Страны</h3><div class="hd-countries">`;
+    for (const c of A.countries) {
+      const name = esc(c.name), city = esc(c.city);
+      if (c.open) {
+        s += `<article class="hd-country open"><div class="hd-ctryh"><b>${name}</b><small>${city}</small></div>
+          <div class="hd-crow"><span>Точек</span><b>${c.stores} из ${c.max}</b></div>
+          <div class="hd-crow"><span>Курс</span><b>×${c.rate.toFixed(2).replace('.', ',')}</b></div>
+          <div class="hd-crow"><span>Выручка за всё</span><b>${fm(c.rev)}</b></div>
+          <div class="hd-crow"><span>Прибыль за всё</span><b class="${c.prof < 0 ? 'negc' : ''}">${fm(c.prof)}</b></div>
+          <div class="hd-crow"><span>Вход</span><b>${c.mode === 'local' ? 'с партнёром' : 'свой директор'}</b></div></article>`;
+      } else if (c.job) {
+        s += `<article class="hd-country job"><div class="hd-ctryh"><b>${name}</b><small>${city}</small></div><p class="hd-job">Вход идёт — открытие ${E().fmtDate(c.job.until)}</p></article>`;
+      } else {
+        s += `<article class="hd-country"><div class="hd-ctryh"><b>${name}</b><small>${city}</small></div>
+          <p class="hint" style="margin:0">Вход в страну: ${c.daysLocal}–${c.daysOwn} дн.</p>
+          <button class="btn sm block" data-act="holdEnter" data-arg="${c.id}:local">С партнёром · ${fm(c.entryLocal)}</button>
+          <button class="btn sm block" data-act="holdEnter" data-arg="${c.id}:own">Свой директор · ${fm(c.entryOwn)}</button></article>`;
+      }
+    }
+    s += `</div></div>`;
+    if (A.deval) s += `<p class="hint" style="margin:0">Курс падал ${A.deval} раз. После падения выручка в рублях ниже, пока курс не выправится.</p>`;
+    if (A.goalDay) s += `<p class="hint" style="margin:0">Цель взята ${E().fmtDate(A.goalDay)}: ${A.open} страны и ${fm(inf.cap)} за 12 месяцев.</p>`;
+    s += `</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+    return s;
+  }
   function infoHtml(S) {
     const inf = HD().info(S); if (!inf) return '';
     if (!inf.path) return chooseHtml(S);
     const P = inf.ipo, D = DATA();
+    if (inf.abroad) return abroadHtml(S, inf);
     if (!P) return `<div class="modal-h"><span class="eyebrow">Третий акт</span><h2>Без холдинга</h2></div><div class="modal-b"><p style="margin:0">Вы решили не строить холдинг. История закончится как обычно.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
     const capV = inf.cap, goal = inf.goal, pub = P.stage === 'public';
     let s = `<div class="modal-h"><span class="eyebrow pos">Третий акт · Холдинг</span><h2>Выход на биржу</h2></div><div class="modal-b hd-m">`;
@@ -158,6 +198,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     else if (inf.ipo) {
       const P = inf.ipo, st = (STAGES.find((x) => x[0] === P.stage) || [])[1] || '';
       s += `<div class="hd-mini"><span>Выход на биржу · <b>${esc(st)}</b></span><span>${P.stage === 'public' ? 'капитализация' : 'оценка'} <b>${bn(inf.cap)}</b> из ${bn(inf.goal)}</span></div>${BK.UIH ? BK.UIH.goalBar(inf.cap / inf.goal) : ''}`;
+    } else if (inf.abroad) {
+      const A = inf.abroad;
+      s += `<div class="hd-mini"><span>За рубеж · <b>${A.open} из ${BK.CFG.HOLDING.ABROAD.GOAL_COUNTRIES} стран</b></span><span>оборот <b>${bn(A.rev12)}</b> из ${bn(A.goal)}</span></div>${BK.UIH ? BK.UIH.goalBar(A.rev12 / A.goal) : ''}`;
     }
     return s + '</div>';
   }
@@ -169,6 +212,23 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec hd-sum"><h3>Холдинг <small>третий акт</small></h3>`;
     if (!H.path) s += '<p class="hint" style="margin:0">Третий акт открылся, путь не выбран.</p>';
     else if (H.path === 'none') s += '<p class="hint" style="margin:0">Вы отказались от холдинга — история закончилась как обычно.</p>';
+    else if (H.abroad) {
+      const A = H.abroad, k = BK.CFG.HOLDING.ABROAD;
+      const open = (k.COUNTRIES || []).filter((d) => A.c[d.id] && A.c[d.id].open);
+      const rev12 = HD().abInfo(S).rev12;
+      s += `<div class="kpis sumk">
+        <div class="kpi"><span class="k">Путь</span><span class="v">За рубеж</span></div>
+        <div class="kpi"><span class="k">Стран</span><span class="v">${open.length} из ${k.GOAL_COUNTRIES}</span></div>
+        <div class="kpi"><span class="k">Оборот за 12 мес.</span><span class="v">${bn(rev12)}</span></div>
+        <div class="kpi"><span class="k">Пришло на счёт</span><span class="v">${fm(A.paidIn)}</span></div>
+        <div class="kpi"><span class="k">Курсовых падений</span><span class="v">${A.deval}</span></div>
+        <div class="kpi"><span class="k">Меню</span><span class="v">${A.menu === 'local' ? 'местное' : 'своё'}</span></div></div>`;
+      s += `<p class="hint" style="margin:0">${open.map((d) => esc(d.name) + ' — ' + (A.c[d.id].stores) + ' точек').join(' · ')}.${A.goalDay ? ` Цель «${bn(k.GOAL_REV)}» взята ${E().fmtDate(A.goalDay)}.` : ''}</p>`;
+      if (H.ending === 'abroad') {
+        const e = (BK.STORY && BK.STORY.endings || {}).abroad || {};
+        s += `<div class="sh-end hd-epi"><b>${esc(e.name || 'Хлеб без границ')}</b><span>${esc(sub(S, e.text || ''))}</span></div>`;
+      }
+    }
     else if (H.ipo) {
       const P = H.ipo, capV = HD().cap(P);
       s += `<div class="kpis sumk">
@@ -206,10 +266,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n.phase === 'unlock') { if (BK.Sound) BK.Sound.play('fanfare'); return () => openChoose(); }
     if (n.phase === 'scene') return () => { if (!openScene()) APP().refresh(); };
     if (n.phase === 'ending') return () => { if (APP().ACT.rewindLost) APP().ACT.rewindLost(); };
-    if (n.phase === 'listed') { toastEl(n.book === 'fail' ? 'warn' : 'good', 'Акции на бирже', `Привлекли ${fm(n.raised)}`, `Капитализация ${bn(n.cap)}.`); if (BK.Sound) BK.Sound.play('fanfare'); }
+    if (n.phase === 'enter') { toastEl('good', 'За рубеж', 'Вход в ' + n.name, `Открытие через ${n.days} дн.`); if (S && inHold()) openInfo('keep'); return null; }
+    if (n.phase === 'country') { toastEl('good', 'Своя страна', n.name, `${n.stores} точки, стран в сети: ${n.count}`); if (BK.Sound) BK.Sound.play('fanfare'); }
+    else if (n.phase === 'deval') { toastEl('warn', 'Курс упал', n.name, `Выручка в рублях ×${String(n.rate.toFixed(2)).replace('.', ',')}.`); }
+    else if (n.phase === 'listed') { toastEl(n.book === 'fail' ? 'warn' : 'good', 'Акции на бирже', `Привлекли ${fm(n.raised)}`, `Капитализация ${bn(n.cap)}.`); if (BK.Sound) BK.Sound.play('fanfare'); }
     else if (n.phase === 'quarter') { const w = n.res === 'beat' ? 'Обещание выполнено' : n.res === 'inline' ? 'Чуть ниже обещанного' : 'Промах'; toastEl(n.res === 'miss' ? 'warn' : 'good', `Отчёт за ${n.qn}-й квартал`, w, `Выручка ${fm(n.rev)} при ожидании ${fm(n.exp)}.${n.scandal ? ' Всплыла история с договорами — акции упали.' : ''}`); if (BK.Sound) BK.Sound.play(n.res === 'miss' ? 'warn' : 'coin'); }
     else if (n.phase === 'prep') toastEl('good', 'Холдинг', n.what === 'audit' ? 'Аудит готов' : 'Совет директоров собран', `Уровень ${n.lvl}.`);
-    else if (n.phase === 'goal') toastEl('good', 'Холдинг', 'Сто миллиардов', `Капитализация ${bn(n.cap)}.`);
+    else if (n.phase === 'goal') toastEl('good', 'Холдинг', n.abroad ? 'Хлеб без границ' : 'Сто миллиардов', n.abroad ? `Оборот за рубежом ${bn(n.rev12)} за 12 месяцев.` : `Капитализация ${bn(n.cap)}.`);
     if (S && inHold()) openInfo('keep');
     return null;
   }
@@ -240,6 +303,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       holdRoadshow: () => { const S = APP().state; const r = HD().startRoadshow(S); APP().save(); if (!r.ok) { after(r); return; } APP().refresh(); if (!openScene()) openInfo('keep'); },
       holdGuide: (d) => after(HD().setGuide(APP().state, d.arg)),
       holdDiv: (d) => after(HD().setDiv(APP().state, +d.arg)),
+      holdEnter: (d) => { const [id, mode] = String(d.arg || '').split(':'); after(HD().abEnter(APP().state, id, mode)); },
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);

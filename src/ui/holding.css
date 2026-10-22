@@ -77,3 +77,16 @@
   .hd-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hd-seg .btn { flex: 1 1 100%; }
 }
+
+/* Путь «За рубеж»: карточки стран */
+.hd-countries { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
+.hd-country { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+.hd-country.open { border-color: var(--pos, #3f8f5a); }
+.hd-country.job { opacity: .85; }
+.hd-ctryh { display: flex; flex-direction: column; }
+.hd-ctryh b { font-size: 15px; }
+.hd-ctryh small { color: var(--ink-3); }
+.hd-crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.hd-crow span { color: var(--ink-3); }
+.hd-country .btn { margin-top: 2px; }
+@media (max-width: 700px) { .hd-countries { grid-template-columns: 1fr; } }
