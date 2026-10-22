@@ -1,0 +1,51 @@
+{
+  "city": "sterlitamak",
+  "version": "0.9.24",
+  "before": [
+    {
+      "seed": 7919,
+      "won": 23,
+      "wSt": 31,
+      "lost": null,
+      "city": "sterlitamak"
+    },
+    {
+      "seed": 15838,
+      "won": 20.8,
+      "wSt": 31,
+      "lost": null,
+      "city": "sterlitamak"
+    },
+    {
+      "seed": 23757,
+      "won": null,
+      "wSt": null,
+      "lost": null,
+      "city": "sterlitamak"
+    }
+  ],
+  "after": [
+    {
+      "seed": 7919,
+      "won": 23.5,
+      "wSt": 33,
+      "lost": null,
+      "city": "sterlitamak"
+    },
+    {
+      "seed": 15838,
+      "won": 23,
+      "wSt": 35,
+      "lost": null,
+      "city": "sterlitamak"
+    },
+    {
+      "seed": 23757,
+      "won": 23.7,
+      "wSt": 30,
+      "lost": null,
+      "city": "sterlitamak"
+    }
+  ],
+  "note": "до карты — генератор mapGen 1; после — подробная схема mapGen 2 с калибровкой трафика +8 % (CITIES.sterlitamak не менялся). 3 сида × 24 года, бот good."
+}
