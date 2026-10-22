@@ -28,7 +28,7 @@ const commands = [
   ['qa/russia.js'], ['qa/tutorial.js'], ['qa/growth.js'], ['qa/managers.js'],
   ['qa/rewind.js'], ['qa/trainers.js'], ['qa/delivery.js'], ['qa/pixel.js'],
   ['qa/lively.js'], ['qa/collateral.js'], ['qa/investors.js'],
-  ['sim/holding.js'], ['sim/holding-abroad.js'], ['qa/holding.js'], ['qa/abroad.js'], ['qa/citygrowth.js'],
+  ['sim/holding.js'], ['sim/holding-abroad.js'], ['sim/holding-franchise.js'], ['qa/holding.js'], ['qa/abroad.js'], ['qa/franchise.js'], ['qa/citygrowth.js'],
   ['qa/story.js'],
   ['qa/strategy.js'], ['qa/music.js'], ['qa/s4-sound.js'], ['qa/prologue.js'],
   ['qa/stage1.js'], ['qa/scen-ui.js'], ['qa/map-cache.js'], ['qa/render-purity.js'],

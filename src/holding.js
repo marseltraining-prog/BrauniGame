@@ -26,7 +26,7 @@
    ===================================================================== */
 var BK = globalThis.BK || (globalThis.BK = {});
 (function () {
-  const E = () => BK.Engine, K = () => BK.CFG.HOLDING, KI = () => BK.CFG.HOLDING.IPO, KA = () => BK.CFG.HOLDING.ABROAD, D = () => BK.HOLDING_DATA || {};
+  const E = () => BK.Engine, K = () => BK.CFG.HOLDING, KI = () => BK.CFG.HOLDING.IPO, KA = () => BK.CFG.HOLDING.ABROAD, KF = () => BK.CFG.HOLDING.FRANCHISE, D = () => BK.HOLDING_DATA || {};
   const I = () => (BK.Engine && BK.Engine._int) || {};
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const fm = (v) => (BK.fmtMoney ? BK.fmtMoney(v) : Math.round(v) + ' ₽');
@@ -39,7 +39,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return {
       v: 1, unlockDay: S.day, path: null, pathDay: null,
       rng: (((S.seed | 0) ^ 0x7a11d) | 0) || 7,
-      f: {}, seen: {}, queue: [], pending: null, log: [], ending: null, endDay: null, ipo: null, abroad: null,
+      f: {}, seen: {}, queue: [], pending: null, log: [], ending: null, endDay: null, ipo: null, abroad: null, franchise: null,
     };
   }
   function ipoDefaults() {
@@ -49,6 +49,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
       shares: KI().SHARES, own: 1, price: 0, ipoPrice: 0, raised: 0, fee: 0, listDay: null,
       mood: 1, guide: 'mid', div: 0, trust: 0, hist: [], q: [], beats: 0, inline: 0, misses: 0, scandals: 0,
       peakCap: 0, goalDay: null, divPaid: 0, spent: 0,
+    };
+  }
+  function franchiseDefaults() {
+    return {
+      stage: 'build', points: 0, cities: 0, brand: KF().BRAND0, standards: KF().STAND0, fee: KF().FEE,
+      hist: [], paidIn: 0, spent: 0, checks: 0, scandals: 0, goalDay: null, oleg: false, recipe: 'own', apps: 0, lastMonth: 0,
     };
   }
   function abroadDefaults() {
@@ -66,6 +72,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     for (const k of Object.keys(d)) if (H[k] == null || typeof H[k] !== 'object') H[k] = d[k];
     if (H.pending === undefined) H.pending = null;
     if (H.ipo) { const id = ipoDefaults(); for (const k of Object.keys(id)) if (H.ipo[k] === undefined) H.ipo[k] = id[k]; }
+    if (H.franchise) { const id = franchiseDefaults(); for (const k of Object.keys(id)) if (H.franchise[k] === undefined) H.franchise[k] = id[k]; }
     if (H.abroad) {
       const id = abroadDefaults();
       for (const k of Object.keys(id)) if (H.abroad[k] === undefined) H.abroad[k] = id[k];
@@ -122,6 +129,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     flushQueue(S, H);
     if (H.path === 'ipo' && H.ipo) ipoDay(S, H);
     if (H.path === 'abroad' && H.abroad) abroadDay(S, H);
+    if (H.path === 'franchise' && H.franchise) franchiseDay(S, H);
   }
   function choose(S, path) {
     const H = state(S); if (!H) return { ok: false, msg: 'Третий акт ещё не открыт' };
@@ -132,11 +140,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
     H.path = path; H.pathDay = S.day;
     if (path === 'ipo') H.ipo = ipoDefaults();
     if (path === 'abroad') H.abroad = abroadDefaults();
+    if (path === 'franchise') H.franchise = franchiseDefaults();
     const p = (D().paths || {})[path] || {};
     pushLog(S, H, 'h_path', 'Третий акт: ' + (p.name || path), p.goal || '');
     log(S, `Третий акт: выбран путь «${p.name || path}». Цель — ${(p.goal || '').toLowerCase()}.`, 'good');
     if (path === 'ipo') startScene(S, 'h_ipo1');
     if (path === 'abroad') startScene(S, 'h_ab1');
+    if (path === 'franchise') startScene(S, 'h_fr1');
     return { ok: true };
   }
   // Пока путь не выбран или идёт — финал сюжета ждёт (концовку даст путь). Отказ — история идёт как обычно.
@@ -230,6 +240,13 @@ var BK = globalThis.BK || (globalThis.BK = {});
         }
         return;
       case 'abStores': if (H.abroad && H.abroad.c[fx.id]) H.abroad.c[fx.id].stores = Math.max(0, H.abroad.c[fx.id].stores + fx.add); return;
+      case 'frBrand': if (H.franchise) H.franchise.brand = cl(H.franchise.brand + fx.add, 0.3, 1.6); return;
+      case 'frStand': if (H.franchise) H.franchise.standards = cl(H.franchise.standards + fx.add, 0.3, 1.6); return;
+      case 'frPoints': if (H.franchise) H.franchise.points = Math.max(0, Math.round(H.franchise.points * (fx.k || 1) + (fx.add || 0))); return;
+      case 'frSpend': spend(S, fx.v * pl(S), 'hold'); if (H.franchise) H.franchise.spent += fx.v * pl(S); return;
+      case 'frOleg': if (H.franchise) H.franchise.oleg = true; return;
+      case 'frRecipe': if (H.franchise) H.franchise.recipe = fx.v; return;
+      case 'frCash': S.cash += fx.v * pl(S); if (H.franchise) H.franchise.paidIn += fx.v * pl(S); return;
       default:
     }
   }
@@ -524,6 +541,70 @@ var BK = globalThis.BK || (globalThis.BK = {});
     return { countries, open: open.length, rev12: abRev12(A), monthRev: last.rev, monthProf: last.prof, goal: k.GOAL_REV, goalDay: A.goalDay, spent: A.spent, paidIn: A.paidIn, menu: A.menu, gulya: A.gulya, deval: A.deval, defaultMode: A.defaultMode };
   }
 
+  /* ---------------- путь «Франшиза-империя» ---------------- */
+  function frP(S) { const H = state(S); return H && H.path === 'franchise' ? H.franchise : null; }
+  function frInfo(S) {
+    const F = frP(S); if (!F) return null;
+    const k = KF(), plr = pl(S);
+    return {
+      points: F.points, cities: F.cities, brand: F.brand, standards: F.standards, goal: k.GOAL_POINTS, goalDay: F.goalDay,
+      fee: Math.round(k.FEE * plr), royalty: Math.round(k.ROYALTY * plr), monthRoyalty: Math.round(F.points * k.ROYALTY * plr),
+      brandK: F.brand, standK: F.standards, spent: F.spent, paidIn: F.paidIn, checks: F.checks, scandals: F.scandals,
+      oleg: F.oleg, recipe: F.recipe, hist: F.hist,
+      costs: { checks: Math.round(k.CHECKS.cost * plr), ads: Math.round(k.ADS.cost * plr), school: Math.round(k.SCHOOL.cost * plr) },
+    };
+  }
+  function frBuy(S, kind) {
+    const F = frP(S), k = KF(); if (!F) return { ok: false, msg: 'Путь не выбран' };
+    const c = k[String(kind).toUpperCase()]; if (!c) return { ok: false, msg: 'Нет такого действия' };
+    const cost = Math.round(c.cost * pl(S));
+    if (S.cash < cost) return { ok: false, msg: `Нужно ${fm(cost)} на счёте` };
+    spend(S, cost, 'hold'); F.spent += cost;
+    if (kind === 'checks') { F.standards = cl(F.standards + k.CHECKS.stand, 0.3, 1.6); F.checks++; log(S, `Холдинг: проверки франчайзи — стандарты ${F.standards.toFixed(2).replace('.', ',')}.`, 'good'); }
+    else if (kind === 'ads') F.brand = cl(F.brand + k.ADS.brand, 0.3, 1.6);
+    else if (kind === 'school') F.standards = cl(F.standards + k.SCHOOL.stand, 0.3, 1.6);
+    else return { ok: false };
+    log(S, `Холдинг: «${kind === 'ads' ? 'реклама бренда' : kind === 'school' ? 'университет для франчайзи' : 'проверки'}» — ${fm(cost)}.`, 'info');
+    note(S, { phase: 'fran', what: kind });
+    return { ok: true, cost };
+  }
+  function franchiseDay(S, H) {
+    const F = H.franchise, k = KF(); if (!F) return;
+    if (E().dateOf(S.day).d !== 1) return;
+    const dt = E().dateOf(S.day);
+    F.brand = cl(F.brand - k.BRAND_DECAY, 0.3, 1.6);
+    F.standards = cl(F.standards - k.STAND_DECAY, 0.3, 1.6);
+    const demand = Math.max(0, (k.BASE_GROWTH + F.points / k.POINTS_K) * F.brand * F.standards * (1 + gauss(H) * 0.08));
+    const open = Math.min(k.MAX_OPEN, Math.round(demand));
+    const fee = open * k.FEE * pl(S), roy = F.points * k.ROYALTY * pl(S);
+    F.points += open; F.cities = Math.ceil(F.points / k.CITY_POINTS);
+    F.apps = open; F.lastMonth = S.day;
+    S.cash += fee + roy; F.paidIn += fee + roy;
+    F.hist.push({ day: S.day, points: F.points, open, fee: Math.round(fee), roy: Math.round(roy) });
+    while (F.hist.length > 36) F.hist.shift();
+    log(S, `Холдинг: франшиза — ${F.points} точек в ${F.cities} городах. За месяц открылось ${open}, взносы ${fm(fee)}, роялти ${fm(roy)}.`, open ? 'good' : 'info');
+    if (F.standards < k.SCANDAL_BELOW && rnd(H) < (k.SCANDAL_BELOW - F.standards) * k.SCANDAL_K) {
+      const lost = Math.round(F.points * k.SCANDAL_PTS);
+      F.points = Math.max(0, F.points - lost); F.cities = Math.ceil(F.points / k.CITY_POINTS);
+      F.brand = cl(F.brand - k.SCANDAL_BRAND, 0.3, 1.6); F.scandals++;
+      log(S, `Холдинг: скандал с франчайзи — «на муке экономят». Закрылось ${lost} точек, бренд просел.`, 'bad');
+      pushLog(S, H, 'h_fr_scandal', 'Скандал с франчайзи', `−${lost} точек, бренд ${F.brand.toFixed(2).replace('.', ',')}`);
+      note(S, { phase: 'fran', what: 'scandal', lost });
+    }
+    if (!H.seen.h_fr2 && F.points >= 60) startScene(S, 'h_fr2');
+    if (!H.seen.h_fr3 && F.points >= 250) startScene(S, 'h_fr3');
+    if (!H.seen.h_fr4 && F.points >= 380 && !F.oleg) startScene(S, 'h_fr4');
+    if (!H.seen.h_fr5 && F.points >= 650) startScene(S, 'h_fr5');
+    if (!F.goalDay && F.points >= k.GOAL_POINTS) {
+      F.goalDay = S.day; F.stage = 'done';
+      log(S, `Холдинг: тысяча точек под брендом — цель пути взята.`, 'good');
+      pushLog(S, H, 'h_fr_goal', 'Тысячная вывеска', `${F.points} точек, ${F.cities} городов`);
+      note(S, { phase: 'goal', franchise: true, points: F.points, cities: F.cities });
+      startScene(S, 'h_fr6');
+    }
+    if (dt.m === 0) pushLog(S, H, 'h_fr_year', 'Франшиза за год', `${F.points} точек, ${F.cities} городов`);
+  }
+
   /* ---------------- данные для интерфейса ---------------- */
   function info(S) {
     const H = state(S); if (!H) return null;
@@ -534,6 +615,8 @@ var BK = globalThis.BK || (globalThis.BK = {});
       out.goal = KA().GOAL_REV;
       out.cap = out.abroad.rev12;
     }
+    const F = frP(S);
+    if (F) { out.franchise = frInfo(S); out.goal = KF().GOAL_POINTS; out.cap = F.points; }
     if (P) {
       out.ipo = P;
       out.cap = P.stage === 'public' || P.stage === 'done' ? cap(P) : v.fair * KI().PRIVATE_K * P.mood;
@@ -565,6 +648,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     const out = [];
     if (H.pending) { const sc = sceneById(H.pending.id); out.push({ lvl: 'warn', ic: 'alert', t: `Холдинг ждёт решения: «${sc ? sc.title : 'сцена'}»`, d: 'Сцена третьего акта. Игра на паузе, пока не решите.', b: { act: 'holdScene', label: 'Решить', primary: true } }); }
     if (!H.path) out.push({ lvl: 'info', ic: 'alert', t: 'Третий акт: выберите путь холдинга', d: 'Биржа, за рубеж или франшиза-империя. Финал истории ждёт вашего выбора.', b: { act: 'holdChoose', label: 'Выбрать', primary: true } });
+    const Fr = frP(S);
+    if (Fr) {
+      const fi = frInfo(S);
+      if (fi.standards < 0.8) out.push({ lvl: 'warn', ic: 'alert', t: 'Франшиза: стандарты низкие', d: `Стандарты ${fi.standards.toFixed(2).replace('.', ',')} — риск скандала. Проверки или университет.`, b: { act: 'hold', label: 'Франшиза' } });
+      if (!fi.goalDay) out.push({ lvl: 'info', ic: 'store', t: `Франшиза: ${fi.points} из ${fi.goal} точек`, d: `${fi.cities} городов, роялти ${fm(fi.monthRoyalty)} в месяц.`, b: { act: 'hold', label: 'Франшиза' } });
+    }
     const A = abP(S);
     if (A) {
       const ai = abInfo(S);
@@ -598,7 +687,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   BK.Holding = {
     state, unlocked, day, choose, holdsFinale, startScene, pendingScene, resolve, canChoose, sceneById, sceneView,
     valuation, figures, info, listBlocks, buyAudit, buyBoard, setFloat, startRoadshow, setGuide, setDiv, nextQuarter,
-    abInfo, abEnter, abP,
+    abInfo, abEnter, abP, frInfo, frBuy, frP,
     attItems, endWith, PATHS, cap,
   };
 })();

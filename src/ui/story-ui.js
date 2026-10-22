@@ -19,7 +19,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const LET = 'АБВГДЕЖЗИК';
   // Финалы-победы (src/data/story.js: endings) — их встречает победная тема; «Пустой зал», «Сделка»,
   // «Жизнь в найме» и банкротство остаются тяжёлыми, как раньше (для них — тема тяжёлых заставок).
-  const WIN_END = { empire: 1, city: 1, twocrusts: 1, ipo: 1, abroad: 1 };
+  const WIN_END = { empire: 1, city: 1, twocrusts: 1, ipo: 1, abroad: 1, franchise: 1 };
 
   /* ---------- подстановки в текстах сцен: {name}, {street}, {n}, {city}, {inCity}, {district},
      {mentor}, {rival}, {rivalChain}, {bank}, {colleague}, {banker}, {inspector}, {chronicler}, {shop}…

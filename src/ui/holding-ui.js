@@ -95,6 +95,35 @@ var BK = globalThis.BK || (globalThis.BK = {});
       ${lvl ? `<span class="hd-have">Есть: ${list.slice(0, lvl).map((x) => esc(x.name)).join(', ')}</span>` : ''}
       <div class="row">${act}</div></div>`;
   }
+  function franchiseHtml(S, inf) {
+    const F = inf.franchise, k = BK.CFG.HOLDING.FRANCHISE;
+    const goalK = Math.min(1, F.points / F.goal);
+    let s = `<div class="modal-h"><span class="eyebrow pos">Третий акт · Холдинг</span><h2>Франшиза-империя</h2></div><div class="modal-b hd-m">`;
+    s += `<div class="hd-goalbox"><div class="hd-gl"><span>Точек под вашим именем</span><b>${F.points}</b><small>цель — ${F.goal} точек в городах России (сейчас ${F.cities})</small></div>${BK.UIH ? BK.UIH.goalBar(goalK) : ''}</div>`;
+    s += `<div class="inv-nums big">
+      <span><small>Точек</small><b>${F.points}</b></span>
+      <span><small>Городов</small><b>${F.cities}</b></span>
+      <span><small>Бренд</small><b>×${F.brand.toFixed(2).replace('.', ',')}</b></span>
+      <span><small>Стандарты</small><b class="${F.standards < 0.8 ? 'negc' : ''}">×${F.standards.toFixed(2).replace('.', ',')}</b></span>
+      <span><small>Роялти в месяц</small><b>${fm(F.monthRoyalty)}</b></span>
+      <span><small>Пришло на счёт</small><b>${fm(F.paidIn)}</b></span>
+      <span><small>Потрачено</small><b>${fm(F.spent)}</b></span>
+      <span><small>Скандалов</small><b class="${F.scandals ? 'negc' : ''}">${F.scandals}</b></span>
+    </div>`;
+    s += `<p class="hint" style="margin:0">Паушальный взнос — ${fm(F.fee)} за точку, роялти — ${fm(F.royalty)} в месяц. Заявки зависят от бренда и стандартов. Ниже 0,72 стандартов начинаются скандалы: точки закрываются, бренд падает.</p>`;
+    s += `<div class="sec"><h3>Держать марку</h3><div class="hd-seg">
+      <button class="btn sm" data-act="holdChecks"${S.cash < F.costs.checks ? ' disabled' : ''}>Проверки · ${fm(F.costs.checks)}</button>
+      <button class="btn sm" data-act="holdAds"${S.cash < F.costs.ads ? ' disabled' : ''}>Реклама бренда · ${fm(F.costs.ads)}</button>
+      <button class="btn sm" data-act="holdSchool"${S.cash < F.costs.school ? ' disabled' : ''}>Университет · ${fm(F.costs.school)}</button>
+    </div><p class="hint" style="margin:0">Проверки и университет поднимают стандарты, реклама — бренд. Каждый месяц и то и другое немного проседает само.</p></div>`;
+    if (F.hist.length) {
+      const last = F.hist.slice(-8).reverse();
+      s += `<div class="sec"><h3>Последние месяцы</h3><div class="hd-qwrap"><table class="tbl hd-q"><thead><tr><th>Месяц</th><th>Точек</th><th>Открылось</th><th>Взносы</th><th>Роялти</th></tr></thead><tbody>${last.map((h) => `<tr><td>${E().fmtDate(h.day)}</td><td>${h.points}</td><td>${h.open}</td><td>${fm(h.fee)}</td><td>${fm(h.roy)}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }
+    if (F.goalDay) s += `<p class="hint" style="margin:0">Цель взята ${E().fmtDate(F.goalDay)}: ${F.points} точек в ${F.cities} городах.</p>`;
+    s += `</div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
+    return s;
+  }
   function abroadHtml(S, inf) {
     const A = inf.abroad, k = BK.CFG.HOLDING.ABROAD, D = DATA();
     const goalK = Math.min(1, inf.cap / A.goal);
@@ -139,6 +168,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (!inf.path) return chooseHtml(S);
     const P = inf.ipo, D = DATA();
     if (inf.abroad) return abroadHtml(S, inf);
+    if (inf.franchise) return franchiseHtml(S, inf);
     if (!P) return `<div class="modal-h"><span class="eyebrow">Третий акт</span><h2>Без холдинга</h2></div><div class="modal-b"><p style="margin:0">Вы решили не строить холдинг. История закончится как обычно.</p></div><div class="modal-f"><button class="btn primary block" data-act="closeModal">Закрыть</button></div>`;
     const capV = inf.cap, goal = inf.goal, pub = P.stage === 'public';
     let s = `<div class="modal-h"><span class="eyebrow pos">Третий акт · Холдинг</span><h2>Выход на биржу</h2></div><div class="modal-b hd-m">`;
@@ -201,6 +231,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
     } else if (inf.abroad) {
       const A = inf.abroad;
       s += `<div class="hd-mini"><span>За рубеж · <b>${A.open} из ${BK.CFG.HOLDING.ABROAD.GOAL_COUNTRIES} стран</b></span><span>оборот <b>${bn(A.rev12)}</b> из ${bn(A.goal)}</span></div>${BK.UIH ? BK.UIH.goalBar(A.rev12 / A.goal) : ''}`;
+    } else if (inf.franchise) {
+      const F = inf.franchise;
+      s += `<div class="hd-mini"><span>Франшиза · <b>${F.points} из ${F.goal} точек</b></span><span>роялти <b>${fm(F.monthRoyalty)}</b> в месяц</span></div>${BK.UIH ? BK.UIH.goalBar(F.points / F.goal) : ''}`;
     }
     return s + '</div>';
   }
@@ -212,6 +245,21 @@ var BK = globalThis.BK || (globalThis.BK = {});
     let s = `<div class="sec hd-sum"><h3>Холдинг <small>третий акт</small></h3>`;
     if (!H.path) s += '<p class="hint" style="margin:0">Третий акт открылся, путь не выбран.</p>';
     else if (H.path === 'none') s += '<p class="hint" style="margin:0">Вы отказались от холдинга — история закончилась как обычно.</p>';
+    else if (H.franchise) {
+      const F = H.franchise, k = BK.CFG.HOLDING.FRANCHISE;
+      s += `<div class="kpis sumk">
+        <div class="kpi"><span class="k">Путь</span><span class="v">Франшиза</span></div>
+        <div class="kpi"><span class="k">Точек</span><span class="v">${F.points}</span></div>
+        <div class="kpi"><span class="k">Городов</span><span class="v">${F.cities}</span></div>
+        <div class="kpi"><span class="k">Пришло на счёт</span><span class="v">${fm(F.paidIn)}</span></div>
+        <div class="kpi"><span class="k">Стандарты</span><span class="v">${F.standards.toFixed(2).replace('.', ',')}</span></div>
+        <div class="kpi"><span class="k">Скандалов</span><span class="v">${F.scandals}</span></div></div>`;
+      s += `<p class="hint" style="margin:0">Бренд ${F.brand.toFixed(2).replace('.', ',')}, рецепт закваски — ${F.recipe === 'sold' ? 'продан франчайзи' : 'только у своих'}.${F.goalDay ? ` Цель «${k.GOAL_POINTS} точек» взята ${E().fmtDate(F.goalDay)}.` : ''}</p>`;
+      if (H.ending === 'franchise') {
+        const e = (BK.STORY && BK.STORY.endings || {}).franchise || {};
+        s += `<div class="sh-end hd-epi"><b>${esc(e.name || 'Имя на вывеске')}</b><span>${esc(sub(S, e.text || ''))}</span></div>`;
+      }
+    }
     else if (H.abroad) {
       const A = H.abroad, k = BK.CFG.HOLDING.ABROAD;
       const open = (k.COUNTRIES || []).filter((d) => A.c[d.id] && A.c[d.id].open);
@@ -266,13 +314,18 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (n.phase === 'unlock') { if (BK.Sound) BK.Sound.play('fanfare'); return () => openChoose(); }
     if (n.phase === 'scene') return () => { if (!openScene()) APP().refresh(); };
     if (n.phase === 'ending') return () => { if (APP().ACT.rewindLost) APP().ACT.rewindLost(); };
+    if (n.phase === 'fran') {
+      if (n.what === 'scandal') toastEl('warn', 'Скандал с франчайзи', `Закрылось ${n.lost} точек`, 'Бренд просел. Пора проверять стандарты.');
+      else if (n.what) toastEl('good', 'Франшиза', n.what === 'ads' ? 'Реклама бренда' : n.what === 'school' ? 'Университет для франчайзи' : 'Проверки', 'Марка стала крепче.');
+      if (S && inHold()) openInfo('keep'); return null;
+    }
     if (n.phase === 'enter') { toastEl('good', 'За рубеж', 'Вход в ' + n.name, `Открытие через ${n.days} дн.`); if (S && inHold()) openInfo('keep'); return null; }
     if (n.phase === 'country') { toastEl('good', 'Своя страна', n.name, `${n.stores} точки, стран в сети: ${n.count}`); if (BK.Sound) BK.Sound.play('fanfare'); }
     else if (n.phase === 'deval') { toastEl('warn', 'Курс упал', n.name, `Выручка в рублях ×${String(n.rate.toFixed(2)).replace('.', ',')}.`); }
     else if (n.phase === 'listed') { toastEl(n.book === 'fail' ? 'warn' : 'good', 'Акции на бирже', `Привлекли ${fm(n.raised)}`, `Капитализация ${bn(n.cap)}.`); if (BK.Sound) BK.Sound.play('fanfare'); }
     else if (n.phase === 'quarter') { const w = n.res === 'beat' ? 'Обещание выполнено' : n.res === 'inline' ? 'Чуть ниже обещанного' : 'Промах'; toastEl(n.res === 'miss' ? 'warn' : 'good', `Отчёт за ${n.qn}-й квартал`, w, `Выручка ${fm(n.rev)} при ожидании ${fm(n.exp)}.${n.scandal ? ' Всплыла история с договорами — акции упали.' : ''}`); if (BK.Sound) BK.Sound.play(n.res === 'miss' ? 'warn' : 'coin'); }
     else if (n.phase === 'prep') toastEl('good', 'Холдинг', n.what === 'audit' ? 'Аудит готов' : 'Совет директоров собран', `Уровень ${n.lvl}.`);
-    else if (n.phase === 'goal') toastEl('good', 'Холдинг', n.abroad ? 'Хлеб без границ' : 'Сто миллиардов', n.abroad ? `Оборот за рубежом ${bn(n.rev12)} за 12 месяцев.` : `Капитализация ${bn(n.cap)}.`);
+    else if (n.phase === 'goal') toastEl('good', 'Холдинг', n.franchise ? 'Имя на вывеске' : n.abroad ? 'Хлеб без границ' : 'Сто миллиардов', n.franchise ? `${n.points} точек в ${n.cities} городах.` : n.abroad ? `Оборот за рубежом ${bn(n.rev12)} за 12 месяцев.` : `Капитализация ${bn(n.cap)}.`);
     if (S && inHold()) openInfo('keep');
     return null;
   }
@@ -304,6 +357,9 @@ var BK = globalThis.BK || (globalThis.BK = {});
       holdGuide: (d) => after(HD().setGuide(APP().state, d.arg)),
       holdDiv: (d) => after(HD().setDiv(APP().state, +d.arg)),
       holdEnter: (d) => { const [id, mode] = String(d.arg || '').split(':'); after(HD().abEnter(APP().state, id, mode)); },
+      holdChecks: () => after(HD().frBuy(APP().state, 'checks')),
+      holdAds: () => after(HD().frBuy(APP().state, 'ads')),
+      holdSchool: () => after(HD().frBuy(APP().state, 'school')),
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot)); else setTimeout(boot);

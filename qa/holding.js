@@ -92,8 +92,8 @@ async function run(b, vp, theme, save, full) {
     const m = document.querySelector('#modal .modal');
     return { cards: m.querySelectorAll('.hd-card').length, soon: m.querySelectorAll('.hd-card.soon').length, picks: m.querySelectorAll('[data-act="holdPick"]').length, txt: m.innerText, days: BK.App.state.holding ? BK.App.state.holding.unlockDay - BK.App.state.wonDay : null };
   });
-  if (ch.cards !== 3 || ch.soon !== 1 || ch.picks !== 2) issues.push(`[${tag}] окно выбора: ${JSON.stringify({ cards: ch.cards, soon: ch.soon, picks: ch.picks })}`);
-  for (const need of ['Выход на биржу', 'За рубеж', 'Франшиза-империя', 'скоро', 'Решить позже']) if (!ch.txt.toLowerCase().includes(need.toLowerCase())) issues.push(`[${tag}] в окне выбора нет «${need}»`);
+  if (ch.cards !== 3 || ch.soon !== 0 || ch.picks !== 3) issues.push(`[${tag}] окно выбора: ${JSON.stringify({ cards: ch.cards, soon: ch.soon, picks: ch.picks })}`);
+  for (const need of ['Выход на биржу', 'За рубеж', 'Франшиза-империя', 'Решить позже']) if (!ch.txt.toLowerCase().includes(need.toLowerCase())) issues.push(`[${tag}] в окне выбора нет «${need}»`);
   notes.push(`${tag}: третий акт открылся через ${ch.days} дн. после победы`);
   await shot(p, `${tag}-1-choose`);
   issues.push(...await layoutCheck(p, `${tag} выбор пути`, { mobile }), ...await textProblems(p, `${tag} выбор пути`));

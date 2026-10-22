@@ -89,11 +89,15 @@ tickN(S, CFG.HOLDING.UNLOCK_DELAY + 2);
 const H = HD.state(S);
 check(!!H && H.unlockDay - W.wonDay >= CFG.HOLDING.UNLOCK_DELAY, `третий акт открылся через ${H ? H.unlockDay - W.wonDay : '—'} дн. после победы`);
 check(HD.holdsFinale(S), 'путь не выбран — финал сюжета ждёт');
-check(!HD.choose(S, 'franchise').ok, '«Франшиза-империя» пока не выбрать («скоро»)');
 {
   const SA = clone(S), HA = HD.state(SA);
   check(HD.choose(SA, 'abroad').ok && HA.path === 'abroad' && !!HA.abroad, 'путь «За рубеж» выбирается');
   check((HA.pending && HA.pending.id === 'h_ab1') || HA.queue.some((q) => q.id === 'h_ab1'), 'сцена «Ташкентский партнёр» ждёт');
+}
+{
+  const SF = clone(S), HF = HD.state(SF);
+  check(HD.choose(SF, 'franchise').ok && HF.path === 'franchise' && !!HF.franchise, 'путь «Франшиза-империя» выбирается');
+  check((HF.pending && HF.pending.id === 'h_fr1') || HF.queue.some((q) => q.id === 'h_fr1'), 'сцена «Первый чужой» ждёт');
 }
 check(HD.choose(S, 'ipo').ok && H.path === 'ipo' && ((H.pending && H.pending.id === 'h_ipo1') || H.queue.some((q) => q.id === 'h_ipo1')), 'выбран путь «Биржа» — сцена «Витрина для всей страны»');
 for (let i = 0; i < 30 && !H.pending; i++) tickN(S, 1);   // сцена ждёт, пока закроется событие дня
