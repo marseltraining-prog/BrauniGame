@@ -152,7 +152,7 @@ open dist/local.html     # поиграть
 **Шаг 1. Выпуск 0.9.21 — сделан 21.10.2026.**
 Ветки влиты, версия поднята, `node build.js --min` собран, полный `tools/check-release.js` прогнан.
 Итог и отчёт — `docs/releases/0.9.21.md` и `docs/releases/0.9.21-checks.json`; HANDOFF, PLAN и CLAUDE.md обновлены.
-Осталось по §8: GitHub Release и файл на рабочем столе (делается на Mac владельца).
+Файл на рабочем столе и страницы GitHub Release 0.9.16–0.9.27 — сделаны 23.10.2026.
 
 **Шаг 2. Холдинг, фазы 2 и 3** (замысел — `docs/holding-design.md`):
 - «За рубеж» — **сделано в 0.9.22**;
@@ -186,7 +186,7 @@ open dist/local.html     # поиграть
 
 ## 8. Как выпускать версию
 
-- На Mac: GitHub Release с тегом `v0.9.xx`, приложить `dist/khlebnaya-karta-<версия>.html`.
+- GitHub Release с тегом `v0.9.xx`, приложить `dist/khlebnaya-karta-<версия>.html`. **Сделано 23.10.2026:** страницы 0.9.16–0.9.27 созданы, у каждой вложен полный HTML; 0.9.27 — Latest.
 - `node tools/gh-desc.js` — описание репозитория на GitHub.
 - `node tools/update-desktop.js` — обновить файл `~/Desktop/Хлебная карта.html` (прямое поручение владельца). Проверить, что SHA совпадает.
 - Раньше Claude выкладывал сжатую сборку на claude.ai (Artifact). Тебе это недоступно, поэтому отдай владельцу файл `dist/khlebnaya-karta-<версия>.html`: он открывается в любом браузере, в том числе на телефоне.
