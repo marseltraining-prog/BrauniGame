@@ -1,0 +1,198 @@
+{
+  "version": "0.9.27",
+  "note": "до карты — генератор mapGen 1; после — подробная схема mapGen 2; CITIES.* не менялись. 3 сида × 24 года, бот good.",
+  "cities": {
+    "tyumen": {
+      "before": [
+        {
+          "seed": 7919,
+          "won": 12.8,
+          "wSt": 41,
+          "lost": null,
+          "city": "tyumen"
+        },
+        {
+          "seed": 15838,
+          "won": 13.2,
+          "wSt": 42,
+          "lost": null,
+          "city": "tyumen"
+        },
+        {
+          "seed": 23757,
+          "won": 15.5,
+          "wSt": 42,
+          "lost": null,
+          "city": "tyumen"
+        }
+      ],
+      "after": [
+        {
+          "seed": 7919,
+          "won": 13.1,
+          "wSt": 44,
+          "lost": null,
+          "city": "tyumen"
+        },
+        {
+          "seed": 15838,
+          "won": 11.3,
+          "wSt": 46,
+          "lost": null,
+          "city": "tyumen"
+        },
+        {
+          "seed": 23757,
+          "won": 12.2,
+          "wSt": 42,
+          "lost": null,
+          "city": "tyumen"
+        }
+      ]
+    },
+    "voronezh": {
+      "before": [
+        {
+          "seed": 7919,
+          "won": 18.3,
+          "wSt": 44,
+          "lost": null,
+          "city": "voronezh"
+        },
+        {
+          "seed": 15838,
+          "won": 16.8,
+          "wSt": 41,
+          "lost": null,
+          "city": "voronezh"
+        },
+        {
+          "seed": 23757,
+          "won": 18.5,
+          "wSt": 42,
+          "lost": null,
+          "city": "voronezh"
+        }
+      ],
+      "after": [
+        {
+          "seed": 7919,
+          "won": 16.3,
+          "wSt": 42,
+          "lost": null,
+          "city": "voronezh"
+        },
+        {
+          "seed": 15838,
+          "won": 17.6,
+          "wSt": 39,
+          "lost": null,
+          "city": "voronezh"
+        },
+        {
+          "seed": 23757,
+          "won": 18.4,
+          "wSt": 38,
+          "lost": null,
+          "city": "voronezh"
+        }
+      ]
+    },
+    "krasnodar": {
+      "before": [
+        {
+          "seed": 7919,
+          "won": 13.8,
+          "wSt": 46,
+          "lost": null,
+          "city": "krasnodar"
+        },
+        {
+          "seed": 15838,
+          "won": 14,
+          "wSt": 41,
+          "lost": null,
+          "city": "krasnodar"
+        },
+        {
+          "seed": 23757,
+          "won": 15.1,
+          "wSt": 41,
+          "lost": null,
+          "city": "krasnodar"
+        }
+      ],
+      "after": [
+        {
+          "seed": 7919,
+          "won": 13.3,
+          "wSt": 46,
+          "lost": null,
+          "city": "krasnodar"
+        },
+        {
+          "seed": 15838,
+          "won": 15.2,
+          "wSt": 43,
+          "lost": null,
+          "city": "krasnodar"
+        },
+        {
+          "seed": 23757,
+          "won": 17.3,
+          "wSt": 43,
+          "lost": null,
+          "city": "krasnodar"
+        }
+      ]
+    },
+    "sochi": {
+      "before": [
+        {
+          "seed": 7919,
+          "won": 15.3,
+          "wSt": 37,
+          "lost": null,
+          "city": "sochi"
+        },
+        {
+          "seed": 15838,
+          "won": 15.2,
+          "wSt": 36,
+          "lost": null,
+          "city": "sochi"
+        },
+        {
+          "seed": 23757,
+          "won": 14.6,
+          "wSt": 38,
+          "lost": null,
+          "city": "sochi"
+        }
+      ],
+      "after": [
+        {
+          "seed": 7919,
+          "won": 13.9,
+          "wSt": 37,
+          "lost": null,
+          "city": "sochi"
+        },
+        {
+          "seed": 15838,
+          "won": 15.3,
+          "wSt": 38,
+          "lost": null,
+          "city": "sochi"
+        },
+        {
+          "seed": 23757,
+          "won": 18.8,
+          "wSt": 35,
+          "lost": null,
+          "city": "sochi"
+        }
+      ]
+    }
+  }
+}
