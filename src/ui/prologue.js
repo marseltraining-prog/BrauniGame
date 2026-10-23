@@ -122,15 +122,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
 
   /* ---------------- стартовый экран: «Как начать» ---------------- */
-  function pref() { try { return localStorage.getItem(PREF) === 'prologue' ? 'prologue' : 'net'; } catch (e) { return 'net'; } }
+  function pref() { try { const v = localStorage.getItem(PREF); return v === 'prologue' || v === 'coffee' || v === 'russia' || v === 'holding' ? v : 'net'; } catch (e) { return 'net'; } }
   function startOpt() {
     const v = pref();
     const opt = (k, ic, t, d) => `<label class="pro-pk${v === k ? ' on' : ''}"><input type="radio" name="startmode" value="${k}"${v === k ? ' checked' : ''}><span class="pk-i" aria-hidden="true">${ic}</span><span class="pk-t"><b>${t}</b><small>${d}</small></span></label>`;
-    return `<fieldset class="pro-pick"><legend>Как начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', SW('15–30 мин · вы за стойкой у Рашида и копите на свою точку'))}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}</div></fieldset>`;
+    return `<fieldset class="pro-pick"><legend>С чего начать</legend><div class="pro-picks">${opt('prologue', '☕', 'Пролог «Бариста»', SW('15–30 мин · вы за стойкой у Рашида и копите на свою точку'))}${opt('net', '🥐', 'Сразу своя сеть', 'Стартовый капитал и первая точка — как раньше')}${opt('coffee', '🏪', 'Сразу кофейня', 'Одна точка без пролога · сами выбираете место и часы')}${opt('russia', '🏙', 'Сразу Россия', 'Готовая сеть первого акта · 46 точек · можно входить в города')}${opt('holding', '📈', 'Сразу холдинг', 'Сеть выросла · выбор пути: биржа, за рубеж, франшиза')}</div></fieldset>`;
   }
   function bindStart(el) {
     const btn = () => el.querySelector('#startForm button[type=submit]');
-    const upd = () => { const v = picked(); el.querySelectorAll('.pro-pk').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)); const b = btn(); if (b) b.textContent = v === 'prologue' ? 'Начать пролог' : 'Новая игра'; };
+    const upd = () => { const v = picked(); el.querySelectorAll('.pro-pk').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)); const b = btn(); if (b) b.textContent = v === 'prologue' ? 'Начать пролог' : v === 'coffee' ? 'Начать с кофейни' : v === 'russia' ? 'Начать в России' : v === 'holding' ? 'Начать в холдинге' : 'Новая игра'; };
     el.querySelectorAll('input[name=startmode]').forEach((r) => r.addEventListener('change', () => { try { localStorage.setItem(PREF, picked()); } catch (e) {} upd(); }));
     upd();
   }

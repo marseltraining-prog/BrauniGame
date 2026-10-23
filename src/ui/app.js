@@ -305,7 +305,15 @@ var BK = globalThis.BK || (globalThis.BK = {});
       if (BK.StratEvents) { BK.StratEvents.attach(); BK.StratEvents.attachAch(); }
     } catch (e) { /* данные стратегий не должны ломать игру */ }
   }
-  function startNew(name, difficulty, opts) { if (BK.PrologueUI && BK.PrologueUI.picked() === 'prologue') BK.PrologueUI.begin(name, difficulty, opts); else newGame(name, difficulty, opts); }
+  function startNew(name, difficulty, opts) {
+    const mode = BK.PrologueUI ? BK.PrologueUI.picked() : 'net';
+    if ((mode === 'coffee' || mode === 'russia' || mode === 'holding') && BK.StartActs) {
+      const r = BK.StartActs.begin(mode, { app: BK.App, companyName: name, difficulty, heroName: opts && opts.heroName, heroG: opts && opts.heroG });
+      if (!r.ok) toast(r.msg || 'Не удалось начать');
+      return;
+    }
+    if (mode === 'prologue') BK.PrologueUI.begin(name, difficulty, opts); else newGame(name, difficulty, opts);
+  }
   function newGame(name, difficulty, opts) {
     if (BK.PrologueUI) BK.PrologueUI.close();
     if (BK.Stage1UI) BK.Stage1UI.close();
