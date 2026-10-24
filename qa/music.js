@@ -195,7 +195,7 @@ const mus = (p) => p.evaluate(() => window.__mus());
   const info = await p.evaluate(() => ({ game: BK.Sound.musicInfo('game'), prologue: BK.Sound.musicInfo('prologue') }));
   ok(info.game.bpm >= 84 && info.game.bpm <= 96 && info.prologue.bpm >= 84 && info.prologue.bpm <= 96,
     'неспешный темп у обеих тем (84–96 BPM)', info.game.bpm + ' / ' + info.prologue.bpm);
-  ok(info.prologue.leadAvg > info.game.leadAvg, 'мелодия пролога выше по регистру', info.game.leadAvg + ' → ' + info.prologue.leadAvg);
+  ok(info.prologue.leadAvg < info.game.leadAvg, 'мелодия пролога ниже — не свистит', info.game.leadAvg + ' → ' + info.prologue.leadAvg);
   ok(info.prologue.key !== info.game.key, 'у пролога своя тональность (не «та же петля на тон выше»)', info.game.key + ' / ' + info.prologue.key);
   await p.evaluate(() => BK.PrologueUI.begin('Тест', 'normal', {}));
   await p.waitForTimeout(4000);

@@ -299,7 +299,7 @@ function pageTools() {
       ok(t.loopSec >= 40 && t.loopSec <= 70, name + ': петля 40–70 с', t.loopSec + ' с');
       ok(t.bars >= 16, name + ': фраза не короче 16 тактов', t.bars + ' тактов по ' + t.beats + '/4');
     });
-    ok(info.prologue.leadAvg > info.game.leadAvg + 4, 'в прологе регистр выше (мелодия выше на ' + num(info.prologue.leadAvg - info.game.leadAvg, 1) + ' полутона)', num(info.game.leadAvg, 1) + ' → ' + num(info.prologue.leadAvg, 1));
+    ok(info.prologue.leadAvg < info.game.leadAvg, 'в прологе мелодия ниже — не свистит (на ' + num(info.game.leadAvg - info.prologue.leadAvg, 1) + ' полутона)', num(info.game.leadAvg, 1) + ' → ' + num(info.prologue.leadAvg, 1));
     ok(info.prologue.gain < info.game.gain, 'пролог тише игры', info.prologue.gain + ' < ' + info.game.gain);
     ok(info.prologue.cut < info.game.cut, 'в прологе тембр мягче (срез фильтра ниже)', info.prologue.cut + ' < ' + info.game.cut);
     ok(json(info.prologue) !== json(info.game), 'пролог — своя тема, а не та же петля');

@@ -469,19 +469,19 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const MUS_THEMES = {
     game: {
       mood: 'game', key: 'фа мажор', bpm: 96, beats: 4, steps: 8, gain: MUS.GAIN, cut: MUS.CUT.game,
-      lev: { lead: 0.32, bass: 0.24, arp: 0.055, tick: 0.028, pad: 0.045 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
+      lev: { lead: 0.23, bass: 0.25, arp: 0.05, tick: 0.024, pad: 0.06 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
     },
     prologue: {
-      mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: 2350,
-      lev: { lead: 0.30, bass: 0.20, arp: 0.045, tick: 0, pad: 0.035 }, leadType: 'triangle', arpType: 'sine',
+      mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: 1750, trans: -12,
+      lev: { lead: 0.17, bass: 0.23, arp: 0.04, tick: 0, pad: 0.055 }, leadType: 'triangle', arpType: 'sine',
     },
     russia: {
       mood: 'russia', key: 'фа мажор', bpm: 100, beats: 4, steps: 8, gain: MUS.GAIN, cut: 3800,
-      lev: { lead: 0.32, bass: 0.24, arp: 0.05, tick: 0.022, pad: 0.05 }, leadType: 'triangle', arpType: 'sine', sub: 0.22,
+      lev: { lead: 0.24, bass: 0.25, arp: 0.045, tick: 0.02, pad: 0.06 }, leadType: 'triangle', arpType: 'sine', sub: 0.22,
     },
     holding: {
       mood: 'holding', key: 'фа мажор', bpm: 84, beats: 4, steps: 8, gain: MUS.GAIN * 0.85, cut: 2900,
-      lev: { lead: 0.28, bass: 0.20, arp: 0, tick: 0, pad: 0.05 }, leadType: 'triangle', arpType: 'sine',
+      lev: { lead: 0.20, bass: 0.22, arp: 0, tick: 0, pad: 0.065 }, leadType: 'triangle', arpType: 'sine',
     },
     // Победа — разовая тема-момент (`once`): тот же движок, но позиция не зацикливается, а в конце
     // музыка сама возвращается к прежней теме (musSched → musMood). Громче и ярче фона, потому что
@@ -489,12 +489,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     victory: {
       mood: 'victory', key: 'ре мажор', bpm: 140, beats: 4, steps: 8, once: true,
       gain: MUS.GAIN * MUS.WIN_K, cut: MUS.CUT.victory,
-      lev: { lead: 0.36, bass: 0.24, arp: 0.05, tick: 0.04, pad: 0.045 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
+      lev: { lead: 0.27, bass: 0.25, arp: 0.045, tick: 0.035, pad: 0.055 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
     },
     sad: {
       mood: 'sad', key: 'ре минор', bpm: 63, beats: 3, steps: 6, gain: MUS.GAIN * MUS.SAD_K, cut: MUS.CUT.sad,
       // перкуссии нет вовсе (tick: 0): в тяжёлом моменте «тик» звучал бы как метроном
-      lev: { lead: 0.28, bass: 0.20, arp: 0.03, tick: 0, pad: 0.035 }, leadType: 'triangle', arpType: 'sine', sub: 0.16,
+      lev: { lead: 0.20, bass: 0.22, arp: 0.025, tick: 0, pad: 0.05 }, leadType: 'triangle', arpType: 'sine', sub: 0.16,
     },
   };
   Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
@@ -549,7 +549,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (st === 0 && lev.pad) for (const note of ch) musNote(c, nd.bus, { f: midi(note), t, d: sd * steps * 0.96, type: 'sine', vol: lev.pad, att: 0.18, rel: 0.5 });
     if (m) for (let i = 0; i < m.length; i++) {
       if (m[i][0] !== st) continue;
-      const f = midi(m[i][1]), d = sd * m[i][2] * 0.96;
+      const f = midi(m[i][1] + (th.trans || 0)), d = sd * m[i][2] * 0.96;
       musNote(c, nd.bus, { f, t, d, type: th.leadType || 'square', vol: lev.lead });
       // тёплый «корпус»: тихая синусоида в унисон, чтобы треугольник не звучал одиноко
       if (th.sub) musNote(c, nd.bus, { f, t, d, type: 'sine', vol: lev.lead * th.sub, att: 0.03, rel: 0.12 });
@@ -741,7 +741,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function musInfo(m) {
     const th = theme(MUS_THEMES[m] ? m : mus.mood);
     let sum = 0, n = 0, lo = 127, hi = 0;
-    th.mel.forEach((bar) => bar.forEach((v) => { sum += v[1]; n++; if (v[1] < lo) lo = v[1]; if (v[1] > hi) hi = v[1]; }));
+    th.mel.forEach((bar) => bar.forEach((v) => { const x = v[1] + (th.trans || 0); sum += x; n++; if (x < lo) lo = x; if (x > hi) hi = x; }));
     return { mood: th.mood, key: th.key, bpm: th.bpm, beats: th.beats, steps: th.steps, bars: th.bars,
       loopSec: +loopSec(th).toFixed(1), cut: th.cut, gain: +th.gain.toFixed(4), once: !!th.once,
       leadAvg: n ? +(sum / n).toFixed(1) : 0, leadLo: lo, leadHi: hi, leadNotes: n };
