@@ -339,6 +339,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     ui.tab = 'dash'; ui.sel = null; ui.storeId = null; ui.speed = 1; ui.modalQueue = []; cityView();
     openSeen = null; // живость: не считать уже открытые точки «только что открывшимися»
     hideStart(); closeModal(); map.reset(S); renderAll(); save();
+    if (BK.Analytics) BK.Analytics.goal('play_start'); // статистика: новая партия
   }
   function continueGame(st, raw) {
     // raw — состояние из снимка «Переиграть» (та же версия, без миграции)
@@ -427,7 +428,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
       else if (n.type === 'event') { toast(n.ev.title, n.ev.text, n.ev.kind === 'pos' ? 'pos' : 'neg', n.ev.effectsText); if (BK.Sound) BK.Sound.play(n.ev.kind === 'pos' ? 'coin' : 'warn'); }
       else if (n.type === 'month') { save(); if (BK.LivelyUI) BK.LivelyUI.monthFx(n.profit); }
       else if (n.type === 'year') ui.modalQueue.push(() => openYearModal(n));
-      else if (n.type === 'won') { if (BK.Sound) { BK.Sound.play('fanfare'); BK.Sound.music('victory'); } ui.modalQueue.unshift(() => openWinModal()); } // победа: фанфара + победная тема-момент (сама вернёт обычную музыку)
+      else if (n.type === 'won') { if (BK.Analytics) BK.Analytics.goal('win'); if (BK.Sound) { BK.Sound.play('fanfare'); BK.Sound.music('victory'); } ui.modalQueue.unshift(() => openWinModal()); } // победа: фанфара + победная тема-момент (сама вернёт обычную музыку)
       else if (n.type === 'lost') { if (BK.Sound) BK.Sound.play('bad'); ui.modalQueue.unshift(() => openLostModal()); }
       else if (n.type === 'ach' && BK.Extras) BK.Extras.achToast(n);
       else if (n.type === 'mile' && BK.LivelyUI) BK.LivelyUI.mileNotify(n);

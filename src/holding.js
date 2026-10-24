@@ -147,6 +147,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     if (path === 'ipo') startScene(S, 'h_ipo1');
     if (path === 'abroad') startScene(S, 'h_ab1');
     if (path === 'franchise') startScene(S, 'h_fr1');
+    if (BK.Analytics) BK.Analytics.goal('holding_' + path); // статистика: выбран путь
     return { ok: true };
   }
   // Пока путь не выбран или идёт — финал сюжета ждёт (концовку даст путь). Отказ — история идёт как обычно.

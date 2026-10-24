@@ -942,6 +942,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     I.log(S, `Вход ${cityIn(id, S)}: регистрация, разрешения и стартовый маркетинг — ${BK.fmtMoney(cost)}. ${sm ? 'Выберите первую точку.' + supTxt : 'Выберите помещение под цех.'}`, 'good');
     switchCity(S, id);
     const pc = cr.cities[id].perk; if (pc && pc.prodRent) for (const o of S.prodOffers) o.rentM2 = Math.round(o.rentM2 * pc.prodRent); // цех в индустриальном парке за полцены
+    if (BK.Analytics) BK.Analytics.goal('act_russia'); // статистика: первый вход в Россию
     return { ok: true, cost, supply: sm };
   }
   // шаг запуска нового города: 'prod' — нужен цех, 'store' — первая точка, null — город работает

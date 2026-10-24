@@ -643,6 +643,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
     R.log.push({ day: S.day, id: 'end_' + id, title: 'Финал: ' + (e.name || id), choice: '', chapter: chapter || 'final', fx: ['ending'] });
     if (S.notify) S.notify.push({ type: 'story', phase: 'ending', id, name: e.name, text: e.text });
     S.lost = true; S.storyEnding = id;   // игра останавливается, итоги показывают концовку
+    if (BK.Analytics) BK.Analytics.goal('ending_' + id); // статистика: какая концовка
     return `концовка «${e.name || id}»`;
   }
   function hero(id) { return (D().heroes || {})[id] || { name: id }; }
