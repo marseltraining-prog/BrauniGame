@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Проверка звука — Хлебная карта</title>
+<style>
+  :root { --paper:#f6efe3; --ink:#2c2721; --muted:#7b6f60; --crust:#b5653c; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:radial-gradient(900px 500px at 20% 0%,#fdf8ee,var(--paper)); color:var(--ink); font:16px/1.55 "Golos Text","Segoe UI",system-ui,sans-serif; padding:24px; }
+  main { width:min(560px,100%); background:#fffaf2; border:1px solid #e3d6c2; border-radius:20px; padding:24px; box-shadow:0 14px 40px rgba(80,55,30,.08); }
+  h1 { font-size:26px; margin:0 0 8px; }
+  p { color:var(--muted); margin:0 0 14px; }
+  button { width:100%; border:0; border-radius:14px; padding:16px 18px; font:inherit; font-weight:600; color:#fff; background:var(--crust); }
+  button:active { transform:translateY(1px); }
+  #st { margin:16px 0 0; padding:12px 14px; border-radius:12px; background:#f3eadb; color:#5c5145; font-size:14px; white-space:pre-wrap; }
+  .back { display:inline-block; margin-top:14px; color:var(--crust); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Проверка звука</h1>
+  <p>Нажми кнопку. Должен прозвучать короткий тёплый аккорд. Если его нет — проблема в телефоне/браузере, а не в игре.</p>
+  <button id="go">Проверить звук</button>
+  <div id="st">Ещё не проверяли.</div>
+  <a class="back" href="./">← вернуться в игру</a>
+</main>
+<script>
+const st = document.getElementById('st');
+document.getElementById('go').addEventListener('click', async () => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) { st.textContent = 'Web Audio не поддерживается этим браузером.'; return; }
+  let c;
+  try { c = new AC(); } catch (e) { st.textContent = 'Не удалось создать AudioContext: ' + e.message; return; }
+  try { await c.resume(); } catch (e) {}
+  const now = c.currentTime;
+  const master = c.createGain(); master.gain.setValueAtTime(0.0001, now); master.gain.exponentialRampToValueAtTime(0.32, now + 0.03); master.gain.exponentialRampToValueAtTime(0.0001, now + 1.8); master.connect(c.destination);
+  [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = i === 3 ? 'sine' : 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.22, now + 0.04 + i * 0.03); g.gain.exponentialRampToValueAtTime(0.0001, now + 1.7);
+    o.connect(g); g.connect(master); o.start(now); o.stop(now + 1.9);
+  });
+  st.textContent = 'Контекст: ' + c.state + '\nЕсли аккорда нет — проверь боковой переключатель «Без звука» на iPhone и громкость.';
+});
+</script>
+</body>
+</html>
