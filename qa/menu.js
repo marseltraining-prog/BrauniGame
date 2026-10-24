@@ -129,6 +129,15 @@ async function screens(b, vp, theme, sv) {
     await p.evaluate(() => { BK.App.ACT.tab({ arg: 'dash' }); BK.App.ACT.tab({ arg: 'menu' }); }); await p.waitForTimeout(100);
     const src = await p.evaluate(() => (document.querySelector('#pbody .ms-src') || {}).textContent || '');
     if (!/среднее за [12] месяц/.test(src)) issues.push(`[${tag}] старое сохранение: после месяца подпись «${src}»`);
+    // город на автопилоте: честная подпись, что статистика продуктов замерла на дате упаковки
+    const packedSrc = await p.evaluate(() => {
+      const S = BK.App.state; if (!S.prodStats || !S.prodStats.c) return '';
+      S.prodStats.c.kazan = JSON.parse(JSON.stringify(S.prodStats.c.ufa || { hist: [] }));
+      S.corp = { active: 'kazan', cities: { kazan: { id: 'kazan', packed: { stores: [] } } } };
+      BK.App.ACT.tab({ arg: 'menu' });
+      return (document.querySelector('#pbody .ms-src') || {}).textContent || '';
+    });
+    if (!/автопилот/.test(packedSrc)) issues.push(`[${tag}] упакованный город: нет пометки «на автопилоте» («${packedSrc}»)`);
   }
   errors.push(...p.errs.map((e) => `[${tag}] ${e}`));
   await p.context().close();

@@ -13,11 +13,14 @@
   // сводка с кешем: панель перерисовывается часто, а история меняется раз в месяц
   let cache = { key: '', val: null };
   function sum(S) {
-    const cd = S.prodStats && S.prodStats.c ? S.prodStats.c[S.corp ? S.corp.active : 'ufa'] : null;
+    const active = S.corp ? S.corp.active : 'ufa';
+    const cd = S.prodStats && S.prodStats.c ? S.prodStats.c[active] : null;
+    const city = S.corp && S.corp.cities ? S.corp.cities[active] : null;
+    const frozen = !!(city && city.packed); // город на автопилоте: статистика продуктов замирает на дате упаковки
     const hasHist = !!(cd && cd.hist.length);
-    const key = [S.seed, S.corp ? S.corp.active : '', cd ? cd.hist.length + ':' + (cd.hist.length ? cd.hist[cd.hist.length - 1].y * 12 + cd.hist[cd.hist.length - 1].m : 0) : 0,
+    const key = [S.seed, active, frozen ? 'packed' : '', cd ? cd.hist.length + ':' + (cd.hist.length ? cd.hist[cd.hist.length - 1].y * 12 + cd.hist[cd.hist.length - 1].m : 0) : 0,
       S.menu.map((m) => m.id + m.pm).join(), Math.round(S.macro.priceLevel * 1e4), hasHist ? '' : S.stores.length + ':' + Math.floor(S.day / 7)].join('|');
-    if (cache.key !== key) cache = { key, val: PS().summary(S) };
+    if (cache.key !== key) { const val = PS().summary(S); if (frozen) val.frozen = true; cache = { key, val }; }
     return cache.val;
   }
 
@@ -43,8 +46,9 @@
   // подпись источника данных
   function source(s) {
     const city = s.city && s.city !== 'ufa' && BK.CITY ? ` · ${esc(BK.CITY.name || '')}` : '';
-    if (s.hasData) return `в месяц, среднее за ${H().nw(s.months, 'месяц', 'месяца', 'месяцев')}${city} · примерно: продажи сети поделены между продуктами по их спросу`; // аудит D2: по продуктам — оценка по модели, а не отдельный учёт
-    return `копим статистику — пока оценка по модели спроса${city}`;
+    const frozen = s.frozen ? ' · данные на момент перехода города на автопилот' : '';
+    if (s.hasData) return `в месяц, среднее за ${H().nw(s.months, 'месяц', 'месяца', 'месяцев')}${city}${frozen} · примерно: продажи сети поделены между продуктами по их спросу`; // аудит D2: по продуктам — оценка по модели, а не отдельный учёт
+    return `копим статистику — пока оценка по модели спроса${city}${frozen}`;
   }
 
   /* ---------- вкладка «Меню»: строка под продуктом ---------- */

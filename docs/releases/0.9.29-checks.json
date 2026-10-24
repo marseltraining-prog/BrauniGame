@@ -1,0 +1,2007 @@
+{
+  "version": "0.9.29",
+  "complete": true,
+  "results": [
+    {
+      "command": "node sim/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/01-nnov.log",
+      "lastLines": [
+        "НИЖНИЙ НОВГОРОД: 571 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 22,
+      "log": "tmp/release-checks/0.9.29/02-nnov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "НИЖНИЙ НОВГОРОД UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/nnov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 29,
+      "log": "tmp/release-checks/0.9.29/03-nnov.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "НИЖНИЙ НОВГОРОД UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/04-perm.log",
+      "lastLines": [
+        "ПЕРМЬ: 558 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 26,
+      "log": "tmp/release-checks/0.9.29/05-perm.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ПЕРМЬ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/perm.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 32,
+      "log": "tmp/release-checks/0.9.29/06-perm.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "ПЕРМЬ UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/07-rostov.log",
+      "lastLines": [
+        "РОСТОВ: 545 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.29/08-rostov.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "РОСТОВ UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/rostov.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 28,
+      "log": "tmp/release-checks/0.9.29/09-rostov.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "РОСТОВ UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/volgograd.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/10-volgograd.log",
+      "lastLines": [
+        "ВОЛГОГРАД: 554 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/volgograd.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.29/11-volgograd.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ВОЛГОГРАД UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/volgograd.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 28,
+      "log": "tmp/release-checks/0.9.29/12-volgograd.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "ВОЛГОГРАД UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/sterlitamak.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/13-sterlitamak.log",
+      "lastLines": [
+        "СТЕРЛИТАМАК: 300 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/sterlitamak.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.29/14-sterlitamak.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "СТЕРЛИТАМАК UI (chromium): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/sterlitamak.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 15,
+      "log": "tmp/release-checks/0.9.29/15-sterlitamak.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "СТЕРЛИТАМАК UI (webkit): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/chelny.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/16-chelny.log",
+      "lastLines": [
+        "НАБЕРЕЖНЫЕ ЧЕЛНЫ: 301 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/chelny.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.29/17-chelny.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "НАБЕРЕЖНЫЕ ЧЕЛНЫ UI (chromium): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/chelny.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 15,
+      "log": "tmp/release-checks/0.9.29/18-chelny.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "НАБЕРЕЖНЫЕ ЧЕЛНЫ UI (webkit): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/orenburg.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/19-orenburg.log",
+      "lastLines": [
+        "ОРЕНБУРГ: 281 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/orenburg.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 11,
+      "log": "tmp/release-checks/0.9.29/20-orenburg.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "ОРЕНБУРГ UI (chromium): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/orenburg.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 15,
+      "log": "tmp/release-checks/0.9.29/21-orenburg.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "ОРЕНБУРГ UI (webkit): 105 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/startacts.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/22-startacts.log",
+      "lastLines": [
+        "СТАРТ В РОССИИ/ХОЛДИНГЕ: 24 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/startacts.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 27,
+      "log": "tmp/release-checks/0.9.29/23-startacts.log",
+      "lastLines": [
+        "СТАРТ В РОССИИ/ХОЛДИНГЕ (chromium): 88 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/startacts.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 34,
+      "log": "tmp/release-checks/0.9.29/24-startacts.log",
+      "lastLines": [
+        "СТАРТ В РОССИИ/ХОЛДИНГЕ (webkit): 88 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/newcities.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/25-newcities.log",
+      "lastLines": [
+        "Тюмень: 1 реки, 6 мостов, 44 мест, 54 улиц",
+        "  Воронеж: 3 реки, 6 мостов, 40 мест, 54 улиц",
+        "  Краснодар: 3 реки, 15 мостов, 43 мест, 54 улиц",
+        "  Сочи: 5 реки, 15 мостов, 40 мест, 54 улиц",
+        "ЧЕТЫРЕ ГОРОДА: 970 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/citymap.js tyumen",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 13,
+      "log": "tmp/release-checks/0.9.29/26-citymap.log",
+      "lastLines": [
+        "chromium/tyumen/d1440/light",
+        "chromium/tyumen/d1440/dark",
+        "chromium/tyumen/m390/light",
+        "chromium/tyumen/m390/dark",
+        "Тюмень UI (chromium): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/citymap.js tyumen",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/27-citymap.log",
+      "lastLines": [
+        "webkit/tyumen/d1440/light",
+        "webkit/tyumen/d1440/dark",
+        "webkit/tyumen/m390/light",
+        "webkit/tyumen/m390/dark",
+        "Тюмень UI (webkit): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/citymap.js voronezh",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 13,
+      "log": "tmp/release-checks/0.9.29/28-citymap.log",
+      "lastLines": [
+        "chromium/voronezh/d1440/light",
+        "chromium/voronezh/d1440/dark",
+        "chromium/voronezh/m390/light",
+        "chromium/voronezh/m390/dark",
+        "Воронеж UI (chromium): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/citymap.js voronezh",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/29-citymap.log",
+      "lastLines": [
+        "webkit/voronezh/d1440/light",
+        "webkit/voronezh/d1440/dark",
+        "webkit/voronezh/m390/light",
+        "webkit/voronezh/m390/dark",
+        "Воронеж UI (webkit): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/citymap.js krasnodar",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 13,
+      "log": "tmp/release-checks/0.9.29/30-citymap.log",
+      "lastLines": [
+        "chromium/krasnodar/d1440/light",
+        "chromium/krasnodar/d1440/dark",
+        "chromium/krasnodar/m390/light",
+        "chromium/krasnodar/m390/dark",
+        "Краснодар UI (chromium): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/citymap.js krasnodar",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/31-citymap.log",
+      "lastLines": [
+        "webkit/krasnodar/d1440/light",
+        "webkit/krasnodar/d1440/dark",
+        "webkit/krasnodar/m390/light",
+        "webkit/krasnodar/m390/dark",
+        "Краснодар UI (webkit): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/citymap.js sochi",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 13,
+      "log": "tmp/release-checks/0.9.29/32-citymap.log",
+      "lastLines": [
+        "chromium/sochi/d1440/light",
+        "chromium/sochi/d1440/dark",
+        "chromium/sochi/m390/light",
+        "chromium/sochi/m390/dark",
+        "Сочи UI (chromium): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/citymap.js sochi",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 16,
+      "log": "tmp/release-checks/0.9.29/33-citymap.log",
+      "lastLines": [
+        "webkit/sochi/d1440/light",
+        "webkit/sochi/d1440/dark",
+        "webkit/sochi/m390/light",
+        "webkit/sochi/m390/dark",
+        "Сочи UI (webkit): 97 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/34-chelyabinsk.log",
+      "lastLines": [
+        "ЧЕЛЯБИНСК: 562 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 26,
+      "log": "tmp/release-checks/0.9.29/35-chelyabinsk.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "ЧЕЛЯБИНСК UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/chelyabinsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 31,
+      "log": "tmp/release-checks/0.9.29/36-chelyabinsk.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "ЧЕЛЯБИНСК UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/real-ufa.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/37-real-ufa.log",
+      "lastLines": [
+        "real-ufa: 77 проверок — OK"
+      ]
+    },
+    {
+      "command": "node qa/real-ufa.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 8,
+      "log": "tmp/release-checks/0.9.29/38-real-ufa.log",
+      "lastLines": [
+        "НАСТОЯЩАЯ УФА UI: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/city-portraits.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 1,
+      "log": "tmp/release-checks/0.9.29/39-city-portraits.log",
+      "lastLines": [
+        "Уфа: 183 из 183 картинок побайтно как в эталоне",
+        "kazan: 88 портретов отличаются от уфимских",
+        "moscow: 88 портретов отличаются от уфимских",
+        "nsk: 88 портретов отличаются от уфимских",
+        "контактный лист: qa/shots/city-portraits/contact-sheet.png",
+        "",
+        "OK: городские портреты в порядке"
+      ]
+    },
+    {
+      "command": "node sim/perf-big.js --make tmp/big1000.json 1000",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 6,
+      "log": "tmp/release-checks/0.9.29/40-perf-big.log",
+      "lastLines": [
+        "точек 1000 в 12 городах · сохранение 1357 КБ",
+        "месяц агрегата: медиана 9.31 мс · 1-е число целиком: 10.88 мс · обычный день: 0.78 мс",
+        "после прогрева (вторая половина из 8): месяц агрегата 9.31 мс · 1-е число целиком 10.88 мс"
+      ]
+    },
+    {
+      "command": "node qa/bigsave.js tmp/big1000.json",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 4,
+      "log": "tmp/release-checks/0.9.29/41-bigsave.log",
+      "lastLines": [
+        "{\"r1\":{\"len\":1389606,\"packed\":false},\"r2\":{\"saved\":true,\"packed\":true,\"kb\":229,\"freed\":523776},\"r3\":{\"stores\":50,\"broken\":false,\"company\":\"Пекарня «Каравай»\"},\"r4\":{\"day\":10951,\"cities\":12,\"packedStores\":950},\"r5\":{\"saved\":false,\"toasts\":1}}",
+        "БОЛЬШОЕ СОХРАНЕНИЕ: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node sim/samara.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/42-samara.log",
+      "lastLines": [
+        "САМАРА: 513 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/samara.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 26,
+      "log": "tmp/release-checks/0.9.29/43-samara.log",
+      "lastLines": [
+        "chromium/d1440/light",
+        "chromium/d1440/dark",
+        "chromium/m390/light",
+        "chromium/m390/dark",
+        "chromium/m360/light",
+        "chromium/m360/dark",
+        "САМАРА UI (chromium): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/samara.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 31,
+      "log": "tmp/release-checks/0.9.29/44-samara.log",
+      "lastLines": [
+        "webkit/d1440/light",
+        "webkit/d1440/dark",
+        "webkit/m390/light",
+        "webkit/m390/dark",
+        "webkit/m360/light",
+        "webkit/m360/dark",
+        "САМАРА UI (webkit): 212 проверок, 0 проблем; 0 наблюдений вёрстки"
+      ]
+    },
+    {
+      "command": "node sim/story.js --all-branches 1 22 --snapshots",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 465,
+      "log": "tmp/release-checks/0.9.29/45-story.log",
+      "lastLines": [
+        "  \"limitations\": [",
+        "    \"fixtures are assisted, not balance\",",
+        "    \"no global all-afterDeps claim: alternative scene gates are mutually exclusive\",",
+        "    \"not full economic effect/time/load coverage\",",
+        "    \"scenario initialization is a deferred coverage fixture\",",
+        "    \"profiles do not yet construct every rare premise\"",
+        "  ]",
+        "}"
+      ]
+    },
+    {
+      "command": "node sim/story-choice-guard.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/46-story-choice-guard.log",
+      "lastLines": [
+        "Story choice guard: 2128 checks passed"
+      ]
+    },
+    {
+      "command": "node sim/defer-open.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/47-defer-open.log",
+      "lastLines": [
+        "defer-open: 24 проверок — OK"
+      ]
+    },
+    {
+      "command": "node sim/story-queue.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/48-story-queue.log",
+      "lastLines": [
+        "Story queue: 111 assertions passed"
+      ]
+    },
+    {
+      "command": "node qa/story-branches.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 514,
+      "log": "tmp/release-checks/0.9.29/49-story-branches.log",
+      "lastLines": [
+        "chromium-d1440-light-f",
+        "chromium-d1440-dark-m",
+        "chromium-d1440-dark-f",
+        "chromium-m360-light-m",
+        "chromium-m360-light-f",
+        "chromium-m360-dark-m",
+        "chromium-m360-dark-f",
+        "12598 checks, 0 issues"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/story-branches.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 624,
+      "log": "tmp/release-checks/0.9.29/50-story-branches.log",
+      "lastLines": [
+        "webkit-d1440-light-f",
+        "webkit-d1440-dark-m",
+        "webkit-d1440-dark-f",
+        "webkit-m360-light-m",
+        "webkit-m360-light-f",
+        "webkit-m360-dark-m",
+        "webkit-m360-dark-f",
+        "12598 checks, 0 issues"
+      ]
+    },
+    {
+      "command": "node sim/story-depth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/51-story-depth.log",
+      "lastLines": [
+        "{",
+        "  \"ok\": true,",
+        "  \"checks\": 362,",
+        "  \"method\": \"real Story/Engine/Threads and renderer; no bot\",",
+        "  \"scope\": \"targeted integration; full branch coverage and browser QA still required\"",
+        "}"
+      ]
+    },
+    {
+      "command": "node qa/story-depth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 25,
+      "log": "tmp/release-checks/0.9.29/52-story-depth.log",
+      "lastLines": [
+        "chromium-m390-light-f",
+        "chromium-m390-dark-m",
+        "chromium-m390-dark-f",
+        "chromium-m360-light-m",
+        "chromium-m360-light-f",
+        "chromium-m360-dark-m",
+        "chromium-m360-dark-f",
+        "ГЛУБИНА UI chromium: 1546 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/story-depth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 40,
+      "log": "tmp/release-checks/0.9.29/53-story-depth.log",
+      "lastLines": [
+        "webkit-m390-light-f",
+        "webkit-m390-dark-m",
+        "webkit-m390-dark-f",
+        "webkit-m360-light-m",
+        "webkit-m360-light-f",
+        "webkit-m360-dark-m",
+        "webkit-m360-dark-f",
+        "ГЛУБИНА UI webkit: 1546 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/start-preview.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 18,
+      "log": "tmp/release-checks/0.9.29/54-start-preview.log",
+      "lastLines": [
+        "ПРЕДПРОСМОТР/ПОДСКАЗКИ chromium: 680 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/start-preview.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 26,
+      "log": "tmp/release-checks/0.9.29/55-start-preview.log",
+      "lastLines": [
+        "ПРЕДПРОСМОТР/ПОДСКАЗКИ webkit: 680 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/nsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/56-nsk.log",
+      "lastLines": [
+        "НОВОСИБИРСК: 485 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/nsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/57-nsk.log",
+      "lastLines": [
+        "НОВОСИБИРСК UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/nsk.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/58-nsk.log",
+      "lastLines": [
+        "НОВОСИБИРСК UI (webkit): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/ekb.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/59-ekb.log",
+      "lastLines": [
+        "ЕКАТЕРИНБУРГ: 484 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/ekb.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 10,
+      "log": "tmp/release-checks/0.9.29/60-ekb.log",
+      "lastLines": [
+        "ЕКАТЕРИНБУРГ UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/ekb.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/61-ekb.log",
+      "lastLines": [
+        "ЕКАТЕРИНБУРГ UI (webkit): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/kazan.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/62-kazan.log",
+      "lastLines": [
+        "КАЗАНЬ: 443 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node qa/kazan.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/63-kazan.log",
+      "lastLines": [
+        "КАЗАНЬ UI (chromium): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/kazan.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/64-kazan.log",
+      "lastLines": [
+        "КАЗАНЬ UI (webkit): 62 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/city-coefficients.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/65-city-coefficients.log",
+      "lastLines": [
+        "✓ Москва публикует коэффициенты из CITIES — 1.8/3/1.7",
+        "✓ одинаковый район получает московский inc — 775,1150 против 430,640",
+        "✓ одинаковый район получает московский rent — 7800,13800 против 2600,4600",
+        "✓ первый акт применяет московский wage к обеим профессиям — 93500/115600",
+        "✓ второй акт восстанавливает базовый рынок без двойного wage — 55000/68000",
+        "✓ домашний ключ второго акта сохраняет экономику стартового города",
+        "✓ агрегированная модель использует тот же московский wage, что первый акт",
+        "✓ city coefficients: ok"
+      ]
+    },
+    {
+      "command": "node qa/start-city.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 9,
+      "log": "tmp/release-checks/0.9.29/66-start-city.log",
+      "lastLines": [
+        "ГОРОД СТАРТА (chromium): 51 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "BR=webkit node qa/start-city.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/67-start-city.log",
+      "lastLines": [
+        "ГОРОД СТАРТА (webkit): 51 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/start-city.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/68-start-city.log",
+      "lastLines": [
+        "СВОЯ КОФЕЙНЯ: 133 проверок, 0 проблем"
+      ]
+    },
+    {
+      "command": "node sim/start-city-corp.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/69-start-city-corp.log",
+      "lastLines": [
+        "start-city-corp: 533 проверок, все пройдены"
+      ]
+    },
+    {
+      "command": "node sim/pro2-hooks.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/70-pro2-hooks.log",
+      "lastLines": [
+        "✓ сборка (v2 → пролог), как build.js: вызовов 10, не хватает 0",
+        "✓ симуляторы (пролог → v2), как sim/load.js: вызовов 10, не хватает 0",
+        "✓ дилеммы: вариантов проверено 42 (18 дилемм), исключений 0",
+        "✓ ход времени: разобрано карточек 12, ошибок нет (лента 18, летопись 10, нити 1)",
+        "✓ надёжность: странных вызовов 150, исключений 0; границы ок, деньги ок, длины ок, нить ок",
+        "",
+        "Все функции BK.Prologue.* из src/data/prolog-v2.js на месте в обоих порядках загрузки, дилеммы играются."
+      ]
+    },
+    {
+      "command": "node qa/smoke.js qa/shots",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 38,
+      "log": "tmp/release-checks/0.9.29/71-smoke.log",
+      "lastLines": [
+        "desk {\"day\":120,\"stores\":1,\"cash\":-986545,\"phase\":\"lost\",\"log\":[\"Итоги месяца (апрель 2027): выручка 1,3 млн ₽, прибыль −187 тыс ₽.\",\"Банкротство: счёт в минусе 3-й месяц подряд, а резерв пуст.\",\"Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.\",\"«Хлебный двор» открыл пекарню: ул. Нижегородская, 47 (Нижегородка). Всего у сети: 2.\",\"Событие: Стройка напротив. Напротив пекарни по адресу бул. Славы, 18 начали строить ЖК: забор на полтротуара, пыль и бетономешалки с шести утра.\"]}",
+        "desk errors: none",
+        "desk horizontal scroll: false",
+        "mob {\"day\":120,\"stores\":1,\"cash\":-986545,\"phase\":\"lost\",\"log\":[\"Итоги месяца (апрель 2027): выручка 1,3 млн ₽, прибыль −187 тыс ₽.\",\"Банкротство: счёт в минусе 3-й месяц подряд, а резерв пуст.\",\"Кассовый разрыв: зарплату выдали с задержкой, команда недовольна.\",\"«Хлебный двор» открыл пекарню: ул. Нижегородская, 47 (Нижегородка). Всего у сети: 2.\",\"Событие: Стройка напротив. Напротив пекарни по адресу бул. Славы, 18 начали строить ЖК: забор на полтротуара, пыль и бетономешалки с шести утра.\"]}",
+        "mob errors: none",
+        "mob horizontal scroll: false"
+      ]
+    },
+    {
+      "command": "node qa/full.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 234,
+      "log": "tmp/release-checks/0.9.29/72-full.log",
+      "lastLines": [
+        "перф 60 точек, m390, CPU×1: dash: 50 дн/5с, тик 1.5 мс (макс 3.4), 60 fps, кадр p95 16.7 мс, задач >50 мс: 0 | stores: 49 дн/5с, тик 1.3 мс (макс 4.1), 60 fps, кадр p95 16.7 мс, задач >50 мс: 0 | team: 50 дн/5с, тик 1.4 мс (макс 3), 60 fps, кадр p95 16.8 мс, задач >50 мс: 0",
+        "перф 60 точек, m390, CPU×4: dash: 50 дн/5с, тик 4.8 мс (макс 8), 60 fps, кадр p95 16.8 мс, задач >50 мс: 0 | stores: 50 дн/5с, тик 4.9 мс (макс 11.3), 58 fps, кадр p95 16.8 мс, задач >50 мс: 1 (макс 53, сумма 53 мс) | team: 49 дн/5с, тик 4.6 мс (макс 8.7), 60 fps, кадр p95 16.7 мс, задач >50 мс: 1 (макс 57, сумма 57 мс)",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 233 с, скриншоты: qa/shots/full"
+      ]
+    },
+    {
+      "command": "node qa/extras.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 49,
+      "log": "tmp/release-checks/0.9.29/73-extras.log",
+      "lastLines": [
+        "слоты: без localStorage — подсказка на старте, игра идёт: true",
+        "итоги победы: верно 5, лучше 3, графиков 4, решений 12",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 48 с, скриншоты: qa/shots/extras"
+      ]
+    },
+    {
+      "command": "node qa/menu.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 25,
+      "log": "tmp/release-checks/0.9.29/74-menu.log",
+      "lastLines": [
+        "экраны d1440 dark",
+        "экраны m390 light",
+        "экраны m390 dark",
+        "экраны m360 light",
+        "экраны m360 dark",
+        "шеф (история 12+ мес.): новинок 5, меню 14, кандидатов на вывод 1, пометок 6, ширина окна 820 px",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли (24 с) → qa/shots/menu/issues.txt"
+      ]
+    },
+    {
+      "command": "node qa/russia.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 134,
+      "log": "tmp/release-checks/0.9.29/75-russia.log",
+      "lastLines": [
+        "сохранение с двумя городами: 378 КБ",
+        "Уфа под директором: 40 точек, рейтинг 4.69, отчёт во входящих — да",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "готово за 133 с, скриншоты: qa/shots/russia"
+      ]
+    },
+    {
+      "command": "node qa/tutorial.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 82,
+      "log": "tmp/release-checks/0.9.29/76-tutorial.log",
+      "lastLines": [
+        "m390-light: кредит взят ещё на шаге «первая точка» — шаг 5 пропущен",
+        "m390-light: пройдено шагов 12 из 12",
+        "m390-dark: цех — советуем nizh, ближе всех к центру nizh",
+        "m390-dark: пройдено шагов 12 из 12",
+        "m360-light: цех — советуем nizh, ближе всех к центру nizh",
+        "m360-light: кредит взят ещё на шаге «первая точка» — шаг 5 пропущен",
+        "m360-light: пройдено шагов 12 из 12",
+        "настройки: выбор запоминается, старое сохранение — без обучения, есть сохранения — по умолчанию выкл"
+      ]
+    },
+    {
+      "command": "node qa/growth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 33,
+      "log": "tmp/release-checks/0.9.29/77-growth.log",
+      "lastLines": [
+        "d1440",
+        "d1440 тёмная",
+        "m390",
+        "m390 тёмная",
+        "m360",
+        "m360 тёмная",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/managers.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 26,
+      "log": "tmp/release-checks/0.9.29/78-managers.log",
+      "lastLines": [
+        "m390 тёмная",
+        "  m390-dark: за неделю после найма предложений 0",
+        "m360",
+        "  m360: за неделю после найма предложений 0",
+        "m360 тёмная",
+        "  m360-dark: за неделю после найма предложений 0",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/rewind.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 60,
+      "log": "tmp/release-checks/0.9.29/79-rewind.log",
+      "lastLines": [
+        "второй акт (d1440): снимки 3, 842 тыс. символов, в хранилище 3; сохранение 272 тыс. символов",
+        "второй акт (m390): снимки 3, 842 тыс. символов, в хранилище 3; сохранение 272 тыс. символов",
+        "",
+        "# Проблемы (0)",
+        "",
+        "# Ошибки консоли (0)",
+        "",
+        "0 проблем, 0 ошибок консоли; готово за 60 с, скриншоты: qa/shots/rewind"
+      ]
+    },
+    {
+      "command": "node qa/trainers.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 24,
+      "log": "tmp/release-checks/0.9.29/80-trainers.log",
+      "lastLines": [
+        "m360",
+        "  m360: после 46 дней навык продаж 1, подсказок 1-го уровня 2, в «Требует внимания» 2",
+        "  m360: навыки 3 — подсказок 7, в «Требует внимания» 3, лампочек на карте 3",
+        "m360 тёмная",
+        "  m360-dark: после 46 дней навык продаж 1, подсказок 1-го уровня 2, в «Требует внимания» 2",
+        "  m360-dark: навыки 3 — подсказок 7, в «Требует внимания» 3, лампочек на карте 3",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/delivery.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 19,
+      "log": "tmp/release-checks/0.9.29/81-delivery.log",
+      "lastLines": [
+        "d1440 dark",
+        "m390 light",
+        "m390 dark",
+        "m360 light",
+        "m360 dark",
+        "бот 4 года: точек 7, в агрегаторах 3",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/pixel.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 120,
+      "log": "tmp/release-checks/0.9.29/82-pixel.log",
+      "lastLines": [
+        "m360-dark пролог → «жизнь в найме»: смен сыграно 1, окон 18 (дилемм живого сюжета 1, гостей-завсегдатаев 16), месяцев 180",
+        "m360-dark живая точка s305: утро очередь 8, витрина 91 %, мысли очередь/дорого; вечер очередь 7, витрина 21 %, мысли очередь/дорого",
+        "перф CPU×1: 45 точек, живая точка открыта, ×10: 48 дн/5с, кадров сцены 38 (7.6/с), задач > 50 мс: 0",
+        "перф: после закрытия карточки кадров сцены за 2 с — 0",
+        "перф CPU×4: 45 точек, живая точка открыта, ×10: 47 дн/5с, кадров сцены 38 (7.6/с), задач > 50 мс: 3 (макс 159, сумма 270 мс)",
+        "перф: после закрытия карточки кадров сцены за 2 с — 0",
+        "Проблем не найдено",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /Users/macbookmarsel/Documents/deepseek-harness/default-workspace/BrauniGame/qa/shots/pixel"
+      ]
+    },
+    {
+      "command": "node qa/lively.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 31,
+      "log": "tmp/release-checks/0.9.29/83-lively.log",
+      "lastLines": [
+        "m390-dark: веха open:1461 → cash:1463",
+        "m390-dark: тост — toast miltoast done | ВЕХА ВЗЯТА! Полные залы +4 % к гостям сети на 12 дн.",
+        "m360-light: веха open:1461 → cash:1463",
+        "m360-light: тост — toast miltoast done | ВЕХА ВЗЯТА! Полные залы +4 % к гостям сети на 12 дн.",
+        "m360-dark: веха open:1461 → cash:1463",
+        "m360-dark: тост — toast miltoast done | ВЕХА ВЗЯТА! Полные залы +4 % к гостям сети на 12 дн.",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/collateral.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 18,
+      "log": "tmp/release-checks/0.9.29/84-collateral.log",
+      "lastLines": [
+        "d1440-light: под залог взято 9 млн, долг 9 млн",
+        "d1440-dark: под залог взято 9 млн, долг 9 млн",
+        "m390-light: под залог взято 9 млн, долг 9 млн",
+        "m390-dark: под залог взято 9 млн, долг 9 млн",
+        "m360-light: под залог взято 9 млн, долг 9 млн",
+        "m360-dark: под залог взято 9 млн, долг 9 млн",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/investors.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/85-investors.log",
+      "lastLines": [
+        "m360-light: Ильдар Сафин — 165 млн за 12.9 % (profit), польза brand",
+        "m360-light: торг — раундов 3 → 2",
+        "m360-light: сделка на 184 млн, выплаты 5 млн/мес (18 % прибыли)",
+        "m360-dark: Ильдар Сафин — 165 млн за 12.9 % (profit), польза brand",
+        "m360-dark: торг — раундов 3 → 2",
+        "m360-dark: сделка на 184 млн, выплаты 5 млн/мес (18 % прибыли)",
+        "",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node sim/holding.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 10,
+      "log": "tmp/release-checks/0.9.29/86-holding.log",
+      "lastLines": [
+        "  ✓ после сохранения/загрузки партия идёт так же (200 дней)",
+        "  ✓ старое сохранение после победы получает третий акт",
+        "  ✓ неполное состояние дозаполняется",
+        "  ✓ путь холдинга не выбран — «Последний ужин» не приходит",
+        "  ✓ отказ от третьего акта — «Последний ужин» приходит как обычно",
+        "  ✓ концовка «Публичная компания» — в сюжете и летописи (глава «Холдинг»)",
+        "",
+        "Итог: 33 прошло, 0 провалов."
+      ]
+    },
+    {
+      "command": "node sim/holding-abroad.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/87-holding-abroad.log",
+      "lastLines": [
+        "✓ цель «10 млрд за 12 месяцев и три страны» взята",
+        "✓ концовка «Хлеб без границ»",
+        "✓ сохранение хранит страны и путь",
+        "✓ без победы холдинг не создаётся",
+        "✓ обычная партия идёт",
+        "✓ при выключенном холдинге старые боты не меняются",
+        "",
+        "✓ «За рубеж»: 26/26 проверок"
+      ]
+    },
+    {
+      "command": "node sim/holding-franchise.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/88-holding-franchise.log",
+      "lastLines": [
+        "✓ города считаются",
+        "✓ месячная история копится",
+        "✓ цель 1000 точек взята",
+        "✓ концовка «Имя на вывеске»",
+        "✓ сохранение хранит точки франшизы",
+        "✓ без победы холдинг не создаётся",
+        "",
+        "✓ «Франшиза-империя»: 16/16 проверок"
+      ]
+    },
+    {
+      "command": "node qa/holding.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 27,
+      "log": "tmp/release-checks/0.9.29/89-holding.log",
+      "lastLines": [
+        "d1440-light: {\"stage\":\"public\",\"q\":4,\"book\":\"hot\",\"cap\":55281221902.76615,\"seen\":[\"h_ipo1\",\"h_ipo3\",\"h_ipo2\",\"h_ipo4\",\"h_ipo5\",\"h_ipo6\"]}",
+        "d1440-light: до «Колокола» — {\"stop\":\"h_ipo7\",\"day\":5326}; окно: ГЛАВА 5 · ХОЛДИНГ Колокол Семён Аркадьевич постоянный гость ",
+        "m390-dark: третий акт открылся через 14 дн. после победы",
+        "m390-dark: прокрутка до торгов и 4 отчётов — {\"stop\":\"public\",\"day\":5295}",
+        "m390-dark: {\"stage\":\"public\",\"q\":4,\"book\":\"hot\",\"cap\":55281221902.76615,\"seen\":[\"h_ipo1\",\"h_ipo3\",\"h_ipo2\",\"h_ipo4\",\"h_ipo5\",\"h_ipo6\"]}",
+        "m390-dark: до «Колокола» — {\"stop\":\"h_ipo7\",\"day\":5326}; окно: ГЛАВА 5 · ХОЛДИНГ Колокол Семён Аркадьевич постоянный гость ",
+        "d1440-dark: третий акт открылся через 14 дн. после победы",
+        "m390-light: третий акт открылся через 14 дн. после победы"
+      ]
+    },
+    {
+      "command": "node qa/abroad.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 18,
+      "log": "tmp/release-checks/0.9.29/90-abroad.log",
+      "lastLines": [
+        "ЗА РУБЕЖ: проблем нет, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/franchise.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 18,
+      "log": "tmp/release-checks/0.9.29/91-franchise.log",
+      "lastLines": [
+        "ФРАНШИЗА: проблем нет, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/citygrowth.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.29/92-citygrowth.log",
+      "lastLines": [
+        "[m390-dark] карточка: Полки в супермаркетах: | +4,4 % выручки · прибыль 8,9 млн ₽/мес | Франшиза: | 6 партнёров, роялти и закупки 24,4 млн ₽/мес · прибыль 15,6 млн ₽/мес",
+        "[m390-dark] без направлений: Направления роста директор откроет в крупном городе — с 10 точек (сейчас 7).",
+        "[m390-dark] отчёт: Полки в супермаркетах: | +4,4 % выручки · прибыль 8,9 млн ₽/мес | Франшиза: | 6 партнёров, роялти и закупки 24,4 млн ₽/мес · прибыль 15,6 млн ₽/мес",
+        "",
+        "# Проблемы (0)",
+        "",
+        "",
+        "# Ошибки консоли (0)"
+      ]
+    },
+    {
+      "command": "node qa/story.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 16,
+      "log": "tmp/release-checks/0.9.29/93-story.log",
+      "lastLines": [
+        "d1440 light",
+        "d1440 dark",
+        "m390 light",
+        "m390 dark",
+        "m360 light",
+        "m360 dark",
+        "бот 5 лет: точек 14",
+        "Итог: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/strategy.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 7,
+      "log": "tmp/release-checks/0.9.29/94-strategy.log",
+      "lastLines": [
+        "m360-light: готово",
+        "m360-dark: готово",
+        "Проблем не найдено",
+        "· d1440-light: путь «Премиум», цена открытия ×1.1, модификаторы check:1.12, conv:0.98, traffic:0.85",
+        "· d1440-light: в прологе путь выпал случайно — «coffee»",
+        "· m390-dark: путь «Премиум», цена открытия ×1.1, модификаторы check:1.12, conv:0.98, traffic:0.85",
+        "· m390-dark: в прологе путь выпал случайно — «folk»",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /Users/macbookmarsel/Documents/deepseek-harness/default-workspace/BrauniGame/qa/shots/strategy"
+      ]
+    },
+    {
+      "command": "node qa/music.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 38,
+      "log": "tmp/release-checks/0.9.29/95-music.log",
+      "lastLines": [
+        "C. музыка выключена в localStorage — узлов нет",
+        "  ок   при выключенной музыке не создано ни одного узла → {\"oscs\":0,\"level\":0}",
+        "  ок   звуки игры при этом работают",
+        "D. общий звук выключен — музыки нет",
+        "  ок   общий выключатель глушит и музыку → {\"oscs\":0,\"sounding\":0}",
+        "  ок   и звуки не играют",
+        "",
+        "МУЗЫКА: всё в порядке"
+      ]
+    },
+    {
+      "command": "node qa/s4-sound.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 9,
+      "log": "tmp/release-checks/0.9.29/96-s4-sound.log",
+      "lastLines": [
+        "озвучка пролога и стадии 1: 0 проблем, 0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/prologue.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 176,
+      "log": "tmp/release-checks/0.9.29/97-prologue.log",
+      "lastLines": [
+        "d1440: готово",
+        "d1440-dark: готово",
+        "m390: готово",
+        "m390-dark: готово",
+        "m360: готово",
+        "m360-dark: готово",
+        "Проблем не найдено",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /Users/macbookmarsel/Documents/deepseek-harness/default-workspace/BrauniGame/qa/shots/prologue"
+      ]
+    },
+    {
+      "command": "node qa/stage1.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 119,
+      "log": "tmp/release-checks/0.9.29/98-stage1.log",
+      "lastLines": [
+        "d1440: готово",
+        "d1440-dark: готово",
+        "m390: готово",
+        "m390-dark: готово",
+        "m360: готово",
+        "m360-dark: готово",
+        "Проблем не найдено",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /Users/macbookmarsel/Documents/deepseek-harness/default-workspace/BrauniGame/qa/shots/stage1"
+      ]
+    },
+    {
+      "command": "node qa/scen-ui.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 25,
+      "log": "tmp/release-checks/0.9.29/99-scen-ui.log",
+      "lastLines": [
+        "Проблем не найдено",
+        "· обучение+заново/d1440: «crisis» → «coffee», обучение сохранено",
+        "0 проблем, 0 ошибок консоли. Скриншоты: /Users/macbookmarsel/Documents/deepseek-harness/default-workspace/BrauniGame/qa/shots/scen-ui"
+      ]
+    },
+    {
+      "command": "node qa/map-cache.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 2,
+      "log": "tmp/release-checks/0.9.29/100-map-cache.log",
+      "lastLines": [
+        "map cache: markers=new-1,new-2,new-3 errors=0"
+      ]
+    },
+    {
+      "command": "node qa/render-purity.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 2,
+      "log": "tmp/release-checks/0.9.29/101-render-purity.log",
+      "lastLines": [
+        "render purity: day 731, line rashid.waste",
+        "state bytes: 57010; panels same; reload same",
+        "render purity: ok"
+      ]
+    },
+    {
+      "command": "node qa/minified.js webkit min",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 14,
+      "log": "tmp/release-checks/0.9.29/102-minified.log",
+      "lastLines": [
+        "  [1440] финансы: водопад есть, строк точек 1, ширина страницы 1440",
+        "  [1440] окно события: значков последствий 10",
+        "  [1440] день 80, точек 1",
+        "  [390] стартовый экран за 365 мс",
+        "  [390] финансы: водопад есть, строк точек 1, ширина страницы 390",
+        "  [390] окно события: значков последствий 10",
+        "  [390] день 80, точек 1",
+        "0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/minified.js chromium min",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.29/103-minified.log",
+      "lastLines": [
+        "  [1440] финансы: водопад есть, строк точек 1, ширина страницы 1440",
+        "  [1440] окно события: значков последствий 10",
+        "  [1440] день 79, точек 1",
+        "  [390] стартовый экран за 274 мс",
+        "  [390] финансы: водопад есть, строк точек 1, ширина страницы 390",
+        "  [390] окно события: значков последствий 10",
+        "  [390] день 79, точек 1",
+        "0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/minified.js webkit min dist/khlebnaya-karta-0.9.29.html",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 13,
+      "log": "tmp/release-checks/0.9.29/104-minified.log",
+      "lastLines": [
+        "  [1440] финансы: водопад есть, строк точек 1, ширина страницы 1440",
+        "  [1440] окно события: значков последствий 10",
+        "  [1440] день 79, точек 1",
+        "  [390] стартовый экран за 387 мс",
+        "  [390] финансы: водопад есть, строк точек 1, ширина страницы 390",
+        "  [390] окно события: значков последствий 10",
+        "  [390] день 80, точек 1",
+        "0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node qa/minified.js chromium min dist/khlebnaya-karta-0.9.29.html",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 12,
+      "log": "tmp/release-checks/0.9.29/105-minified.log",
+      "lastLines": [
+        "  [1440] финансы: водопад есть, строк точек 1, ширина страницы 1440",
+        "  [1440] окно события: значков последствий 10",
+        "  [1440] день 80, точек 1",
+        "  [390] стартовый экран за 271 мс",
+        "  [390] финансы: водопад есть, строк точек 1, ширина страницы 390",
+        "  [390] окно события: значков последствий 10",
+        "  [390] день 79, точек 1",
+        "0 ошибок консоли"
+      ]
+    },
+    {
+      "command": "node sim/newbie.js 8 2",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 1,
+      "log": "tmp/release-checks/0.9.29/106-newbie.log",
+      "lastLines": [
+        "│ 2       │ 23757 │ null │ 2      │ 2.1  │ 2    │ 8    │ 0       │ -4  │ -4  │ 0.8    │ 0       │ 0    │ null │ 16    │",
+        "│ 3       │ 31676 │ null │ 4      │ 11.7 │ 9    │ 18   │ 0       │ -2  │ -1  │ 0.2    │ 0       │ 0    │ 5    │ 9     │",
+        "│ 4       │ 39595 │ null │ 3      │ 5.8  │ 4    │ 10   │ 0       │ -2  │ -3  │ 0.9    │ 0       │ 0    │ 3    │ 7     │",
+        "│ 5       │ 47514 │ null │ 8      │ 6    │ 19   │ 41   │ 1       │ 3   │ 5   │ 1.1    │ 0       │ 0    │ 2    │ 43    │",
+        "│ 6       │ 55433 │ null │ 1      │ null │ 3    │ 5    │ 0       │ -3  │ -2  │ 2      │ 0       │ 0    │ 12   │ 6     │",
+        "│ 7       │ 63352 │ null │ 1      │ null │ 2    │ 6    │ 0       │ -3  │ -3  │ 0.3    │ 0       │ 0    │ 12   │ 4     │",
+        "└─────────┴───────┴──────┴────────┴──────┴──────┴──────┴─────────┴─────┴─────┴────────┴─────────┴──────┴──────┴───────┘",
+        "новичок по советам обучения · normal · 8 сидов × 2 г.: банкротств 0/8, точек (медиана) 3, кассовых разрывов 1-го числа 0"
+      ]
+    },
+    {
+      "command": "node sim/bot.js good 3 18 --summary",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 7,
+      "log": "tmp/release-checks/0.9.29/107-bot.log",
+      "lastLines": [
+        "┌─────────┬──────┬─────┬──────┬─────┬────┬────┬─────┬─────┬──────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬──────┬──────┬────┬───────┬──────┬──────┬──────┬──────┬─────┬─────┬──────┬────────┬──────┬─────┬──────┬──────┬──────┬─────┬──────┬──────┬─────┬─────┬──────┐",
+        "│ (index) │ won  │ wSt │ lost │ y1p │ s3 │ s5 │ s10 │ s15 │ s20  │ r5   │ r10  │ r15  │ mood10 │ lvl10 │ rev0 │ chk0 │ cpd0 │ flag │ pb │ pbNet │ turn │ fc   │ pay  │ rent │ del │ upk │ tax  │ minLiq │ cris │ g10 │ g15  │ gp15 │ fr15 │ rv5 │ rv10 │ rv15 │ rvW │ rvL │ seed │",
+        "├─────────┼──────┼─────┼──────┼─────┼────┼────┼─────┼─────┼──────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼──────┼──────┼────┼───────┼──────┼──────┼──────┼──────┼─────┼─────┼──────┼────────┼──────┼─────┼──────┼──────┼──────┼─────┼──────┼──────┼─────┼─────┼──────┤",
+        "│ 0       │ 14.8 │ 46  │ null │ -4  │ 4  │ 14 │ 40  │ 46  │ null │ 0.44 │ 3.04 │ 5.14 │ 88     │ 4.82  │ 2.11 │ 469  │ 145  │ 10.3 │ 7  │ 10    │ 6    │ 26.3 │ 25.6 │ 8.7  │ 0.7 │ 6.7 │ 10.4 │ -16    │ 7    │ 518 │ 1014 │ 20   │ 24   │ 11  │ 25   │ 32   │ 32  │ 3.1 │ 1    │",
+        "│ 1       │ 12.3 │ 48  │ null │ 4   │ 9  │ 31 │ 44  │ 53  │ null │ 1.55 │ 4.4  │ 6.55 │ 90     │ 4.95  │ 2.34 │ 486  │ 156  │ 12.2 │ 7  │ 9     │ 5    │ 26.7 │ 24.7 │ 8.6  │ 0.6 │ 6.5 │ 10.7 │ -8     │ 6    │ 931 │ 1262 │ 19   │ 25   │ 16  │ 20   │ 29   │ 25  │ 2.5 │ 2    │",
+        "│ 2       │ 15.8 │ 44  │ null │ -4  │ 5  │ 21 │ 40  │ 44  │ null │ 0.75 │ 3.32 │ 4.87 │ 88     │ 4.97  │ 2.13 │ 453  │ 146  │ 12.6 │ 7  │ 9     │ 4    │ 26.9 │ 27.1 │ 8.9  │ 0.6 │ 6.6 │ 9.7  │ -11    │ 6    │ 652 │ 1067 │ 22   │ 25   │ 14  │ 25   │ 31   │ 30  │ 2.3 │ 3    │",
+        "└─────────┴──────┴─────┴──────┴─────┴────┴────┴─────┴─────┴──────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴──────┴──────┴────┴───────┴──────┴──────┴──────┴──────┴─────┴─────┴──────┴────────┴──────┴─────┴──────┴──────┴──────┴─────┴──────┴──────┴─────┴─────┴──────┘",
+        "wins 3/3, median win year 14.8, lost 0"
+      ]
+    },
+    {
+      "command": "node sim/bot.js avg 2 25 --summary",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 4,
+      "log": "tmp/release-checks/0.9.29/108-bot.log",
+      "lastLines": [
+        "### avg normal {\"summary\":true}",
+        "┌─────────┬──────┬─────┬──────┬─────┬────┬────┬─────┬─────┬─────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬──────┬──────┬────┬───────┬──────┬──────┬──────┬──────┬─────┬─────┬─────┬────────┬──────┬─────┬─────┬──────┬──────┬─────┬──────┬──────┬─────┬─────┬──────┐",
+        "│ (index) │ won  │ wSt │ lost │ y1p │ s3 │ s5 │ s10 │ s15 │ s20 │ r5   │ r10  │ r15  │ mood10 │ lvl10 │ rev0 │ chk0 │ cpd0 │ flag │ pb │ pbNet │ turn │ fc   │ pay  │ rent │ del │ upk │ tax │ minLiq │ cris │ g10 │ g15 │ gp15 │ fr15 │ rv5 │ rv10 │ rv15 │ rvW │ rvL │ seed │",
+        "├─────────┼──────┼─────┼──────┼─────┼────┼────┼─────┼─────┼─────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼──────┼──────┼────┼───────┼──────┼──────┼──────┼──────┼─────┼─────┼─────┼────────┼──────┼─────┼─────┼──────┼──────┼─────┼──────┼──────┼─────┼─────┼──────┤",
+        "│ 0       │ 21.6 │ 31  │ null │ -4  │ 3  │ 4  │ 24  │ 29  │ 31  │ 0.17 │ 1.52 │ 3.93 │ 67     │ 4.51  │ 2.45 │ 450  │ 157  │ 9.5  │ 8  │ 11    │ 13   │ 30.1 │ 29.3 │ 9.4  │ 0.7 │ 4.3 │ 9.7 │ -14    │ 9    │ 3   │ 904 │ 23   │ 25   │ 9   │ 19   │ 28   │ 35  │ 3.6 │ 1    │",
+        "│ 1       │ 19.8 │ 35  │ null │ 1   │ 5  │ 13 │ 24  │ 32  │ 35  │ 0.52 │ 2.23 │ 3.62 │ 74     │ 4.93  │ 2.12 │ 474  │ 142  │ 10.7 │ 9  │ 12    │ 10   │ 30.5 │ 27.2 │ 9.3  │ 0.7 │ 4.3 │ 9.9 │ -2     │ 10   │ 537 │ 912 │ 25   │ 25   │ 10  │ 20   │ 28   │ 30  │ 4.3 │ 2    │",
+        "└─────────┴──────┴─────┴──────┴─────┴────┴────┴─────┴─────┴─────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴──────┴──────┴────┴───────┴──────┴──────┴──────┴──────┴─────┴─────┴─────┴────────┴──────┴─────┴─────┴──────┴──────┴─────┴──────┴──────┴─────┴─────┴──────┘",
+        "wins 2/2, median win year 21.6, lost 0"
+      ]
+    },
+    {
+      "command": "node sim/bot.js bad 2 5 --summary",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/109-bot.log",
+      "lastLines": [
+        "### bad normal {\"summary\":true}",
+        "┌─────────┬──────┬──────┬──────┬─────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬────────┬───────┬──────┬──────┬──────┬──────┬──────┬───────┬──────┬──────┬──────┬──────┬─────┬─────┬─────┬────────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐",
+        "│ (index) │ won  │ wSt  │ lost │ y1p │ s3   │ s5   │ s10  │ s15  │ s20  │ r5   │ r10  │ r15  │ mood10 │ lvl10 │ rev0 │ chk0 │ cpd0 │ flag │ pb   │ pbNet │ turn │ fc   │ pay  │ rent │ del │ upk │ tax │ minLiq │ cris │ g10  │ g15  │ gp15 │ fr15 │ rv5  │ rv10 │ rv15 │ rvW  │ rvL  │ seed │",
+        "├─────────┼──────┼──────┼──────┼─────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼───────┼──────┼──────┼──────┼──────┼──────┼───────┼──────┼──────┼──────┼──────┼─────┼─────┼─────┼────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┤",
+        "│ 0       │ null │ null │ 1.4  │ -6  │ null │ null │ null │ null │ null │ null │ null │ null │ null   │ null  │ 0.51 │ 251  │ 67   │ 0.8  │ null │ null  │ 0    │ 29.6 │ 53.5 │ 61.9 │ 4.2 │ 0   │ 6.1 │ -7     │ 0    │ null │ null │ null │ null │ null │ null │ null │ null │ null │ 1    │",
+        "│ 1       │ null │ null │ 2.4  │ -4  │ null │ null │ null │ null │ null │ null │ null │ null │ null   │ null  │ 0.97 │ 342  │ 94   │ 1.6  │ 11   │ null  │ 315  │ 27.8 │ 38.1 │ 31.3 │ 2.1 │ 0   │ 6   │ -7     │ 0    │ null │ null │ null │ null │ null │ null │ null │ null │ null │ 2    │",
+        "└─────────┴──────┴──────┴──────┴─────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴────────┴───────┴──────┴──────┴──────┴──────┴──────┴───────┴──────┴──────┴──────┴──────┴─────┴─────┴─────┴────────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘",
+        "wins 0/2, median win year -, lost 2"
+      ]
+    },
+    {
+      "command": "node sim/scencity.js 20 3",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 23,
+      "log": "tmp/release-checks/0.9.29/110-scencity.log",
+      "lastLines": [
+        "  аренда: 10.6 % выручки в Москве против 4.2 % выручки в Уфе",
+        "  выручка месяца: 140 млн ₽ в Москве против 103 млн ₽ в Уфе",
+        "  ✓ в Москве чек выше уфимского — 1013 против 666 ₽",
+        "  ✓ в Москве аренда съедает больше выручки — 10.6 против 4.2 %",
+        "  год победы: Москва с историей 15.7 против Москвы без правил истории 6.8 (Уфа 14.8)",
+        "  ✓ правила «Старта в Москве» делают историю честнее — медленнее, чем просто московский чек — 6.8 против 15.7",
+        "",
+        "✓ все проверки города истории прошли"
+      ]
+    },
+    {
+      "command": "node sim/scencoffee.js 6",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 52,
+      "log": "tmp/release-checks/0.9.29/111-scencoffee.log",
+      "lastLines": [
+        "  == avg «Только кофейни»: побед 6/6, медиана 23.4; цель истории к сроку — 3/6",
+        "  ✓ у бота все точки маленькие, флагмана нет",
+        "  ✓ good побеждает в коридоре историй (14–17 лет) — 14.9",
+        "  ✓ история медленнее обычной Уфы — 14.9 против 14.5",
+        "  ✓ good выполняет цель истории к сроку — 5.1 / 4.6 / 4.8 / 6.1 / 5.5 / 4.9",
+        "  ✓ avg заметно медленнее good — 6/6, медиана 23.4",
+        "",
+        "✓ «Только кофейни»: все проверки прошли"
+      ]
+    },
+    {
+      "command": "node sim/scenfail.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/112-scenfail.log",
+      "lastLines": [
+        "✓ спасённая история засчитывается (BK.Scenario.finish → ok) — ok=true",
+        "✓ без localStorage отметка живёт только в браузере — здесь прогресс пуст — 0 из 5",
+        "✓ у «Старта в Москве» срока нет — провала истории не бывает",
+        "✓ обычная игра без истории провала не знает",
+        "✓ «Только кофейни»: пока срок идёт — провала нет",
+        "✓ «Только кофейни»: 8 лет прошли без цели — «История не сложилась»",
+        "✓ историй пять — 5",
+        "✓ сценарный провал: ok"
+      ]
+    },
+    {
+      "command": "node sim/corp.js 2 16",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 4,
+      "log": "tmp/release-checks/0.9.29/113-corp.log",
+      "lastLines": [
+        "│ (index) │ город    │ режим       │ точек │ штат │ рейтинг │ выр. 12 мес, млн │ приб. 12 мес, млн │ узнаваемость │",
+        "├─────────┼──────────┼─────────────┼───────┼──────┼─────────┼──────────────────┼───────────────────┼──────────────┤",
+        "│ 0       │ 'Уфа'    │ 'вручную'   │ 50    │ 339  │ 4.87    │ 5843             │ 306               │ 1            │",
+        "│ 1       │ 'Казань' │ 'автопилот' │ 26    │ 186  │ 3.5     │ 2522             │ 706               │ 0.78         │",
+        "│ 2       │ 'Самара' │ 'автопилот' │ 25    │ 153  │ 3.5     │ 2144             │ 639               │ 0.74         │",
+        "└─────────┴──────────┴─────────────┴───────┴──────┴─────────┴──────────────────┴───────────────────┴──────────────┘",
+        "Сохранение: 805 КБ",
+        "Проблем нет: деньги сходятся каждый день, NaN нет."
+      ]
+    },
+    {
+      "command": "node sim/corp-calib.js 3",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 34,
+      "log": "tmp/release-checks/0.9.29/114-corp-calib.log",
+      "lastLines": [
+        "├─────────┼──────┼────────────────────┼─────────┼───────┼────────────────────┼───────────────────┼─────────────┼────────────────────┼───────────────────┼─────────────┼────────────────────┼───────────────────┼─────────────┤",
+        "│ 0       │ 1    │ 11261              │ 31.2    │ 35    │ -57.2              │ 0.9               │ 21          │ -41.6              │ 2.3               │ 26          │ -33                │ 5.4               │ 27          │",
+        "│ 1       │ 2    │ 9144               │ 31.5    │ 34    │ -51.6              │ -0                │ 23          │ -21.6              │ 1.2               │ 27          │ -24                │ 2.2               │ 30          │",
+        "│ 2       │ 3    │ 7898               │ 32.8    │ 30    │ -43.6              │ -0.2              │ 21          │ -14.8              │ 2.1               │ 25          │ -14.8              │ 1.3               │ 26          │",
+        "└─────────┴──────┴────────────────────┴─────────┴───────┴────────────────────┴───────────────────┴─────────────┴────────────────────┴───────────────────┴─────────────┴────────────────────┴───────────────────┴─────────────┘",
+        "Среднее: грейд 1 — -50.8 %, грейд 3 — -26 %, грейд 5 — -23.9 % выручки к ручному",
+        "",
+        "Калибровка в допуске (грейд 3: ±5% выручки, ±2 п. п. маржи)."
+      ]
+    },
+    {
+      "command": "node sim/miles.js good 8 20",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 21,
+      "log": "tmp/release-checks/0.9.29/115-miles.log",
+      "lastLines": [
+        "└─────────┴───────┴───────────────────┴────────────────┴────────────────┴───────┴─────────┴──────────────────────────┴────────────────────┴────────────────────┴─────────────┴───────┴────────────┴───────────┘",
+        "",
+        "Взятые по видам: loanfree: 80 · nofire: 59 · guests: 56 · cash: 48 · repair: 24 · open: 23 · check: 22 · rating: 22 · staff: 15 · mood: 13 · train: 5 · reserve: 1 · loan: 1",
+        "Невышедшие по видам: check: 37 · repair: 37 · rating: 28 · open: 25 · train: 25 · nofire: 18 · cash: 17 · guests: 17 · loan: 6 · reserve: 3 · mood: 2 · fatigue: 2",
+        "",
+        "Первая веха: медиана 96 игровых дн. = 1.60 мин на ×1, 0.53 мин на ×3, 0.16 мин на ×10",
+        "Между вехами: медиана 83 игровых дн. = 1.38 мин на ×1, 0.46 мин на ×3, 0.14 мин на ×10",
+        "КРИТЕРИЙ ЭТАПА: время до первой вехи ≤ 5 мин — выполнено"
+      ]
+    },
+    {
+      "command": "node sim/collateral.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/116-collateral.log",
+      "lastLines": [
+        "  ✓ после запрета ставка выше",
+        "  ✓ движок учитывает надбавку залога в ставке",
+        "  ✓ досрочное погашение закрывает кредит",
+        "  ✓ метка залога снята с точки",
+        "  ✓ без S.coll модуль не падает и состояние не создаёт",
+        "  ✓ S.coll не создаётся, пока кредит не взят (сохранения и боты не меняются)",
+        "",
+        "Механика в порядке."
+      ]
+    },
+    {
+      "command": "node sim/collateral.js good 6 22",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 18,
+      "log": "tmp/release-checks/0.9.29/117-collateral.log",
+      "lastLines": [
+        "│ 3       │ 4   │ 13.9       │ null    │ 50    │ 27            │ 0             │ 0              │",
+        "│ 4       │ 5   │ 13.3       │ null    │ 50    │ 34            │ 0             │ 0              │",
+        "│ 5       │ 6   │ 13.3       │ null    │ 53    │ 42            │ 0             │ 0              │",
+        "└─────────┴─────┴────────────┴─────────┴───────┴───────────────┴───────────────┴────────────────┘",
+        "побед 6/6, медиана года победы — 13.9; забрано точек: 0",
+        "эталон без залога: good 3 18 — 3/3, медиана 14,9; good 12 22 — медиана 14,8",
+        "",
+        "Механика в порядке."
+      ]
+    },
+    {
+      "command": "node sim/investors.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 2,
+      "log": "tmp/release-checks/0.9.29/118-investors.log",
+      "lastLines": [
+        "  ✓ выплата попала в статью месяца (в отчёте «Партнёрам»)",
+        "  ✓ выкуп дороже вложенного",
+        "  ✓ доля выкуплена, сделка закрыта",
+        "  ✓ польза снята вместе с долей",
+        "  ✓ при опасной доле партнёров новые инвесторы не приходят",
+        "  ✓ с выключенными инвесторами S.inv не создаётся",
+        "",
+        "Механика в порядке."
+      ]
+    },
+    {
+      "command": "node sim/investors.js good 6 22",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 17,
+      "log": "tmp/release-checks/0.9.29/119-investors.log",
+      "lastLines": [
+        "│ 3       │ 4   │ 15.9       │ null    │ 51    │ 4      │ 796             │ 40               │ 85             │",
+        "│ 4       │ 5   │ 14.3       │ null    │ 51    │ 3      │ 582             │ 30               │ 37             │",
+        "│ 5       │ 6   │ 15         │ null    │ 48    │ 4      │ 766             │ 41               │ 91             │",
+        "└─────────┴─────┴────────────┴─────────┴───────┴────────┴─────────────────┴──────────────────┴────────────────┘",
+        "побед 6/6, медиана года победы — 14.7",
+        "эталон без инвесторов: good 3 18 — 3/3, медиана 14,9; good 12 22 — медиана 14,8",
+        "",
+        "Механика в порядке."
+      ]
+    },
+    {
+      "command": "node sim/story.js good,avg 12 22",
+      "exit": 1,
+      "blocking": false,
+      "diagnostic": true,
+      "warning": true,
+      "seconds": 21,
+      "log": "tmp/release-checks/0.9.29/120-story.log",
+      "lastLines": [
+        "  ✗ mos7 «Мама приезжает» (city)",
+        "  ✗ mos8 «Своя сеть в Москве» (war)",
+        "  ✗ mosBank «Банк напоминает» (city)",
+        "  ✗ s32b «Папка» (war)",
+        "  ✗ s35 «Лариса» (war)",
+        "  ✗ s36b «Старая печь» (war)",
+        "  ✗ b4k «Последняя глава» (deep)",
+        "Код выхода 1."
+      ]
+    },
+    {
+      "command": "node sim/story.js --check",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 3,
+      "log": "tmp/release-checks/0.9.29/121-story.log",
+      "lastLines": [
+        "  ✓ после прогона очередь сцен пуста",
+        "  ✓ resolve без сцены — отказ",
+        "  ✓ сцена s25 достигнута",
+        "  ✓ зафиксированный выбор применён — idx 1",
+        "  ✓ последствие выбора записано во флаги (lenin = no)",
+        "",
+        "# Итог",
+        "Всё в порядке."
+      ]
+    },
+    {
+      "command": "node sim/strat.js --seeds=16 --years=22",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 100,
+      "log": "tmp/release-checks/0.9.29/122-strat.log",
+      "lastLines": [
+        "  ✓ Премиум: 16/16 побед (база 15/16), медиана 15.5 (+1.1), среднее 15.17 (+0.86) — в коридоре",
+        "  ✓ Народная: 15/16 побед (база 15/16), медиана 14.5 (+0.1), среднее 14.46 (+0.15) — в коридоре",
+        "  ✓ Кофейни: 14/16 побед (база 15/16), медиана 15 (+0.6), среднее 15.11 (+0.8) — в коридоре",
+        "  ✓ Пекарня-кафе: 15/16 побед (база 15/16), медиана 15.3 (+0.9), среднее 15.43 (+1.12) — в коридоре",
+        "  ✓ разброс между путями 1 года (норма ≤ 1.5)",
+        "  ✓ база (14.4) не сдвинулась: канонический good 3 18 — 3/3, медиана 14,9",
+        "",
+        "Цель выполнена: все пути в коридоре."
+      ]
+    },
+    {
+      "command": "node sim/prodstats.js",
+      "exit": 0,
+      "blocking": false,
+      "diagnostic": false,
+      "warning": false,
+      "seconds": 0,
+      "log": "tmp/release-checks/0.9.29/123-prodstats.log",
+      "lastLines": [
+        "Булочка с корицей                 5980 шт   1274 т₽ доля  10.4% спис  5.5% маржа  78% дин 37% доля -27% | вывести: -269 т₽ теряет долю",
+        "Чай с чабрецом                    4068 шт    942 т₽ доля   7.7% спис  0.5% маржа  94% дин 41% доля -24% | вывести: 261 т₽ теряет долю",
+        "Хлеб «Уфимский» пшеничный         4763 шт    689 т₽ доля   5.6% спис  5.6% маржа  77% дин 42% доля -24% | вывести: 65 т₽ малая доля, теряет долю ← КАНДИДАТ",
+        "+ croissant    ≈6503 шт ≈1498 т₽ доля 11.7% маржа 66% сеть +538 т₽",
+        "+ cappuccino   ≈5550 шт ≈1826 т₽ доля 14.3% маржа 83% сеть +517 т₽",
+        "+ kumis        ≈2899 шт ≈705 т₽ доля 5.9% маржа 57% сеть -244 т₽",
+        "+ medovik      ≈5649 шт ≈2167 т₽ доля 16.6% маржа 67% сеть +781 т₽",
+        "+ glutenfree   ≈3722 шт ≈1542 т₽ доля 12.4% маржа 63% сеть +158 т₽"
+      ]
+    }
+  ]
+}
