@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>«Тёплый хлеб» — новая главная тема</title>
+<style>
+  :root { --paper:#f6efe3; --ink:#2c2721; --muted:#7b6f60; --crust:#b5653c; --line:#e3d6c2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(1100px 600px at 15% 0%, #fdf8ee, var(--paper)); color:var(--ink);
+    font:16px/1.55 "Golos Text", "Segoe UI", system-ui, sans-serif; }
+  main { max-width:880px; margin:0 auto; padding:44px 20px 64px; }
+  h1 { font-size:34px; line-height:1.15; margin:0 0 8px; letter-spacing:-.02em; }
+  .lead { color:var(--muted); margin:0 0 26px; max-width:700px; }
+  .big { background:#fffaf2; border:1px solid var(--line); border-radius:18px; padding:22px; margin:0 0 18px;
+    box-shadow:0 12px 34px rgba(80,55,30,.07); }
+  .big h2 { margin:0 0 4px; font-size:21px; }
+  .tag { display:inline-block; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--crust);
+    background:#f7e2d3; border-radius:999px; padding:2px 9px; margin-left:8px; vertical-align:2px; }
+  .desc { color:var(--muted); margin:0 0 12px; }
+  audio { width:100%; height:40px; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+  .card { background:#fffaf2; border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .card h3 { margin:0 0 2px; font-size:17px; }
+  .card small { color:var(--muted); display:block; margin-bottom:10px; }
+  .note { border-left:3px solid var(--crust); padding:4px 0 4px 14px; color:var(--muted); margin:24px 0 0; font-size:14px; }
+  .foot { margin-top:22px; color:var(--muted); font-size:13px; }
+  a { color:var(--crust); }
+</style>
+</head>
+<body>
+<main>
+  <h1>«Тёплый хлеб»</h1>
+  <p class="lead">Новая главная тема. Одна человеческая фраза — 1–3–5–3, четыре ноты — которая взрослеет вместе с сетью:
+     от войлочного пиано в кофейне до струнных и литавр в России. Сначала послушай всю сюиту, потом отдельные части.</p>
+
+  <section class="big">
+    <h2>Сюита: кофейня → сеть → Россия <span class="tag">68 секунд</span></h2>
+    <p class="desc">Три состава одной темы подряд. Это эскиз, а не финальная запись: он показывает, как меняется характер,
+       оставаясь одной мелодией.</p>
+    <audio controls preload="metadata" src="new-theme-suite.mp3"></audio>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h3>1. Утро в кофейне</h3>
+      <small>3/4 · 76 BPM · пиано, шкатулка, контрабас, щётки</small>
+      <audio controls preload="metadata" src="new-theme-1-coffee.mp3"></audio>
+    </section>
+    <section class="card">
+      <h3>2. Сеть в Уфе</h3>
+      <small>4/4 · 96 BPM · Rhodes, мягкий бит, пульс баса</small>
+      <audio controls preload="metadata" src="new-theme-2-network.mp3"></audio>
+    </section>
+    <section class="card">
+      <h3>3. Россия</h3>
+      <small>4/4 · 100 BPM · струнные, валторна, литавры, пиано</small>
+      <audio controls preload="metadata" src="new-theme-3-russia.mp3"></audio>
+    </section>
+  </div>
+
+  <p class="note">Это только тема и три состава. Динамические слои, кризисы, победа, тяжёлый момент и финал —
+     отдельный уровень; как это устроить, описано в предложении по саунд-дизайну.</p>
+  <p class="foot"><a href="../sound-design.md">Открыть предложение по саунд-дизайну</a> ·
+     файлы: new-theme-suite.mp3, new-theme-1-coffee.mp3, new-theme-2-network.mp3, new-theme-3-russia.mp3.</p>
+</main>
+</body>
+</html>
