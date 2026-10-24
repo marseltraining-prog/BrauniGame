@@ -183,7 +183,7 @@ async function waitMood(p, want, ms) {
   ok(info.win.key !== info.game.key && info.win.key !== info.prologue.key, 'своя тональность (ре мажор) — не «та же тема выше»',
     info.game.key + ' / ' + info.prologue.key + ' / ' + info.win.key);
   ok(info.win.bpm > info.game.bpm + 30, 'темп заметно бодрее игровой темы (140 против 92)', info.game.bpm + ' → ' + info.win.bpm);
-  ok(info.win.beats === 4 && info.game.beats === 3, 'другой размер: марш 4/4 против вальса 3/4', info.game.beats + '/4 → ' + info.win.beats + '/4');
+  ok(info.win.beats === 4, 'победная тема — марш 4/4', info.win.beats + '/4');
   ok(info.win.loopSec >= 10 && info.win.loopSec <= 20, 'длина 10–20 с — это момент, а не фон', info.win.loopSec + ' с');
   ok(info.win.bars < info.game.bars, 'короче фоновой темы (10 тактов против 24)', info.win.bars + ' против ' + info.game.bars);
   ok(info.win.once === true && !info.game.once && !info.prologue.once, 'победа помечена разовой (`once`), фоновые — петли');

@@ -382,16 +382,17 @@ var BK = globalThis.BK || (globalThis.BK = {});
     // ——— победа: ре мажор, 4/4, 140 BPM, 10 тактов ≈ 17 с. Это НЕ петля: подъём к кульминации
     // (такты 1–5), утверждение (6–8) и разрешение A7 → D (9–10). Последняя нота — тоника D6.
     victory: [
-      [[0, 62, 2], [2, 66, 1], [3, 69, 2], [6, 74, 2]],               // D: D–F#–A–D5, восход
-      [[0, 71, 2], [2, 74, 1], [3, 76, 2], [5, 79, 3]],               // G: B–D5–E5–G5
-      [[0, 78, 2], [2, 74, 1], [3, 71, 2], [5, 74, 3]],               // Bm: F#5–D5–B4–D5
-      [[0, 76, 2], [2, 73, 1], [3, 69, 2], [5, 73, 3]],               // A: E5–C#5–A4–C#5 (ведёт в D)
-      [[0, 74, 4], [4, 78, 2], [6, 81, 2]],                           // D: кульминация D5–F#5–A5
-      [[0, 83, 2], [2, 81, 1], [3, 79, 2], [5, 76, 2]],               // G: B5–A5–G5–E5
-      [[0, 73, 2], [2, 76, 1], [3, 79, 2], [5, 81, 3]],               // A7: C#5–E5–G5–A5
-      [[0, 78, 2], [2, 74, 1], [3, 71, 2], [5, 74, 3]],               // D: F#5–D5–B4–D5
-      [[0, 76, 1], [1, 78, 1], [2, 79, 2], [4, 81, 4]],               // A7: E5–F#5–G5–A5, подъём к разрешению
-      [[0, 74, 2], [2, 78, 1], [3, 81, 1], [4, 86, 4]],               // D: D5–F#5–A5–D6 — разрешение в тонику
+      // тот же мотив «Тёплый хлеб», но в ре мажоре: подъём, утверждение, разрешение
+      [[0,74,2],[2,78,1],[3,81,2],[5,78,1]],
+      [[0,83,2],[2,81,1],[3,78,3]],
+      [[0,79,2],[2,83,1],[3,86,2],[5,83,1]],
+      [[0,81,3],[3,76,1],[4,73,2]],
+      [[0,74,2],[2,78,1],[3,81,1],[4,86,2]],
+      [[0,83,2],[2,86,1],[3,90,2],[5,88,1]],
+      [[0,86,2],[2,83,1],[3,81,2],[5,79,1]],
+      [[0,81,4],[4,76,2]],
+      [[0,86,1],[1,88,1],[2,90,2],[4,93,4]],
+      [[0,81,2],[2,86,2],[3,90,2],[4,93,4]],
     ],
     // ——— тяжёлый момент: ре минор, медленно и низко; фразы длинные, дыхания много ———
     // Ноты тянутся по 2–4 восьмых: это «неспешный темп», а не просто редкие удары.
@@ -427,14 +428,60 @@ var BK = globalThis.BK || (globalThis.BK = {});
     victory: ['D', 'G', 'Bm', 'A', 'D', 'G', 'A', 'D', 'A', 'D'],
     sad: ['Dm', 'Bb', 'F', 'C', 'Dm', 'Gm', 'Am', 'Dm',
       'Bb', 'F', 'Gm', 'Dm', 'Bb', 'C', 'Am', 'Dm'],  };
+  /* ——— новая тема «Тёплый хлеб» (24.10.2026): один мотив 1–3–5–3 в трёх составах ———
+     Кофейня/пролог — до мажор, 3/4, 84 BPM, мягкое трио; сеть — фа мажор, 4/4, 96 BPM;
+     Россия — та же сеть, 100 BPM, шире и с пульсом; холдинг — 84 BPM, без суеты.
+     Мелодия нарочно простая: её должны узнавать через двадцать минут, а не ловить как ребус. */
+  MUS_MEL.game = [
+    // A (8 тактов): фа мажор, «рабочий день»
+    [[0,65,2],[2,69,1],[3,72,2],[5,69,1]], [[0,74,2],[2,72,1],[3,69,3]],
+    [[0,70,2],[2,74,1],[3,77,2],[5,74,1]], [[0,72,3],[3,67,1],[4,64,2]],
+    [[0,65,2],[2,69,1],[3,72,1],[4,77,2]], [[0,74,2],[2,77,1],[3,81,2],[5,79,1]],
+    [[0,77,2],[2,74,1],[3,72,2],[5,70,1]], [[0,72,4],[4,67,2]],
+    // B (8 тактов): контраст и возврат
+    [[0,74,2],[2,77,1],[3,81,2],[5,79,1]], [[0,77,2],[2,74,1],[3,70,2],[5,74,1]],
+    [[0,72,2],[2,76,1],[3,79,2],[5,77,1]], [[0,76,3],[3,72,1],[4,67,2]],
+    [[0,74,2],[2,77,1],[3,81,3]], [[0,79,2],[2,77,1],[3,74,3]],
+    [[0,72,2],[2,76,1],[3,79,2],[5,84,1]], [[0,77,4],[4,72,2]],
+  ];
+  MUS_MEL.prologue = [
+    // A (8 тактов): до мажор, выше и светлее
+    [[0,72,2],[2,76,1],[3,79,2],[5,76,1]], [[0,81,2],[2,79,1],[3,76,3]],
+    [[0,77,2],[2,81,1],[3,84,2],[5,81,1]], [[0,79,3],[3,74,1],[4,71,2]],
+    [[0,72,2],[2,76,1],[3,79,1],[4,84,2]], [[0,81,2],[2,84,1],[3,88,2],[5,86,1]],
+    [[0,84,2],[2,81,1],[3,79,2],[5,77,1]], [[0,79,4],[4,74,2]],
+    // B (8 тактов): лёгкий контраст
+    [[0,74,2],[2,77,1],[3,81,3]], [[0,79,2],[2,76,1],[3,71,3]],
+    [[0,76,2],[2,79,1],[3,83,3]], [[0,81,3],[3,76,1],[4,72,2]],
+    [[0,77,2],[2,81,1],[3,84,2],[5,86,1]], [[0,83,2],[2,79,1],[3,74,3]],
+    [[0,72,2],[2,76,1],[3,79,2],[5,84,1]], [[0,79,4],[4,74,2]],
+  ];
+  MUS_MEL.russia = MUS_MEL.game;
+  MUS_MEL.holding = MUS_MEL.game;
+  MUS_PROG.game = ['F','Dm','Bb','C','F','Dm','Bb','C','Dm','Bb','F','C','Dm','Bb','F','C'];
+  MUS_PROG.prologue = ['C','Am','F','G','C','Am','F','G','Dm','G','Em','Am','F','G','C','G'];
+  // пролог: A–A–B, 24 такта — петля ~51 с, чтобы не повторяться каждые полминуты
+  MUS_MEL.prologue = MUS_MEL.prologue.concat(MUS_MEL.prologue.slice(0, 8));
+  MUS_PROG.prologue = MUS_PROG.prologue.concat(MUS_PROG.prologue.slice(0, 8));
+  MUS_PROG.russia = MUS_PROG.game;
+  MUS_PROG.holding = MUS_PROG.game;
+
   const MUS_THEMES = {
     game: {
-      mood: 'game', key: 'фа мажор', bpm: 92, beats: 3, steps: 6, gain: MUS.GAIN, cut: MUS.CUT.game,
-      lev: { lead: 0.34, bass: 0.246, arp: 0.058, tick: 0.037 },
+      mood: 'game', key: 'фа мажор', bpm: 96, beats: 4, steps: 8, gain: MUS.GAIN, cut: MUS.CUT.game,
+      lev: { lead: 0.32, bass: 0.24, arp: 0.055, tick: 0.028, pad: 0.045 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
     },
     prologue: {
-      mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: MUS.CUT.prologue,
-      lev: { lead: 0.272, bass: 0.208, arp: 0.049, tick: 0.025 },
+      mood: 'prologue', key: 'до мажор', bpm: 84, beats: 3, steps: 6, gain: MUS.GAIN * MUS.PRO_K, cut: 2350,
+      lev: { lead: 0.30, bass: 0.20, arp: 0.045, tick: 0, pad: 0.035 }, leadType: 'triangle', arpType: 'sine',
+    },
+    russia: {
+      mood: 'russia', key: 'фа мажор', bpm: 100, beats: 4, steps: 8, gain: MUS.GAIN, cut: 3800,
+      lev: { lead: 0.32, bass: 0.24, arp: 0.05, tick: 0.022, pad: 0.05 }, leadType: 'triangle', arpType: 'sine', sub: 0.22,
+    },
+    holding: {
+      mood: 'holding', key: 'фа мажор', bpm: 84, beats: 4, steps: 8, gain: MUS.GAIN * 0.85, cut: 2900,
+      lev: { lead: 0.28, bass: 0.20, arp: 0, tick: 0, pad: 0.05 }, leadType: 'triangle', arpType: 'sine',
     },
     // Победа — разовая тема-момент (`once`): тот же движок, но позиция не зацикливается, а в конце
     // музыка сама возвращается к прежней теме (musSched → musMood). Громче и ярче фона, потому что
@@ -442,12 +489,12 @@ var BK = globalThis.BK || (globalThis.BK = {});
     victory: {
       mood: 'victory', key: 'ре мажор', bpm: 140, beats: 4, steps: 8, once: true,
       gain: MUS.GAIN * MUS.WIN_K, cut: MUS.CUT.victory,
-      lev: { lead: 0.40, bass: 0.25, arp: 0.075, tick: 0.05 },
+      lev: { lead: 0.36, bass: 0.24, arp: 0.05, tick: 0.04, pad: 0.045 }, leadType: 'triangle', arpType: 'sine', sub: 0.2,
     },
     sad: {
       mood: 'sad', key: 'ре минор', bpm: 63, beats: 3, steps: 6, gain: MUS.GAIN * MUS.SAD_K, cut: MUS.CUT.sad,
       // перкуссии нет вовсе (tick: 0): в тяжёлом моменте «тик» звучал бы как метроном
-      lev: { lead: 0.28, bass: 0.22, arp: 0.04, tick: 0 },
+      lev: { lead: 0.28, bass: 0.20, arp: 0.03, tick: 0, pad: 0.035 }, leadType: 'triangle', arpType: 'sine', sub: 0.16,
     },
   };
   Object.keys(MUS_THEMES).forEach((k) => { const t = MUS_THEMES[k]; t.mel = MUS_MEL[k]; t.prog = MUS_PROG[k]; t.bars = t.prog.length; });  const theme = (m) => MUS_THEMES[m] || MUS_THEMES.game;
@@ -455,7 +502,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
   const loopSec = (th) => th.bars * th.beats * 60 / th.bpm;        // длина полной петли, с
   const totalSteps = (th) => th.bars * th.steps;                   // шагов в одном проходе темы
 
-  const mus = { on: false, gestured: false, mood: 'game', nodes: null, bus: null, gen: 0, timer: null, nextT: 0, pos: 0, duck: false,
+  const mus = { on: false, gestured: false, mood: 'game', energy: 0.4, nodes: null, bus: null, gen: 0, timer: null, nextT: 0, pos: 0, duck: false,
     moment: 0, after: 'game', until: 0 };  // moment/after/until — разовая тема-момент (победа) и возврат к прежней
 
   // одна нота: свой осциллятор, мягкая атака, спад в ноль, и только потом stop() — щелчка на стыках нет
@@ -496,19 +543,26 @@ var BK = globalThis.BK || (globalThis.BK = {});
   function musStep(c, nd, th, t, pos) {
     const steps = th.steps, bar = Math.floor(pos / steps) % th.bars, st = pos % steps;
     const ch = CH[th.prog[bar]] || CH.C, sd = stepDur(th), lev = th.lev;
+    const en = 0.35 + 0.65 * (mus.energy || 0.4);          // слой пульса: тише в покое, громче в работе
     const m = th.mel[bar];
+    // подложка: аккорд раз в такт, очень тихо и мягко — это «воздух», а не ещё одна мелодия
+    if (st === 0 && lev.pad) for (const note of ch) musNote(c, nd.bus, { f: midi(note), t, d: sd * steps * 0.96, type: 'sine', vol: lev.pad, att: 0.18, rel: 0.5 });
     if (m) for (let i = 0; i < m.length; i++) {
-      if (m[i][0] !== st) continue;                       // ведущая партия — квадрат
-      musNote(c, nd.bus, { f: midi(m[i][1]), t, d: sd * m[i][2] * 0.96, type: 'square', vol: lev.lead });
+      if (m[i][0] !== st) continue;
+      const f = midi(m[i][1]), d = sd * m[i][2] * 0.96;
+      musNote(c, nd.bus, { f, t, d, type: th.leadType || 'square', vol: lev.lead });
+      // тёплый «корпус»: тихая синусоида в унисон, чтобы треугольник не звучал одиноко
+      if (th.sub) musNote(c, nd.bus, { f, t, d, type: 'sine', vol: lev.lead * th.sub, att: 0.03, rel: 0.12 });
     }
     if (st === 0) musNote(c, nd.bus, { f: midi(ch[0] - 12), t, d: sd * 1.9, type: 'triangle', vol: lev.bass });
-    else if (st === 2) musNote(c, nd.bus, { f: midi(ch[0]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.62 });
-    else if (st === 4) musNote(c, nd.bus, { f: midi(ch[1]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.55 });
-    const arp = [ch[0], ch[1], ch[2], ch[0] + 12];        // мягкое арпеджио восьмыми — тихо
-    // нота арпеджио звучит дольше шага (1,3 восьмой): между шагами не остаётся «дырки» в тишину
-    musNote(c, nd.bus, { f: midi(arp[st % 4]), t, d: sd * 1.3, type: 'square', vol: lev.arp, att: 0.02, rel: 0.08 });
-    const tv = lev.tick * (st === 0 ? 1 : (st === 2 || st === 4 ? 0.55 : 0));
-    if (tv > 0) musTick(c, nd.bus, t, tv, st === 0 ? 5200 : 4200);
+    else if (st === 2) musNote(c, nd.bus, { f: midi(ch[0]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.55 * en });
+    else if (st === 4) musNote(c, nd.bus, { f: midi(ch[1]), t, d: sd * 1.9, type: 'triangle', vol: lev.bass * 0.48 * en });
+    if (lev.arp) {
+      const arp = [ch[0], ch[1], ch[2], ch[0] + 12];
+      musNote(c, nd.bus, { f: midi(arp[st % 4]), t, d: sd * 1.3, type: th.arpType || 'square', vol: lev.arp * en, att: 0.02, rel: 0.1 });
+    }
+    const tv = lev.tick * (st === 0 ? 1 : (st === 2 || st === 4 ? 0.5 : 0)) * en;
+    if (tv > 0) musTick(c, nd.bus, t, tv, st === 0 ? 4800 : 3900);
   }
   // шина музыки: gain → фильтр низких частот → мягкий лимитер → выход (master в игре, destination в офлайне)
   function musGraph(c, mood, dest) {
@@ -557,8 +611,30 @@ var BK = globalThis.BK || (globalThis.BK = {});
   }
   // планировщик: держим LOOK секунд вперёд; отстали (вкладка подвисла) — не играем в прошлом, а начинаем заново.
   // Разовая тема (победа) не зацикливается: доиграв её до конца, возвращаем ту тему, что звучала до неё.
+  // какую сцену играть: Уфа → Россия → холдинг. Пролог и разовые темы не перебиваем.
+  function desiredMood() {
+    const S = BK.App && BK.App.state;
+    if (!S) return 'game';
+    if (S.prologue && S.prologue.status === 'run') return null;   // у пролога своя тема
+    if (S.holding && S.holding.v && S.holding.path && S.holding.path !== 'none') return 'holding';
+    if (S.corp && S.corp.cities && Object.keys(S.corp.cities).length > 1) return 'russia';
+    return 'game';
+  }
+  // интенсивность 0–1: сколько точек, есть ли Россия/холдинг, ждёт ли событие, не кризис ли
+  function targetEnergy() {
+    const S = BK.App && BK.App.state; if (!S) return 0.35;
+    let e = 0.22 + Math.min(0.38, (S.stores ? S.stores.length : 0) / 55 * 0.38);
+    if (S.corp && S.corp.cities && Object.keys(S.corp.cities).length > 1) e += 0.14;
+    if (S.holding && S.holding.v && S.holding.path && S.holding.path !== 'none') e += 0.08;
+    if (S.ev && S.ev.pending) e += 0.18;
+    if (S.cash < 0) e += 0.08;
+    return Math.max(0, Math.min(1, e));
+  }
   function musSched() {
     if (!mus.on || !ctx || !mus.nodes) return;
+    mus.energy += (targetEnergy() - mus.energy) * 0.22;
+    const want = desiredMood();
+    if (want && want !== mus.mood && !theme(mus.mood).once && mus.mood !== 'prologue' && mus.mood !== 'sad') musMood(want);
     const now = ctx.currentTime;
     if (!mus.nextT || mus.nextT < now + 0.05) mus.nextT = now + 0.08;
     let guard = 0;
@@ -896,7 +972,7 @@ var BK = globalThis.BK || (globalThis.BK = {});
         ${catRow('money', CAT_NAME.money, 'выручка, монетки 1-го числа')}
         ${catRow('notes', CAT_NAME.notes, 'открытие точки, вехи, достижения')}
         ${catRow('ui', CAT_NAME.ui, 'отклик на нажатия и окна')}
-        ${catRow('music', CAT_NAME.music, '8-битные темы: игра, пролог, победа и тяжёлый момент — разные')}      </div></div>`;
+        ${catRow('music', CAT_NAME.music, 'темы: игра, пролог, победа и тяжёлый момент — разные')}      </div></div>`;
   }
 
   /* ---------- подключение к интерфейсу без правок чужих файлов ---------- */
